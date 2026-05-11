@@ -21,6 +21,7 @@ import type {
   UpdateModelRequest,
   TestProviderResponse,
   SyncResponse,
+  TaskStatusResponse,
   DashboardStats,
   ProductionStats,
   FeedbackRequest,
@@ -53,6 +54,10 @@ async function fetcher<T>(
       detail: `Request failed with status ${res.status}`,
     }));
     throw new Error(error.detail || `Request failed: ${res.status}`);
+  }
+
+  if (res.status === 204) {
+    return undefined as T;
   }
 
   return res.json();
@@ -131,6 +136,12 @@ async function getTranscript(episodeId: string): Promise<Transcript> {
 
 async function getSummary(episodeId: string): Promise<Summary> {
   return fetcher(`/episodes/${episodeId}/summary`);
+}
+
+// ===== Task API =====
+
+async function getTaskStatus(taskId: string): Promise<TaskStatusResponse> {
+  return fetcher(`/tasks/${taskId}`);
 }
 
 // ===== Settings API =====
@@ -359,11 +370,15 @@ export function useEpisodes(params?: EpisodeListParams) {
   });
 }
 
-export function useEpisode(id: string) {
+export function useEpisode(
+  id: string,
+  options?: Partial<UseQueryOptions<Episode>>
+) {
   return useQuery({
     queryKey: ["episode", id],
     queryFn: () => getEpisode(id),
     enabled: !!id,
+    ...options,
   });
 }
 
@@ -413,6 +428,26 @@ export function useSummary(
     queryKey: ["summary", episodeId],
     queryFn: () => getSummary(episodeId),
     enabled: !!episodeId,
+    ...options,
+  });
+}
+
+// -- Tasks --
+
+export function useTaskStatus(
+  taskId: string | null | undefined,
+  options?: Partial<UseQueryOptions<TaskStatusResponse>>
+) {
+  return useQuery({
+    queryKey: ["task-status", taskId],
+    queryFn: () => getTaskStatus(taskId!),
+    enabled: !!taskId,
+    refetchInterval: (query) => {
+      const status = query.state.data?.status;
+      return status && ["success", "failure", "revoked"].includes(status)
+        ? false
+        : 2000;
+    },
     ...options,
   });
 }

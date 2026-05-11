@@ -45,6 +45,7 @@ def dispatch_transcription_tasks(episode_ids: list[str], priorities: dict[str, i
 def sync_rankings_task(self) -> dict:
     """Celery task: sync podcast rankings from xyzrank.com API."""
     import asyncio
+
     from app.domains.podcast.service import PodcastService
 
     async def _run() -> dict:
@@ -80,6 +81,7 @@ def sync_episodes_task(self, podcast_id: str | None = None) -> dict:
         return {"task_id": result.id, "podcast_id": podcast_id}
 
     import asyncio
+
     from app.domains.podcast.service import EpisodeService
 
     async def _run() -> dict:
@@ -112,7 +114,6 @@ def sync_episodes_task(self, podcast_id: str | None = None) -> dict:
 def sync_podcast_episodes_task(self, podcast_id: str) -> dict:
     """Celery task: sync episodes for a specific podcast by ID."""
     import asyncio
-    from uuid import UUID
 
     from app.domains.podcast.service import EpisodeService
 
@@ -128,7 +129,16 @@ def sync_podcast_episodes_task(self, podcast_id: str) -> dict:
                 raise
 
     try:
-        return asyncio.run(_run())
+        result = asyncio.run(_run())
     except Exception as exc:
         logger.error(f"Podcast episode sync failed for {podcast_id}: {exc}")
         raise self.retry(exc=exc, countdown=60)
+
+    for episode_id in result.get("new_episode_ids", []):
+        celery_app.send_task(
+            "app.domains.transcription.tasks.transcribe_episode_task",
+            args=[episode_id],
+        )
+        logger.info(f"Dispatched transcription task for episode {episode_id}")
+
+    return result

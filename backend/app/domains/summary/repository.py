@@ -3,6 +3,7 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.domains.podcast.models import ProcessingStatus
 from app.domains.summary.models import Summary
 from app.shared.base import BaseRepository
 
@@ -22,3 +23,11 @@ class SummaryRepository(BaseRepository[Summary]):
         if existing:
             return existing
         return await self.create({"episode_id": episode_id})
+
+    async def mark_failed(self, episode_id: UUID, error_message: str) -> Summary:
+        summary = await self.get_or_create(episode_id)
+        summary.status = ProcessingStatus.FAILED
+        summary.error_message = error_message[:4000]
+        self.session.add(summary)
+        await self.session.flush()
+        return summary

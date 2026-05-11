@@ -1,8 +1,6 @@
-from datetime import datetime
-from typing import Any
 from uuid import UUID
 
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -141,6 +139,33 @@ class EpisodeRepository(BaseRepository[Episode]):
         )
         return result.scalars().first()
 
+    async def get_by_feed_identity(
+        self,
+        *,
+        podcast_id: UUID,
+        external_id: str | None = None,
+        source_url: str | None = None,
+        audio_url: str | None = None,
+    ) -> Episode | None:
+        identity_filters = []
+        if external_id:
+            identity_filters.append(self.model.external_id == external_id)
+        if source_url:
+            identity_filters.append(self.model.source_url == source_url)
+        if audio_url:
+            identity_filters.append(self.model.audio_url == audio_url)
+
+        if not identity_filters:
+            return None
+
+        result = await self.session.execute(
+            select(self.model).where(
+                self.model.podcast_id == podcast_id,
+                or_(*identity_filters),
+            )
+        )
+        return result.scalars().first()
+
     async def get_filtered(
         self,
         *,
@@ -187,7 +212,10 @@ class EpisodeRepository(BaseRepository[Episode]):
         return result.scalars().first()
 
     async def update_status(
-        self, id: UUID, transcript_status: ProcessingStatus | None = None, summary_status: ProcessingStatus | None = None
+        self,
+        id: UUID,
+        transcript_status: ProcessingStatus | None = None,
+        summary_status: ProcessingStatus | None = None,
     ) -> Episode | None:
         episode = await self.get(id)
         if episode is None:

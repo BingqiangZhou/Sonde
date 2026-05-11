@@ -70,7 +70,7 @@ function EpisodesContent() {
           size="sm"
           onClick={() =>
             syncMut.mutate(undefined, {
-              onSuccess: () => toast.success('剧集同步已触发'),
+              onSuccess: () => toast.success('剧集同步任务已提交'),
               onError: (err) => toast.error(`同步失败: ${err.message}`),
             })
           }

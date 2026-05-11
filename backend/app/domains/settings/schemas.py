@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from datetime import datetime
 from uuid import UUID
 
@@ -29,6 +31,7 @@ class ProviderResponse(BaseModel):
     is_active: bool
     created_at: datetime
     updated_at: datetime
+    models: list[ModelResponse] = Field(default_factory=list)
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -99,3 +102,6 @@ class PromptTemplateResponse(BaseModel):
 class PromptTemplateListResponse(BaseModel):
     items: list[PromptTemplateResponse]
     total: int
+
+
+ProviderResponse.model_rebuild()

@@ -7,11 +7,18 @@ import { EpisodeTabs } from '@/components/episode-tabs';
 import { AudioPlayer } from '@/components/audio-player';
 import { StatusBadge } from '@/components/status-badge';
 import { useEpisode } from '@/lib/api';
+import type { Episode } from '@/types';
 import { formatDate, formatDuration } from '@/lib/utils';
 
-function EpisodeDetailContent({ id }: { id: string }) {
-  const { data: episode, isLoading } = useEpisode(id);
-
+function EpisodeDetailContent({
+  id,
+  episode,
+  isLoading,
+}: {
+  id: string;
+  episode?: Episode;
+  isLoading: boolean;
+}) {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -76,12 +83,20 @@ export default function EpisodeDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
-  const episode = useEpisode(id).data;
+  const { data: episode, isLoading } = useEpisode(id, {
+    refetchInterval: (query) => {
+      const episode = query.state.data;
+      return episode?.transcript_status === 'processing' ||
+        episode?.summary_status === 'processing'
+        ? 3000
+        : false;
+    },
+  });
 
   return (
     <>
       <Suspense fallback={<div className="py-20 text-center text-muted-foreground">加载中...</div>}>
-        <EpisodeDetailContent id={id} />
+        <EpisodeDetailContent id={id} episode={episode} isLoading={isLoading} />
       </Suspense>
 
       {/* Audio Player - always mounted for seekTo functionality */}

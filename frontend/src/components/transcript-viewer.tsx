@@ -90,7 +90,10 @@ export function TranscriptViewer({ episodeId, isActive }: TranscriptViewerProps)
 
   // Fetch transcript only when active and completed
   const { data: transcript, isLoading, error } = useTranscript(episodeId, {
-    enabled: isActive && episode?.transcript_status === TranscriptStatus.Completed,
+    enabled:
+      isActive &&
+      (episode?.transcript_status === TranscriptStatus.Completed ||
+        episode?.transcript_status === TranscriptStatus.Failed),
   });
 
   const transcribeMutation = useTranscribeEpisode();
@@ -155,7 +158,7 @@ export function TranscriptViewer({ episodeId, isActive }: TranscriptViewerProps)
         part
       )
     );
-  }, [transcript?.content, debouncedSearch, hasSegments]);
+  }, [transcript, debouncedSearch, hasSegments]);
 
   const highlightText = useCallback(
     (text: string) => {
@@ -200,7 +203,7 @@ export function TranscriptViewer({ episodeId, isActive }: TranscriptViewerProps)
     if (el) {
       el.scrollIntoView({ behavior: "smooth", block: "nearest" });
     }
-  }, [currentTime, hasSegments, debouncedSearch, transcript?.segments]);
+  }, [currentTime, hasSegments, debouncedSearch, transcript]);
 
   const handleScroll = useCallback(() => {
     lastUserScrollRef.current = Date.now();
@@ -237,6 +240,9 @@ export function TranscriptViewer({ episodeId, isActive }: TranscriptViewerProps)
             ? "转录失败"
             : "此内容尚未转录"}
         </p>
+        {transcript?.error_message && (
+          <p className="mt-2 text-sm text-destructive">{transcript.error_message}</p>
+        )}
         {episode?.transcript_status !== TranscriptStatus.Processing && (
           <Button
             onClick={() => transcribeMutation.mutate(episodeId)}

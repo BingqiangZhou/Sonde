@@ -50,6 +50,8 @@ export interface Episode {
   title: string;
   description: string | null;
   audio_url: string | null;
+  source_url: string | null;
+  external_id: string | null;
   duration: number | null;
   published_at: string | null;
   transcript_status: TranscriptStatus | null;
@@ -75,8 +77,10 @@ export interface Transcript {
   processing_duration_sec: number | null;
   rating: number | null;
   model_used: string | null;
+  error_message: string | null;
   segments: TranscriptSegment[] | null;
   created_at: string;
+  updated_at: string;
 }
 
 export interface Summary {
@@ -92,7 +96,9 @@ export interface Summary {
   rating: number | null;
   feedback: string | null;
   processing_duration_sec: number | null;
+  error_message: string | null;
   created_at: string;
+  updated_at: string;
 }
 
 // ===== AI Provider Settings =====
@@ -105,7 +111,7 @@ export interface AIProvider {
   is_active: boolean;
   created_at: string;
   updated_at: string;
-  models?: AIModel[];
+  models: AIModel[];
 }
 
 export interface AIModel {
@@ -216,6 +222,15 @@ export interface BatchRequest {
 export interface CreatePromptRequest {
   name: string;
   content: string;
+}
+
+export interface TaskStatusResponse {
+  task_id: string;
+  status: string;
+  result: unknown;
+  error: string | null;
+  started_at: string | null;
+  finished_at: string | null;
 }
 
 // ===== Dashboard Types =====

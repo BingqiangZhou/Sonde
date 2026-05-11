@@ -19,12 +19,10 @@ from app.domains.podcast.schemas import (
     EpisodeDetail,
     EpisodeListResponse,
     EpisodeResponse,
-    PaginatedResponse,
     PodcastDetail,
     PodcastListResponse,
     PodcastResponse,
     PodcastTrackResponse,
-    SyncResponse,
 )
 
 logger = logging.getLogger(__name__)
@@ -376,10 +374,14 @@ class EpisodeService:
         total_created = 0
         total_updated = 0
         new_episode_ids: list[str] = []
+        feed_errors: list[dict[str, str]] = []
 
         for podcast in tracked_podcasts:
             if not podcast.rss_feed_url:
                 logger.warning(f"Podcast {podcast.name} has no RSS feed URL, skipping")
+                feed_errors.append(
+                    {"podcast_id": str(podcast.id), "podcast": podcast.name, "error": "Missing RSS feed URL"}
+                )
                 continue
 
             try:
@@ -390,6 +392,13 @@ class EpisodeService:
                         if resp.status != 200:
                             logger.warning(
                                 f"RSS feed for {podcast.name} returned status {resp.status}"
+                            )
+                            feed_errors.append(
+                                {
+                                    "podcast_id": str(podcast.id),
+                                    "podcast": podcast.name,
+                                    "error": f"RSS feed returned HTTP {resp.status}",
+                                }
                             )
                             continue
                         content = await resp.text()
@@ -420,11 +429,14 @@ class EpisodeService:
                     if not audio_url:
                         continue
 
-                    # Check if episode already exists
-                    existing = await self.repo.get_by_audio_url(audio_url)
-                    if existing:
-                        total_updated += 1
-                        continue
+                    external_id = (
+                        str(entry.get("id") or entry.get("guid") or "").strip()
+                        or None
+                    )
+                    source_url = (
+                        str(entry.get("link") or entry.get("href") or "").strip()
+                        or None
+                    )
 
                     # Parse published date
                     published_at = None
@@ -451,21 +463,37 @@ class EpisodeService:
                         except (ValueError, TypeError):
                             duration = duration
 
-                    episode = await self.repo.create(
-                        {
-                            "podcast_id": podcast.id,
-                            "title": entry.get("title", "Untitled"),
-                            "description": entry.get("summary") or entry.get("description"),
-                            "audio_url": audio_url,
-                            "duration": duration,
-                            "published_at": published_at,
-                        }
+                    episode_data = {
+                        "podcast_id": podcast.id,
+                        "title": entry.get("title", "Untitled"),
+                        "description": entry.get("summary") or entry.get("description"),
+                        "audio_url": audio_url,
+                        "source_url": source_url,
+                        "external_id": external_id,
+                        "duration": duration,
+                        "published_at": published_at,
+                    }
+
+                    existing = await self.repo.get_by_feed_identity(
+                        podcast_id=podcast.id,
+                        external_id=external_id,
+                        source_url=source_url,
+                        audio_url=audio_url,
                     )
+                    if existing:
+                        await self.repo.update(existing.id, episode_data)
+                        total_updated += 1
+                        continue
+
+                    episode = await self.repo.create(episode_data)
                     total_created += 1
                     new_episode_ids.append(str(episode.id))
 
             except Exception as e:
                 logger.error(f"Error syncing episodes for podcast {podcast.name}: {e}")
+                feed_errors.append(
+                    {"podcast_id": str(podcast.id), "podcast": podcast.name, "error": str(e)}
+                )
                 continue
 
         await self.session.flush()
@@ -474,4 +502,5 @@ class EpisodeService:
             "created": total_created,
             "updated": total_updated,
             "new_episode_ids": new_episode_ids,
+            "feed_errors": feed_errors,
         }

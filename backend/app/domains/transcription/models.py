@@ -1,6 +1,6 @@
-import enum
 import uuid
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from sqlalchemy import DateTime, Enum, Float, ForeignKey, Integer, String, Text, func
 from sqlalchemy.dialects.postgresql import JSONB
@@ -8,6 +8,9 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
 from app.domains.podcast.models import ProcessingStatus
+
+if TYPE_CHECKING:
+    from app.domains.podcast.models import Episode
 
 
 class Transcript(Base):
@@ -27,6 +30,7 @@ class Transcript(Base):
     rating: Mapped[int | None] = mapped_column(Integer, nullable=True)
     feedback: Mapped[str | None] = mapped_column(Text, nullable=True)
     model_used: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
     status: Mapped[ProcessingStatus] = mapped_column(
         Enum(ProcessingStatus), nullable=False, default=ProcessingStatus.PENDING
     )
@@ -37,4 +41,4 @@ class Transcript(Base):
         DateTime(timezone=True), nullable=False, server_default=func.now(), onupdate=func.now()
     )
 
-    episode: Mapped["app.domains.podcast.models.Episode"] = relationship(back_populates="transcript")
+    episode: Mapped["Episode"] = relationship(back_populates="transcript")

@@ -108,7 +108,7 @@ export default function DashboardPage() {
             size="sm"
             onClick={() =>
               syncRankings.mutate(undefined, {
-                onSuccess: () => toast.success('排名同步已触发'),
+                onSuccess: () => toast.success('排名同步任务已提交'),
                 onError: (err) => toast.error(`同步失败: ${err.message}`),
               })
             }
@@ -124,7 +124,7 @@ export default function DashboardPage() {
             size="sm"
             onClick={() =>
               syncEpisodes.mutate(undefined, {
-                onSuccess: () => toast.success('剧集同步已触发'),
+                onSuccess: () => toast.success('剧集同步任务已提交'),
                 onError: (err) => toast.error(`同步失败: ${err.message}`),
               })
             }
@@ -140,7 +140,7 @@ export default function DashboardPage() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        {statCards.map((stat, i) => (
+        {statCards.map((stat) => (
           <Link key={stat.title} href={stat.href}>
             <Card className="animate-fade-in-up border-0 shadow-sm transition-all duration-200 hover:shadow-md hover:bg-muted/30 cursor-pointer">
               <CardContent className="p-5">
@@ -201,7 +201,7 @@ export default function DashboardPage() {
                   className="mt-3"
                   onClick={() =>
                     syncRankings.mutate(undefined, {
-                      onSuccess: () => toast.success('排名同步已触发'),
+                      onSuccess: () => toast.success('排名同步任务已提交'),
                     })
                   }
                   disabled={syncRankings.isPending}

@@ -1,10 +1,9 @@
 'use client';
 
-import { use, Suspense } from 'react';
+import { Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Loader2, FileText, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { StatusBadge } from '@/components/status-badge';
 import { EpisodeInfoCard } from '@/components/episode-info-card';
 import { ExpandableDescription } from '@/components/expandable-description';
 import { TranscriptViewer } from '@/components/transcript-viewer';
@@ -14,7 +13,7 @@ import {
   useSummarizeEpisode,
 } from '@/lib/api';
 import { toast } from 'sonner';
-import type { Episode, TranscriptStatus, SummaryStatus } from '@/types';
+import type { Episode } from '@/types';
 
 interface EpisodeTabsProps {
   episodeId: string;
@@ -35,14 +34,14 @@ function TabContent({ episodeId, episode, activeTab }: {
     episode.transcript_status === null ||
     episode.transcript_status === 'failed';
   const canSummarize =
-    episode.summary_status === null ||
-    episode.summary_status === 'failed';
+    episode.transcript_status === 'completed' &&
+    (episode.summary_status === null || episode.summary_status === 'failed');
   const isTranscribing = episode.transcript_status === 'processing';
   const isSummarizing = episode.summary_status === 'processing';
 
   const handleTranscribe = () => {
     transcribeMut.mutate(episodeId, {
-      onSuccess: () => toast.success('转录完成'),
+      onSuccess: () => toast.success('转录任务已提交'),
       onError: (err) => toast.error(`转录失败: ${err.message}`),
     });
   };
@@ -78,9 +77,7 @@ function TabContent({ episodeId, episode, activeTab }: {
             )}
             {isTranscribing
               ? '转录中...'
-              : episode.transcript_status === 'completed'
-                ? '重新转录'
-                : '开始转录'}
+              : '开始转录'}
           </Button>
           <Button
             variant="outline"
@@ -96,9 +93,7 @@ function TabContent({ episodeId, episode, activeTab }: {
             )}
             {isSummarizing
               ? '总结中...'
-              : episode.summary_status === 'completed'
-                ? '重新总结'
-                : '开始总结'}
+              : '开始总结'}
           </Button>
         </div>
 

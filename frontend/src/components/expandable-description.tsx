@@ -9,10 +9,6 @@ interface ExpandableDescriptionProps {
   maxLines?: number;
 }
 
-function stripHtmlTags(html: string): string {
-  return html.replace(/<[^>]*>/g, "").trim();
-}
-
 function isHtmlContent(text: string): boolean {
   return /<[a-zA-Z][^>]*>/.test(text);
 }
@@ -26,7 +22,6 @@ export function ExpandableDescription({
   const textRef = useRef<HTMLDivElement>(null);
 
   const isHtml = useMemo(() => isHtmlContent(content), [content]);
-  const plainText = useMemo(() => stripHtmlTags(content), [content]);
 
   const checkOverflow = useCallback(() => {
     const el = textRef.current;

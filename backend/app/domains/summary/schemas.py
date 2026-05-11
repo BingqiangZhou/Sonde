@@ -19,8 +19,8 @@ class SummaryResponse(BaseModel):
     id: UUID
     episode_id: UUID
     status: ProcessingStatus
-    key_topics: list[str] | dict | None = None
-    highlights: list[str] | dict | None = None
+    key_topics: list[str] | None = None
+    highlights: list[str] | None = None
     model_used: str | None = None
     provider: str | None = None
     prompt_version_id: UUID | None = None
@@ -28,6 +28,7 @@ class SummaryResponse(BaseModel):
     rating: int | None = None
     feedback: str | None = None
     processing_duration_sec: int | None = None
+    error_message: str | None = None
     created_at: datetime
     updated_at: datetime
 

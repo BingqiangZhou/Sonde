@@ -1,7 +1,7 @@
 import logging
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -13,6 +13,7 @@ from app.domains.podcast.schemas import (
     PodcastDetail,
     PodcastListResponse,
     PodcastTrackResponse,
+    SyncResponse,
 )
 from app.domains.podcast.service import EpisodeService, PodcastService
 
@@ -71,6 +72,18 @@ async def toggle_track_podcast(
     return result
 
 
+@router.delete("/podcasts/{podcast_id}/track", response_model=PodcastTrackResponse)
+async def untrack_podcast(
+    podcast_id: UUID,
+    db: AsyncSession = Depends(get_db),
+) -> PodcastTrackResponse:
+    service = PodcastService(db)
+    result = await service.untrack_podcast(podcast_id)
+    if result is None:
+        raise HTTPException(status_code=404, detail="Podcast not found")
+    return result
+
+
 class PriorityRequest(BaseModel):
     priority: int
 
@@ -94,47 +107,32 @@ async def set_podcast_priority(
     return {"message": "Priority updated", "priority": data.priority}
 
 
-@router.post("/podcasts/sync")
+@router.post("/podcasts/sync", response_model=SyncResponse, status_code=status.HTTP_202_ACCEPTED)
 async def sync_podcasts(
-    db: AsyncSession = Depends(get_db),
-) -> dict:
-    """Sync podcast rankings from xyzrank.com. Runs inline (no Celery required)."""
-    service = PodcastService(db)
-    try:
-        result = await service.sync_rankings()
-        await db.commit()
-        return {"message": "Ranking sync complete", **result}
-    except Exception as e:
-        await db.rollback()
-        logger.error(f"Ranking sync failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+    db: AsyncSession = Depends(get_db),  # noqa: ARG001
+) -> SyncResponse:
+    """Queue podcast ranking sync from xyzrank.com."""
+    from app.core.celery_app import celery_app
+
+    task = celery_app.send_task("app.domains.podcast.tasks.sync_rankings_task")
+    logger.info("Queued ranking sync task: %s", task.id)
+    return SyncResponse(message="Ranking sync queued", task_id=task.id)
 
 
-@router.post("/episodes/sync")
+@router.post("/episodes/sync", response_model=SyncResponse, status_code=status.HTTP_202_ACCEPTED)
 async def sync_episodes(
-    db: AsyncSession = Depends(get_db),
-) -> dict:
-    """Sync episodes from RSS feeds for tracked podcasts. Runs inline."""
-    service = EpisodeService(db)
-    try:
-        result = await service.sync_episodes()
-        await db.commit()
+    podcast_id: UUID | None = Query(None),
+    db: AsyncSession = Depends(get_db),  # noqa: ARG001
+) -> SyncResponse:
+    """Queue episode sync from RSS feeds for tracked podcasts."""
+    from app.core.celery_app import celery_app
 
-        # Dispatch transcription tasks for new episodes with priority
-        new_episode_ids = result.get("new_episode_ids", [])
-        if new_episode_ids:
-            import asyncio
-            from app.domains.podcast.tasks import _get_episode_priorities, dispatch_transcription_tasks
-
-            priorities = await _get_episode_priorities(new_episode_ids)
-            dispatch_transcription_tasks(new_episode_ids, priorities)
-            logger.info(f"Dispatched transcription for {len(new_episode_ids)} new episodes")
-
-        return {"message": "Episode sync complete", **result}
-    except Exception as e:
-        await db.rollback()
-        logger.error(f"Episode sync failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+    task = celery_app.send_task(
+        "app.domains.podcast.tasks.sync_episodes_task",
+        args=[str(podcast_id) if podcast_id else None],
+    )
+    logger.info("Queued episode sync task: %s", task.id)
+    return SyncResponse(message="Episode sync queued", task_id=task.id)
 
 
 @router.get("/stats/production")

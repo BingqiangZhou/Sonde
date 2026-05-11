@@ -1,5 +1,6 @@
 import json
 import logging
+import re
 import time
 from uuid import UUID
 
@@ -23,6 +24,7 @@ def _get_summary_semaphore() -> int:
     """Get the max concurrent LLM API calls from settings."""
     return getattr(settings, "SUMMARY_CONCURRENCY_LIMIT", 4)
 
+
 DEFAULT_SUMMARY_PROMPT = """You are an expert podcast summarizer. Given the following transcript of a podcast episode, generate a comprehensive summary.
 
 Please provide:
@@ -35,6 +37,9 @@ Format your response as a JSON object with keys: "summary", "key_topics", "highl
 Transcript:
 {transcript}
 """
+
+MAX_SUMMARY_INPUT_CHARS = 24000
+SUMMARY_CHUNK_CHARS = 18000
 
 
 class SummaryService:
@@ -101,12 +106,46 @@ class SummaryService:
         provider_config: dict | None = None,
         prompt_template: str | None = None,
     ) -> dict:
-        """Internal: make the actual LLM API call."""
-        base_url = (provider_config or {}).get("base_url", "https://api.openai.com/v1")
-        api_key = (provider_config or {}).get("api_key", "")
-        model = (provider_config or {}).get("model", "gpt-4o-mini")
-        temperature = (provider_config or {}).get("temperature", 0.3)
-        max_tokens = (provider_config or {}).get("max_tokens", 4096)
+        """Internal: handle chunked or single summary generation with rate limiting."""
+        if provider_config is None:
+            raise RuntimeError("No active AI provider configured")
+
+        # Chunk long transcripts
+        if len(transcript) <= MAX_SUMMARY_INPUT_CHARS:
+            return await self._generate_summary_once(transcript, provider_config, prompt_template)
+
+        partials = []
+        chunks = self._chunk_transcript(transcript, SUMMARY_CHUNK_CHARS)
+        for index, chunk in enumerate(chunks, start=1):
+            partial = await self._generate_summary_once(chunk, provider_config, prompt_template)
+            partials.append(
+                {
+                    "part": index,
+                    "summary": partial["content"],
+                    "key_topics": partial["key_topics"],
+                    "highlights": partial["highlights"],
+                }
+            )
+
+        combined = (
+            "The transcript was summarized in parts. Merge the following partial "
+            "summaries into one coherent episode summary without duplicating points.\n\n"
+            f"{json.dumps(partials, ensure_ascii=False)}"
+        )
+        return await self._generate_summary_once(combined, provider_config, prompt_template)
+
+    async def _generate_summary_once(
+        self,
+        transcript: str,
+        provider_config: dict,
+        prompt_template: str | None = None,
+    ) -> dict:
+        """Single LLM API call for summary generation."""
+        base_url = provider_config["base_url"]
+        api_key = provider_config["api_key"]
+        model = provider_config["model"]
+        temperature = provider_config.get("temperature", 0.3)
+        max_tokens = provider_config.get("max_tokens", 4096)
 
         url = f"{base_url.rstrip('/')}/chat/completions"
 
@@ -116,7 +155,10 @@ class SummaryService:
         payload = {
             "model": model,
             "messages": [
-                {"role": "system", "content": "You are a helpful podcast summarization assistant. Always respond with valid JSON."},
+                {
+                    "role": "system",
+                    "content": "You are a helpful podcast summarization assistant. Always respond with valid JSON.",
+                },
                 {"role": "user", "content": prompt},
             ],
             "temperature": temperature,
@@ -146,7 +188,7 @@ class SummaryService:
             content = result["choices"][0]["message"]["content"]
 
             try:
-                parsed = json.loads(content)
+                parsed = self._parse_summary_response(content)
                 return self._validate_summary_output(parsed)
             except (json.JSONDecodeError, ValueError) as e:
                 if attempt < max_retries:
@@ -158,6 +200,62 @@ class SummaryService:
                         "key_topics": [],
                         "highlights": [],
                     }
+
+        # Should not reach here, but fallback
+        return {
+            "content": content if content else "Summary generation failed.",
+            "key_topics": [],
+            "highlights": [],
+        }
+
+    def _parse_summary_response(self, content: str) -> dict:
+        """Parse LLM response content into structured summary."""
+        json_text = content.strip()
+        fenced_match = re.search(r"```(?:json)?\s*(.*?)```", json_text, re.DOTALL | re.IGNORECASE)
+        if fenced_match:
+            json_text = fenced_match.group(1).strip()
+
+        try:
+            parsed = json.loads(json_text)
+            summary_text = parsed.get("summary", content)
+            key_topics = self._normalize_string_list(parsed.get("key_topics", []))
+            highlights = self._normalize_string_list(parsed.get("highlights", []))
+        except (json.JSONDecodeError, AttributeError):
+            summary_text = content
+            key_topics = []
+            highlights = []
+
+        return {
+            "summary": summary_text,
+            "key_topics": key_topics,
+            "highlights": highlights,
+        }
+
+    @staticmethod
+    def _normalize_string_list(value: object) -> list[str]:
+        if isinstance(value, list):
+            return [str(item) for item in value if str(item).strip()]
+        if isinstance(value, dict):
+            return [str(item) for item in value.values() if str(item).strip()]
+        if isinstance(value, str) and value.strip():
+            return [value.strip()]
+        return []
+
+    @staticmethod
+    def _chunk_transcript(transcript: str, chunk_size: int) -> list[str]:
+        chunks = []
+        start = 0
+        while start < len(transcript):
+            end = min(start + chunk_size, len(transcript))
+            if end < len(transcript):
+                split_at = transcript.rfind("\n", start, end)
+                if split_at <= start:
+                    split_at = transcript.rfind("。", start, end)
+                if split_at > start:
+                    end = split_at + 1
+            chunks.append(transcript[start:end].strip())
+            start = end
+        return [chunk for chunk in chunks if chunk]
 
     async def summarize_episode(self, episode_id: UUID) -> Summary:
         """Full pipeline: get transcript, generate summary, save.
@@ -220,6 +318,7 @@ class SummaryService:
                 "status": ProcessingStatus.COMPLETED,
                 "processing_duration_sec": duration_sec,
                 "quality_score": round(quality_score, 1),
+                "error_message": None,
             })
 
             # Update episode status
@@ -230,7 +329,13 @@ class SummaryService:
 
         except Exception as e:
             logger.error(f"Summarization failed for episode {episode_id}: {e}")
-            await self.repo.update(summary.id, {"status": ProcessingStatus.FAILED})
+            await self.repo.update(
+                summary.id,
+                {
+                    "status": ProcessingStatus.FAILED,
+                    "error_message": str(e)[:4000],
+                },
+            )
             await self.episode_repo.update_status(episode_id, summary_status=ProcessingStatus.FAILED)
             await self.session.flush()
             raise
@@ -242,13 +347,15 @@ class SummaryService:
         settings_repo = SettingsRepository(self.session)
         provider = await settings_repo.get_active_provider()
         if provider is None:
-            return None
+            raise RuntimeError("No active AI provider configured")
 
         from app.core.security import decrypt_api_key
         api_key = decrypt_api_key(provider.encrypted_api_key)
 
         # Get default model config
         model_config = await settings_repo.get_default_model(provider.id)
+        if model_config is None:
+            raise RuntimeError("No AI model configured for active provider")
 
         return {
             "base_url": provider.base_url,

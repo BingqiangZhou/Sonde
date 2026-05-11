@@ -1,7 +1,7 @@
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict
 
 from app.domains.podcast.models import ProcessingStatus
 
@@ -72,6 +72,8 @@ class EpisodeBase(BaseModel):
     title: str
     description: str | None = None
     audio_url: str | None = None
+    source_url: str | None = None
+    external_id: str | None = None
     duration: int | None = None
     published_at: datetime | None = None
 
@@ -100,3 +102,12 @@ class EpisodeDetail(EpisodeResponse):
 class SyncResponse(BaseModel):
     message: str
     task_id: str | None = None
+
+
+class TaskStatusResponse(BaseModel):
+    task_id: str
+    status: str
+    result: dict | list | str | int | float | bool | None = None
+    error: str | None = None
+    started_at: datetime | None = None
+    finished_at: datetime | None = None

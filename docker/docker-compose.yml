@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   # ── PostgreSQL ──────────────────────────────────────────────────────────
   postgres:
@@ -40,7 +38,7 @@ services:
     build:
       context: ../backend
       dockerfile: Dockerfile
-    image: ghcr.io/bingqiangzhou/podcast-insight/backend:1.0.0
+    image: ghcr.io/bingqiangzhou/podcastinsight/backend:1.0.0
     container_name: podcastinsight-backend
     depends_on:
       postgres:
@@ -55,7 +53,9 @@ services:
       CELERY_BROKER_URL: redis://redis:6379/0
       CELERY_RESULT_BACKEND: redis://redis:6379/0
       ENCRYPTION_KEY: ${ENCRYPTION_KEY:-}
-      WHISPER_MODEL: ${WHISPER_MODEL:-whisper-1}
+      WHISPER_MODEL_SIZE: ${WHISPER_MODEL_SIZE:-large-v3-turbo}
+      WHISPER_DEVICE: ${WHISPER_DEVICE:-cpu}
+      WHISPER_COMPUTE_TYPE: ${WHISPER_COMPUTE_TYPE:-int8}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       XYZRANK_API_URL: ${XYZRANK_API_URL:-https://xyzrank.com/api/podcasts}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000,http://localhost:8000}
@@ -69,7 +69,7 @@ services:
     build:
       context: ../backend
       dockerfile: Dockerfile
-    image: ghcr.io/bingqiangzhou/podcast-insight/backend:1.0.0
+    image: ghcr.io/bingqiangzhou/podcastinsight/backend:1.0.0
     container_name: podcastinsight-celery-worker
     depends_on:
       redis:
@@ -84,7 +84,9 @@ services:
       CELERY_BROKER_URL: redis://redis:6379/0
       CELERY_RESULT_BACKEND: redis://redis:6379/0
       ENCRYPTION_KEY: ${ENCRYPTION_KEY:-}
-      WHISPER_MODEL: ${WHISPER_MODEL:-whisper-1}
+      WHISPER_MODEL_SIZE: ${WHISPER_MODEL_SIZE:-large-v3-turbo}
+      WHISPER_DEVICE: ${WHISPER_DEVICE:-cpu}
+      WHISPER_COMPUTE_TYPE: ${WHISPER_COMPUTE_TYPE:-int8}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       XYZRANK_API_URL: ${XYZRANK_API_URL:-https://xyzrank.com/api/podcasts}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000,http://localhost:8000}
@@ -96,7 +98,7 @@ services:
     build:
       context: ../backend
       dockerfile: Dockerfile
-    image: ghcr.io/bingqiangzhou/podcast-insight/backend:1.0.0
+    image: ghcr.io/bingqiangzhou/podcastinsight/backend:1.0.0
     container_name: podcastinsight-celery-beat
     depends_on:
       redis:
@@ -109,7 +111,9 @@ services:
       CELERY_BROKER_URL: redis://redis:6379/0
       CELERY_RESULT_BACKEND: redis://redis:6379/0
       ENCRYPTION_KEY: ${ENCRYPTION_KEY:-}
-      WHISPER_MODEL: ${WHISPER_MODEL:-whisper-1}
+      WHISPER_MODEL_SIZE: ${WHISPER_MODEL_SIZE:-large-v3-turbo}
+      WHISPER_DEVICE: ${WHISPER_DEVICE:-cpu}
+      WHISPER_COMPUTE_TYPE: ${WHISPER_COMPUTE_TYPE:-int8}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       XYZRANK_API_URL: ${XYZRANK_API_URL:-https://xyzrank.com/api/podcasts}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000,http://localhost:8000}
@@ -121,12 +125,12 @@ services:
     build:
       context: ../frontend
       dockerfile: Dockerfile
-    image: ghcr.io/bingqiangzhou/podcast-insight/frontend:1.0.0
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000/api/v1}
+    image: ghcr.io/bingqiangzhou/podcastinsight/frontend:1.0.0
     container_name: podcastinsight-frontend
     depends_on:
       - backend
-    environment:
-      NEXT_PUBLIC_API_URL: http://backend:8000/api/v1
     ports:
       - "3000:3000"
     restart: unless-stopped

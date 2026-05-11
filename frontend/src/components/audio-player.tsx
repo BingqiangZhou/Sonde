@@ -12,14 +12,13 @@ import {
   PanelRightClose,
   ListMusic,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
 } from "@/components/ui/select";
+import Image from "next/image";
 import { useAudioPlayer } from "@/hooks/use-audio-player";
 import { useAudioStore } from "@/stores/audio-store";
 import { formatTimeDisplay, cn } from "@/lib/utils";
@@ -58,9 +57,11 @@ function CoverArt({
       )}
       <div className="relative h-44 w-44 overflow-hidden rounded-3xl shadow-2xl ring-1 ring-white/5">
         {coverUrl ? (
-          <img
+          <Image
             src={coverUrl}
             alt="Cover"
+            fill
+            sizes="176px"
             className={cn(
               "h-full w-full object-cover transition-transform duration-700",
               isPlaying && "scale-110"

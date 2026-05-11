@@ -89,10 +89,15 @@ class TranscriptionService:
             transcript = await self.repo.create({
                 "episode_id": episode_id,
                 "status": ProcessingStatus.PROCESSING,
+                "error_message": None,
             })
         else:
             await self.repo.update(
-                transcript.id, {"status": ProcessingStatus.PROCESSING}
+                transcript.id,
+                {
+                    "status": ProcessingStatus.PROCESSING,
+                    "error_message": None,
+                },
             )
 
         # Update episode status
@@ -127,6 +132,7 @@ class TranscriptionService:
                 "model_used": settings.WHISPER_MODEL_SIZE,
                 "processing_duration_sec": duration_sec,
                 "status": ProcessingStatus.COMPLETED,
+                "error_message": None,
             })
 
             # Update episode status
@@ -142,7 +148,11 @@ class TranscriptionService:
                 f"Transcription failed for episode {episode_id}: {e}"
             )
             await self.repo.update(
-                transcript.id, {"status": ProcessingStatus.FAILED}
+                transcript.id,
+                {
+                    "status": ProcessingStatus.FAILED,
+                    "error_message": str(e)[:4000],
+                },
             )
             await self.episode_repo.update_status(
                 episode_id, transcript_status=ProcessingStatus.FAILED

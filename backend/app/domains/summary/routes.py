@@ -1,7 +1,7 @@
 import logging
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -9,20 +9,25 @@ from app.core.database import get_db
 from app.domains.podcast.models import Episode, ProcessingStatus
 from app.domains.podcast.repository import EpisodeRepository
 from app.domains.podcast.schemas import SyncResponse
+from app.domains.settings.repository import SettingsRepository
+from app.domains.summary.repository import SummaryRepository
 from app.domains.summary.schemas import (
     BatchSummarizeRequest,
     FeedbackRequest,
     SummaryDetail,
     SummaryResponse,
 )
-from app.domains.summary.repository import SummaryRepository
 from app.domains.summary.service import SummaryService
 
 router = APIRouter(tags=["summary"])
 logger = logging.getLogger(__name__)
 
 
-@router.post("/episodes/{episode_id}/summarize", response_model=SyncResponse)
+@router.post(
+    "/episodes/{episode_id}/summarize",
+    response_model=SyncResponse,
+    status_code=status.HTTP_202_ACCEPTED,
+)
 async def summarize_episode(
     episode_id: UUID,
     db: AsyncSession = Depends(get_db),
@@ -55,6 +60,25 @@ async def summarize_episode(
     # Check if already processing
     if episode.summary_status == ProcessingStatus.PROCESSING:
         raise HTTPException(status_code=409, detail="Summarization already in progress")
+
+    settings_repo = SettingsRepository(db)
+    provider = await settings_repo.get_active_provider()
+    if provider is None:
+        raise HTTPException(status_code=400, detail="No active AI provider configured")
+    model = await settings_repo.get_default_model(provider.id)
+    if model is None:
+        raise HTTPException(status_code=400, detail="No AI model configured for active provider")
+
+    summary_repo = SummaryRepository(db)
+    summary = await summary_repo.get_or_create(episode_id)
+    await summary_repo.update(
+        summary.id,
+        {
+            "status": ProcessingStatus.PROCESSING,
+            "error_message": None,
+        },
+    )
+    await episode_repo.update_status(episode_id, summary_status=ProcessingStatus.PROCESSING)
 
     from app.core.celery_app import celery_app
 

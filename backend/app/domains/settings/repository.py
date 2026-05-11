@@ -14,13 +14,26 @@ class AIProviderRepository(BaseRepository[AIProviderConfig]):
 
     async def get_active_providers(self) -> list[AIProviderConfig]:
         result = await self.session.execute(
-            select(self.model).where(self.model.is_active == True)  # noqa: E712
+            select(self.model)
+            .options(selectinload(self.model.models))
+            .where(self.model.is_active == True)  # noqa: E712
+        )
+        return list(result.scalars().all())
+
+    async def get_multi_with_models(self, skip: int = 0, limit: int = 100) -> list[AIProviderConfig]:
+        result = await self.session.execute(
+            select(self.model)
+            .options(selectinload(self.model.models))
+            .offset(skip)
+            .limit(limit)
         )
         return list(result.scalars().all())
 
     async def get_by_name(self, name: str) -> AIProviderConfig | None:
         result = await self.session.execute(
-            select(self.model).where(self.model.name == name)
+            select(self.model)
+            .options(selectinload(self.model.models))
+            .where(self.model.name == name)
         )
         return result.scalars().first()
 

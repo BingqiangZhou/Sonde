@@ -44,12 +44,27 @@ def transcribe_episode_task(self, episode_id: str) -> dict:
                 await session.rollback()
                 raise
 
+    async def _mark_failed(error_message: str) -> None:
+        from app.domains.podcast.models import ProcessingStatus
+        from app.domains.podcast.repository import EpisodeRepository
+        from app.domains.transcription.repository import TranscriptRepository
+
+        async with async_session_factory() as session:
+            transcript_repo = TranscriptRepository(session)
+            episode_repo = EpisodeRepository(session)
+            await transcript_repo.mark_failed(UUID(episode_id), error_message)
+            await episode_repo.update_status(
+                UUID(episode_id), transcript_status=ProcessingStatus.FAILED
+            )
+            await session.commit()
+
     try:
         result = asyncio.run(_run())
     except Exception as exc:
         logger.error(
             f"Transcription task failed for episode {episode_id}: {exc}"
         )
+        asyncio.run(_mark_failed(str(exc)))
         raise self.retry(exc=exc, countdown=120)
 
     # Quality gate: skip summarization for low-quality transcripts

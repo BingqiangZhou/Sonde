@@ -1,6 +1,26 @@
+import json
 from functools import lru_cache
+from typing import Annotated
 
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import BeforeValidator
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
+
+
+def parse_cors_origins(value: str | list[str]) -> list[str]:
+    if isinstance(value, list):
+        return value
+
+    value = value.strip()
+    if not value:
+        return []
+
+    if value.startswith("["):
+        parsed = json.loads(value)
+        if not isinstance(parsed, list):
+            raise ValueError("CORS_ORIGINS JSON value must be a list")
+        return parsed
+
+    return [origin.strip() for origin in value.split(",") if origin.strip()]
 
 
 class Settings(BaseSettings):
@@ -32,7 +52,11 @@ class Settings(BaseSettings):
 
     XYZRANK_API_URL: str = "https://xyzrank.com/api/podcasts"
 
-    CORS_ORIGINS: list[str] = ["http://localhost:3000", "http://localhost:3001", "http://localhost:8000"]
+    CORS_ORIGINS: Annotated[list[str], NoDecode, BeforeValidator(parse_cors_origins)] = [
+        "http://localhost:3000",
+        "http://localhost:3001",
+        "http://localhost:8000",
+    ]
 
 
 @lru_cache

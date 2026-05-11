@@ -45,3 +45,4 @@ backend/data/
 
 # Generated
 frontend/next-env.d.ts
+frontend/tsconfig.tsbuildinfo

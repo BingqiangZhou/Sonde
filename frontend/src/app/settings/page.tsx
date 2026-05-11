@@ -12,6 +12,8 @@ import {
   BrainCircuit,
   FileText,
   Power,
+  Check,
+  X,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -42,13 +44,207 @@ import {
   useUpdateProvider,
   useDeleteProvider,
   useTestProvider,
+  useCreateModel,
+  useUpdateModel,
+  useDeleteModel,
   usePromptTemplates,
   useCreatePromptTemplate,
   useActivatePromptTemplate,
 } from '@/lib/api';
-import type { AIProvider, CreateProviderRequest, UpdateProviderRequest, PromptTemplate } from '@/types';
+import type {
+  AIModel,
+  AIProvider,
+  CreateModelRequest,
+  CreateProviderRequest,
+  UpdateProviderRequest,
+  PromptTemplate,
+} from '@/types';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+
+function ProviderModels({ provider }: { provider: AIProvider }) {
+  const createModel = useCreateModel();
+  const updateModel = useUpdateModel();
+  const deleteModel = useDeleteModel();
+  const [editing, setEditing] = useState<AIModel | null>(null);
+  const [modelName, setModelName] = useState('');
+  const [temperature, setTemperature] = useState('0.3');
+  const [maxTokens, setMaxTokens] = useState('4096');
+  const [isDefault, setIsDefault] = useState(false);
+
+  const resetForm = () => {
+    setEditing(null);
+    setModelName('');
+    setTemperature('0.3');
+    setMaxTokens('4096');
+    setIsDefault(false);
+  };
+
+  const startEdit = (model: AIModel) => {
+    setEditing(model);
+    setModelName(model.model_name);
+    setTemperature(String(model.temperature));
+    setMaxTokens(String(model.max_tokens));
+    setIsDefault(model.is_default);
+  };
+
+  const submitModel = () => {
+    const payload: CreateModelRequest = {
+      model_name: modelName.trim(),
+      temperature: Number(temperature),
+      max_tokens: Number(maxTokens),
+      is_default: isDefault,
+    };
+    if (!payload.model_name) {
+      toast.error('请填写模型名称');
+      return;
+    }
+
+    if (editing) {
+      updateModel.mutate(
+        { providerId: provider.id, modelId: editing.id, data: payload },
+        {
+          onSuccess: () => {
+            toast.success('模型已更新');
+            resetForm();
+          },
+          onError: (err) => toast.error(`更新失败: ${err.message}`),
+        }
+      );
+      return;
+    }
+
+    createModel.mutate(
+      { providerId: provider.id, data: payload },
+      {
+        onSuccess: () => {
+          toast.success('模型已添加');
+          resetForm();
+        },
+        onError: (err) => toast.error(`添加失败: ${err.message}`),
+      }
+    );
+  };
+
+  const isSaving = createModel.isPending || updateModel.isPending;
+
+  return (
+    <div className="space-y-3 border-t pt-3">
+      <div className="space-y-2">
+        {provider.models.length > 0 ? (
+          provider.models.map((model) => (
+            <div key={model.id} className="flex items-center gap-2 rounded-md bg-muted/40 px-2 py-1.5">
+              <Badge variant={model.is_default ? 'default' : 'outline'} className="text-[11px]">
+                {model.model_name}
+              </Badge>
+              <span className="text-[11px] text-muted-foreground">
+                {model.temperature} / {model.max_tokens}
+              </span>
+              <div className="ml-auto flex gap-1">
+                {!model.is_default && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 px-2"
+                    onClick={() =>
+                      updateModel.mutate(
+                        {
+                          providerId: provider.id,
+                          modelId: model.id,
+                          data: { is_default: true },
+                        },
+                        {
+                          onSuccess: () => toast.success('已设为默认模型'),
+                          onError: (err) => toast.error(`设置失败: ${err.message}`),
+                        }
+                      )
+                    }
+                  >
+                    <Check className="h-3.5 w-3.5" />
+                  </Button>
+                )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 px-2"
+                  onClick={() => startEdit(model)}
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 px-2 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                  onClick={() =>
+                    deleteModel.mutate(
+                      { providerId: provider.id, modelId: model.id },
+                      {
+                        onSuccess: () => toast.success('模型已删除'),
+                        onError: (err) => toast.error(`删除失败: ${err.message}`),
+                      }
+                    )
+                  }
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            </div>
+          ))
+        ) : (
+          <p className="text-xs text-muted-foreground">暂未配置模型</p>
+        )}
+      </div>
+
+      <div className="grid gap-2">
+        <Input
+          value={modelName}
+          onChange={(e) => setModelName(e.target.value)}
+          placeholder="模型名称，例如 gpt-4o-mini"
+          className="h-8 text-xs"
+        />
+        <div className="grid grid-cols-2 gap-2">
+          <Input
+            type="number"
+            step="0.1"
+            value={temperature}
+            onChange={(e) => setTemperature(e.target.value)}
+            placeholder="Temperature"
+            className="h-8 text-xs"
+          />
+          <Input
+            type="number"
+            value={maxTokens}
+            onChange={(e) => setMaxTokens(e.target.value)}
+            placeholder="Max tokens"
+            className="h-8 text-xs"
+          />
+        </div>
+        <div className="flex items-center justify-between gap-2">
+          <label className="flex items-center gap-2 text-xs text-muted-foreground">
+            <input
+              type="checkbox"
+              checked={isDefault}
+              onChange={(e) => setIsDefault(e.target.checked)}
+              className="h-3.5 w-3.5 rounded border-input"
+            />
+            设为默认
+          </label>
+          <div className="flex gap-2">
+            {editing && (
+              <Button variant="ghost" size="sm" className="h-8" onClick={resetForm}>
+                <X className="h-3.5 w-3.5" />
+              </Button>
+            )}
+            <Button size="sm" className="h-8" onClick={submitModel} disabled={isSaving}>
+              {isSaving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+              {editing ? '保存模型' : '添加模型'}
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function SettingsPage() {
   const { data: providers, isLoading } = useProviders();
@@ -59,6 +255,7 @@ export default function SettingsPage() {
 
   const [formOpen, setFormOpen] = useState(false);
   const [editingProvider, setEditingProvider] = useState<AIProvider | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<AIProvider | null>(null);
 
   const handleCreate = () => {
     setEditingProvider(null);
@@ -70,11 +267,16 @@ export default function SettingsPage() {
     setFormOpen(true);
   };
 
-  const handleDelete = (id: string) => {
-    if (!confirm('确定要删除此提供商吗？')) return;
-    deleteMut.mutate(id, {
+  const handleDelete = (provider: AIProvider) => {
+    setDeleteTarget(provider);
+  };
+
+  const confirmDelete = () => {
+    if (!deleteTarget) return;
+    deleteMut.mutate(deleteTarget.id, {
       onSuccess: () => toast.success('已删除提供商'),
       onError: (err) => toast.error(`删除失败: ${err.message}`),
+      onSettled: () => setDeleteTarget(null),
     });
   };
 
@@ -222,7 +424,7 @@ export default function SettingsPage() {
                 </div>
 
                 {/* Models */}
-                {provider.models && provider.models.length > 0 && (
+                {provider.models.length > 0 && (
                   <div className="flex flex-wrap gap-1.5">
                     {provider.models.map((model) => (
                       <Badge
@@ -283,11 +485,13 @@ export default function SettingsPage() {
                     variant="ghost"
                     size="sm"
                     className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                    onClick={() => handleDelete(provider.id)}
+                    onClick={() => handleDelete(provider)}
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </Button>
                 </div>
+
+                <ProviderModels provider={provider} />
               </CardContent>
             </Card>
           ))}
@@ -469,6 +673,30 @@ export default function SettingsPage() {
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Provider Dialog */}
+      <Dialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <DialogContent className="sm:max-w-[380px]">
+          <DialogHeader>
+            <DialogTitle>删除提供商</DialogTitle>
+            <DialogDescription>
+              删除后会同时移除此提供商下的模型配置。
+            </DialogDescription>
+          </DialogHeader>
+          <p className="text-sm">
+            确定删除 <span className="font-medium">{deleteTarget?.name}</span> 吗？
+          </p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteTarget(null)}>
+              取消
+            </Button>
+            <Button variant="destructive" onClick={confirmDelete} disabled={deleteMut.isPending}>
+              {deleteMut.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+              删除
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

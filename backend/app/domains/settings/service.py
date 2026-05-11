@@ -38,11 +38,11 @@ class SettingsService:
     # ---- Provider CRUD ----
 
     async def list_providers(self) -> list[ProviderResponse]:
-        providers = await self.provider_repo.get_multi(limit=100)
+        providers = await self.provider_repo.get_multi_with_models(limit=100)
         return [ProviderResponse.model_validate(p) for p in providers]
 
     async def get_provider(self, provider_id: UUID) -> ProviderResponse | None:
-        provider = await self.provider_repo.get(provider_id)
+        provider = await self.provider_repo.get_with_models(provider_id)
         if provider is None:
             return None
         return ProviderResponse.model_validate(provider)
@@ -57,7 +57,8 @@ class SettingsService:
             "is_active": data.is_active,
         })
         await self.session.flush()
-        return ProviderResponse.model_validate(provider)
+        provider_with_models = await self.provider_repo.get_with_models(provider.id)
+        return ProviderResponse.model_validate(provider_with_models or provider)
 
     async def update_provider(self, provider_id: UUID, data: ProviderUpdate) -> ProviderResponse | None:
         update_data = {}
@@ -73,7 +74,7 @@ class SettingsService:
             update_data["is_active"] = data.is_active
 
         if not update_data:
-            provider = await self.provider_repo.get(provider_id)
+            provider = await self.provider_repo.get_with_models(provider_id)
             if provider is None:
                 return None
             return ProviderResponse.model_validate(provider)
@@ -82,7 +83,8 @@ class SettingsService:
         if provider is None:
             return None
         await self.session.flush()
-        return ProviderResponse.model_validate(provider)
+        provider_with_models = await self.provider_repo.get_with_models(provider_id)
+        return ProviderResponse.model_validate(provider_with_models or provider)
 
     async def delete_provider(self, provider_id: UUID) -> bool:
         # Also delete associated models (cascade will handle this)

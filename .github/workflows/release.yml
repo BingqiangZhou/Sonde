@@ -110,11 +110,69 @@ jobs:
           path: changelog.md
 
   # ============================================
-  # Job 2: Build and push Docker images
+  # Job 2: Validate release inputs before publishing
+  # ============================================
+  preflight:
+    name: Release Preflight
+    needs: prepare-release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Set up pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@11.0.9 --activate
+
+      - name: Install frontend dependencies
+        working-directory: ./frontend
+        run: pnpm install --frozen-lockfile
+
+      - name: Build frontend
+        working-directory: ./frontend
+        run: pnpm build
+        env:
+          NEXT_PUBLIC_API_URL: /api/v1
+
+      - name: Lint frontend
+        working-directory: ./frontend
+        run: pnpm lint
+
+      - name: Install uv
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Install backend dependencies
+        working-directory: ./backend
+        run: uv sync --locked --group dev
+
+      - name: Lint backend
+        working-directory: ./backend
+        run: uv run ruff check app
+
+      - name: Import backend app
+        working-directory: ./backend
+        run: uv run python -c "import app.main; print(app.main.app.title)"
+
+      - name: Test backend
+        working-directory: ./backend
+        run: uv run pytest
+
+  # ============================================
+  # Job 3: Build and push Docker images
   # ============================================
   build-docker:
     name: Build Docker Images
-    needs: prepare-release
+    needs:
+      - prepare-release
+      - preflight
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -137,7 +195,7 @@ jobs:
         id: meta-backend
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/${{ github.repository }}/backend
+          images: ghcr.io/bingqiangzhou/podcastinsight/backend
           tags: |
             type=raw,value=${{ needs.prepare-release.outputs.version }}
             type=raw,value=latest,enable=${{ needs.prepare-release.outputs.is_prerelease == 'false' }}
@@ -157,7 +215,7 @@ jobs:
         id: meta-frontend
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/${{ github.repository }}/frontend
+          images: ghcr.io/bingqiangzhou/podcastinsight/frontend
           tags: |
             type=raw,value=${{ needs.prepare-release.outputs.version }}
             type=raw,value=latest,enable=${{ needs.prepare-release.outputs.is_prerelease == 'false' }}
@@ -168,13 +226,15 @@ jobs:
           context: ./frontend
           push: true
           platforms: linux/amd64,linux/arm64
+          build-args: |
+            NEXT_PUBLIC_API_URL=/api/v1
           tags: ${{ steps.meta-frontend.outputs.tags }}
           labels: ${{ steps.meta-frontend.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
   # ============================================
-  # Job 3: Create GitHub Release
+  # Job 4: Create GitHub Release
   # ============================================
   create-release:
     name: Create Release
@@ -216,8 +276,8 @@ jobs:
           echo "**Prerelease:** ${{ needs.prepare-release.outputs.is_prerelease }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "#### Docker Images:" >> $GITHUB_STEP_SUMMARY
-          echo "- \`ghcr.io/${{ github.repository }}/backend:${{ needs.prepare-release.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "- \`ghcr.io/${{ github.repository }}/frontend:${{ needs.prepare-release.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- \`ghcr.io/bingqiangzhou/podcastinsight/backend:${{ needs.prepare-release.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- \`ghcr.io/bingqiangzhou/podcastinsight/frontend:${{ needs.prepare-release.outputs.version }}\`" >> $GITHUB_STEP_SUMMARY
           if [ "${{ needs.prepare-release.outputs.is_prerelease }}" = "false" ]; then
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "#### Also tagged as \`latest\`" >> $GITHUB_STEP_SUMMARY

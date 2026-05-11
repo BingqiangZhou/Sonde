@@ -1,7 +1,7 @@
 import logging
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -23,13 +23,17 @@ router = APIRouter(tags=["transcription"])
 logger = logging.getLogger(__name__)
 
 
-@router.post("/episodes/{episode_id}/transcribe", response_model=SyncResponse)
+@router.post(
+    "/episodes/{episode_id}/transcribe",
+    response_model=SyncResponse,
+    status_code=status.HTTP_202_ACCEPTED,
+)
 async def transcribe_episode(
     episode_id: UUID,
     force: bool = Query(False, description="Force re-transcription even if completed"),
     db: AsyncSession = Depends(get_db),
 ) -> SyncResponse:
-    """Transcribe an episode. Runs inline (no Celery required)."""
+    """Queue transcription for an episode."""
     episode_repo = EpisodeRepository(db)
     episode = await episode_repo.get(episode_id)
     if episode is None:
@@ -43,15 +47,27 @@ async def transcribe_episode(
             status_code=409, detail="Transcription already in progress"
         )
 
-    service = TranscriptionService(db)
-    try:
-        await service.transcribe_episode(episode_id, force=force)
-        await db.commit()
-        return SyncResponse(message="Transcription complete", task_id=None)
-    except Exception as e:
-        await db.rollback()
-        logger.error(f"Inline transcription failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+    transcript_repo = TranscriptRepository(db)
+    transcript = await transcript_repo.get_or_create(episode_id)
+    await transcript_repo.update(
+        transcript.id,
+        {
+            "status": ProcessingStatus.PROCESSING,
+            "error_message": None,
+        },
+    )
+    await episode_repo.update_status(
+        episode_id, transcript_status=ProcessingStatus.PROCESSING
+    )
+
+    from app.core.celery_app import celery_app
+
+    task = celery_app.send_task(
+        "app.domains.transcription.tasks.transcribe_episode_task",
+        args=[str(episode_id)],
+    )
+    logger.info("Queued transcription task for episode %s: %s", episode_id, task.id)
+    return SyncResponse(message="Transcription queued", task_id=task.id)
 
 
 @router.get("/episodes/{episode_id}/transcript", response_model=TranscriptDetail)
@@ -67,7 +83,11 @@ async def get_transcript(
     return TranscriptDetail.model_validate(transcript)
 
 
-@router.post("/episodes/{episode_id}/transcribe/retry", response_model=SyncResponse)
+@router.post(
+    "/episodes/{episode_id}/transcribe/retry",
+    response_model=SyncResponse,
+    status_code=status.HTTP_202_ACCEPTED,
+)
 async def retry_transcription(
     episode_id: UUID,
     db: AsyncSession = Depends(get_db),
@@ -84,15 +104,27 @@ async def retry_transcription(
             detail="Can only retry failed transcriptions",
         )
 
-    service = TranscriptionService(db)
-    try:
-        await service.transcribe_episode(episode_id, force=True)
-        await db.commit()
-        return SyncResponse(message="Transcription retry complete", task_id=None)
-    except Exception as e:
-        await db.rollback()
-        logger.error(f"Transcription retry failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+    transcript_repo = TranscriptRepository(db)
+    transcript = await transcript_repo.get_or_create(episode_id)
+    await transcript_repo.update(
+        transcript.id,
+        {
+            "status": ProcessingStatus.PROCESSING,
+            "error_message": None,
+        },
+    )
+    await episode_repo.update_status(
+        episode_id, transcript_status=ProcessingStatus.PROCESSING
+    )
+
+    from app.core.celery_app import celery_app
+
+    task = celery_app.send_task(
+        "app.domains.transcription.tasks.transcribe_episode_task",
+        args=[str(episode_id)],
+    )
+    logger.info("Queued transcription retry for episode %s: %s", episode_id, task.id)
+    return SyncResponse(message="Transcription retry queued", task_id=task.id)
 
 
 @router.post("/episodes/batch/transcribe", response_model=SyncResponse)
@@ -107,10 +139,10 @@ async def batch_transcribe(
         episode_ids = [str(eid) for eid in request.episode_ids]
     else:
         # Query episodes by status
-        status = request.filter_status or ProcessingStatus.PENDING
+        filter_status = request.filter_status or ProcessingStatus.PENDING
         result = await db.execute(
             select(Episode.id).where(
-                Episode.transcript_status == status,
+                Episode.transcript_status == filter_status,
                 Episode.audio_url != None,  # noqa: E711
             ).limit(100)
         )

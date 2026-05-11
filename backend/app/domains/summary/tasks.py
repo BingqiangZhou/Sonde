@@ -23,7 +23,6 @@ def summarize_episode_task(self, episode_id: str) -> dict:
         Dict with summarization result status.
     """
     import asyncio
-    from uuid import UUID
 
     from app.domains.summary.service import SummaryService
 
@@ -42,8 +41,23 @@ def summarize_episode_task(self, episode_id: str) -> dict:
                 await session.rollback()
                 raise
 
+    async def _mark_failed(error_message: str) -> None:
+        from app.domains.podcast.models import ProcessingStatus
+        from app.domains.podcast.repository import EpisodeRepository
+        from app.domains.summary.repository import SummaryRepository
+
+        async with async_session_factory() as session:
+            summary_repo = SummaryRepository(session)
+            episode_repo = EpisodeRepository(session)
+            await summary_repo.mark_failed(UUID(episode_id), error_message)
+            await episode_repo.update_status(
+                UUID(episode_id), summary_status=ProcessingStatus.FAILED
+            )
+            await session.commit()
+
     try:
         return asyncio.run(_run())
     except Exception as exc:
         logger.error(f"Summarization task failed for episode {episode_id}: {exc}")
+        asyncio.run(_mark_failed(str(exc)))
         raise self.retry(exc=exc, countdown=120)

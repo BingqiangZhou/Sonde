@@ -82,7 +82,10 @@ export function SummaryCard({ episodeId, isActive }: SummaryCardProps) {
 
   // Fetch summary only when active and completed
   const { data: summary, isLoading, error } = useSummary(episodeId, {
-    enabled: isActive && episode?.summary_status === SummaryStatus.Completed,
+    enabled:
+      isActive &&
+      (episode?.summary_status === SummaryStatus.Completed ||
+        episode?.summary_status === SummaryStatus.Failed),
   });
 
   const summarizeMutation = useSummarizeEpisode();
@@ -124,10 +127,16 @@ export function SummaryCard({ episodeId, isActive }: SummaryCardProps) {
             ? "总结生成失败"
             : "此内容尚未生成 AI 总结"}
         </p>
+        {summary?.error_message && (
+          <p className="mt-2 text-sm text-destructive">{summary.error_message}</p>
+        )}
         {episode?.summary_status !== SummaryStatus.Processing && (
           <Button
             onClick={() => summarizeMutation.mutate(episodeId)}
-            disabled={summarizeMutation.isPending}
+            disabled={
+              summarizeMutation.isPending ||
+              episode?.transcript_status !== "completed"
+            }
             className="mt-4"
           >
             {summarizeMutation.isPending ? (

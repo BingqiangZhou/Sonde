@@ -1,7 +1,7 @@
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict
 
 from app.domains.podcast.models import ProcessingStatus
 
@@ -13,6 +13,7 @@ class TranscriptCreate(BaseModel):
     duration: int | None = None
     word_count: int | None = None
     model_used: str | None = None
+    error_message: str | None = None
 
 
 class TranscriptResponse(BaseModel):
