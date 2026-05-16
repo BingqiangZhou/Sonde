@@ -44,8 +44,6 @@ def dispatch_transcription_tasks(episode_ids: list[str], priorities: dict[str, i
 @celery_app.task(name="app.domains.podcast.tasks.sync_rankings_task", bind=True, max_retries=3)
 def sync_rankings_task(self) -> dict:
     """Celery task: sync podcast rankings from xyzrank.com API."""
-    import asyncio
-
     from app.domains.podcast.service import PodcastService
 
     async def _run() -> dict:
@@ -80,8 +78,6 @@ def sync_episodes_task(self, podcast_id: str | None = None) -> dict:
         result = sync_podcast_episodes_task.delay(podcast_id)
         return {"task_id": result.id, "podcast_id": podcast_id}
 
-    import asyncio
-
     from app.domains.podcast.service import EpisodeService
 
     async def _run() -> dict:
@@ -113,8 +109,6 @@ def sync_episodes_task(self, podcast_id: str | None = None) -> dict:
 @celery_app.task(name="app.domains.podcast.tasks.sync_podcast_episodes_task", bind=True, max_retries=3)
 def sync_podcast_episodes_task(self, podcast_id: str) -> dict:
     """Celery task: sync episodes for a specific podcast by ID."""
-    import asyncio
-
     from app.domains.podcast.service import EpisodeService
 
     async def _run() -> dict:

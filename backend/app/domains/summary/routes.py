@@ -9,7 +9,6 @@ from app.core.database import get_db
 from app.domains.podcast.models import Episode, ProcessingStatus
 from app.domains.podcast.repository import EpisodeRepository
 from app.domains.podcast.schemas import SyncResponse
-from app.domains.settings.repository import SettingsRepository
 from app.domains.summary.repository import SummaryRepository
 from app.domains.summary.schemas import (
     BatchSummarizeRequest,

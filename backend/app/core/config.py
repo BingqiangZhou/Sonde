@@ -1,8 +1,8 @@
 import json
 from functools import lru_cache
-from typing import Annotated
+from typing import Annotated, Any
 
-from pydantic import BeforeValidator
+from pydantic import BeforeValidator, field_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
@@ -57,6 +57,7 @@ class Settings(BaseSettings):
         "http://localhost:3001",
         "http://localhost:8000",
     ]
+    SUMMARY_CONCURRENCY_LIMIT: int = 4
 
 
 @lru_cache

@@ -25,14 +25,6 @@ function formatTimestamp(seconds: number): string {
   return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
 }
 
-const TOPIC_COLORS = [
-  "bg-chart-1/15 text-chart-1",
-  "bg-chart-2/15 text-chart-2",
-  "bg-chart-3/15 text-chart-3",
-  "bg-chart-4/15 text-chart-4",
-  "bg-chart-5/15 text-chart-5",
-];
-
 function StarRating({
   rating,
   onRate,
@@ -136,7 +128,7 @@ export function TranscriptViewer({ episodeId, isActive }: TranscriptViewerProps)
     return transcript.segments!.filter((seg) =>
       seg.text.toLowerCase().includes(lowerSearch)
     );
-  }, [transcript?.segments, debouncedSearch, hasSegments]);
+  }, [transcript, debouncedSearch, hasSegments]);
 
   const highlightedContent = useMemo(() => {
     if (hasSegments) return null;

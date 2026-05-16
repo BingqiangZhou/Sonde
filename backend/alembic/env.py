@@ -1,19 +1,19 @@
 import asyncio
 from logging.config import fileConfig
 
-from alembic import context
 from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
+from alembic import context
 from app.core.config import get_settings
 from app.core.database import Base
 
 # Import all models so Alembic can detect them
 from app.domains.podcast.models import Episode, Podcast, PodcastRankingHistory  # noqa: F401
-from app.domains.transcription.models import Transcript  # noqa: F401
-from app.domains.summary.models import Summary  # noqa: F401
 from app.domains.settings.models import AIModelConfig, AIProviderConfig, PromptTemplate  # noqa: F401
+from app.domains.summary.models import Summary  # noqa: F401
+from app.domains.transcription.models import Transcript  # noqa: F401
 
 config = context.config
 

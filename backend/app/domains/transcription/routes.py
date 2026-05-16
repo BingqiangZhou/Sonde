@@ -2,21 +2,20 @@ import logging
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import select, func
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.domains.podcast.models import Episode, ProcessingStatus
 from app.domains.podcast.repository import EpisodeRepository
 from app.domains.podcast.schemas import SyncResponse
-from app.domains.transcription.models import Transcript
+from app.domains.transcription.repository import TranscriptRepository
 from app.domains.transcription.schemas import (
     BatchTranscribeRequest,
     FeedbackRequest,
     TranscriptDetail,
     TranscriptResponse,
 )
-from app.domains.transcription.repository import TranscriptRepository
 from app.domains.transcription.service import TranscriptionService
 
 router = APIRouter(tags=["transcription"])
@@ -133,8 +132,6 @@ async def batch_transcribe(
     db: AsyncSession = Depends(get_db),
 ) -> SyncResponse:
     """Batch transcribe episodes by IDs or filter status."""
-    episode_repo = EpisodeRepository(db)
-
     if request.episode_ids:
         episode_ids = [str(eid) for eid in request.episode_ids]
     else:
@@ -158,6 +155,7 @@ async def batch_transcribe(
         celery_app.send_task(
             "app.domains.transcription.tasks.transcribe_episode_task",
             args=[eid],
+            kwargs={"force": request.force},
         )
         dispatched += 1
 

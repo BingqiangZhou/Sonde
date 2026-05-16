@@ -53,7 +53,7 @@ async def get_podcast(
 
 
 @router.post("/podcasts/{podcast_id}/track", response_model=PodcastTrackResponse)
-async def toggle_track_podcast(
+async def track_podcast(
     podcast_id: UUID,
     db: AsyncSession = Depends(get_db),
 ) -> PodcastTrackResponse:
@@ -62,11 +62,23 @@ async def toggle_track_podcast(
     if podcast is None:
         raise HTTPException(status_code=404, detail="Podcast not found")
 
-    if podcast.is_tracked:
-        result = await service.untrack_podcast(podcast_id)
-    else:
-        result = await service.track_podcast(podcast_id)
+    result = await service.track_podcast(podcast_id)
+    if result is None:
+        raise HTTPException(status_code=404, detail="Podcast not found")
+    return result
 
+
+@router.delete("/podcasts/{podcast_id}/track", response_model=PodcastTrackResponse)
+async def untrack_podcast(
+    podcast_id: UUID,
+    db: AsyncSession = Depends(get_db),
+) -> PodcastTrackResponse:
+    service = PodcastService(db)
+    podcast = await service.get_podcast(podcast_id)
+    if podcast is None:
+        raise HTTPException(status_code=404, detail="Podcast not found")
+
+    result = await service.untrack_podcast(podcast_id)
     if result is None:
         raise HTTPException(status_code=404, detail="Podcast not found")
     return result
@@ -95,16 +107,17 @@ async def set_podcast_priority(
     db: AsyncSession = Depends(get_db),
 ) -> dict:
     """Set priority for a podcast (0=normal, 5=high, 9=urgent)."""
-    service = PodcastService(db)
     from app.domains.podcast.repository import PodcastRepository
+
     repo = PodcastRepository(db)
     podcast = await repo.get(podcast_id)
     if podcast is None:
         raise HTTPException(status_code=404, detail="Podcast not found")
 
-    await repo.update(podcast_id, {"priority": max(0, min(9, data.priority))})
+    priority = max(0, min(9, data.priority))
+    await repo.update(podcast_id, {"priority": priority})
     await db.commit()
-    return {"message": "Priority updated", "priority": data.priority}
+    return {"message": "Priority updated", "priority": priority}
 
 
 @router.post("/podcasts/sync", response_model=SyncResponse, status_code=status.HTTP_202_ACCEPTED)

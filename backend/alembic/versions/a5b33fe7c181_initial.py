@@ -7,9 +7,10 @@ Create Date: 2026-04-22 19:50:11.503811
 """
 from typing import Sequence, Union
 
-from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
+
+from alembic import op
 
 revision: str = 'a5b33fe7c181'
 down_revision: Union[str, None] = None
@@ -73,7 +74,13 @@ def upgrade() -> None:
     op.create_table(
         'transcripts',
         sa.Column('id', sa.Uuid(), primary_key=True),
-        sa.Column('episode_id', sa.Uuid(), sa.ForeignKey('episodes.id', ondelete='CASCADE'), unique=True, nullable=False),
+        sa.Column(
+            'episode_id',
+            sa.Uuid(),
+            sa.ForeignKey('episodes.id', ondelete='CASCADE'),
+            unique=True,
+            nullable=False,
+        ),
         sa.Column('content', sa.Text(), nullable=True),
         sa.Column('segments', postgresql.JSONB(), nullable=True),
         sa.Column('language', sa.String(10), nullable=True),
@@ -88,7 +95,13 @@ def upgrade() -> None:
     op.create_table(
         'summaries',
         sa.Column('id', sa.Uuid(), primary_key=True),
-        sa.Column('episode_id', sa.Uuid(), sa.ForeignKey('episodes.id', ondelete='CASCADE'), unique=True, nullable=False),
+        sa.Column(
+            'episode_id',
+            sa.Uuid(),
+            sa.ForeignKey('episodes.id', ondelete='CASCADE'),
+            unique=True,
+            nullable=False,
+        ),
         sa.Column('content', sa.Text(), nullable=True),
         sa.Column('key_topics', postgresql.JSONB(), nullable=True),
         sa.Column('highlights', postgresql.JSONB(), nullable=True),
@@ -114,7 +127,12 @@ def upgrade() -> None:
     op.create_table(
         'ai_model_configs',
         sa.Column('id', sa.Uuid(), primary_key=True),
-        sa.Column('provider_id', sa.Uuid(), sa.ForeignKey('ai_provider_configs.id', ondelete='CASCADE'), nullable=False),
+        sa.Column(
+            'provider_id',
+            sa.Uuid(),
+            sa.ForeignKey('ai_provider_configs.id', ondelete='CASCADE'),
+            nullable=False,
+        ),
         sa.Column('model_name', sa.String(255), nullable=False),
         sa.Column('temperature', sa.Float(), nullable=False, server_default='0.3'),
         sa.Column('max_tokens', sa.Integer(), nullable=False, server_default='4096'),

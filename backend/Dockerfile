@@ -16,7 +16,7 @@ COPY uv.lock .
 COPY app/ app/
 
 ENV PATH="/root/.local/bin:$PATH"
-RUN uv sync --locked --no-dev --no-install-project
+RUN uv sync --frozen --no-dev --no-install-project
 
 # ---- Runtime stage ----
 FROM python:3.11-slim

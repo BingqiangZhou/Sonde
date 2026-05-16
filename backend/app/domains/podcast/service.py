@@ -100,12 +100,10 @@ class PodcastService:
 
     async def get_production_stats(self) -> dict:
         """Compute content production statistics."""
-        from app.domains.transcription.models import Transcript
         from app.domains.summary.models import Summary
+        from app.domains.transcription.models import Transcript
 
         now = datetime.now(timezone.utc)
-        seven_days_ago = now - timedelta(days=7)
-
         # Total counts
         total_episodes = await self.session.scalar(
             select(func.count()).select_from(Episode)

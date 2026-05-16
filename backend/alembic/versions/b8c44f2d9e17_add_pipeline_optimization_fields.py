@@ -7,8 +7,9 @@ Create Date: 2026-04-26 12:00:00.000000
 """
 from typing import Sequence, Union
 
-from alembic import op
 import sqlalchemy as sa
+
+from alembic import op
 
 revision: str = 'b8c44f2d9e17'
 down_revision: Union[str, None] = 'a5b33fe7c181'
@@ -39,7 +40,15 @@ def upgrade() -> None:
     op.add_column('transcripts', sa.Column('feedback', sa.Text(), nullable=True))
 
     # Summaries: add new columns
-    op.add_column('summaries', sa.Column('prompt_version_id', sa.Uuid(), sa.ForeignKey('prompt_templates.id', ondelete='SET NULL'), nullable=True))
+    op.add_column(
+        'summaries',
+        sa.Column(
+            'prompt_version_id',
+            sa.Uuid(),
+            sa.ForeignKey('prompt_templates.id', ondelete='SET NULL'),
+            nullable=True,
+        ),
+    )
     op.add_column('summaries', sa.Column('quality_score', sa.Float(), nullable=True))
     op.add_column('summaries', sa.Column('rating', sa.Integer(), nullable=True))
     op.add_column('summaries', sa.Column('feedback', sa.Text(), nullable=True))

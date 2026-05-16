@@ -271,10 +271,6 @@ async function listPromptTemplates(): Promise<{ items: PromptTemplate[]; total: 
   return fetcher("/settings/prompts");
 }
 
-async function getActivePrompt(): Promise<PromptTemplate> {
-  return fetcher("/settings/prompts/active");
-}
-
 async function createPromptTemplate(data: CreatePromptRequest): Promise<PromptTemplate> {
   return fetcher("/settings/prompts", {
     method: "POST",

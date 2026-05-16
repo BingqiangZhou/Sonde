@@ -13,11 +13,12 @@ logger = logging.getLogger(__name__)
     max_retries=3,
     default_retry_delay=120,
 )
-def transcribe_episode_task(self, episode_id: str) -> dict:
+def transcribe_episode_task(self, episode_id: str, force: bool = False) -> dict:
     """Celery task: transcribe an episode using local faster-whisper.
 
     Args:
         episode_id: The episode UUID as string.
+        force: Re-transcribe even if a completed transcript exists.
 
     Returns:
         Dict with transcription result status.
@@ -30,9 +31,7 @@ def transcribe_episode_task(self, episode_id: str) -> dict:
         async with async_session_factory() as session:
             try:
                 service = TranscriptionService(session)
-                transcript = await service.transcribe_episode(
-                    UUID(episode_id)
-                )
+                transcript = await service.transcribe_episode(UUID(episode_id), force=force)
                 await session.commit()
                 return {
                     "episode_id": episode_id,
@@ -100,10 +99,11 @@ def cleanup_audio_task() -> dict:
     from app.core.whisper import cleanup_old_audio_files
 
     async def _get_active_ids() -> set[str]:
+        from sqlalchemy import select
+
         from app.core.database import async_session_factory
         from app.domains.podcast.models import ProcessingStatus
         from app.domains.transcription.models import Transcript
-        from sqlalchemy import select
 
         async with async_session_factory() as session:
             result = await session.execute(
@@ -114,7 +114,6 @@ def cleanup_audio_task() -> dict:
             return {str(row[0]) for row in result.all()}
 
     active_ids = asyncio.run(_get_active_ids())
-    from app.core.whisper import cleanup_old_audio_files
 
     removed = cleanup_old_audio_files(active_episode_ids=active_ids)
     logger.info(f"Audio cleanup removed {removed} files (protected {len(active_ids)} active)")

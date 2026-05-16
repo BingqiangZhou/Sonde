@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import DateTime, Enum, Float, ForeignKey, Integer, String, Text, func
+from sqlalchemy import DateTime, Enum, ForeignKey, Integer, String, Text, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -11,6 +11,7 @@ from app.domains.podcast.models import ProcessingStatus
 
 if TYPE_CHECKING:
     from app.domains.podcast.models import Episode
+    from app.domains.settings.models import PromptTemplate
 
 
 class Summary(Base):

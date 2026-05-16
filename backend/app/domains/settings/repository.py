@@ -17,15 +17,7 @@ class AIProviderRepository(BaseRepository[AIProviderConfig]):
             select(self.model)
             .options(selectinload(self.model.models))
             .where(self.model.is_active == True)  # noqa: E712
-        )
-        return list(result.scalars().all())
-
-    async def get_multi_with_models(self, skip: int = 0, limit: int = 100) -> list[AIProviderConfig]:
-        result = await self.session.execute(
-            select(self.model)
-            .options(selectinload(self.model.models))
-            .offset(skip)
-            .limit(limit)
+            .order_by(self.model.created_at.asc())
         )
         return list(result.scalars().all())
 

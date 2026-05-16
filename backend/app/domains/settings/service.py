@@ -5,7 +5,6 @@ import aiohttp
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import decrypt_api_key, encrypt_api_key
-from app.domains.settings.models import AIModelConfig, AIProviderConfig, PromptTemplate
 from app.domains.settings.repository import (
     AIModelRepository,
     AIProviderRepository,
@@ -48,6 +47,9 @@ class SettingsService:
         return ProviderResponse.model_validate(provider)
 
     async def create_provider(self, data: ProviderCreate) -> ProviderResponse:
+        if data.is_active:
+            await self._deactivate_other_providers()
+
         encrypted_key = encrypt_api_key(data.api_key)
         provider = await self.provider_repo.create({
             "name": data.name,
@@ -73,6 +75,9 @@ class SettingsService:
         if data.is_active is not None:
             update_data["is_active"] = data.is_active
 
+        if update_data.get("is_active"):
+            await self._deactivate_other_providers(except_provider_id=provider_id)
+
         if not update_data:
             provider = await self.provider_repo.get_with_models(provider_id)
             if provider is None:
@@ -85,6 +90,12 @@ class SettingsService:
         await self.session.flush()
         provider_with_models = await self.provider_repo.get_with_models(provider_id)
         return ProviderResponse.model_validate(provider_with_models or provider)
+
+    async def _deactivate_other_providers(self, except_provider_id: UUID | None = None) -> None:
+        active_providers = await self.provider_repo.get_active_providers()
+        for provider in active_providers:
+            if except_provider_id is None or provider.id != except_provider_id:
+                await self.provider_repo.update(provider.id, {"is_active": False})
 
     async def delete_provider(self, provider_id: UUID) -> bool:
         # Also delete associated models (cascade will handle this)

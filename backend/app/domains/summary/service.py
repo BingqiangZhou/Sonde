@@ -24,8 +24,8 @@ def _get_summary_semaphore() -> int:
     """Get the max concurrent LLM API calls from settings."""
     return getattr(settings, "SUMMARY_CONCURRENCY_LIMIT", 4)
 
-
-DEFAULT_SUMMARY_PROMPT = """You are an expert podcast summarizer. Given the following transcript of a podcast episode, generate a comprehensive summary.
+DEFAULT_SUMMARY_PROMPT = """You are an expert podcast summarizer.
+Given the following transcript of a podcast episode, generate a comprehensive summary.
 
 Please provide:
 1. A detailed summary of the episode content
@@ -369,8 +369,9 @@ class SummaryService:
     async def _get_active_prompt_template(self) -> str | None:
         """Get the active prompt template content, or None to use default."""
         try:
-            from app.domains.settings.models import PromptTemplate
             from sqlalchemy import select
+
+            from app.domains.settings.models import PromptTemplate
 
             result = await self.session.execute(
                 select(PromptTemplate).where(PromptTemplate.is_active == True).limit(1)  # noqa: E712
