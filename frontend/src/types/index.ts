@@ -1,272 +1,208 @@
-// ===== Enums =====
+// ========== Get笔记 API Types ==========
 
-export enum TranscriptStatus {
-  Pending = "pending",
-  Processing = "processing",
-  Completed = "completed",
-  Failed = "failed",
+export interface GetNoteConfig {
+  apiKey: string;
+  clientId: string;
 }
 
-export enum SummaryStatus {
-  Pending = "pending",
-  Processing = "processing",
-  Completed = "completed",
-  Failed = "failed",
-}
+// --- Notes ---
 
-// ===== Core Models =====
+export type NoteType = "plain_text" | "link" | "img_text";
 
-export interface Podcast {
-  id: string;
-  xyzrank_id: string;
-  name: string;
-  rank: number;
-  logo_url: string | null;
-  category: string | null;
-  author: string | null;
-  rss_feed_url: string | null;
-  track_count: number | null;
-  avg_duration: number | null;
-  avg_play_count: number | null;
-  last_synced_at: string | null;
-  is_tracked: boolean;
-  priority: number;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface PodcastRanking {
-  id: string;
-  podcast_id: string;
-  rank: number;
-  avg_play_count: number | null;
-  recorded_at: string;
-  podcast?: Podcast;
-}
-
-export interface Episode {
-  id: string;
-  podcast_id: string;
+export interface Note {
+  note_id: string;
   title: string;
-  description: string | null;
-  audio_url: string | null;
-  source_url: string | null;
-  external_id: string | null;
-  duration: number | null;
-  published_at: string | null;
-  transcript_status: TranscriptStatus | null;
-  summary_status: SummaryStatus | null;
-  created_at: string;
-  updated_at: string;
-  podcast?: Podcast;
-}
-
-export interface TranscriptSegment {
-  start: number;
-  end: number;
-  text: string;
-}
-
-export interface Transcript {
-  id: string;
-  episode_id: string;
   content: string;
-  language: string | null;
-  word_count: number | null;
-  char_count: number | null;
-  processing_duration_sec: number | null;
-  rating: number | null;
-  model_used: string | null;
-  error_message: string | null;
-  segments: TranscriptSegment[] | null;
+  note_type: string;
+  tags: NoteTag[];
+  topics: NoteTopic[];
   created_at: string;
   updated_at: string;
 }
 
-export interface Summary {
-  id: string;
-  episode_id: string;
-  content: string;
-  key_topics: string[];
-  highlights: string[];
-  model_used: string | null;
-  provider: string | null;
-  prompt_version_id: string | null;
-  quality_score: number | null;
-  rating: number | null;
-  feedback: string | null;
-  processing_duration_sec: number | null;
-  error_message: string | null;
-  created_at: string;
-  updated_at: string;
+export interface NoteDetail extends Note {
+  audio?: {
+    original: string;
+    play_url: string;
+    duration: number;
+  };
+  web_page?: {
+    content: string;
+    url: string;
+    excerpt: string;
+  };
+  attachments?: Attachment[];
 }
 
-// ===== AI Provider Settings =====
-
-export interface AIProvider {
+export interface NoteTag {
   id: string;
   name: string;
-  provider_type: string;
-  base_url: string;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
-  models: AIModel[];
+  type: string;
 }
 
-export interface AIModel {
-  id: string;
-  provider_id: string;
-  model_name: string;
-  temperature: number;
-  max_tokens: number;
-  is_default: boolean;
-  created_at: string;
-}
-
-export interface PromptTemplate {
-  id: string;
+export interface NoteTopic {
+  topic_id: string;
   name: string;
-  content: string;
-  version: number;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
 }
 
-// ===== API Types =====
-
-export interface PaginatedResponse<T> {
-  items: T[];
-  total: number;
-  page: number;
-  page_size: number;
-  total_pages: number;
-}
-
-export interface ApiError {
-  detail: string;
-  status_code?: number;
-}
-
-// ===== Request/Response Types =====
-
-export interface PodcastListParams {
-  page?: number;
-  page_size?: number;
-  search?: string;
-  category?: string;
-  is_tracked?: boolean;
-}
-
-export interface EpisodeListParams {
-  page?: number;
-  page_size?: number;
-  search?: string;
-  podcast_id?: string;
-  transcript_status?: TranscriptStatus;
-  summary_status?: SummaryStatus;
-}
-
-export interface CreateProviderRequest {
-  name: string;
-  provider_type: string;
-  base_url: string;
-  api_key: string;
-  is_active?: boolean;
-}
-
-export interface UpdateProviderRequest {
+export interface Attachment {
+  type: "image" | "audio" | "link" | "pdf";
+  url: string;
   name?: string;
-  provider_type?: string;
-  base_url?: string;
-  api_key?: string;
-  is_active?: boolean;
 }
 
-export interface CreateModelRequest {
-  model_name: string;
-  temperature?: number;
-  max_tokens?: number;
-  is_default?: boolean;
+export interface NoteListResponse {
+  notes: Note[];
+  has_more: boolean;
+  cursor: string;
 }
 
-export interface UpdateModelRequest {
-  model_name?: string;
-  temperature?: number;
-  max_tokens?: number;
-  is_default?: boolean;
+export interface SaveNoteRequest {
+  note_type?: NoteType;
+  title?: string;
+  content?: string;
+  tags?: string[];
+  link_url?: string;
+  image_urls?: string[];
+  topic_id?: string;
 }
 
-export interface TestProviderResponse {
-  success: boolean;
-  message: string;
+export interface SaveNoteResponse {
+  note_id?: string;
+  title?: string;
+  created_at?: string;
+  updated_at?: string;
+  tasks?: { task_id: string; url?: string }[];
+  created_count?: number;
 }
 
-export interface SyncResponse {
-  message: string;
-  task_id?: string;
+// --- Tasks ---
+
+export type TaskStatus = "pending" | "processing" | "success" | "failed";
+
+export interface TaskProgress {
+  status: TaskStatus;
+  note_id?: string;
 }
 
-export interface FeedbackRequest {
-  rating: number;
-  feedback?: string;
-}
+// --- Knowledge Base ---
 
-export interface BatchRequest {
-  episode_ids?: string[];
-  filter_status?: string;
-  force?: boolean;
-}
-
-export interface CreatePromptRequest {
+export interface KnowledgeBase {
+  topic_id: string;
   name: string;
+  description: string;
+  stats: {
+    note_count: number;
+  };
+}
+
+export interface KnowledgeListResponse {
+  topics: KnowledgeBase[];
+}
+
+export interface KnowledgeNotesResponse {
+  notes: Note[];
+  has_more: boolean;
+  page: number;
+}
+
+// --- Semantic Recall ---
+
+export interface RecallRequest {
+  query: string;
+  top_k?: number;
+}
+
+export interface KnowledgeRecallRequest extends RecallRequest {
+  topic_id: string;
+}
+
+export interface RecallResult {
+  note_id: string;
+  note_type: string;
+  title: string;
   content: string;
+  created_at: string;
 }
 
-export interface TaskStatusResponse {
-  task_id: string;
-  status: string;
-  result: unknown;
-  error: string | null;
-  started_at: string | null;
-  finished_at: string | null;
+export interface RecallResponse {
+  results: RecallResult[];
 }
 
-// ===== Dashboard Types =====
+// --- Quota ---
 
-export interface DashboardStats {
-  total_podcasts: number;
-  tracked_podcasts: number;
-  total_episodes: number;
-  transcribed_episodes: number;
+export interface QuotaInfo {
+  daily: { limit: number; used: number; remaining: number; reset_at: number };
+  monthly: { limit: number; used: number; remaining: number; reset_at: number };
 }
 
-export interface ProductionDayTrend {
-  date: string;
-  transcribed: number;
-  summarized: number;
+export interface RateLimitInfo {
+  read: QuotaInfo;
+  write: QuotaInfo;
 }
 
-export interface ProductionStats {
-  total_episodes: number;
-  transcribed: number;
-  summarized: number;
-  transcription_success_rate: number | null;
-  summary_success_rate: number | null;
-  avg_transcription_duration_sec: number | null;
-  avg_summary_duration_sec: number | null;
-  last_7_days: ProductionDayTrend[];
-  pipeline: PipelineStats;
+// --- API Response ---
+
+export interface ApiResponse<T> {
+  success: boolean;
+  data: T;
+  error?: {
+    code: number;
+    message: string;
+    reason?: string;
+    rate_limit?: RateLimitInfo;
+  };
 }
 
-export interface PipelineStats {
-  transcription_pending: number;
-  transcription_processing: number;
-  transcription_completed: number;
-  transcription_failed: number;
-  summary_pending: number;
-  summary_processing: number;
-  summary_completed: number;
-  summary_failed: number;
+// ========== xyzrank Types ==========
+
+export interface XyzrankPodcast {
+  id: string;
+  name: string;
+  rank: number;
+  logo_url: string;
+  category: string;
+  author: string;
+  rss_feed_url: string;
+  track_count: number;
+  avg_duration: number;
+  avg_play_count: number;
+}
+
+export interface XyzrankResponse {
+  podcasts: XyzrankPodcast[];
+  total: number;
+}
+
+// ========== RSS Types ==========
+
+export interface RssEpisode {
+  title: string;
+  link: string;
+  description: string;
+  audio_url: string;
+  duration: number;
+  published_at: string;
+  image_url?: string;
+}
+
+export interface RssFeedResult {
+  title: string;
+  description: string;
+  episodes: RssEpisode[];
+}
+
+// ========== Local Types ==========
+
+export interface Subscription {
+  xyzrankId: string;
+  topicId: string;
+  podcastName: string;
+  rssUrl: string;
+  logoUrl: string;
+  category: string;
+}
+
+export interface SubscriptionMap {
+  [xyzrankId: string]: Subscription;
 }
