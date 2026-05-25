@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import {
   LayoutDashboard,
   Podcast,
-  FileText,
+  Search,
   Settings,
   Radio,
   ChevronLeft,
@@ -32,9 +32,9 @@ const navItems = [
     icon: Podcast,
   },
   {
-    label: '剧集',
-    href: '/episodes',
-    icon: FileText,
+    label: '搜索',
+    href: '/search',
+    icon: Search,
   },
   {
     label: '设置',
@@ -141,7 +141,7 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
         {!collapsed && (
           <div className="px-3 pt-1">
             <p className="text-[11px] text-sidebar-foreground/30">
-              PodcastInsight v1.0
+              PodcastInsight v2
             </p>
           </div>
         )}
