@@ -1,15 +1,3 @@
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.egg-info/
-dist/
-build/
-.venv/
-venv/
-env/
-*.egg
-
 # Node
 node_modules/
 .next/
@@ -31,17 +19,6 @@ out/
 # OS
 .DS_Store
 Thumbs.db
-
-# Testing
-.pytest_cache/
-htmlcov/
-.coverage
-
-# Docker
-docker/nginx/ssl/
-
-# Backend data (whisper models, audio files)
-backend/data/
 
 # Generated
 frontend/next-env.d.ts
