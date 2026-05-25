@@ -49,13 +49,13 @@ export default function PodcastsPage() {
   // Derive unique categories from loaded data
   const categories = useMemo(() => {
     if (!data?.podcasts) return ['全部'];
-    const cats = new Set(data.podcasts.map((p) => p.category).filter(Boolean));
-    return ['全部', ...Array.from(cats).sort()];
+    const cats = new Set(data.podcasts.map((p: XyzrankPodcast) => p.category).filter(Boolean));
+    return ['全部', ...Array.from(cats).sort()] as string[];
   }, [data]);
 
   // Filter podcasts by search text and category
   const filteredPodcasts = useMemo(() => {
-    let list = data?.podcasts ?? [];
+    let list: XyzrankPodcast[] = data?.podcasts ?? [];
     if (search) {
       const q = search.toLowerCase();
       list = list.filter(
@@ -65,7 +65,7 @@ export default function PodcastsPage() {
       );
     }
     if (category && category !== '全部') {
-      list = list.filter((p) => p.category === category);
+      list = list.filter((p: XyzrankPodcast) => p.category === category);
     }
     return list;
   }, [data, search, category]);

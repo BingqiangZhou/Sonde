@@ -172,7 +172,7 @@ function SearchContent() {
           <p className="text-sm text-muted-foreground">
             找到 {results.length} 条结果
           </p>
-          {results.map((result) => (
+          {results.map((result: RecallResult) => (
             <ResultCard key={result.note_id} result={result} />
           ))}
         </div>

@@ -30,7 +30,7 @@ import {
   useTaskProgress,
   useKnowledgeNotes,
 } from "@/lib/queries";
-import type { RssEpisode, Subscription, SaveNoteResponse } from "@/types";
+import type { RssEpisode, Subscription, SaveNoteResponse, Note } from "@/types";
 
 /** Task tracking state for a single episode */
 interface EpisodeTask {
@@ -384,7 +384,7 @@ export default function PodcastDetailPage({
             </div>
           ) : knowledgeData?.notes && knowledgeData.notes.length > 0 ? (
             <div className="space-y-2">
-              {knowledgeData.notes.map((note) => (
+              {knowledgeData.notes.map((note: Note) => (
                 <Link
                   key={note.note_id}
                   href={`/episodes/${note.note_id}`}

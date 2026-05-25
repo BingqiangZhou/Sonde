@@ -8,8 +8,8 @@ export async function parseRssFeed(feedUrl: string): Promise<RssFeedResult> {
 
   const text = await res.text();
 
-  const titleMatch = text.match(/<title>(?:<![CDATA[)?(.*?)(?:]]>)?<\/title>/s);
-  const descMatch = text.match(/<description>(?:<![CDATA[)?(.*?)(?:]]>)?<\/description>/s);
+  const titleMatch = text.match(/<title>(?:<![CDATA[)?([\s\S]*?)(?:]]>)?<\/title>/);
+  const descMatch = text.match(/<description>(?:<![CDATA[)?([\s\S]*?)(?:]]>)?<\/description>/);
 
   const episodeRegex = /<item>([\s\S]*?)<\/item>/g;
   const episodes: RssEpisode[] = [];
@@ -20,9 +20,9 @@ export async function parseRssFeed(feedUrl: string): Promise<RssFeedResult> {
     const enclosureMatch = item.match(/<enclosure[^>]*url="([^"]*)"[^>]*type="([^"]*)"/);
     if (!enclosureMatch || !enclosureMatch[2].startsWith("audio/")) continue;
 
-    const itemTitle = item.match(/<title>(?:<![CDATA[)?(.*?)(?:]]>)?<\/title>/s);
-    const itemLink = item.match(/<link>(?:<![CDATA[)?(.*?)(?:]]>)?<\/link>/s);
-    const itemDesc = item.match(/<description>(?:<![CDATA[)?(.*?)(?:]]>)?<\/description>/s);
+    const itemTitle = item.match(/<title>(?:<![CDATA[)?([\s\S]*?)(?:]]>)?<\/title>/);
+    const itemLink = item.match(/<link>(?:<![CDATA[)?([\s\S]*?)(?:]]>)?<\/link>/);
+    const itemDesc = item.match(/<description>(?:<![CDATA[)?([\s\S]*?)(?:]]>)?<\/description>/);
     const itemPubDate = item.match(/<pubDate>(.*?)<\/pubDate>/);
     const itemDuration =
       item.match(/<itunes:duration>(.*?)<\/itunes:duration>/) ??
