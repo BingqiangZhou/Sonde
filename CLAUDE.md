@@ -1,242 +1,113 @@
-# PodcastInsight — Podcast Insight Platform v1.0
+# PodcastInsight v2 — Get笔记驱动的播客洞察平台
 
-Podcast ranking monitor + transcription + AI summarization web platform.
-Backend: Python/FastAPI/PostgreSQL/Redis/Celery. Frontend: Next.js/React/TailwindCSS/shadcn-ui.
+播客排名监控 + Get笔记 AI 摘要/笔记 + 语义搜索 Web 平台。
+纯 Next.js 架构，Get笔记 OpenAPI 作为核心数据引擎。
 
-## Architecture Overview
+## 架构
 
 ```
 podcast-insight/
-├── backend/              # Python FastAPI backend (DDD layout)
-│   ├── app/
-│   │   ├── main.py       # FastAPI app + lifespan
-│   │   ├── core/         # Config, database, redis, security, celery
-│   │   ├── domains/      # Business domains
-│   │   │   ├── podcast/  # Podcast fetching, ranking, episodes
-│   │   │   ├── transcription/  # Audio transcription (Whisper)
-│   │   │   ├── summary/  # AI summarization
-│   │   │   └── settings/ # API key management
-│   │   └── shared/       # Cross-domain utilities
-│   ├── alembic/          # Database migrations
-│   ├── pyproject.toml
-│   └── Dockerfile
-├── frontend/             # Next.js web frontend
+├── frontend/              # Next.js 全栈应用
 │   ├── src/
-│   │   ├── app/          # Next.js App Router pages
-│   │   ├── components/   # Shared UI components (shadcn)
-│   │   ├── lib/          # Utilities, API client
-│   │   └── types/        # TypeScript type definitions
-│   ├── package.json
-│   └── Dockerfile
-├── docker/               # Docker Compose deployment
-│   ├── docker-compose.yml
-│   └── nginx/
+│   │   ├── app/           # App Router 页面 + API Routes
+│   │   │   ├── api/       # BFF 代理层
+│   │   │   │   ├── getnote/   # Get笔记 API 代理
+│   │   │   │   └── podcasts/  # xyzrank + RSS 代理
+│   │   │   ├── podcasts/  # 播客排行榜 + 详情
+│   │   │   ├── episodes/  # 笔记详情
+│   │   │   ├── search/    # 语义搜索
+│   │   │   └── settings/  # API Key 配置
+│   │   ├── components/    # shadcn/ui 组件
+│   │   ├── hooks/         # React hooks
+│   │   ├── lib/           # API 客户端、工具函数
+│   │   ├── stores/        # Zustand 状态管理
+│   │   └── types/         # TypeScript 类型
+│   └── package.json
+├── docs/                  # 设计文档和规范
+├── .env.example
 └── CLAUDE.md
 ```
 
-## Commands
+## 命令
 
-### Backend (Python 3.11+, uses uv — NEVER pip)
-```bash
-cd backend
-uv sync --extra dev                    # Install deps
-uv run alembic upgrade head            # Run migrations
-uv run uvicorn app.main:app --reload   # Dev server (port 8000)
-uv run ruff check .                    # Lint
-uv run ruff format .                   # Format
-uv run pytest                          # Tests
-```
-
-### Frontend (Node 20+, pnpm)
 ```bash
 cd frontend
-pnpm install                           # Install deps
-pnpm dev                               # Dev server (port 3000)
-pnpm build                             # Production build
-pnpm lint                              # ESLint
-pnpm test                              # Vitest tests
+pnpm install                  # 安装依赖
+pnpm dev                      # 开发服务器 (端口 3000)
+pnpm build                    # 生产构建
+pnpm lint                     # ESLint
+pnpm test                     # Vitest 测试
 ```
 
-### Docker (full-stack)
-```bash
-cd docker && docker compose up -d      # Start all services
-curl http://localhost:8000/api/v1/health
-```
+## 技术栈
 
-## Tech Stack
-
-### Backend
-- FastAPI (async web framework)
-- SQLAlchemy 2.0 async (asyncpg driver)
-- PostgreSQL 15
-- Redis 7 (cache + Celery broker)
-- Celery 5 (background tasks: podcast sync, transcription, summarization)
-- Alembic (migrations)
-- Pydantic v2 + pydantic-settings
-- aiohttp (async HTTP client)
-- feedparser (RSS/podcast feed parsing)
-- uv (package manager — NEVER pip)
-
-### Frontend
-- Next.js 15 (App Router)
+- Next.js 16 (App Router)
 - React 19
 - TypeScript 5
 - TailwindCSS 4
-- shadcn/ui (component library)
-- TanStack Query v5 (server state)
-- Zustand (client state)
+- shadcn/ui (组件库)
+- TanStack Query v5 (服务端状态)
+- Zustand (客户端状态)
 - Lucide icons
-- Sonner (toast notifications)
+- Sonner (toast)
 
-## Core Features (v1.0 MVP)
+## 核心能力
 
-### 1. Podcast Ranking from xyzrank.com
-- Fetch top 1000 podcasts from xyzrank.com public API
-- API: `GET https://xyzrank.com/api/podcasts?offset={n}&limit=50`
-- Store: name, rank, logo, category, author, RSS feed URL, stats
-- Daily sync via Celery beat (store ranking history for trends)
+### 1. Get笔记 OpenAPI 集成
+- 笔记 CRUD：保存文本/链接，自动抓取网页内容 + AI 摘要
+- 知识库：创建和管理知识库，作为播客订阅的容器
+- 语义搜索：全局和知识库范围的语义召回
+- 异步任务：链接保存后轮询处理进度
 
-### 2. Episode Monitoring
-- Parse RSS feeds via feedparser to get new episodes
-- Store: title, audio_url, duration, published date, description
-- Periodic check (every 1 hour) for new episodes across all tracked podcasts
-- User can configure which podcasts to track (subscribe/favorite)
+### 2. 播客排行 (xyzrank.com)
+- 从 xyzrank.com API 获取 Top 1000 播客排行
+- 展示排名、logo、分类、作者、RSS feed
+- 用户可订阅播客（创建对应知识库）
 
-### 3. Audio Transcription
-- Download audio → ffmpeg chunking → OpenAI Whisper API
-- Background Celery task with retry logic
-- Status tracking: pending → processing → completed/failed
-- Configurable Whisper model via settings
+### 3. RSS Feed 解析
+- 解析播客 RSS feed 获取剧集列表
+- 将剧集链接保存到 Get笔记 知识库处理
+- Get笔记 自动完成：网页抓取 → AI 生成摘要 → 打标签
 
-### 4. AI Summarization
-- Generate episode summaries using configured LLM API
-- Support: OpenAI, DeepSeek, OpenRouter, custom OpenAI-compatible endpoints
-- Summary includes: key topics, highlights, takeaways
-- Background processing with status tracking
+### 4. API Key 管理
+- 前端设置页输入 Get笔记 API Key + Client ID
+- 凭证存储在 Zustand (localStorage) 和/或 .env.local
+- 通过 BFF 代理层注入认证头
 
-### 5. API Key Management
-- CRUD for AI provider API keys (encrypted at rest)
-- Support multiple providers: OpenAI, DeepSeek, OpenRouter, custom
-- Per-provider: API key, base URL, default model, temperature, max tokens
-- Test connectivity endpoint
-- Frontend settings page for management
-
-### 6. Web Frontend
-- Dashboard: podcast rankings, recent episodes, processing status
-- Podcast detail: episode list with transcription/summary status
-- Episode detail: transcript viewer + summary display
-- Settings: API key management, system configuration
-- Responsive design (mobile + desktop)
-
-## Database Schema (Key Tables)
-
-```sql
--- Podcasts synced from xyzrank.com
-podcasts (id, xyzrank_id, name, rank, logo_url, category, author,
-          rss_feed_url, track_count, avg_duration, avg_play_count,
-          last_synced_at, is_tracked, created_at, updated_at)
-
--- Ranking history for trend tracking
-podcast_ranking_history (id, podcast_id, rank, avg_play_count, recorded_at)
-
--- Episodes from RSS feeds
-episodes (id, podcast_id, title, description, audio_url, duration,
-          published_at, transcript_status, summary_status,
-          created_at, updated_at)
-
--- Transcripts
-transcripts (id, episode_id, content, language, word_count,
-             model_used, created_at)
-
--- Summaries
-summaries (id, episode_id, content, key_topics, highlights,
-           model_used, provider, created_at)
-
--- AI Provider configs (encrypted API keys)
-ai_provider_configs (id, provider_name, base_url, encrypted_api_key,
-                     is_default, created_at, updated_at)
-ai_model_configs (id, provider_id, model_name, temperature, max_tokens,
-                  is_default, created_at)
-```
-
-## API Endpoints
+## API 路由 (BFF 代理层)
 
 ```
-# Podcasts
-GET    /api/v1/podcasts              # List podcasts (paginated, filterable)
-GET    /api/v1/podcasts/{id}         # Podcast detail
-GET    /api/v1/podcasts/rankings     # Current rankings
-POST   /api/v1/podcasts/{id}/track   # Start tracking a podcast
-DELETE /api/v1/podcasts/{id}/track   # Stop tracking
+# Get笔记 代理
+GET    /api/getnote/notes          # 笔记列表
+POST   /api/getnote/notes          # 保存笔记
+GET    /api/getnote/notes/[id]     # 笔记详情
+POST   /api/getnote/task           # 任务进度
+GET    /api/getnote/knowledge      # 知识库列表
+POST   /api/getnote/knowledge      # 创建知识库
+GET    /api/getnote/knowledge/[id] # 知识库笔记
+POST   /api/getnote/recall         # 语义搜索
 
-# Episodes
-GET    /api/v1/episodes              # List episodes (paginated, filterable)
-GET    /api/v1/episodes/{id}         # Episode detail with transcript/summary
-POST   /api/v1/episodes/{id}/transcribe   # Trigger transcription
-POST   /api/v1/episodes/{id}/summarize    # Trigger summarization
-
-# Transcripts
-GET    /api/v1/episodes/{id}/transcript   # Get transcript
-
-# Summaries
-GET    /api/v1/episodes/{id}/summary      # Get summary
-
-# Settings / API Keys
-GET    /api/v1/settings/providers         # List AI providers
-POST   /api/v1/settings/providers         # Create provider
-PUT    /api/v1/settings/providers/{id}    # Update provider
-DELETE /api/v1/settings/providers/{id}    # Delete provider
-POST   /api/v1/settings/providers/{id}/test  # Test provider connection
-
-# System
-GET    /api/v1/health                    # Health check
-POST   /api/v1/sync/rankings             # Trigger manual ranking sync
-POST   /api/v1/sync/episodes             # Trigger manual episode sync
+# 播客数据
+GET    /api/podcasts/rankings      # xyzrank 排行榜
+POST   /api/podcasts/feed          # RSS feed 解析
 ```
 
-## Conventions
+## 约定
 
-### Backend
-- **uv only** (NEVER pip). **ruff only** for lint/format
-- All I/O is async (SQLAlchemy async, aiohttp, redis async)
-- DDD structure: domains/{domain}/models.py, schemas.py, repository.py, service.py, routes.py, tasks.py
-- Celery queues: `default` (sync tasks), `transcription` (audio processing), `summary` (AI summarization)
-- API keys encrypted at rest using Fernet
-
-### Frontend
 - Next.js App Router (NOT Pages Router)
-- shadcn/ui components (NOT custom UI from scratch)
-- TanStack Query for all server state (fetch, cache, invalidate)
-- Responsive: mobile-first, desktop >=1024px sidebar layout
-- Dark/light mode support
+- shadcn/ui 组件 (NOT 自定义 UI)
+- TanStack Query 管理所有服务端状态
+- Route Handlers 做代理，注入 API Key
+- 响应式：移动端优先，桌面端侧边栏布局
+- 支持暗色/亮色模式
 
-### General
-- Conventional Commits: feat:, fix:, refactor:, chore:
-- All API endpoints prefixed with /api/v1/
+## 注意事项
 
-## Gotchas
-
-| Wrong | Correct |
-|-------|---------|
-| `pip install` | `uv add` or `uv sync` |
-| Next.js Pages Router | App Router (app/ directory) |
-| Custom CSS components | shadcn/ui components |
-| Fetch without TanStack Query | Use useQuery/useMutation |
-| Sync DB queries | Async SQLAlchemy sessions |
-| Plain text API keys | Fernet encryption at rest |
-| Direct audio processing in API | Celery background task |
-| Skip Docker setup | Must support docker-compose deployment |
-
-## Deployment
-
-### Docker Compose (4 services)
-1. postgres — PostgreSQL 15-alpine
-2. redis — Redis 7-alpine
-3. backend — FastAPI + Celery worker + Celery beat
-4. frontend — Next.js (standalone output)
-5. nginx — Reverse proxy (optional, for production)
-
-### Direct Deployment
-- Backend: `uv run uvicorn app.main:app` + `celery -A app.core.celery_app worker -B`
-- Frontend: `pnpm build && pnpm start` (standandalone output)
-- Requires: PostgreSQL 15+, Redis 7+, Node 20+, Python 3.11+
+| 错误 | 正确 |
+|------|------|
+| Next.js Pages Router | App Router (app/ 目录) |
+| 自定义 CSS 组件 | shadcn/ui 组件 |
+| 不用 TanStack Query 直接 fetch | 使用 useQuery/useMutation |
+| 后端服务 | 纯 Next.js，无后端 |
+| pip / uv | 无 Python 依赖 |
+| 数据库 | Get笔记知识库即数据库 |
