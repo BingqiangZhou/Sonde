@@ -4,6 +4,37 @@ All notable changes to this project will be documented in this file.
 
 
 
+## [2.0.0] - 2026-05-30
+
+> **Highlights**: PodcastInsight v2.0.0 — 架构全面升级为纯 Next.js 全栈应用，移除 FastAPI 后端，以 Get笔记 OpenAPI 作为核心数据引擎。集成 xyzrank 播客排行榜、RSS feed 解析、AI 摘要生成、知识库管理和语义搜索。
+
+### 🚀 Features
+
+- Add xyzrank API client and RSS parser ([64499c3](https://github.com/BingqiangZhou/PodcastInsight/commit/64499c36))
+- Add Get笔记 API client and subscription store ([4dc9dc0](https://github.com/BingqiangZhou/PodcastInsight/commit/4dc9dc01))
+- Add podcast rankings and RSS feed API routes ([ce1dfce](https://github.com/BingqiangZhou/PodcastInsight/commit/ce1dfce3))
+- Add TanStack Query hooks for Get笔记 API ([149cc8b](https://github.com/BingqiangZhou/PodcastInsight/commit/149cc8b5))
+- Rewrite dashboard page for v2 ([9320602](https://github.com/BingqiangZhou/PodcastInsight/commit/93206021))
+- Add semantic search page with global/knowledge-base scope ([94cfecc](https://github.com/BingqiangZhou/PodcastInsight/commit/94cfecc1))
+- Rewrite podcast detail page with RSS parsing and note processing ([2ce618f](https://github.com/BingqiangZhou/PodcastInsight/commit/2ce618f1))
+- Rewrite podcasts list page with xyzrank rankings ([68c28f2](https://github.com/BingqiangZhou/PodcastInsight/commit/68c28f23))
+- Rewrite note detail page with AI summary and content display ([f7ff171](https://github.com/BingqiangZhou/PodcastInsight/commit/f7ff1713))
+
+### 🚜 Refactor
+
+- Remove backend, docker, and old config for v2 architecture ([e34ba66](https://github.com/BingqiangZhou/PodcastInsight/commit/e34ba66e))
+- Replace backend types with Get笔记 API types ([b6ba8ae](https://github.com/BingqiangZhou/PodcastInsight/commit/b6ba8aed))
+- Update sidebar navigation and remove v1 components ([bc5c31d](https://github.com/BingqiangZhou/PodcastInsight/commit/bc5c31db))
+- Resolve TypeScript errors and remove unused v1 components ([9346475](https://github.com/BingqiangZhou/PodcastInsight/commit/93464756))
+
+### 📚 Documentation
+
+- Add PodcastInsight v2 Get笔记 architecture design spec ([4f0e459](https://github.com/BingqiangZhou/PodcastInsight/commit/4f0e459b))
+- Add PodcastInsight v2 implementation plan ([ef40f2b](https://github.com/BingqiangZhou/PodcastInsight/commit/ef40f2b0))
+- Update CLAUDE.md, README, and CI for v2 architecture ([7a48e64](https://github.com/BingqiangZhou/PodcastInsight/commit/7a48e647))
+
+
+
 ## [1.0.0](https://github.com/BingqiangZhou/PodcastInsight/compare/v0.52.0...v1.0.0) - 2026-04-22 ([📥](https://github.com/BingqiangZhou/PodcastInsight/releases/tag/v1.0.0))
 
 > **Highlights**: PodcastInsight v1.0.0 正式发布 — 从播客排行榜监控到 AI 摘要生成的全栈知识管理平台。

@@ -18,8 +18,7 @@ podcast-insight/
 │   │   │   ├── search/    # 语义搜索
 │   │   │   └── settings/  # API Key 配置
 │   │   ├── components/    # shadcn/ui 组件
-│   │   ├── hooks/         # React hooks
-│   │   ├── lib/           # API 客户端、工具函数
+│   │   ├── lib/           # API 客户端、TanStack Query hooks、工具函数
 │   │   ├── stores/        # Zustand 状态管理
 │   │   └── types/         # TypeScript 类型
 │   └── package.json
