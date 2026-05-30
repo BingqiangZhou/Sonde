@@ -15,7 +15,10 @@
       "esbuild",
       "sharp",
       "unrs-resolver"
-    ]
+    ],
+    "overrides": {
+      "postcss": ">=8.5.10"
+    }
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.0",
@@ -26,8 +29,9 @@
     "@tanstack/react-query": "^5.60.0",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
+    "fast-xml-parser": "^5.8.0",
     "lucide-react": "^0.460.0",
-    "next": "^16.2.4",
+    "next": "^16.2.6",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "sonner": "^1.7.0",
@@ -40,7 +44,8 @@
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
     "eslint": "^9.0.0",
-    "eslint-config-next": "16.2.4",
+    "eslint-config-next": "16.2.6",
+    "jsdom": "^29.1.1",
     "postcss": "^8.4.0",
     "tailwindcss": "^4.0.0",
     "typescript": "^5.7.0",

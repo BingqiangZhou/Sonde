@@ -102,7 +102,7 @@
 | 前端开发 | @frontend-dev | Next.js, React, TypeScript, shadcn/ui |
 | 架构设计 | @architect | 系统设计, DDD, 微服务 |
 | 测试 | @test-engineer | pytest, Vitest, 自动化测试 |
-| DevOps | @devops-engineer | Docker, CI/CD, 监控 |
+| DevOps | @devops-engineer | Next.js 部署, CI/CD, 监控 |
 
 ### 依赖管理
 

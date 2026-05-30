@@ -54,21 +54,12 @@ class ErrorResponse(BaseModel):
 
 ## Project Overview
 
-You are working on the **PodcastInsight** project, a podcast ranking monitor + transcription + AI summarization web platform. The system fetches podcast rankings from xyzrank.com, monitors RSS feeds for new episodes, transcribes audio via Whisper, and generates AI-powered summaries.
+You are working on the **PodcastInsight v2** project, a podcast ranking monitor + Get笔记 AI summarization/note-taking + semantic search web platform. The system fetches podcast rankings from xyzrank.com, uses Get笔记 OpenAPI for AI-powered summarization and knowledge management, and provides semantic search capabilities.
 
 ## Tech Stack Summary
 
-### Backend
-- **Framework**: FastAPI (Python 3.11+)
-- **Database**: PostgreSQL 15+
-- **Caching**: Redis 7+ (cache + Celery broker)
-- **Task Queue**: Celery 5 (background tasks)
-- **ORM**: SQLAlchemy 2.0 async (asyncpg driver)
-- **API Documentation**: OpenAPI/Swagger
-- **Package Manager**: uv (NEVER pip)
-
-### Frontend
-- **Framework**: Next.js 15 (App Router)
+### Frontend (全栈应用)
+- **Framework**: Next.js 16 (App Router)
 - **Language**: React 19 + TypeScript 5
 - **Styling**: TailwindCSS 4
 - **Components**: shadcn/ui
@@ -77,41 +68,34 @@ You are working on the **PodcastInsight** project, a podcast ranking monitor + t
 - **Icons**: Lucide
 - **Toasts**: Sonner
 
-### Infrastructure
-- **Deployment**: Docker Compose (5 services)
-- **Reverse Proxy**: nginx (optional, for production)
-- **Monitoring**: Structured logging with correlation IDs
+### 数据引擎
+- **Get笔记 OpenAPI**: 笔记 CRUD、知识库管理、语义搜索
+- **xyzrank.com API**: 播客排行榜数据
+- **RSS Feed**: 剧集列表获取
 
-### AI/ML
-- **Transcription**: OpenAI Whisper API / faster-whisper
-- **Summarization**: OpenAI / DeepSeek / OpenRouter (configurable)
-- **RSS Parsing**: feedparser
+### 架构
+- **纯 Next.js**: 无独立后端，BFF 代理层注入 API Key
+- **部署**: Vercel / Cloudflare Pages / 静态托管
+- **包管理**: pnpm（NEVER npm/yarn）
 
-## Architecture: Domain-Driven Design (DDD)
+## Architecture: Next.js App Router
 
 ### Core Principles
-1. **Ubiquitous Language**: All code uses domain-specific terminology
-2. **Bounded Contexts**: Each domain has clear boundaries and interfaces
-3. **Domain Entities**: Business logic lives in domain models, not services
-4. **Application Services**: Coordinate use cases between domains
-5. **Infrastructure Concerns**: Separated from business logic
+1. **App Router**: 使用 app/ 目录，NOT Pages Router
+2. **BFF 代理层**: Route Handlers 做代理，注入 API Key
+3. **服务端状态**: TanStack Query 管理所有服务端状态
+4. **组件库**: shadcn/ui，NOT 自定义 UI
+5. **响应式**: 移动端优先，桌面端侧边栏布局
 
-### Domain Boundaries
-- **Podcast**: Fetching, ranking, episode monitoring from xyzrank.com + RSS feeds
-- **Transcription**: Audio transcription via Whisper
-- **Summary**: AI summarization with configurable LLM providers
-- **Settings**: API key management, provider configuration
+### API Routes (BFF 代理层)
+- `/api/getnote/*` — Get笔记 API 代理（笔记、知识库、语义搜索）
+- `/api/podcasts/*` — 播客数据代理（xyzrank 排行、RSS 解析）
 
-### Layer Structure (per domain)
-```
-domains/{domain}/
-├── models.py       # SQLAlchemy models
-├── schemas.py      # Pydantic schemas
-├── repository.py   # Data access layer
-├── service.py      # Business logic
-├── routes.py       # API endpoints
-└── tasks.py        # Celery background tasks
-```
+### 页面结构
+- `/podcasts` — 播客排行榜 + 详情
+- `/episodes/[id]` — 笔记详情（AI 摘要 + 内容展示）
+- `/search` — 语义搜索
+- `/settings` — API Key 配置
 
 ## Collaboration Principles
 
@@ -130,28 +114,12 @@ domains/{domain}/
 5. **Consider performance implications** at scale
 
 ### Design Philosophy
-- **API-first**: Design interfaces before implementations
-- **Event-driven**: Use Celery tasks for async processing
+- **BFF 代理模式**: Route Handlers 做代理，注入认证
+- **Get笔记即后端**: 无独立后端，Get笔记知识库即数据库
 - **Fail gracefully**: Handle errors without leaking details
 - **Optimize for maintainability**: Clear code over clever code
 
 ## Code Quality Standards
-
-### Python Standards
-```python
-# Use type hints consistently
-async def process_episode(episode_id: UUID) -> Result[Episode, ProcessingError]:
-    """Process an episode for transcription."""
-    pass
-
-# Follow PEP 8 naming conventions
-class PodcastService:
-    def __init__(self, repository: PodcastRepository):
-        self._repository = repository
-
-    async def sync_rankings(self) -> List[Podcast]:
-        return await self._repository.save_all(rankings)
-```
 
 ### TypeScript Standards
 ```typescript
@@ -175,26 +143,16 @@ const { data, isLoading } = useQuery({
 - **RESTful conventions**: GET (read), POST (create), PUT/PATCH (update), DELETE
 - **HTTP status codes**: Use semantically correct status codes
 - **Error responses**: Consistent error format with error codes
-- **Pagination**: Use limit/offset with total count
-- **Versioning**: URL-based versioning (/v1/)
-
-### Database Standards
-- **Naming**: snake_case for tables/columns, plural for tables
-- **Primary Keys**: UUID for all entities
-- **Timestamps**: created_at, updated_at on all tables
-- **Indexes**: Add based on query patterns
+- **BFF proxy**: Route Handlers inject auth headers, never expose API keys to client
 
 ### Testing Standards
-- **Unit tests**: 90%+ coverage for business logic
-- **Integration tests**: Critical paths through the system
+- **Unit tests**: Use Vitest for testing
 - **Test structure**: Arrange-Act-Assert pattern
-- **Test data**: Factories for creating test objects
 - **Mocking**: Only for external dependencies
 
 ### Security Standards
 - **Input validation**: Always validate/sanitize inputs
-- **SQL injection**: Use parameterized queries (SQLAlchemy ORM)
-- **API keys**: Encrypted at rest using Fernet
+- **API keys**: Stored in Zustand (localStorage) and/or .env.local, injected via BFF
 - **Sensitive data**: Never log API keys, tokens, or credentials
 
 ## Development Workflow
@@ -221,42 +179,27 @@ const { data, isLoading } = useQuery({
 
 ## Common Patterns
 
-### Repository Pattern
-```python
-class PodcastRepository:
-    async def save(self, podcast: Podcast) -> Podcast:
-        pass
-
-    async def find_by_id(self, id: UUID) -> Optional[Podcast]:
-        pass
-
-    async def find_tracked(self) -> List[Podcast]:
-        pass
+### BFF API Route Pattern
+```typescript
+// app/api/getnote/notes/route.ts
+export async function GET(request: Request) {
+  const apiKey = request.headers.get('x-api-key');
+  const res = await fetch(`${GETNOTE_API_URL}/notes`, {
+    headers: { 'Authorization': `Bearer ${apiKey}` },
+  });
+  return Response.json(await res.json());
+}
 ```
 
-### Service Layer Pattern
-```python
-class PodcastService:
-    def __init__(self, repository: PodcastRepository, celery_app: Celery):
-        self._repository = repository
-        self._celery = celery_app
-
-    async def sync_rankings(self) -> int:
-        rankings = await fetch_xyzrank_rankings()
-        saved = await self._repository.save_all(rankings)
-        return len(saved)
-```
-
-### Celery Task Pattern
-```python
-@celery_app.task(bind=True, max_retries=3)
-def transcribe_episode(self, episode_id: str):
-    """Background task for audio transcription."""
-    try:
-        result = transcribe_audio(episode_id)
-        update_transcript(episode_id, result)
-    except Exception as exc:
-        raise self.retry(exc=exc, countdown=60)
+### TanStack Query Hook Pattern
+```typescript
+// lib/hooks/use-podcasts.ts
+export function usePodcasts(page: number) {
+  return useQuery({
+    queryKey: ['podcasts', page],
+    queryFn: () => fetchAPI(`/api/podcasts/rankings?page=${page}`),
+  });
+}
 ```
 
 Remember: You are part of a team of specialized agents. Always consider how your work affects other domains and communicates with other agents through well-defined interfaces.

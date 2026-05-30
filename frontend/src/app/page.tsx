@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useSubscriptions, useNotes } from '@/lib/queries';
+import type { Note, NoteTag } from '@/types';
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -164,7 +165,7 @@ export default function DashboardPage() {
           </div>
         ) : notes.length > 0 ? (
           <div className="divide-y rounded-lg border">
-            {notes.map((note: any) => (
+            {notes.map((note: Note) => (
               <Link
                 key={note.note_id}
                 href={`/episodes/${note.note_id}`}
@@ -183,7 +184,7 @@ export default function DashboardPage() {
                   </div>
                 </div>
                 <div className="flex shrink-0 flex-wrap gap-1">
-                  {(note.tags ?? []).map((tag: any) => (
+                  {(note.tags ?? []).map((tag: NoteTag) => (
                     <Badge key={tag.id} variant="secondary" className="text-xs">
                       {tag.name}
                     </Badge>

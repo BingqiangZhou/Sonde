@@ -7,9 +7,10 @@ export async function GET(req: NextRequest) {
     const limit = parseInt(req.nextUrl.searchParams.get("limit") ?? "50", 10);
     const data = await fetchRankings(offset, limit);
     return NextResponse.json({ success: true, data });
-  } catch (e: any) {
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : "Unknown error";
     return NextResponse.json(
-      { success: false, error: { message: e.message } },
+      { success: false, error: { message } },
       { status: 500 }
     );
   }

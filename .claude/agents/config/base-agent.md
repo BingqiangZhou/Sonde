@@ -104,11 +104,11 @@ development_tools:
     - "Zustand (client state)"
 
   devops:
-    - "Docker containers"
+    - "Next.js deployment (Vercel/Cloudflare Pages)"
     - "GitHub Actions CI/CD"
-    - "Kubernetes orchestration"
-    - "Prometheus monitoring"
-    - "Grafana dashboards"
+    - "CDN and caching"
+    - "Application monitoring"
+    - "Error tracking"
 ```
 
 ### Error Handling Protocol

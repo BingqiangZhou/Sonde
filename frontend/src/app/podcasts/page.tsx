@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo, useCallback } from 'react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Search, Trophy, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -93,8 +94,9 @@ export default function PodcastsPage() {
             onError: (err) => toast.error(`订阅失败: ${err.message}`),
           }
         );
-      } catch (err: any) {
-        toast.error(`创建知识库失败: ${err.message}`);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : "Unknown error";
+        toast.error(`创建知识库失败: ${msg}`);
       }
     },
     [createKbMut, subscribeMut]
@@ -239,11 +241,12 @@ export default function PodcastsPage() {
                     <TableCell className="text-center">{rankDisplay}</TableCell>
                     <TableCell>
                       {podcast.logo_url ? (
-                        <img
+                        <Image
                           src={podcast.logo_url}
                           alt={podcast.name}
+                          width={40}
+                          height={40}
                           className="h-10 w-10 rounded object-cover"
-                          loading="lazy"
                         />
                       ) : (
                         <div className="flex h-10 w-10 items-center justify-center rounded bg-muted text-xs font-medium">

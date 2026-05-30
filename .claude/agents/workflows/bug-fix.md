@@ -369,23 +369,17 @@ echo "Deploying hotfix for bug $BUG_ID, version $VERSION"
 # 1. 创建hotfix分支
 git checkout -b hotfix/$BUG_ID-$VERSION
 
-# 2. 构建hotfix版本
-docker build -t podcast-insight:$VERSION-hotfix .
+# 2. 构建和验证
+cd frontend && pnpm build
 
-# 3. 标记和推送
-docker tag podcast-insight:$VERSION-hotfix \
-  registry/podcast-insight:$VERSION-hotfix
-docker push registry/podcast-insight:$VERSION-hotfix
+# 3. 推送并触发部署
+git push origin hotfix/$BUG_ID-$VERSION
 
-# 4. 部署到生产环境
-kubectl set image deployment/app \
-  app=registry/podcast-insight:$VERSION-hotfix
+# 4. 合并到 main 触发自动部署（Vercel/CI）
+# 或通过 CI/CD 平台手动触发部署
 
 # 5. 验证部署
-kubectl rollout status deployment/app
-
-# 6. 运行健康检查
-curl -f http://app/health || exit 1
+curl -f https://app-domain/health || exit 1
 
 echo "Hotfix deployed successfully"
 ```

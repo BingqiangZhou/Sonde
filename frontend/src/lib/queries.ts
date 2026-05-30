@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import type { SaveNoteRequest, Subscription } from "@/types";
+import type { SaveNoteRequest, Subscription, NoteListResponse, NoteDetail, TaskProgress, KnowledgeListResponse, KnowledgeNotesResponse, RecallResponse, SaveNoteResponse } from "@/types";
 import * as subscriptionStore from "@/lib/subscription-store";
 
 // ========== Query Keys ==========
@@ -37,8 +37,12 @@ export const queryKeys = {
 
 // We need the settings store for API credentials.
 // Import lazily to avoid circular deps.
-let _settingsStore: any = null;
-async function getSettingsStore() {
+import type { useSettingsStore } from "@/stores/settings-store";
+
+type SettingsStore = typeof useSettingsStore;
+
+let _settingsStore: SettingsStore | null = null;
+async function getSettingsStore(): Promise<SettingsStore> {
   if (!_settingsStore) {
     const mod = await import("@/stores/settings-store");
     _settingsStore = mod.useSettingsStore;
@@ -73,7 +77,7 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
 export function useNotes(cursor?: string) {
   return useQuery({
     queryKey: queryKeys.notes.list(cursor),
-    queryFn: () => apiFetch<any>(`/notes${cursor ? `?cursor=${cursor}` : ""}`),
+    queryFn: () => apiFetch<NoteListResponse>(`/notes${cursor ? `?cursor=${cursor}` : ""}`),
     staleTime: 5 * 60 * 1000,
     retry: 1,
   });
@@ -82,7 +86,10 @@ export function useNotes(cursor?: string) {
 export function useNoteDetail(noteId: string) {
   return useQuery({
     queryKey: queryKeys.notes.detail(noteId),
-    queryFn: () => apiFetch<any>(`/notes/${noteId}`),
+    queryFn: async () => {
+      const result = await apiFetch<{ note: NoteDetail }>(`/notes/${noteId}`);
+      return result.note;
+    },
     enabled: !!noteId,
     staleTime: 5 * 60 * 1000,
     retry: 1,
@@ -93,7 +100,7 @@ export function useSaveNote() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (data: SaveNoteRequest) =>
-      apiFetch<any>("/notes", {
+      apiFetch<SaveNoteResponse>("/notes", {
         method: "POST",
         body: JSON.stringify(data),
       }),
@@ -108,7 +115,7 @@ export function useTaskProgress(taskId: string) {
   return useQuery({
     queryKey: queryKeys.task(taskId),
     queryFn: () =>
-      apiFetch<any>("/task", {
+      apiFetch<TaskProgress>("/task", {
         method: "POST",
         body: JSON.stringify({ task_id: taskId }),
       }),
@@ -127,7 +134,7 @@ export function useTaskProgress(taskId: string) {
 export function useKnowledgeBases(page = 1) {
   return useQuery({
     queryKey: queryKeys.knowledge.list(page),
-    queryFn: () => apiFetch<any>(`/knowledge?page=${page}`),
+    queryFn: () => apiFetch<KnowledgeListResponse>(`/knowledge?page=${page}`),
     staleTime: 5 * 60 * 1000,
     retry: 1,
   });
@@ -137,7 +144,7 @@ export function useCreateKnowledgeBase() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ name, description }: { name: string; description?: string }) =>
-      apiFetch<any>("/knowledge", {
+      apiFetch<{ topic_id: string }>("/knowledge", {
         method: "POST",
         body: JSON.stringify({ name, description }),
       }),
@@ -150,7 +157,7 @@ export function useCreateKnowledgeBase() {
 export function useKnowledgeNotes(topicId: string, page = 1) {
   return useQuery({
     queryKey: queryKeys.knowledge.notes(topicId, page),
-    queryFn: () => apiFetch<any>(`/knowledge/${topicId}?page=${page}`),
+    queryFn: () => apiFetch<KnowledgeNotesResponse>(`/knowledge/${topicId}?page=${page}`),
     enabled: !!topicId,
     staleTime: 5 * 60 * 1000,
     retry: 1,
@@ -163,7 +170,7 @@ export function useGlobalRecall(query: string) {
   return useQuery({
     queryKey: queryKeys.recall.global(query),
     queryFn: () =>
-      apiFetch<any>("/recall", {
+      apiFetch<RecallResponse>("/recall", {
         method: "POST",
         body: JSON.stringify({ query, top_k: 5 }),
       }),
@@ -177,7 +184,7 @@ export function useKnowledgeRecall(topicId: string, query: string) {
   return useQuery({
     queryKey: queryKeys.recall.knowledge(topicId, query),
     queryFn: () =>
-      apiFetch<any>("/recall", {
+      apiFetch<RecallResponse>("/recall", {
         method: "POST",
         body: JSON.stringify({ query, top_k: 5, topic_id: topicId }),
       }),

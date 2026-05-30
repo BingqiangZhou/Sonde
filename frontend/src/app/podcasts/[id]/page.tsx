@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState, useCallback, useEffect } from "react";
+import { use, useState, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -144,7 +144,7 @@ export default function PodcastDetailPage({
         setFeedParsed(true);
       },
     });
-  }, [subscription?.rssUrl]);
+  }, [subscription?.rssUrl, rssFeedMut]);
 
   // Process a single episode: save as note to knowledge base
   const handleProcessEpisode = useCallback(
@@ -172,7 +172,7 @@ export default function PodcastDetailPage({
         }
       );
     },
-    [topicId]
+    [topicId, saveNoteMut]
   );
 
   // Loading subscription data

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import {
   Loader2,
   Trash2,
@@ -30,7 +31,7 @@ import {
 import type { Subscription, KnowledgeBase } from "@/types";
 
 export default function SettingsPage() {
-  const { apiKey, clientId, setApiKey, setClientId, clear: clearSettings } = useSettingsStore();
+  const { apiKey, clientId, setApiKey, setClientId } = useSettingsStore();
   const [inputApiKey, setInputApiKey] = useState(apiKey);
   const [inputClientId, setInputClientId] = useState(clientId);
   const [testing, setTesting] = useState(false);
@@ -205,9 +206,11 @@ export default function SettingsPage() {
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     {sub.logoUrl && (
-                      <img
+                      <Image
                         src={sub.logoUrl}
                         alt={sub.podcastName}
+                        width={32}
+                        height={32}
                         className="h-8 w-8 rounded-md object-cover shrink-0"
                       />
                     )}

@@ -412,7 +412,7 @@ Implement browser-based fallback mechanism for podcast audio downloads when aioh
 - This feature is critical for improving podcast transcription reliability
 - Browser fallback should add minimal overhead to user experience
 - Must handle concurrent downloads with resource limits (max 3 browsers)
-- Requires Playwright and Chromium browser installation in Docker
+- Requires Playwright and Chromium browser installation
 
 **Updates**
 - [2026-01-03 10:00] - [Product Manager]: PRD created, task ready for assignment

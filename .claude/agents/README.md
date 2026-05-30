@@ -86,7 +86,7 @@ version: "2.0.0"
 ### 7. 运维工程师 (DevOps Engineer) ⚙️
 - **专业领域**: 部署、基础设施、CI/CD
 - **主要职责**: 确保系统稳定运行、自动化部署
-- **核心技能**: Docker、Kubernetes、GitHub Actions、监控
+- **核心技能**: Next.js 部署、GitHub Actions、CDN、监控
 
 ## 工作流程
 
