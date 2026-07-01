@@ -125,6 +125,22 @@ importers:
         specifier: ^2.1.0
         version: 2.1.9(@types/node@22.20.0)(jsdom@29.1.1)(lightningcss@1.32.0)
 
+  skills/parse-rss:
+    dependencies:
+      '@podcastinsight/shared':
+        specifier: workspace:*
+        version: link:../_shared
+      fast-xml-parser:
+        specifier: ^5.8.0
+        version: 5.9.3
+    devDependencies:
+      tsx:
+        specifier: ^4.19.0
+        version: 4.22.4
+      vitest:
+        specifier: ^2.1.0
+        version: 2.1.9(@types/node@22.20.0)(jsdom@29.1.1)(lightningcss@1.32.0)
+
 packages:
 
   '@alloc/quick-lru@5.2.0':
