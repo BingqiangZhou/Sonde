@@ -10,16 +10,6 @@
     "lint": "eslint src/",
     "test": "vitest"
   },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "esbuild",
-      "sharp",
-      "unrs-resolver"
-    ],
-    "overrides": {
-      "postcss": ">=8.5.10"
-    }
-  },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.0",
     "@radix-ui/react-label": "^2.1.0",
