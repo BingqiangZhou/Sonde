@@ -1,133 +1,88 @@
-# PodcastInsight — 播客洞察平台
+# PodcastInsight — Skills 为核心的播客洞察平台
 
-PodcastInsight 是一个基于 Get笔记 OpenAPI 的播客洞察平台，集成播客排行榜监控、AI 笔记摘要、语义搜索等功能，帮助你从播客内容中高效提取和管理知识。
+播客排行榜监控 + AI 摘要，基于 Agent Skills 架构。处理逻辑封装为可复用的 skill 脚本，数据存 git，前端是只读静态站。
 
 ## 功能特性
 
-- **播客排行榜** — 从 xyzrank.com 获取 Top 1000 中文播客排行榜，支持订阅追踪
-- **Get笔记集成** — 通过 Get笔记 OpenAPI 自动完成网页抓取、AI 摘要生成、智能打标签
-- **知识库管理** — 为每个订阅播客创建独立知识库，结构化管理剧集笔记
-- **语义搜索** — 基于 Get笔记 的语义召回能力，全局或知识库范围搜索播客内容
-- **RSS Feed 解析** — 自动解析播客 RSS feed，发现新剧集并保存到 Get笔记 处理
-- **API Key 管理** — 前端可视化配置 Get笔记 API Key，支持 localStorage 和环境变量两种存储方式
-- **响应式界面** — 移动端优先的中文界面，支持深色/浅色主题切换
+- **播客排行榜** — 从 xyzrank.com 获取 Top 1000 中文播客排行榜
+- **RSS 解析** — 自动解析订阅播客的 RSS，发现新剧集
+- **剧集正文抓取** — 抓取剧集网页正文
+- **AI 摘要生成** — agent 实时调用 LLM 生成摘要和标签
+- **关键词搜索** — 在已生成摘要的剧集中搜索
+- **响应式界面** — 移动端优先，支持深色/浅色主题
+
+## 架构
+
+```
+PodcastInsight/
+├── skills/                      # 核心：Agent Skills（SKILL.md + run.ts）
+│   ├── _shared/                 # 共享类型/路径/IO/校验
+│   ├── fetch-rankings/          # 抓 xyzrank 排行榜（定时）
+│   ├── parse-rss/               # 解析订阅 RSS（定时）
+│   ├── scrape-episode/          # 抓剧集正文（定时）
+│   └── summarize/               # LLM 摘要（agent 实时）
+├── data/                        # skill 产出，git 跟踪
+├── frontend/                    # 只读静态站（SSG）
+└── .github/workflows/           # 定时数据刷新 + 发布
+```
 
 ## 技术栈
 
-- **Next.js 16** / React 19 / TypeScript 5 (App Router)
-- **TailwindCSS 4** / shadcn/ui (组件库)
-- **TanStack Query v5** (服务端状态管理)
-- **Zustand** (客户端状态管理)
-- **Get笔记 OpenAPI** (核心数据引擎，替代传统后端和数据库)
-- **Sonner** (消息通知)
+- **Agent Skills**（SKILL.md + TypeScript 脚本，tsx 运行）
+- Next.js 16 (App Router, SSG) / React 19 / TypeScript 5
+- TailwindCSS 4 / shadcn/ui
+- fast-xml-parser / marked / vitest
+- GitHub Actions（定时数据刷新）
 
 ## 快速开始
 
 ### 前置要求
 
-- Node.js 20+ & pnpm
-- Get笔记账号及 API Key (从 Get笔记开放平台获取)
+- Node.js 20+ & pnpm 10
 
-### 1. 克隆项目
+### 安装与运行
 
 ```bash
-git clone git@github.com:BingqiangZhou/PodcastInsight.git
+git clone https://github.com/BingqiangZhou/PodcastInsight.git
 cd PodcastInsight
-```
-
-### 2. 配置环境变量
-
-```bash
-cp frontend/.env.example frontend/.env.local
-```
-
-编辑 `frontend/.env.local`，填入 Get笔记凭证：
-
-```env
-# Get笔记 API 配置
-GETNOTE_API_KEY=your_api_key_here
-GETNOTE_CLIENT_ID=your_client_id_here
-```
-
-### 3. 启动开发服务器
-
-```bash
-cd frontend
-
-# 安装依赖
 pnpm install
-
-# 启动开发服务器 (端口 3000)
-pnpm dev
+pnpm dev          # 前端 http://localhost:3000
 ```
 
-访问 http://localhost:3000 即可使用。
-
-也可以在应用内的 **设置** 页面配置 API Key。
-
-## 项目结构
-
-```
-podcast-insight/
-├── frontend/                     # Next.js 全栈应用
-│   ├── src/
-│   │   ├── app/                  # App Router 页面 + API Routes
-│   │   │   ├── api/              # BFF 代理层
-│   │   │   │   ├── getnote/      # Get笔记 API 代理
-│   │   │   │   └── podcasts/     # xyzrank + RSS 代理
-│   │   │   ├── podcasts/         # 播客排行榜 + 详情
-│   │   │   ├── episodes/         # 笔记详情
-│   │   │   ├── search/           # 语义搜索
-│   │   │   └── settings/         # API Key 配置
-│   │   ├── components/           # shadcn/ui 组件
-│   │   ├── lib/                  # API 客户端、TanStack Query hooks、工具函数
-│   │   ├── stores/               # Zustand 状态管理
-│   │   └── types/                # TypeScript 类型
-│   ├── package.json
-│   └── .env.example
-├── docs/                         # 设计文档和规范
-├── .env.example
-└── CLAUDE.md                     # 开发规范文档
-```
-
-## API 概览
-
-### Get笔记代理 (BFF)
-
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| GET | `/api/getnote/notes` | 笔记列表 |
-| POST | `/api/getnote/notes` | 保存笔记 |
-| GET | `/api/getnote/notes/[id]` | 笔记详情 |
-| POST | `/api/getnote/task` | 任务进度查询 |
-| GET | `/api/getnote/knowledge` | 知识库列表 |
-| POST | `/api/getnote/knowledge` | 创建知识库 |
-| GET | `/api/getnote/knowledge/[id]` | 知识库笔记 |
-| POST | `/api/getnote/recall` | 语义搜索 |
-
-### 播客数据
-
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| GET | `/api/podcasts/rankings` | xyzrank 排行榜 |
-| POST | `/api/podcasts/feed` | RSS feed 解析 |
-
-## 开发指南
+### 生成数据
 
 ```bash
-cd frontend
-pnpm lint                # ESLint 检查
-pnpm test                # Vitest 测试
-pnpm build               # 生产构建
+# 抓取排行榜
+pnpm --filter @podcastinsight/skill-fetch-rankings run
+
+# 订阅播客：在 data/podcasts/<id>/meta.json 中设 subscribed: true 并填 rss_feed_url
+
+# 解析 RSS 发现新剧集
+pnpm --filter @podcastinsight/skill-parse-rss run
+
+# 抓取剧集正文
+pnpm --filter @podcastinsight/skill-scrape-episode run
+
+# 生成 AI 摘要（需 LLM_API_KEY）
+LLM_API_KEY=xxx pnpm --filter @podcastinsight/skill-summarize run
 ```
 
-### 约定
+## Skills
 
-- 前端使用 **App Router** (`app/` 目录)，不是 Pages Router
-- UI 组件使用 **shadcn/ui**，不自行编写基础组件
-- 数据查询使用 **TanStack Query** (`useQuery` / `useMutation`)，不直接 fetch
-- 无后端服务，所有数据操作通过 **BFF 代理层** 转发到 Get笔记 API
-- Git 提交遵循 **Conventional Commits** (`feat:`, `fix:`, `refactor:`)
+| Skill | 说明 | 触发 |
+|-------|------|------|
+| fetch-rankings | 抓 xyzrank Top 排行榜 | GitHub Actions 每周一 + 手动 |
+| parse-rss | 解析订阅播客 RSS，发现新剧集 | GitHub Actions 每日 + 手动 |
+| scrape-episode | 抓剧集网页正文 | parse-rss 之后 + 手动 |
+| summarize | LLM 生成摘要和标签 | agent 实时调用（需 LLM_API_KEY） |
+
+## 开发
+
+```bash
+pnpm test          # 所有包测试
+pnpm lint          # ESLint
+pnpm build         # 前端构建
+```
 
 ## License
 
