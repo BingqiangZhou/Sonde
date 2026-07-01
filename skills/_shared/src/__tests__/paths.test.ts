@@ -1,12 +1,13 @@
 import { describe, it, expect } from "vitest";
 import path from "node:path";
+import os from "node:os";
 import fs from "node:fs";
 import { fileURLToPath } from "node:url";
 import {
-  PODCASTS_DIR,
-  RANKINGS_FILE,
-  INDEX_FILE,
-  SEARCH_INDEX_FILE,
+  podcastsDir,
+  rankingsFile,
+  indexFile,
+  searchIndexFile,
   podcastDir,
   podcastMetaFile,
   episodeMetaFile,
@@ -29,10 +30,10 @@ describe("paths", () => {
   });
   it("rankings/index/search 路径为 data/ 下固定相对路径", () => {
     const root = resolveDataRoot();
-    expect(RANKINGS_FILE).toBe(path.join(root, "rankings", "latest.json"));
-    expect(INDEX_FILE).toBe(path.join(root, "index.json"));
-    expect(SEARCH_INDEX_FILE).toBe(path.join(root, "search-index.json"));
-    expect(PODCASTS_DIR).toBe(path.join(root, "podcasts"));
+    expect(rankingsFile()).toBe(path.join(root, "rankings", "latest.json"));
+    expect(indexFile()).toBe(path.join(root, "index.json"));
+    expect(searchIndexFile()).toBe(path.join(root, "search-index.json"));
+    expect(podcastsDir()).toBe(path.join(root, "podcasts"));
   });
 
   it("podcastDir 用 xyzrank id 定位", () => {
@@ -55,5 +56,24 @@ describe("paths", () => {
     expect(episodeMarkdownFile("abc123", "ep1")).toBe(
       path.join(resolveDataRoot(), "podcasts", "abc123", "episodes", "ep1.md")
     );
+  });
+
+  it("路径在运行时尊重 PODCASTINSIGHT_DATA_DIR 的变更", () => {
+    // 回归保护：路径必须每次实时解析，不能缓存为模块级常量，
+    // 否则测试在 beforeEach 改 env 后仍指向旧目录，造成跨测试状态泄漏。
+    const prev = process.env.PODCASTINSIGHT_DATA_DIR;
+    const first = path.join(os.tmpdir(), "pi-paths-first");
+    const second = path.join(os.tmpdir(), "pi-paths-second");
+    try {
+      process.env.PODCASTINSIGHT_DATA_DIR = first;
+      expect(resolveDataRoot()).toBe(path.resolve(first));
+      process.env.PODCASTINSIGHT_DATA_DIR = second;
+      expect(resolveDataRoot()).toBe(path.resolve(second));
+      expect(indexFile()).toBe(path.join(path.resolve(second), "index.json"));
+      expect(podcastDir("x")).toBe(path.join(path.resolve(second), "podcasts", "x"));
+    } finally {
+      if (prev === undefined) delete process.env.PODCASTINSIGHT_DATA_DIR;
+      else process.env.PODCASTINSIGHT_DATA_DIR = prev;
+    }
   });
 });

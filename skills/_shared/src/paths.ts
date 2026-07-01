@@ -7,6 +7,10 @@ import { fileURLToPath } from "node:url";
  * 数据根目录解析顺序：
  * 1. 环境变量 PODCASTINSIGHT_DATA_DIR（测试/CI 可覆盖）
  * 2. 仓库根的 data/ 目录（从本文件向上回溯到 monorepo 根）
+ *
+ * 注意：路径必须每次实时解析（不缓存为模块级常量），否则测试在 beforeEach
+ * 里设置的 PODCASTINSIGHT_DATA_DIR 不会生效，不同测试会写到同一个 data/
+ * 目录导致状态泄漏。因此根级路径用函数导出；与 episodesDir() 等保持一致。
  */
 export function resolveDataRoot(): string {
   if (process.env.PODCASTINSIGHT_DATA_DIR) {
@@ -19,15 +23,28 @@ export function resolveDataRoot(): string {
   return path.join(repoRoot, "data");
 }
 
-const DATA_ROOT = resolveDataRoot();
+/** data/podcasts 目录。 */
+export function podcastsDir(): string {
+  return path.join(resolveDataRoot(), "podcasts");
+}
 
-export const PODCASTS_DIR = path.join(DATA_ROOT, "podcasts");
-export const RANKINGS_FILE = path.join(DATA_ROOT, "rankings", "latest.json");
-export const INDEX_FILE = path.join(DATA_ROOT, "index.json");
-export const SEARCH_INDEX_FILE = path.join(DATA_ROOT, "search-index.json");
+/** data/rankings/latest.json。 */
+export function rankingsFile(): string {
+  return path.join(resolveDataRoot(), "rankings", "latest.json");
+}
+
+/** data/index.json（前端入口聚合索引）。 */
+export function indexFile(): string {
+  return path.join(resolveDataRoot(), "index.json");
+}
+
+/** data/search-index.json（搜索索引）。 */
+export function searchIndexFile(): string {
+  return path.join(resolveDataRoot(), "search-index.json");
+}
 
 export function podcastDir(podcastId: string): string {
-  return path.join(PODCASTS_DIR, podcastId);
+  return path.join(podcastsDir(), podcastId);
 }
 
 export function podcastMetaFile(podcastId: string): string {
