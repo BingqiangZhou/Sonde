@@ -1,0 +1,17 @@
+{
+  "name": "@podcastinsight/skill-summarize",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "run": "tsx src/run.ts",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@podcastinsight/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0",
+    "vitest": "^2.1.0"
+  }
+}
