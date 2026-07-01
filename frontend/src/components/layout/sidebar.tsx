@@ -6,7 +6,6 @@ import {
   LayoutDashboard,
   Podcast,
   Search,
-  Settings,
   Radio,
   ChevronLeft,
   ChevronRight,
@@ -35,11 +34,6 @@ const navItems = [
     label: '搜索',
     href: '/search',
     icon: Search,
-  },
-  {
-    label: '设置',
-    href: '/settings',
-    icon: Settings,
   },
 ];
 
@@ -141,7 +135,7 @@ function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
         {!collapsed && (
           <div className="px-3 pt-1">
             <p className="text-[11px] text-sidebar-foreground/30">
-              PodcastInsight v2
+              PodcastInsight v3
             </p>
           </div>
         )}
