@@ -30,11 +30,11 @@ primary_stack: ["nextjs", "vercel", "github-actions", "cdn"]
 - CDN 缓存策略
 - Edge Runtime 配置
 
-### 3. API Route (BFF) 运维
-- API Route 性能监控
-- 外部 API（Get笔记、xyzrank）调用健康检查
-- Rate limiting 和错误处理
-- 环境变量管理
+### 3. Skills 数据刷新运维
+- GitHub Actions refresh.yml 定时任务监控（fetch-rankings 每周、parse-rss+scrape-episode 每日）
+- 外部数据源（xyzrank、RSS、剧集网页）可达性检查
+- data/ 自动提交失败处理
+- 无运行时后端、无 API Key 管理（v3 已移除 BFF）
 
 ### 4. Monitoring and Logging
 - 应用性能监控 (APM)
@@ -63,37 +63,33 @@ jobs:
 
     - uses: pnpm/action-setup@v4
       with:
-        version: 11
+        version: 10
 
     - uses: actions/setup-node@v4
       with:
-        node-version: 24
+        node-version: 20
         cache: pnpm
-        cache-dependency-path: frontend/pnpm-lock.yaml
 
     - name: Install dependencies
-      run: cd frontend && pnpm install --frozen-lockfile
+      run: pnpm install --frozen-lockfile
 
     - name: Lint
-      run: cd frontend && pnpm lint
+      run: pnpm lint
 
-    - name: Test
-      run: cd frontend && pnpm test
+    - name: Test (skills)
+      run: pnpm -r --filter "./skills/*" test
 
-    - name: Build
-      run: cd frontend && pnpm build
+    - name: Build frontend
+      run: pnpm build
 ```
 
 ### 2. 环境变量管理
 ```bash
-# .env.example — 必需的环境变量
-# Get笔记 API
-GETNOTE_API_KEY=your_api_key
-GETNOTE_CLIENT_ID=your_client_id
-GETNOTE_API_BASE_URL=https://api.getnote.ai
+# .env.example — v3 通常无需任何环境变量
+# 可选：覆盖数据目录位置
+# PODCASTINSIGHT_DATA_DIR=/path/to/data
 
-# 应用配置
-NEXT_PUBLIC_APP_URL=http://localhost:3000
+# summarize 由 agent 原生生成，不需要 LLM_API_KEY
 ```
 
 ### 3. 安全扫描
@@ -124,13 +120,10 @@ jobs:
 
 ## Health Checks
 
-```typescript
-// src/app/api/health/route.ts
-// 基础健康检查端点
-// - 检查 Get笔记 API 连通性
-// - 检查 xyzrank API 连通性
-// - 返回服务状态
-```
+v3 是纯静态站，无运行时后端健康检查端点。运维关注点：
+- `data/` 是否有近期提交（refresh.yml 是否正常产出数据）
+- GitHub Actions refresh.yml 的运行状态
+- xyzrank API / RSS feed 的可达性（影响 skill 抓取）
 
 ## Collaboration Guidelines
 

@@ -1,7 +1,7 @@
 # PodcastInsight v3 — Skills 为核心架构改造
 
 **日期**: 2026-07-01
-**状态**: Pending Review
+**状态**: Implemented (2026-07-02)
 
 ## 背景
 
@@ -395,5 +395,27 @@ on:
 |------|------|------|
 | data/ 仓库膨胀 | clone/CI 变慢 | 短期可接受；长期可按播客归档或迁移到数据仓库 |
 | 网页正文抓取被反爬 | scrape-episode 失败 | 降级为 scrape_status: failed，summary 跳过；可加 User-Agent 轮换 |
-| LLM API 成本/可用性 | summarize 不可用 | summarize 独立于定时流程，失败不影响展示层 |
+| LLM API 成本/可用性 | summarize 不可用 | ~~原方案~~；已改为 agent 原生生成（见下方修正），不依赖外部 API |
 | 现有 Get笔记 数据无法迁移 | 历史笔记丢失 | 本次按全新数据流重建，不迁移 v2 数据 |
+
+## 实现后修正（2026-07-02）
+
+实现过程中发现两处偏离本 spec 的设计回归，已在合并前修正：
+
+### 修正一：技能发现目录
+
+| 原计划 | 问题 | 修正 |
+|--------|------|------|
+| skill 放 `skills/` 目录即被 agent 发现 | ZCode 的技能发现目录是 `.agents/skills/`，`skills/` 只是 pnpm 包目录，agent 识别不到 | 在 `.agents/skills/` 创建 4 个 SKILL.md 作为发现入口；代码逻辑保留在 `skills/` pnpm 包不动 |
+
+两类技能的区分：
+- **确定性脚本技能**（fetch-rankings / parse-rss / scrape-episode）：SKILL.md 指导 agent 跑 `pnpm --filter ... refresh`
+- **agent 原生智能技能**（podcast-summarize）：SKILL.md 指导 agent 读正文 → 自己生成摘要 → 调 writeSummary 写回
+
+### 修正二：summarize 从"脚本调 API"改为"agent 原生"
+
+| 原计划（决策 #5、#9） | 问题 | 修正 |
+|----------------------|------|------|
+| summarize 是脚本，内部调 OpenAI 兼容 API 生成摘要 | agent 本身就是 LLM，脚本里再调外部 API 是多此一举，还引入 API Key 依赖 | 删除 `llm-client.ts`；summarize 包改为提供 prepareEpisode（读正文）/ writeSummary（写回）/ listPending（列出）三个纯工具函数；摘要由 agent 自身能力生成，无需任何外部 API |
+
+这更符合设计意图："summarize 由 agent 实时生成"——agent 自己读、自己写，脚本只保证格式契约（原子写、frontmatter、索引重建）。

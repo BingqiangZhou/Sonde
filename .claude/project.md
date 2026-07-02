@@ -1,22 +1,22 @@
-# PodcastInsight v2 — Get笔记驱动的播客洞察平台
+# PodcastInsight v3 — Skills 为核心的播客洞察平台
 
-播客排名监控 + Get笔记 AI 摘要/笔记 + 语义搜索 Web 平台。
-纯 Next.js 架构，Get笔记 OpenAPI 作为核心数据引擎。
+处理逻辑封装为 Agent Skills，数据存 git，前端是只读静态站。
 
 ## Tech Stack
-- **Frontend**: Next.js 16 (App Router) / React 19 / TypeScript / TailwindCSS 4 / shadcn-ui
-- **State**: TanStack Query v5 (服务端状态) + Zustand (客户端状态)
-- **数据引擎**: Get笔记 OpenAPI（笔记 CRUD、知识库、语义搜索）
-- **播客排行**: xyzrank.com API
-- **无后端服务**: 纯 Next.js BFF 代理层，无独立后端
+- **Skills**: Agent Skills（SKILL.md + TypeScript 脚本，tsx 运行）
+- **Frontend**: Next.js 16 (App Router, SSG) / React 19 / TypeScript 5 / TailwindCSS 4 / shadcn-ui
+- **Shared**: skills/_shared（类型、路径、原子 IO、校验）
+- **数据**: 结构化 JSON/MD 文件存于 git（无数据库、无 Get笔记、无后端服务）
+- **包管理**: pnpm workspace（NEVER npm/yarn）
 
 ## Key Directories
-- `frontend/`: Next.js 全栈应用（App Router + API Routes）
-- `frontend/src/app/api/`: BFF 代理层（getnote/、podcasts/）
-- `frontend/src/components/`: shadcn/ui 组件
-- `frontend/src/lib/`: API 客户端、TanStack Query hooks、工具函数
-- `frontend/src/stores/`: Zustand 状态管理
-- `frontend/src/types/`: TypeScript 类型
+- `.agents/skills/`: Agent 技能发现入口（SKILL.md，ZCode 据此识别并触发）
+- `skills/`: 技能代码实现（pnpm workspace 包，run.ts）
+  - `_shared/`: 共享类型/路径/IO/校验
+  - `fetch-rankings/`, `parse-rss/`, `scrape-episode/`: 确定性脚本技能（定时）
+  - `summarize/`: 摘要读写工具（prepareEpisode/writeSummary/listPending，agent 调用）
+- `data/`: skill 产出，git 跟踪（rankings/、podcasts/、index.json、search-index.json）
+- `frontend/`: 只读静态站（SSG），唯一数据读取层 `src/lib/loaders.ts`
 - `docs/`: 设计文档和规范
 
 ## Development Commands
