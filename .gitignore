@@ -23,3 +23,7 @@ Thumbs.db
 # Generated
 frontend/next-env.d.ts
 frontend/tsconfig.tsbuildinfo
+
+# Skills 中间产物
+data/tmp/
+*.tsbuildinfo

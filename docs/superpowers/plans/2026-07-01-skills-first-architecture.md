@@ -1150,7 +1150,7 @@ git commit -m "feat(skills): add index and search-index rebuilder"
   "private": true,
   "type": "module",
   "scripts": {
-    "run": "tsx src/run.ts",
+    "refresh": "tsx src/run.ts",
     "test": "vitest run"
   },
   "dependencies": {
@@ -1395,7 +1395,7 @@ description: 从 xyzrank.com 抓取中文播客 Top 排行榜，写入 data/rank
 
 ```bash
 cd skills/fetch-rankings
-pnpm run
+pnpm refresh
 ```
 
 ## 输入
@@ -1445,7 +1445,7 @@ git commit -m "feat(skills): add fetch-rankings skill (xyzrank top rankings)"
   "private": true,
   "type": "module",
   "scripts": {
-    "run": "tsx src/run.ts",
+    "refresh": "tsx src/run.ts",
     "test": "vitest run"
   },
   "dependencies": {
@@ -1771,7 +1771,7 @@ description: 解析所有已订阅播客的 RSS feed，为新剧集写入 data/p
 
 ```bash
 cd skills/parse-rss
-pnpm run
+pnpm refresh
 ```
 
 ## 输入
@@ -1823,7 +1823,7 @@ git commit -m "feat(skills): add parse-rss skill (incremental episode discovery)
   "private": true,
   "type": "module",
   "scripts": {
-    "run": "tsx src/run.ts",
+    "refresh": "tsx src/run.ts",
     "test": "vitest run"
   },
   "dependencies": {
@@ -2134,7 +2134,7 @@ description: 抓取 pending 剧集的网页正文，写入 data/podcasts/<id>/ep
 
 ```bash
 cd skills/scrape-episode
-pnpm run
+pnpm refresh
 ```
 
 ## 输入
@@ -2185,7 +2185,7 @@ git commit -m "feat(skills): add scrape-episode skill (web content extraction)"
   "private": true,
   "type": "module",
   "scripts": {
-    "run": "tsx src/run.ts",
+    "refresh": "tsx src/run.ts",
     "test": "vitest run"
   },
   "dependencies": {
@@ -2627,10 +2627,10 @@ description: 为已抓取正文的剧集生成 AI 摘要和标签，写回 data/
 ```bash
 # 批量处理所有 pending 剧集
 cd skills/summarize
-pnpm run
+pnpm refresh
 
 # 处理单集
-pnpm run -- --episode=<podcastId>/<episodeId>
+pnpm refresh -- --episode=<podcastId>/<episodeId>
 ```
 
 ## 输入
@@ -3710,15 +3710,15 @@ jobs:
 
       - name: Run fetch-rankings
         if: steps.plan.outputs.skill == 'rankings' || steps.plan.outputs.skill == 'all'
-        run: pnpm --filter @podcastinsight/skill-fetch-rankings run
+        run: pnpm --filter @podcastinsight/skill-fetch-rankings refresh
 
       - name: Run parse-rss
         if: steps.plan.outputs.skill == 'rss' || steps.plan.outputs.skill == 'all'
-        run: pnpm --filter @podcastinsight/skill-parse-rss run
+        run: pnpm --filter @podcastinsight/skill-parse-rss refresh
 
       - name: Run scrape-episode
         if: steps.plan.outputs.skill == 'rss' || steps.plan.outputs.skill == 'all'
-        run: pnpm --filter @podcastinsight/skill-scrape-episode run
+        run: pnpm --filter @podcastinsight/skill-scrape-episode refresh
 
       - name: Commit data changes
         run: |
@@ -3778,10 +3778,10 @@ pnpm build                         # 前端构建
 pnpm test                          # 所有包测试
 
 # 运行单个 skill
-pnpm --filter @podcastinsight/skill-fetch-rankings run
-pnpm --filter @podcastinsight/skill-parse-rss run
-pnpm --filter @podcastinsight/skill-scrape-episode run
-pnpm --filter @podcastinsight/skill-summarize run   # 需 LLM_API_KEY
+pnpm --filter @podcastinsight/skill-fetch-rankings refresh
+pnpm --filter @podcastinsight/skill-parse-rss refresh
+pnpm --filter @podcastinsight/skill-scrape-episode refresh
+pnpm --filter @podcastinsight/skill-summarize refresh   # 需 LLM_API_KEY
 ```
 
 ## 约定
@@ -3841,12 +3841,12 @@ pnpm install
 pnpm dev   # 前端 http://localhost:3000
 
 ### 运行 skill 生成数据
-pnpm --filter @podcastinsight/skill-fetch-rankings run
+pnpm --filter @podcastinsight/skill-fetch-rankings refresh
 # 在 data/podcasts/<id>/meta.json 中设 subscribed:true 后：
-pnpm --filter @podcastinsight/skill-parse-rss run
-pnpm --filter @podcastinsight/skill-scrape-episode run
+pnpm --filter @podcastinsight/skill-parse-rss refresh
+pnpm --filter @podcastinsight/skill-scrape-episode refresh
 # 生成摘要（需 LLM_API_KEY）：
-LLM_API_KEY=xxx pnpm --filter @podcastinsight/skill-summarize run
+LLM_API_KEY=xxx pnpm --filter @podcastinsight/skill-summarize refresh
 ```
 
 （按现有 README.md 的详细程度补全项目结构、Skill 列表、API/命令表格。）
@@ -3873,10 +3873,10 @@ rm -f docs/superpowers/plans/_task5.md docs/superpowers/plans/_task6.md docs/sup
 - [ ] **所有测试通过**：`pnpm -r test`
 - [ ] **前端 lint + build 通过**：`cd frontend && pnpm lint && pnpm build`
 - [ ] **端到端冒烟测试**：
-  1. `pnpm --filter @podcastinsight/skill-fetch-rankings run` → 检查 `data/rankings/latest.json` 生成
+  1. `pnpm --filter @podcastinsight/skill-fetch-rankings refresh` → 检查 `data/rankings/latest.json` 生成
   2. 手动在 `data/podcasts/<某id>/meta.json` 设 `subscribed:true, rss_feed_url:"<真实rss>"`
-  3. `pnpm --filter @podcastinsight/skill-parse-rss run` → 检查 episodes/*.json 生成
-  4. `pnpm --filter @podcastinsight/skill-scrape-episode run` → 检查 *.md 正文生成
+  3. `pnpm --filter @podcastinsight/skill-parse-rss refresh` → 检查 episodes/*.json 生成
+  4. `pnpm --filter @podcastinsight/skill-scrape-episode refresh` → 检查 *.md 正文生成
   5. `pnpm build` → 前端能渲染排行榜和播客详情
 - [ ] **CI 检查**：推送后 `refresh.yml` 可手动 dispatch 触发
 
