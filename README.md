@@ -17,13 +17,13 @@
 PodcastInsight/
 ├── skills/                      # 核心：Agent Skills（SKILL.md + run.ts）
 │   ├── _shared/                 # 共享类型/路径/IO/校验
-│   ├── fetch-rankings/          # 抓 xyzrank 排行榜（定时）
-│   ├── parse-rss/               # 解析订阅 RSS（定时）
-│   ├── scrape-episode/          # 抓剧集正文（定时）
-│   └── summarize/               # LLM 摘要（agent 实时）
+│   ├── fetch-rankings/          # 抓 xyzrank 排行榜
+│   ├── parse-rss/               # 解析订阅 RSS
+│   ├── scrape-episode/          # 抓剧集正文
+│   └── summarize/               # 摘要读写工具（agent 调用）
 ├── data/                        # skill 产出，git 跟踪
 ├── frontend/                    # 只读静态站（SSG）
-└── .github/workflows/           # 定时数据刷新 + 发布
+└── .github/workflows/           # 发布流程
 ```
 
 ## 技术栈
@@ -32,7 +32,6 @@ PodcastInsight/
 - Next.js 16 (App Router, SSG) / React 19 / TypeScript 5
 - TailwindCSS 4 / shadcn/ui
 - fast-xml-parser / marked / vitest
-- GitHub Actions（定时数据刷新）
 
 ## 快速开始
 
@@ -72,8 +71,8 @@ pnpm --filter @podcastinsight/skill-summarize refresh
 
 | Skill | 说明 | 触发 |
 |-------|------|------|
-| fetch-rankings | 抓 xyzrank Top 排行榜 | GitHub Actions 每周一 + agent/手动 |
-| parse-rss | 解析订阅播客 RSS，发现新剧集 | GitHub Actions 每日 + agent/手动 |
+| fetch-rankings | 抓 xyzrank Top 排行榜 | agent / 命令行手动 |
+| parse-rss | 解析订阅播客 RSS，发现新剧集 | agent / 命令行手动 |
 | scrape-episode | 抓剧集网页正文 | parse-rss 之后 + agent/手动 |
 | podcast-summarize | agent 自身生成摘要和标签 | agent 对话触发（无需 API Key） |
 

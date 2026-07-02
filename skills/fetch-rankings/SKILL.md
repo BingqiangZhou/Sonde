@@ -1,6 +1,6 @@
 ---
 name: fetch-rankings
-description: 从 xyzrank.com 抓取中文播客 Top 排行榜，写入 data/rankings/latest.json。由 GitHub Actions 每周定时执行，也可手动触发。
+description: 从 xyzrank.com 抓取中文播客 Top 排行榜，写入 data/rankings/latest.json。由 agent 或命令行手动触发。
 ---
 
 # fetch-rankings
@@ -9,9 +9,9 @@ description: 从 xyzrank.com 抓取中文播客 Top 排行榜，写入 data/rank
 
 ## 何时使用
 
-- GitHub Actions 每周一 08:00 UTC 自动执行
-- agent 手动触发：用户说"更新排行榜""抓一下排行"时
+- agent 触发：用户说"更新排行榜""抓一下排行"时
 - 排行榜数据过期需要刷新时
+- 命令行手动执行
 
 ## 如何执行
 

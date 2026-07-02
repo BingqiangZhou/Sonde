@@ -13,7 +13,7 @@
 - `.agents/skills/`: Agent 技能发现入口（SKILL.md，ZCode 据此识别并触发）
 - `skills/`: 技能代码实现（pnpm workspace 包，run.ts）
   - `_shared/`: 共享类型/路径/IO/校验
-  - `fetch-rankings/`, `parse-rss/`, `scrape-episode/`: 确定性脚本技能（定时）
+  - `fetch-rankings/`, `parse-rss/`, `scrape-episode/`: 确定性脚本技能（agent/命令行手动触发）
   - `summarize/`: 摘要读写工具（prepareEpisode/writeSummary/listPending，agent 调用）
 - `data/`: skill 产出，git 跟踪（rankings/、podcasts/、index.json、search-index.json）
 - `frontend/`: 只读静态站（SSG），唯一数据读取层 `src/lib/loaders.ts`

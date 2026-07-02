@@ -9,8 +9,9 @@ description: 抓取 pending 剧集的网页正文，写入 data/podcasts/<id>/ep
 
 ## 何时使用
 
-- 在 parse-rss 之后链式执行（GitHub Actions 同一 workflow）
-- agent 手动触发：用户说"抓正文""处理新剧集内容"时
+- 在 parse-rss 之后链式执行（抓完 RSS 发现新剧集后顺带抓正文）
+- agent 触发：用户说"抓正文""处理新剧集内容"时
+- 命令行手动执行
 
 ## 如何执行
 

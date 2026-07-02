@@ -31,9 +31,9 @@ primary_stack: ["nextjs", "vercel", "github-actions", "cdn"]
 - Edge Runtime 配置
 
 ### 3. Skills 数据刷新运维
-- GitHub Actions refresh.yml 定时任务监控（fetch-rankings 每周、parse-rss+scrape-episode 每日）
+- 数据刷新由 agent 或命令行手动触发（无定时 CI）
 - 外部数据源（xyzrank、RSS、剧集网页）可达性检查
-- data/ 自动提交失败处理
+- data/ 提交由运行者手动负责
 - 无运行时后端、无 API Key 管理（v3 已移除 BFF）
 
 ### 4. Monitoring and Logging
@@ -121,9 +121,9 @@ jobs:
 ## Health Checks
 
 v3 是纯静态站，无运行时后端健康检查端点。运维关注点：
-- `data/` 是否有近期提交（refresh.yml 是否正常产出数据）
-- GitHub Actions refresh.yml 的运行状态
+- `data/` 是否有近期提交（数据是否手动刷新过）
 - xyzrank API / RSS feed 的可达性（影响 skill 抓取）
+- release.yml 发布流程是否正常（push tag 时触发）
 
 ## Collaboration Guidelines
 

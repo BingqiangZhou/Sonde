@@ -1,6 +1,6 @@
 ---
 name: parse-rss
-description: 解析所有已订阅播客的 RSS feed，为新剧集写入 data/podcasts/<id>/episodes/*.json。由 GitHub Actions 每日定时执行。
+description: 解析所有已订阅播客的 RSS feed，为新剧集写入 data/podcasts/<id>/episodes/*.json。由 agent 或命令行手动触发。
 ---
 
 # parse-rss
@@ -9,8 +9,9 @@ description: 解析所有已订阅播客的 RSS feed，为新剧集写入 data/p
 
 ## 何时使用
 
-- GitHub Actions 每日 08:00 UTC 自动执行
-- agent 手动触发：用户说"检查新剧集""解析一下订阅"时
+- agent 触发：用户说"检查新剧集""解析一下订阅"时
+- 订阅新播客后拉取其剧集时
+- 命令行手动执行
 
 ## 如何执行
 

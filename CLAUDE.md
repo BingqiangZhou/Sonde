@@ -13,9 +13,9 @@ PodcastInsight/
 │   └── podcast-summarize/SKILL.md   # agent 原生智能技能
 ├── skills/                      # 技能的代码实现（pnpm workspace 包，run.ts）
 │   ├── _shared/                 # 共享类型/路径/IO/校验
-│   ├── fetch-rankings/          # 抓 xyzrank 排行榜（定时）
-│   ├── parse-rss/               # 解析订阅 RSS（定时）
-│   ├── scrape-episode/          # 抓剧集正文（定时）
+│   ├── fetch-rankings/          # 抓 xyzrank 排行榜
+│   ├── parse-rss/               # 解析订阅 RSS
+│   ├── scrape-episode/          # 抓剧集正文
 │   └── summarize/               # 摘要读写工具（prepare/write/list，agent 调用）
 ├── data/                        # skill 产出，git 跟踪
 │   ├── rankings/latest.json
@@ -24,12 +24,12 @@ PodcastInsight/
 │   └── search-index.json        # 搜索索引
 ├── frontend/                    # 只读静态站（SSG）
 │   └── src/lib/loaders.ts       # 唯一数据读取层
-└── .github/workflows/refresh.yml  # 定时数据刷新
+└── .github/workflows/release.yml  # 发布流程（非定时，push tag 触发）
 ```
 
 ## 两类技能的区分
 
-- **确定性脚本技能**（fetch-rankings / parse-rss / scrape-episode）：纯逻辑，CI 定时或命令行执行。
+- **确定性脚本技能**（fetch-rankings / parse-rss / scrape-episode）：纯逻辑，由 agent 或命令行手动触发。
 - **agent 原生智能技能**（podcast-summarize）：摘要由 agent 自身生成（agent 就是 LLM），不需要任何外部 API 或 Key。脚本只提供 prepareEpisode（读正文）和 writeSummary（写回）两个工具函数。
 
 ## 命令

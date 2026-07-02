@@ -12,13 +12,13 @@ All notable changes to this project will be documented in this file.
 
 - Set up pnpm monorepo workspace with frontend + skills/* ([9273243](https://github.com/BingqiangZhou/PodcastInsight/commit/92732432))
 - Add `skills/_shared` foundation: types, path resolution, atomic fs, http, validate, lock, index-builder ([940ee9f](https://github.com/BingqiangZhou/PodcastInsight/commit/940ee9f7), [7398cb0](https://github.com/BingqiangZhou/PodcastInsight/commit/7398cb0a), [22fb3b2](https://github.com/BingqiangZhou/PodcastInsight/commit/22fb3b20), [4a9a217](https://github.com/BingqiangZhou/PodcastInsight/commit/4a9a217a))
-- Add fetch-rankings skill: xyzrank Top 排行榜抓取（CI 每周） ([05bd019](https://github.com/BingqiangZhou/PodcastInsight/commit/05bd019a))
-- Add parse-rss skill: 订阅播客 RSS 解析，增量发现新剧集（CI 每日） ([afe91d6](https://github.com/BingqiangZhou/PodcastInsight/commit/afe91d62))
+- Add fetch-rankings skill: xyzrank Top 排行榜抓取（agent/手动触发） ([05bd019](https://github.com/BingqiangZhou/PodcastInsight/commit/05bd019a))
+- Add parse-rss skill: 订阅播客 RSS 解析，增量发现新剧集（agent/手动触发） ([afe91d6](https://github.com/BingqiangZhou/PodcastInsight/commit/afe91d62))
 - Add scrape-episode skill: 剧集网页正文抓取（简易 readability） ([0d2527d](https://github.com/BingqiangZhou/PodcastInsight/commit/0d2527d7))
 - Add summarize skill: agent 原生摘要生成（prepareEpisode/writeSummary/listPending，无需 LLM API Key） ([a19bf9e](https://github.com/BingqiangZhou/PodcastInsight/commit/a19bf9e3), [7631666](https://github.com/BingqiangZhou/PodcastInsight/commit/76316665))
 - Convert frontend to read-only static site: loaders.ts + markdown.ts, 5 server component pages, SSG with generateStaticParams ([a84c3b0](https://github.com/BingqiangZhou/PodcastInsight/commit/a84c3b08), [908f5d9](https://github.com/BingqiangZhou/PodcastInsight/commit/908f5d90))
 - Add `.agents/skills/` for ZCode agent discovery: 4 SKILL.md registered ([7631666](https://github.com/BingqiangZhou/PodcastInsight/commit/76316665))
-- Add refresh.yml GitHub Actions workflow for scheduled data refresh ([21bd7d6](https://github.com/BingqiangZhou/PodcastInsight/commit/21bd7d62))
+- Add refresh.yml GitHub Actions workflow for scheduled data refresh ([21bd7d6](https://github.com/BingqiangZhou/PodcastInsight/commit/21bd7d62)); removed in favor of agent/manual triggering
 
 ### 🔧 Fixes
 
@@ -31,6 +31,7 @@ All notable changes to this project will be documented in this file.
 - Remove Get笔记 OpenAPI integration entirely (getnote-api, BFF proxy routes, knowledge base, semantic search)
 - Remove TanStack Query, Zustand, settings page, subscription store, API Key management
 - Remove FastAPI backend and Docker leftovers (already untracked, now physically deleted)
+- Remove refresh.yml scheduled CI (data refresh now via agent/manual triggering)
 
 
 

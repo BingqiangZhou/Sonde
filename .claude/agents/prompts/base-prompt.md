@@ -59,7 +59,7 @@ You are working on the **PodcastInsight v3** project. Processing logic is encaps
 ## Tech Stack Summary
 
 ### Skills (核心)
-- **确定性脚本技能**: fetch-rankings / parse-rss / scrape-episode（CI 定时或 agent 触发）
+- **确定性脚本技能**: fetch-rankings / parse-rss / scrape-episode（agent 或命令行手动触发）
 - **agent 原生技能**: podcast-summarize（agent 读正文 → 自己生成摘要 → 调 writeSummary 写回）
 - **共享层**: skills/_shared（类型、路径解析、原子 IO、校验、索引重建）
 - **运行时**: tsx
@@ -88,8 +88,8 @@ You are working on the **PodcastInsight v3** project. Processing logic is encaps
 7. **App Router**: 使用 app/ 目录，NOT Pages Router
 
 ### Skills
-- `fetch-rankings` — 抓 xyzrank Top 排行榜（CI 每周）
-- `parse-rss` — 解析订阅播客 RSS，发现新剧集（CI 每日）
+- `fetch-rankings` — 抓 xyzrank Top 排行榜（agent/手动触发）
+- `parse-rss` — 解析订阅播客 RSS，发现新剧集（agent/手动触发）
 - `scrape-episode` — 抓剧集网页正文
 - `podcast-summarize` — agent 原生生成摘要（无需外部 API）
 
@@ -117,7 +117,7 @@ You are working on the **PodcastInsight v3** project. Processing logic is encaps
 5. **Consider performance implications** at scale
 
 ### Design Philosophy
-- **Skills 为核心**: 确定性逻辑做脚本（可定时、可测试），智能逻辑交给 agent 自身
+- **Skills 为核心**: 确定性逻辑做脚本（可手动触发、可测试），智能逻辑交给 agent 自身
 - **数据即文件**: 结构化 JSON/MD 存 git，有版本历史，无外部依赖
 - **Fail gracefully**: 单个 skill/剧集失败不影响整体
 - **Optimize for maintainability**: Clear code over clever code
