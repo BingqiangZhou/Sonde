@@ -17,7 +17,7 @@ description: 从 xyzrank.com 抓取中文播客 Top 排行榜，写入 data/rank
 
 ```bash
 cd skills/fetch-rankings
-pnpm run
+pnpm refresh
 ```
 
 ## 输入

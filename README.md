@@ -53,18 +53,18 @@ pnpm dev          # 前端 http://localhost:3000
 
 ```bash
 # 抓取排行榜
-pnpm --filter @podcastinsight/skill-fetch-rankings run
+pnpm --filter @podcastinsight/skill-fetch-rankings refresh
 
 # 订阅播客：在 data/podcasts/<id>/meta.json 中设 subscribed: true 并填 rss_feed_url
 
 # 解析 RSS 发现新剧集
-pnpm --filter @podcastinsight/skill-parse-rss run
+pnpm --filter @podcastinsight/skill-parse-rss refresh
 
 # 抓取剧集正文
-pnpm --filter @podcastinsight/skill-scrape-episode run
+pnpm --filter @podcastinsight/skill-scrape-episode refresh
 
 # 生成 AI 摘要（需 LLM_API_KEY）
-LLM_API_KEY=xxx pnpm --filter @podcastinsight/skill-summarize run
+LLM_API_KEY=xxx pnpm --filter @podcastinsight/skill-summarize refresh
 ```
 
 ## Skills

@@ -31,10 +31,10 @@ pnpm build                         # 前端构建
 pnpm test                          # 所有包测试
 
 # 运行单个 skill
-pnpm --filter @podcastinsight/skill-fetch-rankings run
-pnpm --filter @podcastinsight/skill-parse-rss run
-pnpm --filter @podcastinsight/skill-scrape-episode run
-pnpm --filter @podcastinsight/skill-summarize run   # 需 LLM_API_KEY
+pnpm --filter @podcastinsight/skill-fetch-rankings refresh
+pnpm --filter @podcastinsight/skill-parse-rss refresh
+pnpm --filter @podcastinsight/skill-scrape-episode refresh
+pnpm --filter @podcastinsight/skill-summarize refresh   # 需 LLM_API_KEY
 ```
 
 ## 约定

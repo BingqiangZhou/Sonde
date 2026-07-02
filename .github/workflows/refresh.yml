@@ -48,15 +48,15 @@ jobs:
 
       - name: Run fetch-rankings
         if: steps.plan.outputs.skill == 'rankings' || steps.plan.outputs.skill == 'all'
-        run: pnpm --filter @podcastinsight/skill-fetch-rankings run
+        run: pnpm --filter @podcastinsight/skill-fetch-rankings refresh
 
       - name: Run parse-rss
         if: steps.plan.outputs.skill == 'rss' || steps.plan.outputs.skill == 'all'
-        run: pnpm --filter @podcastinsight/skill-parse-rss run
+        run: pnpm --filter @podcastinsight/skill-parse-rss refresh
 
       - name: Run scrape-episode
         if: steps.plan.outputs.skill == 'rss' || steps.plan.outputs.skill == 'all'
-        run: pnpm --filter @podcastinsight/skill-scrape-episode run
+        run: pnpm --filter @podcastinsight/skill-scrape-episode refresh
 
       - name: Commit data changes
         run: |

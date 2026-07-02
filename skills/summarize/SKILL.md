@@ -23,10 +23,10 @@ description: 为已抓取正文的剧集生成 AI 摘要和标签，写回 data/
 ```bash
 # 批量处理所有 pending 剧集
 cd skills/summarize
-pnpm run
+pnpm refresh
 
 # 处理单集
-pnpm run -- --episode=<podcastId>/<episodeId>
+pnpm refresh -- --episode=<podcastId>/<episodeId>
 ```
 
 ## 输入

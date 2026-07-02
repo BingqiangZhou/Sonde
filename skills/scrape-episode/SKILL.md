@@ -16,7 +16,7 @@ description: 抓取 pending 剧集的网页正文，写入 data/podcasts/<id>/ep
 
 ```bash
 cd skills/scrape-episode
-pnpm run
+pnpm refresh
 ```
 
 ## 输入

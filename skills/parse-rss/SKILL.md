@@ -16,7 +16,7 @@ description: 解析所有已订阅播客的 RSS feed，为新剧集写入 data/p
 
 ```bash
 cd skills/parse-rss
-pnpm run
+pnpm refresh
 ```
 
 ## 输入
