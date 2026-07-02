@@ -11,18 +11,37 @@ import {
   rebuildIndexes,
 } from "@podcastinsight/shared";
 import type { EpisodeMeta, EpisodeMarkdownFrontmatter } from "@podcastinsight/shared";
-import { generateSummary, loadLlmConfig } from "./llm-client.js";
 
-export interface SummarizeResult {
+// 本 skill 不调用任何外部 LLM API —— 摘要由 agent 自身生成。
+// 职责拆分：
+//   prepareEpisode()  读正文，交给 agent 看
+//   writeSummary()    接收 agent 生成的摘要，原子写回 .md/.json + 重建索引
+//   listPending()     列出待处理剧集，供 agent 决策
+
+export interface PrepareSuccess {
+  ok: true;
+  podcast_id: string;
+  episode_id: string;
+  title: string;
+  body: string;
+}
+
+export interface PrepareFailure {
+  ok: false;
+  reason: "not-found" | "no-content" | "already-done";
+}
+
+export type PrepareResult = PrepareSuccess | PrepareFailure;
+
+export interface WriteSummaryResult {
   ok: boolean;
   reason?: string;
 }
 
-export interface BatchResult {
-  summarized: number;
-  skipped: number;
-  failed: number;
-  errors: string[];
+export interface PendingItem {
+  podcast_id: string;
+  episode_id: string;
+  title: string;
 }
 
 /** 从 .md 中提取 `## 正文` 段落内容。 */
@@ -32,7 +51,11 @@ function extractBody(md: string): string {
   return match[0].replace(/^##\s*正文\s*/i, "").trim();
 }
 
-/** 用新摘要重写整个 .md：frontmatter + AI 摘要 + 标签 + 原正文。 */
+/**
+ * 用新摘要重写整个 .md：frontmatter + AI 摘要 + 标签 + 原正文。
+ * 格式契约：下游 index-builder 用 `## AI 摘要` 正则提取摘要，
+ * 前端 markdown.ts 用 `## 正文` 正则提取正文。两段标题必须保持不变。
+ */
 function rewriteMarkdownWithSummary(
   oldMd: string,
   frontmatter: EpisodeMarkdownFrontmatter,
@@ -44,7 +67,7 @@ function rewriteMarkdownWithSummary(
     title: frontmatter.title,
     summary_status: "done",
     generated_at: frontmatter.generated_at ?? new Date().toISOString(),
-    model: frontmatter.model ?? process.env.LLM_MODEL ?? "",
+    model: "agent",
   }).map(([k, v]) => `${k}: ${JSON.stringify(v)}`).join("\n");
 
   const body = extractBody(oldMd) || "(无正文)";
@@ -53,11 +76,14 @@ function rewriteMarkdownWithSummary(
   return `---\n${fm}\n---\n\n## AI 摘要\n\n${summary}\n${tagsLine ? `\n## 标签\n\n${tagsLine}\n` : ""}## 正文\n\n${body}\n`;
 }
 
-/** 对单集生成摘要。 */
-export async function summarizeEpisode(
+/**
+ * 读取单集正文，返回给 agent 生成摘要。
+ * 已 done 或无正文的剧集返回 reason。
+ */
+export async function prepareEpisode(
   podcastId: string,
   episodeId: string
-): Promise<SummarizeResult> {
+): Promise<PrepareResult> {
   const ep = await readJsonFile<EpisodeMeta>(episodeMetaFile(podcastId, episodeId));
   if (!ep) return { ok: false, reason: "not-found" };
   if (ep.summary_status === "done") return { ok: false, reason: "already-done" };
@@ -67,8 +93,31 @@ export async function summarizeEpisode(
   const body = extractBody(md);
   if (!body) return { ok: false, reason: "no-content" };
 
-  const config = loadLlmConfig();
-  const { summary, tags } = await generateSummary(config, ep.title, body);
+  return {
+    ok: true,
+    podcast_id: podcastId,
+    episode_id: episodeId,
+    title: ep.title,
+    body,
+  };
+}
+
+/**
+ * 接收 agent 生成的摘要和标签，原子写回 .md 和 .json，重建索引。
+ * 幂等：对已 done 的剧集返回 already-done，不重复写。
+ */
+export async function writeSummary(
+  podcastId: string,
+  episodeId: string,
+  summary: string,
+  tags: string[]
+): Promise<WriteSummaryResult> {
+  const ep = await readJsonFile<EpisodeMeta>(episodeMetaFile(podcastId, episodeId));
+  if (!ep) return { ok: false, reason: "not-found" };
+  if (ep.summary_status === "done") return { ok: false, reason: "already-done" };
+
+  const md = await readTextFile(episodeMarkdownFile(podcastId, episodeId));
+  if (!md) return { ok: false, reason: "no-content" };
 
   const newMd = rewriteMarkdownWithSummary(
     md,
@@ -82,18 +131,19 @@ export async function summarizeEpisode(
     summary_status: "done",
     tags,
   });
+  await rebuildIndexes();
   return { ok: true };
 }
 
-/** 批量处理所有 pending 且有正文的剧集。 */
-export async function summarizePending(): Promise<BatchResult> {
-  const result: BatchResult = { summarized: 0, skipped: 0, failed: 0, errors: [] };
+/** 列出所有 summary_status: pending 且有正文的剧集。供 agent 决策处理多少。 */
+export async function listPending(): Promise<PendingItem[]> {
+  const items: PendingItem[] = [];
 
   let podcastIds: string[] = [];
   try {
     podcastIds = await fsp.readdir(podcastsDir());
   } catch {
-    return result;
+    return items;
   }
 
   for (const pid of podcastIds) {
@@ -106,41 +156,26 @@ export async function summarizePending(): Promise<BatchResult> {
     for (const jf of episodeFiles.filter((f) => f.endsWith(".json"))) {
       const eid = jf.replace(/\.json$/, "");
       const ep = await readJsonFile<EpisodeMeta>(episodeMetaFile(pid, eid));
-      if (!ep || ep.summary_status !== "pending") {
-        result.skipped++;
-        continue;
-      }
-      try {
-        const r = await summarizeEpisode(pid, eid);
-        if (r.ok) result.summarized++;
-        else result.skipped++;
-      } catch (e) {
-        result.failed++;
-        result.errors.push(`${pid}/${eid}: ${e instanceof Error ? e.message : String(e)}`);
-      }
+      if (!ep || ep.summary_status !== "pending") continue;
+      items.push({ podcast_id: pid, episode_id: eid, title: ep.title });
     }
   }
 
-  await rebuildIndexes();
-  return result;
+  return items;
 }
 
-/** CLI 入口：支持 `--episode <podcastId>/<episodeId>` 或无参数批量。 */
+/** CLI 入口：列出待处理剧集（辅助 agent 和人工查看）。 */
 async function main() {
-  const arg = process.argv.find((a) => a.startsWith("--episode="));
   try {
-    if (arg) {
-      const target = arg.replace("--episode=", "");
-      const [pid, eid] = target.split("/");
-      if (!pid || !eid) throw new Error("用法: --episode=<podcastId>/<episodeId>");
-      const r = await summarizeEpisode(pid, eid);
-      console.log(r.ok ? `✓ summarize: ${pid}/${eid} 完成` : `⊘ summarize: ${pid}/${eid} 跳过 (${r.reason})`);
-      process.exitCode = r.ok ? 0 : 0;
+    const items = await listPending();
+    if (items.length === 0) {
+      console.log("✓ summarize: 无待处理剧集");
     } else {
-      const r = await summarizePending();
-      console.log(`✓ summarize: 生成 ${r.summarized}，跳过 ${r.skipped}，失败 ${r.failed}`);
-      for (const e of r.errors) console.error("  -", e);
-      process.exitCode = r.failed > 0 ? 1 : 0;
+      console.log(`✓ summarize: ${items.length} 集待处理`);
+      for (const it of items) {
+        console.log(`  ${it.podcast_id}/${it.episode_id}  ${it.title}`);
+      }
+      console.log("\n请通过 agent 对话生成摘要（agent 原生能力，无需 API Key）。");
     }
   } catch (e) {
     console.error("✗ summarize 失败:", e instanceof Error ? e.message : e);

@@ -7,7 +7,7 @@
 - **播客排行榜** — 从 xyzrank.com 获取 Top 1000 中文播客排行榜
 - **RSS 解析** — 自动解析订阅播客的 RSS，发现新剧集
 - **剧集正文抓取** — 抓取剧集网页正文
-- **AI 摘要生成** — agent 实时调用 LLM 生成摘要和标签
+- **AI 摘要生成** — agent 自身能力生成摘要和标签（无需额外 API Key）
 - **关键词搜索** — 在已生成摘要的剧集中搜索
 - **响应式界面** — 移动端优先，支持深色/浅色主题
 
@@ -63,18 +63,19 @@ pnpm --filter @podcastinsight/skill-parse-rss refresh
 # 抓取剧集正文
 pnpm --filter @podcastinsight/skill-scrape-episode refresh
 
-# 生成 AI 摘要（需 LLM_API_KEY）
-LLM_API_KEY=xxx pnpm --filter @podcastinsight/skill-summarize refresh
+# 生成 AI 摘要（在 agent 对话中说"生成摘要"，agent 自身能力生成，无需 API Key）
+# 或先查看待处理列表：
+pnpm --filter @podcastinsight/skill-summarize refresh
 ```
 
 ## Skills
 
 | Skill | 说明 | 触发 |
 |-------|------|------|
-| fetch-rankings | 抓 xyzrank Top 排行榜 | GitHub Actions 每周一 + 手动 |
-| parse-rss | 解析订阅播客 RSS，发现新剧集 | GitHub Actions 每日 + 手动 |
-| scrape-episode | 抓剧集网页正文 | parse-rss 之后 + 手动 |
-| summarize | LLM 生成摘要和标签 | agent 实时调用（需 LLM_API_KEY） |
+| fetch-rankings | 抓 xyzrank Top 排行榜 | GitHub Actions 每周一 + agent/手动 |
+| parse-rss | 解析订阅播客 RSS，发现新剧集 | GitHub Actions 每日 + agent/手动 |
+| scrape-episode | 抓剧集网页正文 | parse-rss 之后 + agent/手动 |
+| podcast-summarize | agent 自身生成摘要和标签 | agent 对话触发（无需 API Key） |
 
 ## 开发
 

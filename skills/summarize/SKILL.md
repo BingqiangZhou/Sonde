@@ -1,52 +1,54 @@
 ---
 name: summarize
-description: 为已抓取正文的剧集生成 AI 摘要和标签，写回 data/podcasts/<id>/episodes/*.md 与 *.json。由 agent 实时调用，需要 LLM_API_KEY。
+description: 摘要读写工具包。提供 prepareEpisode（读正文）、writeSummary（写回摘要）、listPending（列出待处理）三个函数，供 agent 在对话中生成摘要后调用。本身不调用任何外部 LLM API。
 ---
 
-# summarize
+# summarize（代码包）
 
-读取 pending 剧集的正文，调用 LLM 生成中文摘要和标签，写回 markdown 和 episode meta。
+这是摘要技能的代码实现包。注意：**agent 发现入口在 `.agents/skills/podcast-summarize/SKILL.md`**，本文件是代码包的说明。
 
-## 何时使用
+## 设计
 
-- **由 agent 实时调用**（不在 CI 定时中）
-- 用户说"生成摘要""处理 pending 剧集""给 XX 播客最近的剧集做摘要"时
-- 不建议大批量调用（LLM 成本）；可先用 parse-rss + scrape-episode 准备好素材
+本 skill **不调用任何外部 LLM API**。摘要由 agent 自身能力生成。本包只提供三个工具函数：
 
-## 前置条件
+| 函数 | 职责 |
+|------|------|
+| `prepareEpisode(pid, eid)` | 读取剧集正文，返回 `{ ok, title, body }` 给 agent |
+| `writeSummary(pid, eid, summary, tags)` | 接收 agent 生成的摘要，原子写回 `.md` + `.json` + 重建索引 |
+| `listPending()` | 列出所有 `summary_status: pending` 的剧集 |
 
-- 环境变量 `LLM_API_KEY` 必须设置（本地 .env 或运行环境注入）
-- 可选：`LLM_BASE_URL`（默认 OpenAI，可指向兼容网关）、`LLM_MODEL`（默认 gpt-4o-mini）
-
-## 如何执行
+## 如何执行（CLI）
 
 ```bash
-# 批量处理所有 pending 剧集
-cd skills/summarize
-pnpm refresh
-
-# 处理单集
-pnpm refresh -- --episode=<podcastId>/<episodeId>
+# 列出待处理剧集（辅助 agent 和人工查看）
+pnpm --filter @podcastinsight/skill-summarize refresh
 ```
 
-## 输入
+CLI 模式只列出 pending 列表，**不生成摘要**。摘要生成由 agent 在对话中完成。
 
-`scrape_status: done` 且 `summary_status: pending` 的剧集，及其 `.md` 中的 `## 正文`。
+## 输出格式契约
 
-## 输出
+writeSummary 写回的 `.md` 结构（下游 index-builder 和前端依赖此格式）：
 
-- 在 `.md` 中插入 `## AI 摘要` 和 `## 标签` 段落，更新 frontmatter `summary_status: done`
-- 在 `<eid>.json` 中更新 `summary_status: done` 和 `tags`
-- 重建 `data/index.json` 和 `data/search-index.json`
+```
+---
+episode_id: "..."
+title: "..."
+summary_status: "done"
+generated_at: "..."
+model: "agent"
+---
 
-## LLM 接口
+## AI 摘要
+<摘要>
 
-使用 OpenAI 兼容的 chat completions 接口。System prompt 要求严格返回 `{"summary","tags"}` JSON。
+## 标签          （仅当 tags 非空）
+#tag1 #tag2
 
-## 失败处理
-
-单集失败标记 failed 但不影响其他集；未抓取正文的剧集标记 skipped。
+## 正文
+<原始正文>
+```
 
 ## 幂等
 
-已 done 的剧集不重复处理。
+已 done 的剧集返回 `already-done`，不会重复处理。

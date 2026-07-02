@@ -6,12 +6,17 @@
 
 ```
 PodcastInsight/
-├── skills/                      # 核心：Agent Skills（SKILL.md + run.ts）
+├── .agents/skills/              # Agent 技能发现入口（SKILL.md，agent 据此识别并触发）
+│   ├── fetch-rankings/SKILL.md
+│   ├── parse-rss/SKILL.md
+│   ├── scrape-episode/SKILL.md
+│   └── podcast-summarize/SKILL.md   # agent 原生智能技能
+├── skills/                      # 技能的代码实现（pnpm workspace 包，run.ts）
 │   ├── _shared/                 # 共享类型/路径/IO/校验
 │   ├── fetch-rankings/          # 抓 xyzrank 排行榜（定时）
 │   ├── parse-rss/               # 解析订阅 RSS（定时）
 │   ├── scrape-episode/          # 抓剧集正文（定时）
-│   └── summarize/               # LLM 摘要（agent 实时）
+│   └── summarize/               # 摘要读写工具（prepare/write/list，agent 调用）
 ├── data/                        # skill 产出，git 跟踪
 │   ├── rankings/latest.json
 │   ├── podcasts/<id>/{meta.json, episodes/*.json, episodes/*.md}
@@ -22,6 +27,11 @@ PodcastInsight/
 └── .github/workflows/refresh.yml  # 定时数据刷新
 ```
 
+## 两类技能的区分
+
+- **确定性脚本技能**（fetch-rankings / parse-rss / scrape-episode）：纯逻辑，CI 定时或命令行执行。
+- **agent 原生智能技能**（podcast-summarize）：摘要由 agent 自身生成（agent 就是 LLM），不需要任何外部 API 或 Key。脚本只提供 prepareEpisode（读正文）和 writeSummary（写回）两个工具函数。
+
 ## 命令
 
 ```bash
@@ -30,21 +40,22 @@ pnpm dev                           # 前端开发服务器
 pnpm build                         # 前端构建
 pnpm test                          # 所有包测试
 
-# 运行单个 skill
+# 运行确定性 skill（也可在 agent 对话中触发）
 pnpm --filter @podcastinsight/skill-fetch-rankings refresh
 pnpm --filter @podcastinsight/skill-parse-rss refresh
 pnpm --filter @podcastinsight/skill-scrape-episode refresh
-pnpm --filter @podcastinsight/skill-summarize refresh   # 需 LLM_API_KEY
+pnpm --filter @podcastinsight/skill-summarize refresh   # 仅列出待处理剧集，不生成摘要
 ```
 
 ## 约定
 
 - **Skills 是核心**：处理逻辑 = SKILL.md + 确定性 run.ts 脚本，TDD
+- **技能发现**：SKILL.md 放 `.agents/skills/`（ZCode 发现目录），代码在 `skills/` pnpm 包
 - **数据布局单一真相**：路径一律走 `skills/_shared/src/paths.ts`
 - **原子写入**：经 `_shared/fs.ts`（写 .tmp 再 rename）
 - **幂等**：所有 skill 重复执行安全，按 id 去重
 - **前端只读**：删了 BFF/API Routes/状态管理，构建期读 data/，无运行时写入
-- **无 Get笔记 / 无数据库 / 无后端服务**：数据即 git 文件
+- **无 Get笔记 / 无数据库 / 无后端服务 / 无 LLM API Key**：摘要由 agent 自身能力生成，数据即 git 文件
 - Next.js App Router（NOT Pages Router）
 - shadcn/ui 组件（NOT 自定义 UI）
 
