@@ -15,6 +15,7 @@ out/
 *.swp
 *.swo
 .superpowers/
+docs/superpowers/
 
 # OS
 .DS_Store
