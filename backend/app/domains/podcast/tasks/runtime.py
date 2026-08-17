@@ -9,13 +9,13 @@ from contextlib import asynccontextmanager
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-
-_logger = logging.getLogger(__name__)
-
 from app.core.database import (
     get_async_session_factory,
     register_orm_models,
 )
+
+
+_logger = logging.getLogger(__name__)
 
 # Persistent event loop for the worker process lifetime.
 # asyncio.run() creates (and closes) a new loop on every call, which breaks

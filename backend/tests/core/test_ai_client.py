@@ -393,15 +393,16 @@ class TestAIClientService:
         with patch(
             "app.core.ai_client.get_shared_http_session",
             AsyncMock(return_value=mock_session),
-        ), patch("app.core.ai_client.asyncio.sleep", AsyncMock()):
-            with patch("app.core.ai_client.settings") as mock_settings:
-                mock_settings.AI_CLIENT_MAX_RETRIES = 1
-                mock_settings.AI_CLIENT_BASE_DELAY = 0
-                with pytest.raises(ValidationError, match="models failed"):
-                    await service.call_with_fallback(
-                        messages=[{"role": "user", "content": "hi"}],
-                        model_type=ModelType.TEXT_GENERATION,
-                    )
+        ), patch("app.core.ai_client.asyncio.sleep", AsyncMock()), patch(
+            "app.core.ai_client.settings"
+        ) as mock_settings:
+            mock_settings.AI_CLIENT_MAX_RETRIES = 1
+            mock_settings.AI_CLIENT_BASE_DELAY = 0
+            with pytest.raises(ValidationError, match="models failed"):
+                await service.call_with_fallback(
+                    messages=[{"role": "user", "content": "hi"}],
+                    model_type=ModelType.TEXT_GENERATION,
+                )
 
     async def test_call_with_fallback_uses_fallback_handler(self, ai_client_service):
         service, repo, security = ai_client_service
@@ -416,15 +417,16 @@ class TestAIClientService:
         with patch(
             "app.core.ai_client.get_shared_http_session",
             AsyncMock(return_value=mock_session),
-        ), patch("app.core.ai_client.asyncio.sleep", AsyncMock()):
-            with patch("app.core.ai_client.settings") as mock_settings:
-                mock_settings.AI_CLIENT_MAX_RETRIES = 1
-                mock_settings.AI_CLIENT_BASE_DELAY = 0
-                content, returned_model = await service.call_with_fallback(
-                    messages=[{"role": "user", "content": "hi"}],
-                    model_type=ModelType.TEXT_GENERATION,
-                    fallback_handler=fallback,
-                )
+        ), patch("app.core.ai_client.asyncio.sleep", AsyncMock()), patch(
+            "app.core.ai_client.settings"
+        ) as mock_settings:
+            mock_settings.AI_CLIENT_MAX_RETRIES = 1
+            mock_settings.AI_CLIENT_BASE_DELAY = 0
+            content, returned_model = await service.call_with_fallback(
+                messages=[{"role": "user", "content": "hi"}],
+                model_type=ModelType.TEXT_GENERATION,
+                fallback_handler=fallback,
+            )
         assert content == "fallback response"
         assert returned_model is None
 

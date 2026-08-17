@@ -56,8 +56,9 @@ packages = ["app"]
 line-length = 88
 target-version = "py311"
 
-# Enable auto-fixing for safe rules
-fix = true
+# Report only by default; auto-fixing must be explicit via `ruff check --fix`
+# so analysis/CI runs never silently rewrite files.
+fix = false
 show-fixes = true
 
 # Exclude directories
@@ -92,6 +93,11 @@ ignore = [
     "E501",   # Line too long (handled by formatter)
     "B008",   # Do not perform function calls in argument defaults
 ]
+
+[tool.ruff.lint.per-file-ignores]
+# ORM model aliases resolved at runtime via _get_subscription_models() to
+# maintain domain boundaries; CamelCase matches the SQLAlchemy model convention.
+"app/domains/podcast/repositories/podcast_repository.py" = ["N806"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["app"]
