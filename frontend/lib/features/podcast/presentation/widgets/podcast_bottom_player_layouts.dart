@@ -454,16 +454,17 @@ class _ExpandedHero extends ConsumerWidget {
                 } catch (e) {
                   logger.AppLogger.debug('[BottomPlayer] Failed to get current route: $e');
                 }
-                final episodeDetailPath =
-                    '/podcast/episodes/${episode.subscriptionId}/${episode.id}';
-                if (resolvedCurrentLocation.startsWith(episodeDetailPath)) {
+                // Compare the path only (query stripped) and exactly, so
+                // episode 5 does not match episode 55 via a prefix check.
+                final currentPath =
+                    Uri.tryParse(resolvedCurrentLocation)?.path ??
+                    resolvedCurrentLocation;
+                if (currentPath == '/podcast/episode/detail/${episode.id}') {
                   return;
                 }
                 PodcastNavigation.goToEpisodeDetail(
                   context,
                   episodeId: episode.id,
-                  subscriptionId: episode.subscriptionId,
-                  episodeTitle: episode.title,
                 );
               },
             child: SizedBox(

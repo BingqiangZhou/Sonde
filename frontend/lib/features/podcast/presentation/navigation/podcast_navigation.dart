@@ -46,38 +46,6 @@ class PodcastEpisodesPageArgs {
   }
 }
 
-/// Navigation arguments for podcast episode detail page
-class PodcastEpisodeDetailPageArgs {
-
-  const PodcastEpisodeDetailPageArgs({
-    required this.episodeId,
-    required this.subscriptionId,
-    this.episodeTitle,
-  });
-  final int episodeId;
-  final int subscriptionId;
-  final String? episodeTitle;
-
-  /// Extracts args from GoRouter state
-  static PodcastEpisodeDetailPageArgs? extractFromState(GoRouterState state) {
-    final episodeIdStr = state.pathParameters['episodeId'];
-    final subscriptionIdStr = state.pathParameters['subscriptionId'];
-
-    if (episodeIdStr == null || subscriptionIdStr == null) return null;
-
-    final episodeId = int.tryParse(episodeIdStr);
-    final subscriptionId = int.tryParse(subscriptionIdStr);
-
-    if (episodeId == null || subscriptionId == null) return null;
-
-    return PodcastEpisodeDetailPageArgs(
-      episodeId: episodeId,
-      subscriptionId: subscriptionId,
-      episodeTitle: state.uri.queryParameters['title'],
-    );
-  }
-}
-
 /// Helper class for podcast navigation
 class PodcastNavigation {
   const PodcastNavigation._();
@@ -127,23 +95,14 @@ class PodcastNavigation {
   static void goToEpisodeDetail(
     BuildContext context, {
     required int episodeId,
-    required int subscriptionId,
-    String? episodeTitle,
   }) {
     final routingContext = _resolveRoutingContext(context);
     if (routingContext == null) {
       return;
     }
-    final query = episodeTitle != null
-        ? {'title': episodeTitle}
-        : <String, dynamic>{};
     GoRouter.of(routingContext).pushNamed(
       'episodeDetail',
-      pathParameters: {
-        'subscriptionId': subscriptionId.toString(),
-        'episodeId': episodeId.toString(),
-      },
-      queryParameters: query,
+      pathParameters: {'episodeId': episodeId.toString()},
     );
   }
 

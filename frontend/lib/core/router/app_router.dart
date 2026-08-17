@@ -275,11 +275,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 
       // Podcast routes (cover the shell)
       GoRoute(
-        path: '/podcast',
-        name: 'podcast',
-        redirect: (context, state) => '/discover',
-      ),
-      GoRoute(
         path: '/podcast/episodes/:subscriptionId',
         name: 'podcastEpisodes',
         pageBuilder: (context, state) {
@@ -306,30 +301,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         },
       ),
       GoRoute(
-        path: '/podcast/episodes/:subscriptionId/:episodeId',
-        name: 'episodeDetail',
-        pageBuilder: (context, state) {
-          final args = PodcastEpisodeDetailPageArgs.extractFromState(state);
-          if (args == null) {
-            final l10n = context.l10n;
-            return _buildPageWithTransition(
-              state: state,
-              child: Scaffold(
-                body: Center(child: Text(l10n.invalid_navigation_arguments)),
-              ),
-            );
-          }
-          return _buildPageWithTransition(
-            state: state,
-            child: _PlayerAwareRouteFrame(
-              child: PodcastEpisodeDetailPage(episodeId: args.episodeId),
-            ),
-          );
-        },
-      ),
-      GoRoute(
         path: '/podcast/episode/detail/:episodeId',
-        name: 'episodeDetailDirect',
+        name: 'episodeDetail',
         pageBuilder: (context, state) {
           final episodeId = int.tryParse(
             state.pathParameters['episodeId'] ?? '',

@@ -351,7 +351,7 @@ Future<GoRouter> _pumpHomePageRouterFlow(
         ],
       ),
       GoRoute(
-        path: '/podcast/episodes/:subscriptionId/:episodeId',
+        path: '/podcast/episode/detail/:episodeId',
         name: 'episodeDetail',
         builder: (context, state) => const _EpisodeDetailRoutePage(),
       ),

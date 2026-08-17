@@ -193,7 +193,7 @@ Widget createEpisodeDetailWidgetWithPlayer({
   PodcastEpisodeModel? episode,
   AudioPlayerState? audioState,
   TestPodcastPlayerUiNotifier? uiNotifier,
-  String route = '/podcast/episodes/1/1',
+  String route = '/podcast/episode/detail/1',
 }) {
   final resolvedEpisode = episode ?? createTestEpisode(itemLink: null);
   return ProviderScope(

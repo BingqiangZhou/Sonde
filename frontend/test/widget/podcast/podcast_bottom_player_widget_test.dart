@@ -797,7 +797,7 @@ Widget _createRouterWidget({
       ),
       GoRoute(
         name: 'episodeDetail',
-        path: '/podcast/episodes/:subscriptionId/:episodeId',
+        path: '/podcast/episode/detail/:episodeId',
         builder: (context, state) => const PodcastPlayerLayoutFrame(
           child: Scaffold(body: Text('Episode Detail Page')),
         ),

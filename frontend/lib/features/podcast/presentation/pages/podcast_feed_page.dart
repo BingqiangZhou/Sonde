@@ -458,12 +458,7 @@ class _FeedContent extends ConsumerWidget {
       unawaited(
         ref.read(audioPlayerProvider.notifier).playManagedEpisode(episode),
       );
-      PodcastNavigation.goToEpisodeDetail(
-        context,
-        episodeId: episode.id,
-        subscriptionId: episode.subscriptionId,
-        episodeTitle: episode.title,
-      );
+      PodcastNavigation.goToEpisodeDetail(context, episodeId: episode.id);
     }
 
     return PodcastFeedEpisodeCard(
@@ -472,12 +467,7 @@ class _FeedContent extends ConsumerWidget {
       isAddingToQueue: isAddingToQueue,
       displayDescription: displayDescription,
       onOpenDetail: () {
-        PodcastNavigation.goToEpisodeDetail(
-          context,
-          episodeId: episode.id,
-          subscriptionId: episode.subscriptionId,
-          episodeTitle: episode.title,
-        );
+        PodcastNavigation.goToEpisodeDetail(context, episodeId: episode.id);
       },
       onPlayAndOpenDetail: playAndOpenDetail,
       onAddToQueue: () => onAddToQueue(episode),

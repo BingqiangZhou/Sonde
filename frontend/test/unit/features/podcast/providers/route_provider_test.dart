@@ -25,7 +25,7 @@ void main() {
 
       test('should update route when setRoute is called', () {
         // Arrange
-        const newRoute = '/podcast/episodes/1/42';
+        const newRoute = '/podcast/episode/detail/42';
 
         // Act
         container.read(currentRouteProvider.notifier).setRoute(newRoute);
@@ -61,7 +61,7 @@ void main() {
 
       test('should handle deep link routes', () {
         // Arrange
-        const deepLinkRoute = '/podcast/episodes/123/456?position=120';
+        const deepLinkRoute = '/podcast/episode/detail/456?position=120';
 
         // Act
         container.read(currentRouteProvider.notifier).setRoute(deepLinkRoute);
@@ -85,7 +85,9 @@ void main() {
 
       test('should return true when on podcast episode detail page', () {
         // Arrange
-        container.read(currentRouteProvider.notifier).setRoute('/podcast/episodes/1/42');
+        container
+            .read(currentRouteProvider.notifier)
+            .setRoute('/podcast/episode/detail/42');
 
         // Act
         final isOnDetail = container.read(isOnEpisodeDetailPageProvider);
@@ -94,15 +96,18 @@ void main() {
         expect(isOnDetail, true);
       });
 
-      test('should return true for direct episode detail route', () {
-        // Arrange
-        container.read(currentRouteProvider.notifier).setRoute('/podcast/episode/detail/42');
+      test('should return false when on podcast episodes list page', () {
+        // The episodes list route (/podcast/episodes/:subscriptionId) must
+        // not be mistaken for the detail page (/podcast/episode/detail/:id).
+        container
+            .read(currentRouteProvider.notifier)
+            .setRoute('/podcast/episodes/1');
 
         // Act
         final isOnDetail = container.read(isOnEpisodeDetailPageProvider);
 
         // Assert
-        expect(isOnDetail, true);
+        expect(isOnDetail, false);
       });
 
       test('should return false when on feed page', () {
@@ -140,7 +145,9 @@ void main() {
 
       test('should return true for episode detail with query params', () {
         // Arrange
-        container.read(currentRouteProvider.notifier).setRoute('/podcast/episodes/5/10?autoplay=true');
+        container
+            .read(currentRouteProvider.notifier)
+            .setRoute('/podcast/episode/detail/5?autoplay=true');
 
         // Act
         final isOnDetail = container.read(isOnEpisodeDetailPageProvider);
@@ -155,15 +162,19 @@ void main() {
         expect(container.read(isOnEpisodeDetailPageProvider), false);
 
         // Navigate to episode detail
-        container.read(currentRouteProvider.notifier).setRoute('/podcast/episodes/42/100');
+        container
+            .read(currentRouteProvider.notifier)
+            .setRoute('/podcast/episode/detail/100');
         expect(container.read(isOnEpisodeDetailPageProvider), true);
 
         // Navigate back to feed
         container.read(currentRouteProvider.notifier).setRoute('/feed');
         expect(container.read(isOnEpisodeDetailPageProvider), false);
 
-        // Navigate to direct detail route
-        container.read(currentRouteProvider.notifier).setRoute('/podcast/episode/detail/100');
+        // Navigate to episode detail again
+        container
+            .read(currentRouteProvider.notifier)
+            .setRoute('/podcast/episode/detail/200');
         expect(container.read(isOnEpisodeDetailPageProvider), true);
       });
 
@@ -198,8 +209,8 @@ void main() {
         expect(container.read(isOnEpisodeDetailPageProvider), false);
 
         // 3. Navigate to episode detail
-        notifier.setRoute('/podcast/episodes/10/20');
-        expect(container.read(currentRouteProvider), '/podcast/episodes/10/20');
+        notifier.setRoute('/podcast/episode/detail/10');
+        expect(container.read(currentRouteProvider), '/podcast/episode/detail/10');
         expect(container.read(isOnEpisodeDetailPageProvider), true);
 
         // 4. Navigate to discover
@@ -207,7 +218,7 @@ void main() {
         expect(container.read(currentRouteProvider), '/discover');
         expect(container.read(isOnEpisodeDetailPageProvider), false);
 
-        // 5. Navigate to direct episode detail
+        // 5. Navigate to another episode detail
         notifier.setRoute('/podcast/episode/detail/20');
         expect(container.read(currentRouteProvider), '/podcast/episode/detail/20');
         expect(container.read(isOnEpisodeDetailPageProvider), true);

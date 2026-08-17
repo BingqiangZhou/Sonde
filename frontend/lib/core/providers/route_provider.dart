@@ -19,6 +19,5 @@ class CurrentRouteNotifier extends Notifier<String> {
 /// where the expanded player overlay should be suppressed
 final isOnEpisodeDetailPageProvider = Provider<bool>((ref) {
   final route = ref.watch(currentRouteProvider);
-  // Episode detail pages match /podcast/episodes/:id/:id or /podcast/episode/detail/:id
-  return route.contains('/podcast/episodes/') || route.contains('/podcast/episode/detail/');
+  return route.contains('/podcast/episode/detail/');
 });

@@ -195,8 +195,7 @@ bool isHomeShellRoute(String route) {
 }
 
 bool isPodcastEpisodeDetailRoute(String route) {
-  return route.startsWith('/podcast/episodes/') ||
-      route.startsWith('/podcast/episode/detail/');
+  return route.startsWith('/podcast/episode/detail/');
 }
 
 PodcastPlayerSurfaceContext _resolveSurfaceContext(
