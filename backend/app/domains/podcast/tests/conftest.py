@@ -100,8 +100,17 @@ def mock_schedule_service(mock_service_factory):
 
 
 @pytest.fixture(autouse=True)
-def override_auth_dependencies():
-    """Override authentication for routes requiring auth."""
+def override_auth_dependencies(
+    mock_episode_service: AsyncMock,
+    mock_subscription_service: AsyncMock,
+):
+    """Override auth plus episode/subscription dependencies for route tests.
+
+    Route handlers resolve every dependency before running, so transcription
+    routes that take an episode or subscription service alongside the workflow
+    service need those providers overridden too, otherwise they request a real
+    DB engine.
+    """
     from app.core.auth import require_api_key
 
     app.dependency_overrides[require_api_key] = lambda: 1

@@ -60,7 +60,7 @@ def test_get_history_lite_page_size_boundaries(
     data = response.json()
     assert data["size"] == size
     assert data["total"] == 1
-    assert len(data["episodes"]) == 1
+    assert len(data["items"]) == 1
     mock_stats_service.list_playback_history_lite.assert_awaited_with(page=1, size=size)
 
 
@@ -90,7 +90,7 @@ def test_get_history_lite_excludes_heavy_fields(
     response = client.get("/api/v1/podcasts/episodes/history-lite?page=1&size=20")
 
     assert response.status_code == 200
-    item = response.json()["episodes"][0]
+    item = response.json()["items"][0]
     assert item["id"] == 88
     assert "transcript_content" not in item
     assert "ai_summary" not in item

@@ -3,6 +3,8 @@ from unittest.mock import AsyncMock
 
 from fastapi.testclient import TestClient
 
+from app.core.exceptions import EpisodeNotFoundError
+
 
 def test_get_queue_returns_assembled_response(
     client: TestClient,
@@ -44,10 +46,12 @@ def test_add_queue_item_preserves_not_found_mapping(
     client: TestClient,
     mock_queue_service: AsyncMock,
 ):
-    mock_queue_service.add_to_queue.side_effect = ValueError("EPISODE_NOT_FOUND")
+    mock_queue_service.add_to_queue.side_effect = EpisodeNotFoundError(
+        "Episode not found"
+    )
 
     response = client.post("/api/v1/podcasts/queue/items", json={"episode_id": 123})
 
     assert response.status_code == 404
-    assert response.json()["detail"]["message_en"] == "Episode not found"
+    assert response.json()["detail"] == "Episode not found"
     mock_queue_service.add_to_queue.assert_awaited_once_with(123)

@@ -19,6 +19,7 @@ class _FakeQueue:
     revision: int = 0
     items: list[_FakeQueueItem] = field(default_factory=list)
     updated_at: object | None = None
+    id: int = 1
 
 
 def _build_repository(queue: _FakeQueue) -> PodcastEpisodeRepository:
@@ -31,6 +32,7 @@ def _build_repository(queue: _FakeQueue) -> PodcastEpisodeRepository:
     db.delete.side_effect = _delete
     repository = PodcastEpisodeRepository(db)
     repository.get_queue_with_items = AsyncMock(side_effect=[queue, queue])  # type: ignore[method-assign]
+    repository._refresh_queue_with_items = AsyncMock(side_effect=lambda q: q)  # type: ignore[method-assign]
     return repository
 
 

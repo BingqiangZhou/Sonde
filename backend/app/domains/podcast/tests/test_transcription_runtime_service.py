@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from app.domains.podcast.services import transcription_runtime_service as service_module
+from app.domains.podcast.services import transcription_service as service_module
 from app.domains.podcast.services.transcription_service import (
     PodcastTranscriptionRuntimeService,
 )

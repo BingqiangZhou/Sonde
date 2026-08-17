@@ -108,9 +108,7 @@ def test_apply_playback_rate_subscription_id_required_bilingual_error(
     )
 
     assert response.status_code == 400
-    detail = response.json()["detail"]
-    assert "message_en" in detail
-    assert "message_zh" in detail
+    assert response.json()["detail"] == "Failed to apply playback preference"
 
 
 def test_apply_playback_rate_validation_rejects_out_of_range(

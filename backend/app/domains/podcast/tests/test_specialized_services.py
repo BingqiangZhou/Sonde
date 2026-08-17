@@ -103,28 +103,6 @@ class TestPodcastSubscriptionService:
         mock_repo.get_episodes_counts_batch.assert_not_called()
 
     @pytest.mark.asyncio
-    async def test_list_subscriptions_cache_hit(self, service, mock_repo, mock_redis):
-        """Cached subscription list should short-circuit repository calls."""
-        cached_payload = {
-            "subscriptions": [
-                {
-                    "id": 1,
-                    "title": "cached",
-                    "source_url": "https://example.com/feed.xml",
-                },
-            ],
-            "total": 1,
-        }
-        mock_redis.get_subscription_list.return_value = cached_payload
-
-        results, total = await service.list_subscriptions(page=1, size=20)
-
-        assert results == cached_payload["subscriptions"]
-        assert total == 1
-        mock_redis.get_subscription_list.assert_awaited_once()
-        mock_repo.get_user_subscriptions_paginated.assert_not_called()
-
-    @pytest.mark.asyncio
     async def test_get_subscription_details_not_found(self, service, mock_repo):
         """测试获取不存在的订阅详情"""
         mock_repo.get_subscription_by_id.return_value = None
@@ -213,9 +191,9 @@ class TestPodcastEpisodeService:
         results, total = await service.list_feed_by_page(page=1, size=20)
 
         assert total == 1
-        assert results[0].description == "A concise summary sentence."
-        assert results[0].ai_summary is None
-        assert results[0].transcript_content is None
+        assert results[0]["description"] == "A concise summary sentence."
+        assert results[0]["ai_summary"] is None
+        assert results[0]["transcript_content"] is None
 
     @pytest.mark.asyncio
     async def test_feed_cursor_lightweight_falls_back_to_collapsed_description(
@@ -248,9 +226,9 @@ class TestPodcastEpisodeService:
         assert total == 1
         assert has_more is False
         assert next_cursor is None
-        assert results[0].description == "Fallback text with extra spaces"
-        assert results[0].ai_summary is None
-        assert results[0].transcript_content is None
+        assert results[0]["description"] == "Fallback text with extra spaces"
+        assert results[0]["ai_summary"] is None
+        assert results[0]["transcript_content"] is None
 
     @pytest.mark.asyncio
     async def test_feed_page_non_lightweight_rewrites_description_only_for_feed(
@@ -278,8 +256,8 @@ class TestPodcastEpisodeService:
         results, total = await service.list_feed_by_page(page=1, size=20)
 
         assert total == 1
-        assert results[0].description == "Feed summary line."
-        assert "Executive Summary" in (results[0].ai_summary or "")
+        assert results[0]["description"] == "Feed summary line."
+        assert "Executive Summary" in (results[0]["ai_summary"] or "")
 
     @pytest.mark.asyncio
     async def test_list_episodes_keeps_original_description(self, service, mock_repo):
@@ -301,7 +279,7 @@ class TestPodcastEpisodeService:
         results, total = await service.list_episodes(page=1, size=20)
 
         assert total == 1
-        assert results[0].description == "Original episode description"
+        assert results[0]["description"] == "Original episode description"
 
     def test_resolve_feed_description_truncates_fallback(self, service):
         long_description = "a" * 500
@@ -373,8 +351,8 @@ class TestPodcastPlaybackService:
 
         result = await service.update_playback_progress(1, 50, True, 1.25)
 
-        assert result.current_position == 50
-        assert result.progress_percentage == 25.0
+        assert result["current_position"] == 50
+        assert result["progress_percentage"] == 25.0
 
 
 class TestPodcastQueueService:

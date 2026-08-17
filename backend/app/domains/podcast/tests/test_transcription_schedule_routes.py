@@ -85,7 +85,7 @@ def test_batch_transcribe_subscription_returns_assembled_response(
 
     response = client.post(
         "/api/v1/podcasts/subscriptions/4/transcribe/batch",
-        json=True,
+        json={"skip_existing": True},
     )
 
     assert response.status_code == 201
@@ -207,5 +207,5 @@ def test_get_pending_transcriptions_returns_assembled_response(
     assert response.status_code == 200
     payload = response.json()
     assert payload["total"] == 1
-    assert payload["tasks"][0]["task_id"] == 901
-    assert payload["tasks"][0]["status"] == "pending"
+    assert payload["items"][0]["task_id"] == 901
+    assert payload["items"][0]["status"] == "pending"

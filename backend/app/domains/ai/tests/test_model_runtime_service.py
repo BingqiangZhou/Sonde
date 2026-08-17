@@ -27,9 +27,11 @@ class _SuccessfulResponse:
         return ""
 
 
-class _InspectingClientSession:
+class _CapturingClientSession:
+    """Capture the audio bytes posted in the multipart form."""
+
     def __init__(self):
-        self.file_closed_during_post = None
+        self.posted_file_bytes: bytes | None = None
 
     async def __aenter__(self):
         return self
@@ -43,15 +45,14 @@ class _InspectingClientSession:
         payload = data()
         for part, *_ in getattr(payload, "_parts", []):
             value = getattr(part, "_value", None)
-            if hasattr(value, "closed"):
-                self.file_closed_during_post = value.closed
-                break
+            if isinstance(value, (bytes, bytearray)):
+                self.posted_file_bytes = bytes(value)
         return _SuccessfulResponse()
 
 
 @pytest.mark.asyncio
-async def test_call_transcription_model_keeps_file_handle_open(monkeypatch):
-    fake_session = _InspectingClientSession()
+async def test_call_transcription_model_posts_buffered_file_bytes(monkeypatch):
+    fake_session = _CapturingClientSession()
     monkeypatch.setattr(
         "app.domains.ai.services.text_generation_service.get_shared_http_session",
         AsyncMock(return_value=fake_session),
@@ -79,7 +80,7 @@ async def test_call_transcription_model_keeps_file_handle_open(monkeypatch):
         result = await runtime_service._call_transcription_model(model, audio_path)
 
     assert result == "transcribed text"
-    assert fake_session.file_closed_during_post is False
+    assert fake_session.posted_file_bytes == b"fake audio bytes"
 
 
 def test_is_retryable_http_status():

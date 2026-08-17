@@ -22,23 +22,24 @@ class _SuccessfulResponse:
         return ""
 
 
-class _InspectingSession:
+class _CapturingSession:
+    """Capture the audio bytes posted in the multipart form."""
+
     def __init__(self):
-        self.file_closed_during_post = None
+        self.posted_file_bytes: bytes | None = None
 
     def post(self, url, data):
         del url
         payload = data()
         for part, *_ in getattr(payload, "_parts", []):
             value = getattr(part, "_value", None)
-            if hasattr(value, "closed"):
-                self.file_closed_during_post = value.closed
-                break
+            if isinstance(value, (bytes, bytearray)):
+                self.posted_file_bytes = bytes(value)
         return _SuccessfulResponse()
 
 
 @pytest.mark.asyncio
-async def test_transcribe_chunk_keeps_file_handle_open_during_post():
+async def test_transcribe_chunk_posts_buffered_file_bytes():
     with TemporaryDirectory() as temp_dir:
         chunk_path = os.path.join(temp_dir, "chunk.mp3")
         with open(chunk_path, "wb") as file_obj:
@@ -51,11 +52,11 @@ async def test_transcribe_chunk_keeps_file_handle_open_during_post():
             duration=5.0,
             file_size=os.path.getsize(chunk_path),
         )
-        session = _InspectingSession()
+        session = _CapturingSession()
         transcriber = SiliconFlowTranscriber("test-key", "https://example.com")
         transcriber.session = session
 
         result = await transcriber.transcribe_chunk(chunk)
 
         assert result.transcript == "hello world"
-        assert session.file_closed_during_post is False
+        assert session.posted_file_bytes == b"fake audio bytes"

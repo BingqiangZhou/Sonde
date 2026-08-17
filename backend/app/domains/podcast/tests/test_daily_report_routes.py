@@ -214,7 +214,7 @@ def test_list_daily_report_dates_with_pagination(
     assert data["page"] == 2
     assert data["size"] == 30
     assert data["pages"] == 2
-    assert data["dates"][0]["report_date"] == "2026-02-20"
+    assert data["items"][0]["report_date"] == "2026-02-20"
     mock_daily_report_service.list_report_dates.assert_awaited_once_with(
         page=2, size=30
     )

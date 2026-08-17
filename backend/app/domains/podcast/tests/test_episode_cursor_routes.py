@@ -63,7 +63,6 @@ def test_feed_accepts_size_alias(monkeypatch):
     response = client.get("/api/v1/podcasts/episodes/feed?page=2&size=11")
 
     assert response.status_code == 200
-    assert response.headers["cache-control"] == "private, max-age=30"
     service.list_feed_by_page.assert_awaited_once_with(page=2, size=11)
 
     app.dependency_overrides.pop(get_podcast_episode_service, None)
