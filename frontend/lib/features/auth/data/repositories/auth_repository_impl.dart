@@ -17,34 +17,55 @@ class AuthRepositoryImpl implements AuthRepository {
   final DioClient _apiClient;
   final SecureStorageService _secureStorage;
 
-  @override
-  Future<AuthResponse> login(LoginRequest request) async {
+  /// Persists the access and refresh tokens from [authResponse].
+  Future<void> _persistTokens(AuthResponse authResponse) async {
+    await _secureStorage.saveAccessToken(authResponse.accessToken);
+    await _secureStorage.saveRefreshToken(authResponse.refreshToken);
+  }
+
+  /// Runs [action], mapping Dio and unexpected errors to [AppException]s.
+  ///
+  /// When [onError] is given it is awaited on every catch path before the
+  /// mapped exception is thrown (used by [logout] to clear stored tokens).
+  Future<T> _guard<T>(
+    Future<T> Function() action, {
+    Future<void> Function()? onError,
+  }) async {
     try {
+      return await action();
+    } on DioException catch (e) {
+      await onError?.call();
+      if (e.error is AppException) {
+        throw e.error! as AppException;
+      }
+      throw UnknownException(e.message ?? 'Unknown Dio error');
+    } on AppException {
+      await onError?.call();
+      rethrow;
+    } catch (e) {
+      await onError?.call();
+      throw UnknownException(e.toString());
+    }
+  }
+
+  @override
+  Future<AuthResponse> login(LoginRequest request) {
+    return _guard(() async {
       final response = await _apiClient.post(
         '/auth/login',
         data: request.toJson(),
       );
       final authResponse = AuthResponse.fromJson(response.data as Map<String, dynamic>);
 
-      await _secureStorage.saveAccessToken(authResponse.accessToken);
-      await _secureStorage.saveRefreshToken(authResponse.refreshToken);
+      await _persistTokens(authResponse);
 
       return authResponse;
-    } on DioException catch (e) {
-      if (e.error is AppException) {
-        throw e.error! as AppException;
-      }
-      throw UnknownException(e.message ?? 'Unknown Dio error');
-    } on AppException {
-      rethrow;
-    } catch (e) {
-      throw UnknownException(e.toString());
-    }
+    });
   }
 
   @override
-  Future<AuthResponse> register(RegisterRequest request) async {
-    try {
+  Future<AuthResponse> register(RegisterRequest request) {
+    return _guard(() async {
       final response = await _apiClient.post(
         '/auth/register',
         data: request.toJson(),
@@ -63,20 +84,10 @@ class AuthRepositoryImpl implements AuthRepository {
         authResponse = AuthResponse.fromJson(responseData);
       }
 
-      await _secureStorage.saveAccessToken(authResponse.accessToken);
-      await _secureStorage.saveRefreshToken(authResponse.refreshToken);
+      await _persistTokens(authResponse);
 
       return authResponse;
-    } on DioException catch (e) {
-      if (e.error is AppException) {
-        throw e.error! as AppException;
-      }
-      throw UnknownException(e.message ?? 'Unknown Dio error');
-    } on AppException {
-      rethrow;
-    } catch (e) {
-      throw UnknownException(e.toString());
-    }
+    });
   }
 
   Future<AuthResponse> _loginInternal(String email, String password) async {
@@ -88,16 +99,15 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<RefreshTokenResponse> refreshToken(String refreshToken) async {
-    try {
+  Future<RefreshTokenResponse> refreshToken(String refreshToken) {
+    return _guard(() async {
       final response = await _apiClient.post(
         '/auth/refresh',
         data: {'refresh_token': refreshToken},
       );
       final authResponse = AuthResponse.fromJson(response.data as Map<String, dynamic>);
 
-      await _secureStorage.saveAccessToken(authResponse.accessToken);
-      await _secureStorage.saveRefreshToken(authResponse.refreshToken);
+      await _persistTokens(authResponse);
 
       return RefreshTokenResponse(
         accessToken: authResponse.accessToken,
@@ -107,98 +117,53 @@ class AuthRepositoryImpl implements AuthRepository {
         expiresAt: authResponse.expiresAt,
         serverTime: authResponse.serverTime,
       );
-    } on DioException catch (e) {
-      if (e.error is AppException) {
-        throw e.error! as AppException;
-      }
-      throw UnknownException(e.message ?? 'Unknown Dio error');
-    } on AppException {
-      rethrow;
-    } catch (e) {
-      throw UnknownException(e.toString());
-    }
+    });
   }
 
   @override
-  Future<void> logout(String? refreshToken) async {
-    try {
-      final token = refreshToken ?? await _secureStorage.getRefreshToken();
+  Future<void> logout(String? refreshToken) {
+    return _guard(
+      () async {
+        final token = refreshToken ?? await _secureStorage.getRefreshToken();
 
-      if (token != null && token.isNotEmpty) {
-        await _apiClient.post(
-          '/auth/logout',
-          data: {'refresh_token': token},
-        );
-      }
+        if (token != null && token.isNotEmpty) {
+          await _apiClient.post(
+            '/auth/logout',
+            data: {'refresh_token': token},
+          );
+        }
 
-      await _secureStorage.clearTokens();
-    } on DioException catch (e) {
-      await _secureStorage.clearTokens();
-      if (e.error is AppException) {
-        throw e.error! as AppException;
-      }
-      throw UnknownException(e.message ?? 'Unknown Dio error');
-    } on AppException {
-      await _secureStorage.clearTokens();
-      rethrow;
-    } catch (e) {
-      await _secureStorage.clearTokens();
-      throw UnknownException(e.toString());
-    }
+        await _secureStorage.clearTokens();
+      },
+      onError: _secureStorage.clearTokens,
+    );
   }
 
   @override
-  Future<User> getCurrentUser() async {
-    try {
+  Future<User> getCurrentUser() {
+    return _guard(() async {
       final response = await _apiClient.get('/auth/me');
       return User.fromJson(response.data as Map<String, dynamic>);
-    } on DioException catch (e) {
-      if (e.error is AppException) {
-        throw e.error! as AppException;
-      }
-      throw UnknownException(e.message ?? 'Unknown Dio error');
-    } on AppException {
-      rethrow;
-    } catch (e) {
-      throw UnknownException(e.toString());
-    }
+    });
   }
 
   @override
-  Future<void> forgotPassword(ForgotPasswordRequest request) async {
-    try {
+  Future<void> forgotPassword(ForgotPasswordRequest request) {
+    return _guard(() async {
       await _apiClient.post(
         '/auth/forgot-password',
         data: request.toJson(),
       );
-    } on DioException catch (e) {
-      if (e.error is AppException) {
-        throw e.error! as AppException;
-      }
-      throw UnknownException(e.message ?? 'Unknown Dio error');
-    } on AppException {
-      rethrow;
-    } catch (e) {
-      throw UnknownException(e.toString());
-    }
+    });
   }
 
   @override
-  Future<void> resetPassword(ResetPasswordRequest request) async {
-    try {
+  Future<void> resetPassword(ResetPasswordRequest request) {
+    return _guard(() async {
       await _apiClient.post(
         '/auth/reset-password',
         data: request.toJson(),
       );
-    } on DioException catch (e) {
-      if (e.error is AppException) {
-        throw e.error! as AppException;
-      }
-      throw UnknownException(e.message ?? 'Unknown Dio error');
-    } on AppException {
-      rethrow;
-    } catch (e) {
-      throw UnknownException(e.toString());
-    }
+    });
   }
 }

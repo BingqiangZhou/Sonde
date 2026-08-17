@@ -16,3 +16,7 @@ const double kPodcastRowCardHorizontalMargin = 4;
 const double kPodcastRowCardVerticalMargin = 2;
 const double kPodcastRowCardTargetHeight =
     kPodcastRowCardImageSize + (kPodcastRowCardVerticalPadding * 2);
+
+// Max content width for panel-style list pages (history, subscriptions,
+// highlights, downloads, daily report, episodes, cache management).
+const double kPanelListMaxWidth = 1480;

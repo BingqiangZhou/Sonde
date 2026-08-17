@@ -290,6 +290,12 @@ abstract class AppLocalizations {
   /// **'No'**
   String get no;
 
+  /// Dismiss tooltip label for closing inline messages
+  ///
+  /// In en, this message translates to:
+  /// **'Dismiss'**
+  String get common_dismiss;
+
   /// Login page welcome title
   ///
   /// In en, this message translates to:

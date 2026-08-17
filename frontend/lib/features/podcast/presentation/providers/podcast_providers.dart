@@ -4,6 +4,7 @@ import 'dart:collection';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:personal_ai_assistant/core/network/exceptions/network_exceptions.dart';
+import 'package:personal_ai_assistant/core/providers/cached_async_notifier.dart';
 import 'package:personal_ai_assistant/core/providers/core_providers.dart';
 import 'package:personal_ai_assistant/core/utils/app_logger.dart' as logger;
 import 'package:personal_ai_assistant/core/utils/request_dedup.dart';
@@ -16,6 +17,9 @@ import 'package:personal_ai_assistant/features/podcast/data/models/profile_stats
 import 'package:personal_ai_assistant/features/podcast/data/repositories/podcast_repository.dart';
 import 'package:personal_ai_assistant/features/podcast/data/services/podcast_api_service.dart';
 import 'package:personal_ai_assistant/features/podcast/data/utils/podcast_url_utils.dart';
+// PodcastAudioHandler lives in the podcast_playback_providers library
+// (audio_handler.dart is a part of it), so this import is structural and
+// intentionally cyclic with podcast_playback_providers.dart.
 import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_playback_providers.dart';
 
 // =============================================================================
@@ -53,8 +57,10 @@ final podcastSubscriptionProvider =
 
 class PodcastSubscriptionNotifier extends Notifier<PodcastSubscriptionState> {
   PodcastRepository get _repository => ref.read(podcastRepositoryProvider);
-  bool _isLoadingSubscriptions = false;
-  bool _isLoadingMoreSubscriptions = false;
+  // Single token covering both initial loads and load-more so a page-1
+  // refresh discards an in-flight append (and vice versa) instead of
+  // interleaving stale pages into the refreshed list.
+  final RequestToken _listToken = RequestToken();
 
   @override
   PodcastSubscriptionState build() {
@@ -69,8 +75,8 @@ class PodcastSubscriptionNotifier extends Notifier<PodcastSubscriptionState> {
     bool forceRefresh = false,
   }) async {
     // Guard against concurrent invocation
-    if (_isLoadingSubscriptions) return;
-    _isLoadingSubscriptions = true;
+    if (state.isLoading) return;
+    final token = _listToken.begin();
 
     try {
       // Check if data is fresh and skip refresh if not forced
@@ -90,6 +96,8 @@ class PodcastSubscriptionNotifier extends Notifier<PodcastSubscriptionState> {
         status: status,
       );
 
+      if (!_listToken.isCurrent(token)) return;
+
       state = state.copyWith(
         subscriptions: response.subscriptions,
         hasMore: page < response.pages,
@@ -104,44 +112,40 @@ class PodcastSubscriptionNotifier extends Notifier<PodcastSubscriptionState> {
         '[OK] Subscription data loaded at ${DateTime.now()} (total=${response.total}, count=${response.subscriptions.length})',
       );
     } catch (error) {
+      if (!_listToken.isCurrent(token)) return;
       state = state.copyWith(isLoading: false, error: mapErrorMessage(error));
-    } finally {
-      _isLoadingSubscriptions = false;
     }
   }
 
   Future<void> loadMoreSubscriptions({int? categoryId, String? status}) async {
     if (state.isLoadingMore || !state.hasMore) return;
-
-    // Guard against concurrent invocation
-    if (_isLoadingMoreSubscriptions) return;
-    _isLoadingMoreSubscriptions = true;
+    final token = _listToken.begin();
 
     state = state.copyWith(isLoadingMore: true);
+    final nextPage = state.nextPage ?? 1;
 
     try {
       final response = await _repository.listSubscriptions(
-        page: state.nextPage ?? 1,
+        page: nextPage,
         size: 10,
         categoryId: categoryId,
         status: status,
       );
 
+      if (!_listToken.isCurrent(token)) return;
+
       state = state.copyWith(
         subscriptions: [...state.subscriptions, ...response.subscriptions],
-        hasMore: (state.nextPage ?? 1) < response.pages,
-        nextPage: (state.nextPage ?? 1) < response.pages
-            ? (state.nextPage ?? 1) + 1
-            : null,
-        currentPage: state.nextPage ?? 1,
+        hasMore: nextPage < response.pages,
+        nextPage: nextPage < response.pages ? nextPage + 1 : null,
+        currentPage: nextPage,
         total: response.total,
         isLoadingMore: false,
         clearError: true,
       );
     } catch (error) {
+      if (!_listToken.isCurrent(token)) return;
       state = state.copyWith(isLoadingMore: false, error: mapErrorMessage(error));
-    } finally {
-      _isLoadingMoreSubscriptions = false;
     }
   }
 
@@ -249,25 +253,17 @@ class PodcastSubscriptionNotifier extends Notifier<PodcastSubscriptionState> {
   }
 
   Future<void> refreshSubscription(int subscriptionId) async {
-    try {
-      await _repository.refreshSubscription(subscriptionId);
+    await _repository.refreshSubscription(subscriptionId);
 
-      // Refresh the list
-      await refreshSubscriptions();
-    } catch (error) {
-      rethrow;
-    }
+    // Refresh the list
+    await refreshSubscriptions();
   }
 
   Future<void> reparseSubscription(int subscriptionId, bool forceAll) async {
-    try {
-      await _repository.reparseSubscription(subscriptionId, forceAll);
+    await _repository.reparseSubscription(subscriptionId, forceAll);
 
-      // Refresh the list
-      await refreshSubscriptions();
-    } catch (error) {
-      rethrow;
-    }
+    // Refresh the list
+    await refreshSubscriptions();
   }
 }
 
@@ -303,105 +299,15 @@ final podcastStatsProvider =
       PodcastStatsNotifier.new,
     );
 
-class PodcastStatsNotifier extends AsyncNotifier<PodcastStatsResponse?> {
+class PodcastStatsNotifier extends CachedAsyncNotifier<PodcastStatsResponse> {
   PodcastRepository get _repository => ref.read(podcastRepositoryProvider);
 
-  // Cache and deduplication state
-  final InFlightSlot<PodcastStatsResponse?> _loadSlot =
-      InFlightSlot<PodcastStatsResponse?>();
-  final FreshnessTracker _freshness = FreshnessTracker();
-  bool _isDisposed = false;
-  bool _onDisposeWired = false;
+  @override
+  Future<PodcastStatsResponse> fetch() => _repository.getStats();
 
   @override
-  FutureOr<PodcastStatsResponse?> build() {
-    return load();
-  }
-
-  /// Whether the currently held data is still within the cache window.
-  bool get isFresh => _freshness.isFresh;
-
-  /// Executes [fetcher] with cache-aware deduplication.
-  Future<PodcastStatsResponse?> runWithCache({
-    required Future<PodcastStatsResponse> Function() fetcher,
-    bool forceRefresh = false,
-    void Function(Object error, StackTrace stackTrace)? onError,
-  }) async {
-    if (!_onDisposeWired) {
-      _onDisposeWired = true;
-      ref.onDispose(markDisposed);
-    }
-    final previousData = state.value;
-
-    if (!forceRefresh && previousData != null && isFresh) {
-      return previousData;
-    }
-
-    final inFlight = _loadSlot.inFlight;
-    if (inFlight != null) {
-      return inFlight;
-    }
-
-    if (previousData == null) {
-      state = const AsyncValue.loading();
-    }
-
-    return _loadSlot(() async {
-      try {
-        final data = await fetcher();
-        _freshness.markSuccess();
-        if (!_isDisposed) {
-          state = AsyncValue.data(data);
-        }
-        return data;
-      } catch (error, stackTrace) {
-        if (onError != null) {
-          onError(error, stackTrace);
-        }
-        if (!_isDisposed) {
-          state = AsyncValue.error(error, stackTrace);
-          if (previousData != null) {
-            Future.microtask(() {
-              if (!_isDisposed) {
-                state = AsyncValue.data(previousData);
-              }
-            });
-          }
-        }
-        return previousData;
-      }
-    });
-  }
-
-  /// Resets the cache state.
-  void resetCache() {
-    _freshness.reset();
-    _loadSlot.reset();
-  }
-
-  /// Mark the notifier as disposed to prevent state updates after disposal.
-  void markDisposed() {
-    _isDisposed = true;
-  }
-
-  Future<PodcastStatsResponse?> load({bool forceRefresh = false}) async {
-    final hasError = state.hasError;
-    final isLoading = state.isLoading;
-
-    final effectiveForce = forceRefresh || hasError || isLoading;
-    return runWithCache(
-      forceRefresh: effectiveForce,
-      fetcher: () => _repository.getStats(),
-      onError: (error, _) {
-        logger.AppLogger.debug('Failed to load podcast stats: $error');
-      },
-    );
-  }
-
-  /// Reset the notifier state completely.
-  void reset() {
-    resetCache();
-    state = const AsyncValue.data(null);
+  void onError(Object error, StackTrace stackTrace) {
+    logger.AppLogger.debug('Failed to load podcast stats: $error');
   }
 }
 
@@ -409,110 +315,15 @@ final profileStatsProvider =
     AsyncNotifierProvider<ProfileStatsNotifier, ProfileStatsModel?>(
       ProfileStatsNotifier.new,
     );
-class ProfileStatsNotifier extends AsyncNotifier<ProfileStatsModel?> {
+class ProfileStatsNotifier extends CachedAsyncNotifier<ProfileStatsModel> {
   PodcastRepository get _repository => ref.read(podcastRepositoryProvider);
 
-  // Cache and deduplication state
-  final InFlightSlot<ProfileStatsModel?> _loadSlot = InFlightSlot<ProfileStatsModel?>();
-  final FreshnessTracker _freshness = FreshnessTracker();
-  bool _isDisposed = false;
-  bool _onDisposeWired = false;
+  @override
+  Future<ProfileStatsModel> fetch() => _repository.getProfileStats();
 
   @override
-  FutureOr<ProfileStatsModel?> build() async {
-    return load();
-  }
-
-  /// Whether the currently held data is still within the cache window.
-  bool get isFresh => _freshness.isFresh;
-
-  /// Executes [fetcher] with cache-aware deduplication.
-  Future<ProfileStatsModel?> runWithCache({
-    required Future<ProfileStatsModel> Function() fetcher,
-    bool forceRefresh = false,
-    void Function(Object error, StackTrace stackTrace)? onError,
-  }) async {
-    if (!_onDisposeWired) {
-      _onDisposeWired = true;
-      ref.onDispose(markDisposed);
-    }
-    final previousData = state.value;
-
-    if (!forceRefresh && previousData != null && isFresh) {
-      return previousData;
-    }
-
-    final inFlight = _loadSlot.inFlight;
-    if (inFlight != null) {
-      return inFlight;
-    }
-
-    if (previousData == null) {
-      state = const AsyncValue.loading();
-    }
-
-    return _loadSlot(() async {
-      try {
-        final data = await fetcher();
-        _freshness.markSuccess();
-        if (!_isDisposed) {
-          state = AsyncValue.data(data);
-        }
-        return data;
-      } catch (error, stackTrace) {
-        if (onError != null) {
-          onError(error, stackTrace);
-        }
-        if (previousData == null) {
-          if (!_isDisposed) {
-            state = AsyncValue.error(error, stackTrace);
-          }
-        } else {
-          if (!_isDisposed) {
-            state = AsyncValue.error(error, stackTrace);
-          }
-          Future.microtask(() {
-            if (!_isDisposed) {
-              state = AsyncValue.data(previousData);
-            }
-          });
-        }
-        return previousData;
-      }
-    });
-  }
-
-  /// Resets the cache state.
-  void resetCache() {
-    _freshness.reset();
-    _loadSlot.reset();
-  }
-
-  /// Mark the notifier as disposed to prevent state updates after disposal.
-  void markDisposed() {
-    _isDisposed = true;
-  }
-
-  /// Reset the notifier state completely.
-  /// Called when switching servers or on login to ensure clean state.
-  void reset() {
-    resetCache();
-    state = const AsyncValue.data(null);
-  }
-
-  Future<ProfileStatsModel?> load({bool forceRefresh = false}) async {
-    final hasError = state.hasError;
-    final isLoading = state.isLoading;
-
-    // If has error or loading, skip cache check and continue to fetch
-    final effectiveForce = forceRefresh || hasError || isLoading;
-    return runWithCache(
-      forceRefresh: effectiveForce,
-      fetcher: () => _repository.getProfileStats(),
-      onError: (error, _) {
-        logger.AppLogger.debug('Failed to load profile stats: $error');
-      },
-    );
+  void onError(Object error, StackTrace stackTrace) {
+    logger.AppLogger.debug('Failed to load profile stats: $error');
   }
 }
 
@@ -522,108 +333,16 @@ final playbackHistoryProvider =
     );
 
 class PlaybackHistoryNotifier
-    extends AsyncNotifier<PodcastEpisodeListResponse?> {
+    extends CachedAsyncNotifier<PodcastEpisodeListResponse> {
   PodcastRepository get _repository => ref.read(podcastRepositoryProvider);
 
-  // Cache and deduplication state
-  final InFlightSlot<PodcastEpisodeListResponse?> _loadSlot = InFlightSlot<PodcastEpisodeListResponse?>();
-  final FreshnessTracker _freshness = FreshnessTracker();
-  bool _isDisposed = false;
-  bool _onDisposeWired = false;
+  @override
+  Future<PodcastEpisodeListResponse> fetch() =>
+      _repository.getPlaybackHistory(size: 100);
 
   @override
-  FutureOr<PodcastEpisodeListResponse?> build() {
-    return load();
-  }
-
-  /// Whether the currently held data is still within the cache window.
-  bool get isFresh => _freshness.isFresh;
-
-  /// Executes [fetcher] with cache-aware deduplication.
-  Future<PodcastEpisodeListResponse?> runWithCache({
-    required Future<PodcastEpisodeListResponse> Function() fetcher,
-    bool forceRefresh = false,
-    void Function(Object error, StackTrace stackTrace)? onError,
-  }) async {
-    if (!_onDisposeWired) {
-      _onDisposeWired = true;
-      ref.onDispose(markDisposed);
-    }
-    final previousData = state.value;
-
-    if (!forceRefresh && previousData != null && isFresh) {
-      return previousData;
-    }
-
-    final inFlight = _loadSlot.inFlight;
-    if (inFlight != null) {
-      return inFlight;
-    }
-
-    if (previousData == null) {
-      state = const AsyncValue.loading();
-    }
-
-    return _loadSlot(() async {
-      try {
-        final data = await fetcher();
-        _freshness.markSuccess();
-        if (!_isDisposed) {
-          state = AsyncValue.data(data);
-        }
-        return data;
-      } catch (error, stackTrace) {
-        if (onError != null) {
-          onError(error, stackTrace);
-        }
-        if (previousData == null) {
-          if (!_isDisposed) {
-            state = AsyncValue.error(error, stackTrace);
-          }
-        } else {
-          if (!_isDisposed) {
-            state = AsyncValue.error(error, stackTrace);
-          }
-          Future.microtask(() {
-            if (!_isDisposed) {
-              state = AsyncValue.data(previousData);
-            }
-          });
-        }
-        return previousData;
-      }
-    });
-  }
-
-  /// Resets the cache state.
-  void resetCache() {
-    _freshness.reset();
-    _loadSlot.reset();
-  }
-
-  /// Mark the notifier as disposed to prevent state updates after disposal.
-  void markDisposed() {
-    _isDisposed = true;
-  }
-
-  Future<PodcastEpisodeListResponse?> load({bool forceRefresh = false}) async {
-    final hasError = state.hasError;
-    final isLoading = state.isLoading;
-
-    final effectiveForce = forceRefresh || hasError || isLoading;
-    return runWithCache(
-      forceRefresh: effectiveForce,
-      fetcher: () => _repository.getPlaybackHistory(size: 100),
-      onError: (error, _) {
-        logger.AppLogger.debug('Failed to load playback history: $error');
-      },
-    );
-  }
-
-  /// Reset the notifier state completely.
-  void reset() {
-    resetCache();
-    state = const AsyncValue.data(null);
+  void onError(Object error, StackTrace stackTrace) {
+    logger.AppLogger.debug('Failed to load playback history: $error');
   }
 }
 
@@ -633,109 +352,15 @@ final playbackHistoryLiteProvider =
       PlaybackHistoryLiteResponse?
     >(PlaybackHistoryLiteNotifier.new);
 class PlaybackHistoryLiteNotifier
-    extends AsyncNotifier<PlaybackHistoryLiteResponse?> {
+    extends CachedAsyncNotifier<PlaybackHistoryLiteResponse> {
   PodcastRepository get _repository => ref.read(podcastRepositoryProvider);
 
-  // Cache and deduplication state
-  final InFlightSlot<PlaybackHistoryLiteResponse?> _loadSlot = InFlightSlot<PlaybackHistoryLiteResponse?>();
-  final FreshnessTracker _freshness = FreshnessTracker();
-  bool _isDisposed = false;
-  bool _onDisposeWired = false;
+  @override
+  Future<PlaybackHistoryLiteResponse> fetch() =>
+      _repository.getPlaybackHistoryLite();
 
   @override
-  FutureOr<PlaybackHistoryLiteResponse?> build() async {
-    return load();
-  }
-
-  /// Whether the currently held data is still within the cache window.
-  bool get isFresh => _freshness.isFresh;
-
-  /// Executes [fetcher] with cache-aware deduplication.
-  Future<PlaybackHistoryLiteResponse?> runWithCache({
-    required Future<PlaybackHistoryLiteResponse> Function() fetcher,
-    bool forceRefresh = false,
-    void Function(Object error, StackTrace stackTrace)? onError,
-  }) async {
-    if (!_onDisposeWired) {
-      _onDisposeWired = true;
-      ref.onDispose(markDisposed);
-    }
-    final previousData = state.value;
-
-    if (!forceRefresh && previousData != null && isFresh) {
-      return previousData;
-    }
-
-    final inFlight = _loadSlot.inFlight;
-    if (inFlight != null) {
-      return inFlight;
-    }
-
-    if (previousData == null) {
-      state = const AsyncValue.loading();
-    }
-
-    return _loadSlot(() async {
-      try {
-        final data = await fetcher();
-        _freshness.markSuccess();
-        if (!_isDisposed) {
-          state = AsyncValue.data(data);
-        }
-        return data;
-      } catch (error, stackTrace) {
-        if (onError != null) {
-          onError(error, stackTrace);
-        }
-        if (previousData == null) {
-          if (!_isDisposed) {
-            state = AsyncValue.error(error, stackTrace);
-          }
-        } else {
-          if (!_isDisposed) {
-            state = AsyncValue.error(error, stackTrace);
-          }
-          Future.microtask(() {
-            if (!_isDisposed) {
-              state = AsyncValue.data(previousData);
-            }
-          });
-        }
-        return previousData;
-      }
-    });
-  }
-
-  /// Resets the cache state.
-  void resetCache() {
-    _freshness.reset();
-    _loadSlot.reset();
-  }
-
-  /// Mark the notifier as disposed to prevent state updates after disposal.
-  void markDisposed() {
-    _isDisposed = true;
-  }
-
-  /// Reset the notifier state completely.
-  /// Called when switching servers or on login to ensure clean state.
-  void reset() {
-    resetCache();
-    state = const AsyncValue.data(null);
-  }
-
-  Future<PlaybackHistoryLiteResponse?> load({bool forceRefresh = false}) async {
-    final hasError = state.hasError;
-    final isLoading = state.isLoading;
-
-    // If has error or loading, skip cache check and continue to fetch
-    final effectiveForce = forceRefresh || hasError || isLoading;
-    return runWithCache(
-      forceRefresh: effectiveForce,
-      fetcher: () => _repository.getPlaybackHistoryLite(),
-      onError: (error, _) {
-        logger.AppLogger.debug('Failed to load playback history lite: $error');
-      },
-    );
+  void onError(Object error, StackTrace stackTrace) {
+    logger.AppLogger.debug('Failed to load playback history lite: $error');
   }
 }

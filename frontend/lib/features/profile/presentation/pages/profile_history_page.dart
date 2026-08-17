@@ -9,12 +9,11 @@ import 'package:personal_ai_assistant/core/localization/app_localizations_extens
 import 'package:personal_ai_assistant/core/theme/app_colors.dart';
 import 'package:personal_ai_assistant/core/utils/time_formatter.dart';
 import 'package:personal_ai_assistant/core/widgets/adaptive/adaptive.dart';
-import 'package:personal_ai_assistant/core/widgets/app_shells.dart';
-import 'package:personal_ai_assistant/core/widgets/custom_adaptive_navigation.dart';
 import 'package:personal_ai_assistant/features/podcast/data/models/playback_history_lite_model.dart';
 import 'package:personal_ai_assistant/features/podcast/presentation/constants/podcast_ui_constants.dart';
 import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_providers.dart';
 import 'package:personal_ai_assistant/features/podcast/presentation/widgets/podcast_image_widget.dart';
+import 'package:personal_ai_assistant/features/podcast/presentation/widgets/shared/panel_list_views.dart';
 import 'package:personal_ai_assistant/shared/widgets/loading_widget.dart';
 
 class ProfileHistoryPage extends ConsumerStatefulWidget {
@@ -30,52 +29,29 @@ class _ProfileHistoryPageState extends ConsumerState<ProfileHistoryPage> {
     final l10n = context.l10n;
     final historyAsync = ref.watch(playbackHistoryLiteProvider);
 
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: Material(
-        color: Colors.transparent,
-        child: ResponsiveContainer(
-          maxWidth: 1480,
-          avoidTopSafeArea: true,
-          alignment: Alignment.topCenter,
-          child: AdaptiveRefreshIndicator.sliver(
-            onRefresh: () => ref
-                .read(playbackHistoryLiteProvider.notifier)
-                .load(forceRefresh: true),
-            child: const SizedBox.shrink(),
-            builder: (context, refreshSliver) {
-              return CustomScrollView(
-                slivers: [
-                  ?refreshSliver,
-                  AdaptiveSliverAppBar(
-                    title: l10n.profile_viewed_title,
-                  ),
-                  SliverToBoxAdapter(
-                    child: SizedBox(height: context.spacing.smMd),
-                  ),
-                  ...historyAsync.when(
-                    data: (response) {
-                      final episodes = response?.episodes ??
-                          const <PlaybackHistoryLiteItem>[];
-                      if (episodes.isEmpty) {
-                        return _buildEmptySlivers(context, l10n);
-                      }
-                      return _buildDataSlivers(
-                        context,
-                        l10n,
-                        episodes: episodes,
-                      );
-                    },
-                    loading: () => _buildLoadingSlivers(context, l10n),
-                    error: (error, _) =>
-                        _buildErrorSlivers(context, l10n, error),
-                  ),
-                ],
-              );
-            },
-          ),
+    return PanelListPageScaffold(
+      appBarTitle: l10n.profile_viewed_title,
+      onRefresh: () => ref
+          .read(playbackHistoryLiteProvider.notifier)
+          .load(forceRefresh: true),
+      slivers: [
+        ...historyAsync.when(
+          data: (response) {
+            final episodes = response?.episodes ??
+                const <PlaybackHistoryLiteItem>[];
+            if (episodes.isEmpty) {
+              return _buildEmptySlivers(context, l10n);
+            }
+            return _buildDataSlivers(
+              context,
+              l10n,
+              episodes: episodes,
+            );
+          },
+          loading: () => _buildLoadingSlivers(context, l10n),
+          error: (error, _) => _buildErrorSlivers(context, l10n, error),
         ),
-      ),
+      ],
     );
   }
 
@@ -84,147 +60,66 @@ class _ProfileHistoryPageState extends ConsumerState<ProfileHistoryPage> {
     AppLocalizations l10n, {
     required List<PlaybackHistoryLiteItem> episodes,
   }) {
-    final tokens = appThemeOf(context);
-    return [
-      // Header
-      SliverToBoxAdapter(
-        child: Container(
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surfaceContainerLow,
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(tokens.cardRadius),
-              topRight: Radius.circular(tokens.cardRadius),
-            ),
-            border: Border.all(
-              color: Theme.of(context)
-                  .colorScheme
-                  .outlineVariant
-                  .withValues(alpha: 0.15),
-            ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: EdgeInsets.fromLTRB(
-                  context.spacing.mdLg,
-                  context.spacing.mdLg,
-                  context.spacing.mdLg,
-                  context.spacing.smMd,
-                ),
-                child: AppSectionHeader(
-                  title: context.l10n.profile_viewed_title,
-                  subtitle:
-                      context.l10n.profile_history_episode_count(episodes.length),
-                  hideTitle: true,
-                ),
-              ),
-              Divider(
-                height: 1,
-                color: Theme.of(context)
-                    .colorScheme
-                    .outlineVariant
-                    .withValues(alpha: 0.45),
-              ),
-            ],
-          ),
+    return panelDataSlivers(
+      context,
+      title: context.l10n.profile_viewed_title,
+      subtitle: context.l10n.profile_history_episode_count(episodes.length),
+      hideTitle: true,
+      headerPadding: _panelHeaderPadding(context),
+      itemSlivers: [
+        // List items
+        SliverList.builder(
+          itemCount: episodes.length,
+          itemBuilder: (context, index) {
+            final episode = episodes[index];
+            return _buildHistoryCard(context, episode);
+          },
         ),
-      ),
-      // List items
-      SliverList.builder(
-        itemCount: episodes.length,
-        itemBuilder: (context, index) {
-          final episode = episodes[index];
-          return _buildHistoryCard(context, episode);
-        },
-      ),
-      // Bottom cap
-      SliverToBoxAdapter(
-        child: Container(
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surfaceContainerLow,
-            borderRadius: BorderRadius.only(
-              bottomLeft: Radius.circular(tokens.cardRadius),
-              bottomRight: Radius.circular(tokens.cardRadius),
-            ),
-            border: Border.all(
-              color: Theme.of(context)
-                  .colorScheme
-                  .outlineVariant
-                  .withValues(alpha: 0.15),
-            ),
-          ),
-          height: context.spacing.smMd,
-        ),
-      ),
-      // Bottom buffer
-      SliverPadding(
-        padding: EdgeInsets.only(bottom: context.spacing.xl),
-      ),
-    ];
+      ],
+    );
   }
 
   List<Widget> _buildEmptySlivers(
     BuildContext context,
     AppLocalizations l10n,
   ) {
-    return [
-      SliverFillRemaining(
-        hasScrollBody: false,
-        child: _buildPanelScaffold(
-          context,
-          title: l10n.profile_viewed_title,
-          subtitle: l10n.profile_history_subtitle,
-          child: Center(
-            child: Padding(
-              padding: EdgeInsets.all(context.spacing.lg),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.history,
-                    size: 56,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                  SizedBox(height: context.spacing.lg),
-                  Text(
-                    l10n.server_history_empty,
-                    style:
-                        Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
+    return panelStateSlivers(
+      PanelStateView(
+        title: l10n.profile_viewed_title,
+        subtitle: l10n.profile_history_subtitle,
+        headerPadding: _panelHeaderPadding(context),
+        body: Center(
+          child: Padding(
+            padding: EdgeInsets.all(context.spacing.lg),
+            child: panelEmptyBody(
+              context,
+              icon: Icons.history,
+              title: l10n.server_history_empty,
             ),
           ),
         ),
       ),
-    ];
+    );
   }
 
   List<Widget> _buildLoadingSlivers(
     BuildContext context,
     AppLocalizations l10n,
   ) {
-    return [
-      SliverFillRemaining(
-        hasScrollBody: false,
-        child: _buildPanelScaffold(
-          context,
-          title: l10n.profile_viewed_title,
-          subtitle: l10n.profile_history_subtitle,
-          child: LoadingStatusContent(
-            key: const Key('profile_history_loading_content'),
-            title: l10n.loading,
-            spinnerSize: 28,
-            gapAfterSpinner: 12,
-          ),
-          bare: true,
+    return panelStateSlivers(
+      PanelStateView(
+        title: l10n.profile_viewed_title,
+        subtitle: l10n.profile_history_subtitle,
+        headerPadding: _panelHeaderPadding(context),
+        bare: true,
+        body: LoadingStatusContent(
+          key: const Key('profile_history_loading_content'),
+          title: l10n.loading,
+          spinnerSize: 28,
+          gapAfterSpinner: 12,
         ),
       ),
-    ];
+    );
   }
 
   List<Widget> _buildErrorSlivers(
@@ -232,87 +127,32 @@ class _ProfileHistoryPageState extends ConsumerState<ProfileHistoryPage> {
     AppLocalizations l10n,
     Object error,
   ) {
-    return [
-      SliverFillRemaining(
-        hasScrollBody: false,
-        child: _buildPanelScaffold(
-          context,
-          title: l10n.profile_viewed_title,
-          subtitle: l10n.profile_history_subtitle,
-          child: Center(
-            child: Padding(
-              padding: EdgeInsets.all(context.spacing.lg),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.error_outline,
-                    size: 56,
-                    color: Theme.of(context).colorScheme.error,
-                  ),
-                  SizedBox(height: context.spacing.lg),
-                  Text(
-                    error.toString(),
-                    style: Theme.of(context).textTheme.bodyMedium,
-                    textAlign: TextAlign.center,
-                  ),
-                  SizedBox(height: context.spacing.md),
-                  FilledButton.tonal(
-                    onPressed: () =>
-                        ref.invalidate(playbackHistoryLiteProvider),
-                    child: Text(l10n.retry),
-                  ),
-                ],
-              ),
+    return panelStateSlivers(
+      PanelStateView(
+        title: l10n.profile_viewed_title,
+        subtitle: l10n.profile_history_subtitle,
+        headerPadding: _panelHeaderPadding(context),
+        body: Center(
+          child: Padding(
+            padding: EdgeInsets.all(context.spacing.lg),
+            child: panelErrorBody(
+              context,
+              message: error.toString(),
+              retryLabel: l10n.retry,
+              onRetry: () => ref.invalidate(playbackHistoryLiteProvider),
             ),
           ),
         ),
       ),
-    ];
+    );
   }
 
-  Widget _buildPanelScaffold(
-    BuildContext context, {
-    required String title,
-    required String subtitle,
-    required Widget child,
-    bool bare = false,
-  }) {
-    if (bare) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: EdgeInsets.fromLTRB(context.spacing.mdLg,
-                context.spacing.mdLg, context.spacing.mdLg, context.spacing.smMd),
-            child: AppSectionHeader(title: title, subtitle: subtitle),
-          ),
-          Expanded(child: Center(child: child)),
-        ],
-      );
-    }
-
-    return SurfacePanel(
-      padding: EdgeInsets.zero,
-      showBorder: false,
-      borderRadius: appThemeOf(context).cardRadius,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: EdgeInsets.fromLTRB(context.spacing.mdLg,
-                context.spacing.mdLg, context.spacing.mdLg, context.spacing.smMd),
-            child: AppSectionHeader(title: title, subtitle: subtitle),
-          ),
-          Divider(
-            height: 1,
-            color: Theme.of(
-              context,
-            ).colorScheme.outlineVariant.withValues(alpha: 0.45),
-          ),
-          Expanded(child: child),
-        ],
-      ),
+  EdgeInsetsGeometry _panelHeaderPadding(BuildContext context) {
+    return EdgeInsets.fromLTRB(
+      context.spacing.mdLg,
+      context.spacing.mdLg,
+      context.spacing.mdLg,
+      context.spacing.smMd,
     );
   }
 

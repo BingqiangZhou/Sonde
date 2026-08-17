@@ -18,6 +18,7 @@ import 'package:personal_ai_assistant/core/widgets/top_floating_notice.dart';
 import 'package:personal_ai_assistant/features/podcast/data/models/podcast_episode_model.dart';
 import 'package:personal_ai_assistant/features/podcast/data/models/podcast_state_models.dart';
 import 'package:personal_ai_assistant/features/podcast/data/models/podcast_subscription_model.dart';
+import 'package:personal_ai_assistant/features/podcast/presentation/constants/podcast_ui_constants.dart';
 import 'package:personal_ai_assistant/features/podcast/presentation/navigation/podcast_navigation.dart';
 import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_episodes_providers.dart';
 import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_playback_providers.dart';
@@ -144,7 +145,7 @@ class _PodcastEpisodesPageState extends ConsumerState<PodcastEpisodesPage> {
       body: Material(
         color: Colors.transparent,
         child: ResponsiveContainer(
-          maxWidth: 1480,
+          maxWidth: kPanelListMaxWidth,
           avoidTopSafeArea: true,
           alignment: Alignment.topCenter,
           child: AdaptiveRefreshIndicator.sliver(

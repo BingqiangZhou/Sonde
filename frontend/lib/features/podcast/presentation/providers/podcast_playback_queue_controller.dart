@@ -71,10 +71,12 @@ class QueueOperationNotifier extends Notifier<QueueOperationState> {
 
 class PodcastQueueController extends AsyncNotifier<PodcastQueueModel> {
   late PodcastRepository _repository;
-  Future<PodcastQueueModel>? _inFlightQueueLoad;
-  final Map<int, Future<PodcastQueueModel>> _inFlightAddToQueueByEpisodeId =
-      <int, Future<PodcastQueueModel>>{};
-  DateTime? _lastQueueRefreshAt;
+  final InFlightSlot<PodcastQueueModel> _loadSlot =
+      InFlightSlot<PodcastQueueModel>();
+  final Map<int, InFlightSlot<PodcastQueueModel>> _addSlotsByEpisodeId =
+      <int, InFlightSlot<PodcastQueueModel>>{};
+  final FreshnessTracker _queueFreshness =
+      FreshnessTracker(maxAge: _queueRefreshThrottle);
   int _latestAppliedQueueRevision = -1;
   int _queueSyncInFlight = 0;
   static const Duration _queueRefreshThrottle = Duration(seconds: 20);
@@ -97,14 +99,7 @@ class PodcastQueueController extends AsyncNotifier<PodcastQueueModel> {
     }
   }
 
-  bool _hasFreshQueueState() {
-    final lastRefresh = _lastQueueRefreshAt;
-    if (lastRefresh == null) {
-      return false;
-    }
-    return DateTime.now().difference(lastRefresh) <
-        _queueRefreshThrottle;
-  }
+  bool _hasFreshQueueState() => _queueFreshness.isFresh;
 
   void _beginQueueSync() {
     _queueSyncInFlight += 1;
@@ -245,7 +240,7 @@ class PodcastQueueController extends AsyncNotifier<PodcastQueueModel> {
 
     state = AsyncValue.data(queue);
     if (updateLastRefreshAt) {
-      _lastQueueRefreshAt = DateTime.now();
+      _queueFreshness.markSuccess();
     }
     _latestAppliedQueueRevision = queue.revision;
     ref.read(audioPlayerProvider.notifier).syncQueueState(queue);
@@ -277,7 +272,7 @@ class PodcastQueueController extends AsyncNotifier<PodcastQueueModel> {
     bool trackSyncing = true,
     bool setErrorStateOnFailure = true,
   }) {
-    final inFlight = _inFlightQueueLoad;
+    final inFlight = _loadSlot.inFlight;
     if (inFlight != null) {
       return inFlight;
     }
@@ -291,7 +286,7 @@ class PodcastQueueController extends AsyncNotifier<PodcastQueueModel> {
       _beginQueueSync();
     }
 
-    final loadFuture = () async {
+    return _loadSlot(() async {
       try {
         final queue = await _repository.getQueue().timeout(queueLoadTimeout);
         return _applyQueue(queue);
@@ -301,15 +296,11 @@ class PodcastQueueController extends AsyncNotifier<PodcastQueueModel> {
         }
         rethrow;
       } finally {
-        _inFlightQueueLoad = null;
         if (trackSyncing) {
           _endQueueSync();
         }
       }
-    }();
-
-    _inFlightQueueLoad = loadFuture;
-    return loadFuture;
+    });
   }
 
   Future<PodcastQueueModel> loadQueue({bool forceRefresh = true}) async {
@@ -344,87 +335,90 @@ class PodcastQueueController extends AsyncNotifier<PodcastQueueModel> {
   }
 
   Future<PodcastQueueModel> addToQueue(int episodeId) async {
-    final inFlight = _inFlightAddToQueueByEpisodeId[episodeId];
+    final slot = _addSlotsByEpisodeId.putIfAbsent(
+      episodeId,
+      () => InFlightSlot<PodcastQueueModel>(),
+    );
+    final inFlight = slot.inFlight;
     if (inFlight != null) {
       return inFlight;
     }
 
     _beginQueueSync();
-    final addFuture = () async {
-      try {
-        final playerSnapshot = ref.read(audioPlayerProvider);
-
-        var queue = await _repository.addQueueItem(episodeId);
-        queue = _applyQueue(queue);
-
-        final currentOrder = queue.items.map((item) => item.episodeId).toList();
-        final desiredOrder = buildQueueOrderAfterAdd(
-          queue: queue,
-          episodeId: episodeId,
-          isPlaying: playerSnapshot.isPlaying,
-          playingEpisodeId: playerSnapshot.currentEpisode?.id,
-        );
-
-        if (!isSameEpisodeOrder(currentOrder, desiredOrder)) {
-          try {
-            final reorderedQueue = await _repository.reorderQueueItems(
-              desiredOrder,
-            );
-            queue = _applyQueue(reorderedQueue);
-          } catch (error) {
-            logger.AppLogger.debug(
-              '[Queue] Reorder after add failed; keeping add result. error=$error',
-            );
-            unawaited(
-              _loadQueueInternal(
-                forceRefresh: true,
-                trackSyncing: false,
-                setErrorStateOnFailure: false,
-              ),
-            );
-          }
-        }
-
-        // Auto-download the added episode
-        final addedItem = queue.items.cast<PodcastQueueItemModel?>().firstWhere(
-              (item) => item?.episodeId == episodeId,
-              orElse: () => null,
-            );
-        if (addedItem != null && addedItem.audioUrl.isNotEmpty) {
-          try {
-            ref.read(downloadManagerProvider).download(
-                  episodeId: addedItem.episodeId,
-                  audioUrl: addedItem.audioUrl,
-                  title: addedItem.title,
-                  subscriptionTitle: addedItem.subscriptionTitle,
-                  imageUrl: addedItem.imageUrl,
-                  subscriptionImageUrl: addedItem.subscriptionImageUrl,
-                  subscriptionId: addedItem.podcastId,
-                  audioDuration: addedItem.duration,
-                  publishedAt: addedItem.publishedAt,
-                );
-          } catch (e) {
-            logger.AppLogger.debug(
-              '[Queue] Auto-download failed for episode $episodeId: $e',
-            );
-          }
-        }
-
-        return queue;
-      } catch (error, stackTrace) {
-        _setErrorStateIfNeeded(error, stackTrace);
-        rethrow;
-      } finally {
-        _endQueueSync();
-      }
-    }();
-
-    _inFlightAddToQueueByEpisodeId[episodeId] = addFuture;
     try {
-      return await addFuture;
+      return await slot(() async {
+        try {
+          final playerSnapshot = ref.read(audioPlayerProvider);
+
+          var queue = await _repository.addQueueItem(episodeId);
+          queue = _applyQueue(queue);
+
+          final currentOrder =
+              queue.items.map((item) => item.episodeId).toList();
+          final desiredOrder = buildQueueOrderAfterAdd(
+            queue: queue,
+            episodeId: episodeId,
+            isPlaying: playerSnapshot.isPlaying,
+            playingEpisodeId: playerSnapshot.currentEpisode?.id,
+          );
+
+          if (!isSameEpisodeOrder(currentOrder, desiredOrder)) {
+            try {
+              final reorderedQueue = await _repository.reorderQueueItems(
+                desiredOrder,
+              );
+              queue = _applyQueue(reorderedQueue);
+            } catch (error) {
+              logger.AppLogger.debug(
+                '[Queue] Reorder after add failed; keeping add result. error=$error',
+              );
+              unawaited(
+                _loadQueueInternal(
+                  forceRefresh: true,
+                  trackSyncing: false,
+                  setErrorStateOnFailure: false,
+                ),
+              );
+            }
+          }
+
+          // Auto-download the added episode
+          final addedItem =
+              queue.items.cast<PodcastQueueItemModel?>().firstWhere(
+                    (item) => item?.episodeId == episodeId,
+                    orElse: () => null,
+                  );
+          if (addedItem != null && addedItem.audioUrl.isNotEmpty) {
+            try {
+              ref.read(downloadManagerProvider).download(
+                    episodeId: addedItem.episodeId,
+                    audioUrl: addedItem.audioUrl,
+                    title: addedItem.title,
+                    subscriptionTitle: addedItem.subscriptionTitle,
+                    imageUrl: addedItem.imageUrl,
+                    subscriptionImageUrl: addedItem.subscriptionImageUrl,
+                    subscriptionId: addedItem.podcastId,
+                    audioDuration: addedItem.duration,
+                    publishedAt: addedItem.publishedAt,
+                  );
+            } catch (e) {
+              logger.AppLogger.debug(
+                '[Queue] Auto-download failed for episode $episodeId: $e',
+              );
+            }
+          }
+
+          return queue;
+        } catch (error, stackTrace) {
+          _setErrorStateIfNeeded(error, stackTrace);
+          rethrow;
+        } finally {
+          _endQueueSync();
+        }
+      });
     } finally {
-      if (identical(_inFlightAddToQueueByEpisodeId[episodeId], addFuture)) {
-        _inFlightAddToQueueByEpisodeId.remove(episodeId);
+      if (slot.inFlight == null) {
+        _addSlotsByEpisodeId.remove(episodeId);
       }
     }
   }

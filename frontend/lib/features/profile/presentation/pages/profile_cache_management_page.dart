@@ -826,7 +826,7 @@ class _ProfileCacheManagementPageState
       body: Material(
         color: Colors.transparent,
         child: ResponsiveContainer(
-          maxWidth: 1480,
+          maxWidth: kPanelListMaxWidth,
           avoidTopSafeArea: true,
           alignment: Alignment.topCenter,
           child: AdaptiveRefreshIndicator.sliver(

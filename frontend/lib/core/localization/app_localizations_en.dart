@@ -105,6 +105,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get no => 'No';
 
   @override
+  String get common_dismiss => 'Dismiss';
+
+  @override
   String get auth_welcome_back => 'Dawn\'s near. Let\'s begin.';
 
   @override

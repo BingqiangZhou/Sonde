@@ -437,6 +437,7 @@ class _AISummaryControlWidgetState
   }
 
   Widget _buildErrorMessage(BuildContext context, String message) {
+    final l10n = context.l10n;
     final scheme = Theme.of(context).colorScheme;
     final extension = appThemeOf(context);
     return Container(
@@ -460,7 +461,7 @@ class _AISummaryControlWidgetState
           ),
           IconButton(
             iconSize: 16,
-            tooltip: 'Dismiss',
+            tooltip: l10n.common_dismiss,
             icon: const Icon(Icons.close),
             onPressed: () {
               final provider = summaryProvider(widget.episodeId);

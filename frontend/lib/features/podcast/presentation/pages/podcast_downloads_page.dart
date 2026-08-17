@@ -11,9 +11,9 @@ import 'package:personal_ai_assistant/core/theme/app_colors.dart';
 import 'package:personal_ai_assistant/core/widgets/adaptive/adaptive.dart';
 import 'package:personal_ai_assistant/core/widgets/app_dialog_helper.dart';
 import 'package:personal_ai_assistant/core/widgets/app_shells.dart';
-import 'package:personal_ai_assistant/core/widgets/custom_adaptive_navigation.dart';
 import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_episodes_providers.dart';
 import 'package:personal_ai_assistant/features/podcast/presentation/widgets/podcast_image_widget.dart';
+import 'package:personal_ai_assistant/features/podcast/presentation/widgets/shared/panel_list_views.dart';
 
 /// Page for managing downloaded podcast episodes.
 class PodcastDownloadsPage extends ConsumerStatefulWidget {
@@ -38,8 +38,6 @@ class _PodcastDownloadsPageState extends ConsumerState<PodcastDownloadsPage> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final theme = Theme.of(context);
-    final tokens = appThemeOf(context);
     final asyncDownloads = ref.watch(downloadsListProvider);
     final grouped = ref.watch(groupedDownloadsProvider);
 
@@ -53,55 +51,25 @@ class _PodcastDownloadsPageState extends ConsumerState<PodcastDownloadsPage> {
           )
         : null;
 
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: Material(
-        color: Colors.transparent,
-        child: ResponsiveContainer(
-          maxWidth: 1480,
-          avoidTopSafeArea: true,
-          alignment: Alignment.topCenter,
-          child: AdaptiveRefreshIndicator.sliver(
-            onRefresh: () async {
-              ref.invalidate(downloadsListProvider);
-            },
-            child: const SizedBox.shrink(),
-            builder: (context, refreshSliver) {
-              return Scrollbar(
-                controller: _scrollController,
-                child: CustomScrollView(
-                  controller: _scrollController,
-                  slivers: [
-                    ?refreshSliver,
-                    AdaptiveSliverAppBar(
-                      title: l10n.downloads_page_title,
-                      actions: [?deleteButton],
-                    ),
-                    SliverToBoxAdapter(child: SizedBox(height: context.spacing.smMd)),
-                    ...asyncDownloads.when(
-                      data: (tasks) {
-                        if (tasks.isEmpty) {
-                          return _buildEmptySlivers(context, l10n, tokens);
-                        }
-                        return _buildDataSlivers(
-                          context,
-                          grouped,
-                          l10n,
-                          theme,
-                          tokens,
-                        );
-                      },
-                      loading: () => _buildLoadingSlivers(context, l10n, tokens),
-                      error: (e, _) =>
-                          _buildErrorSlivers(context, ref, l10n, theme, e),
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
+    return PanelListPageScaffold(
+      appBarTitle: l10n.downloads_page_title,
+      appBarActions: [?deleteButton],
+      scrollController: _scrollController,
+      onRefresh: () async {
+        ref.invalidate(downloadsListProvider);
+      },
+      slivers: [
+        ...asyncDownloads.when(
+          data: (tasks) {
+            if (tasks.isEmpty) {
+              return _buildEmptySlivers(context, l10n);
+            }
+            return _buildDataSlivers(context, grouped, l10n);
+          },
+          loading: () => _buildLoadingSlivers(context, l10n),
+          error: (e, _) => _buildErrorSlivers(context, ref, l10n, e),
         ),
-      ),
+      ],
     );
   }
 
@@ -129,77 +97,35 @@ class _PodcastDownloadsPageState extends ConsumerState<PodcastDownloadsPage> {
   List<Widget> _buildEmptySlivers(
     BuildContext context,
     AppLocalizations l10n,
-    AppThemeExtension tokens,
   ) {
-    final theme = Theme.of(context);
-    return [
-      SliverFillRemaining(
-        hasScrollBody: false,
-        child: SurfacePanel(
-          padding: EdgeInsets.zero,
-          showBorder: false,
-          borderRadius: tokens.cardRadius,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: EdgeInsets.fromLTRB(context.spacing.mdLg, context.spacing.md, context.spacing.mdLg, context.spacing.smMd),
-                child: AppSectionHeader(
-                  title: l10n.downloads_page_title,
-                  subtitle: l10n.downloads_empty,
-                  hideTitle: true,
-                ),
+    return panelStateSlivers(
+      PanelStateView(
+        title: l10n.downloads_page_title,
+        subtitle: l10n.downloads_empty,
+        hideTitle: true,
+        body: Padding(
+          padding: EdgeInsets.all(context.spacing.mdLg),
+          child: panelNoteBox(
+            context,
+            child: Center(
+              child: panelEmptyBody(
+                context,
+                icon: Icons.download_outlined,
+                iconSize: 48,
+                gap: context.spacing.smMd,
+                subtitle: l10n.downloads_empty_subtitle,
               ),
-              Divider(
-                height: 1,
-                color: theme.colorScheme.outlineVariant.withValues(alpha: 0.45),
-              ),
-              Expanded(
-                child: Padding(
-                  padding: EdgeInsets.all(context.spacing.mdLg),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.surfaceContainerLow,
-                      borderRadius: AppRadius.xxlCardRadius,
-                      border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.15)),
-                    ),
-                    padding: EdgeInsets.all(context.spacing.md),
-                    child: Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.download_outlined,
-                            size: 48,
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                          SizedBox(height: context.spacing.smMd),
-                          Text(
-                            l10n.downloads_empty_subtitle,
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: theme.colorScheme.onSurfaceVariant,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),
-    ];
+    );
   }
 
   List<Widget> _buildDataSlivers(
     BuildContext context,
     GroupedDownloads grouped,
     AppLocalizations l10n,
-    ThemeData theme,
-    AppThemeExtension tokens,
   ) {
     final totalDownloads = grouped.active.length +
         grouped.failed.length +
@@ -211,177 +137,71 @@ class _PodcastDownloadsPageState extends ConsumerState<PodcastDownloadsPage> {
       ...grouped.completed,
     ];
 
-    return [
-      // Header panel top
-      SliverToBoxAdapter(
-        child: Container(
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surfaceContainerLow,
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(tokens.cardRadius),
-              topRight: Radius.circular(tokens.cardRadius),
-            ),
-            border: Border.all(
-              color: theme.colorScheme.outlineVariant.withValues(alpha: 0.15),
-            ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: EdgeInsets.fromLTRB(context.spacing.mdLg, context.spacing.md, context.spacing.mdLg, context.spacing.smMd),
-                child: AppSectionHeader(
-                  title: l10n.downloads_page_title,
-                  subtitle: l10n.downloads_items(totalDownloads),
-                  hideTitle: true,
-                ),
+    return panelDataSlivers(
+      context,
+      title: l10n.downloads_page_title,
+      subtitle: l10n.downloads_items(totalDownloads),
+      hideTitle: true,
+      itemSlivers: [
+        // List items
+        SliverList.builder(
+          itemCount: allTasks.length,
+          itemBuilder: (context, index) {
+            return Padding(
+              padding: EdgeInsets.fromLTRB(
+                context.spacing.sm,
+                index == 0 ? context.spacing.sm : 0,
+                context.spacing.sm,
+                context.spacing.sm,
               ),
-              Divider(
-                height: 1,
-                color: theme.colorScheme.outlineVariant.withValues(alpha: 0.45),
-              ),
-            ],
-          ),
+              child: _DownloadTaskCard(task: allTasks[index]),
+            );
+          },
         ),
-      ),
-      // List items
-      SliverList.builder(
-        itemCount: allTasks.length,
-        itemBuilder: (context, index) {
-          return Padding(
-            padding: EdgeInsets.fromLTRB(
-              context.spacing.sm,
-              index == 0 ? context.spacing.sm : 0,
-              context.spacing.sm,
-              context.spacing.sm,
-            ),
-            child: _DownloadTaskCard(task: allTasks[index]),
-          );
-        },
-      ),
-      // Bottom cap
-      SliverToBoxAdapter(
-        child: Container(
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surfaceContainerLow,
-            borderRadius: BorderRadius.only(
-              bottomLeft: Radius.circular(tokens.cardRadius),
-              bottomRight: Radius.circular(tokens.cardRadius),
-            ),
-            border: Border.all(
-              color: theme.colorScheme.outlineVariant.withValues(alpha: 0.15),
-            ),
-          ),
-          height: context.spacing.smMd,
-        ),
-      ),
-      // Bottom buffer for player
-      const SliverPadding(
-        padding: EdgeInsets.only(bottom: _bottomBufferForPlayer),
-      ),
-    ];
+      ],
+      bottomBuffer: _bottomBufferForPlayer,
+    );
   }
 
   List<Widget> _buildLoadingSlivers(
     BuildContext context,
     AppLocalizations l10n,
-    AppThemeExtension tokens,
   ) {
-    return [
-      SliverFillRemaining(
-        hasScrollBody: false,
-        child: SurfacePanel(
-          padding: EdgeInsets.zero,
-          showBorder: false,
-          borderRadius: tokens.cardRadius,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: EdgeInsets.fromLTRB(context.spacing.mdLg, context.spacing.md, context.spacing.mdLg, context.spacing.smMd),
-                child: AppSectionHeader(
-                  title: l10n.downloads_page_title,
-                  subtitle: l10n.loading,
-                  hideTitle: true,
-                ),
-              ),
-              Divider(
-                height: 1,
-                color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.45),
-              ),
-              const Expanded(
-                child: Center(child: CircularProgressIndicator.adaptive()),
-              ),
-            ],
-          ),
-        ),
+    return panelStateSlivers(
+      PanelStateView(
+        title: l10n.downloads_page_title,
+        subtitle: l10n.loading,
+        hideTitle: true,
+        body: const Center(child: CircularProgressIndicator.adaptive()),
       ),
-    ];
+    );
   }
 
   List<Widget> _buildErrorSlivers(
     BuildContext context,
     WidgetRef ref,
     AppLocalizations l10n,
-    ThemeData theme,
     Object error,
   ) {
-    return [
-      SliverFillRemaining(
-        hasScrollBody: false,
-        child: SurfacePanel(
-          padding: EdgeInsets.zero,
-          showBorder: false,
-          borderRadius: appThemeOf(context).cardRadius,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: EdgeInsets.fromLTRB(context.spacing.mdLg, context.spacing.md, context.spacing.mdLg, context.spacing.smMd),
-                child: AppSectionHeader(
-                  title: l10n.downloads_page_title,
-                  subtitle: l10n.podcast_downloads_load_error,
-                  hideTitle: true,
-                ),
-              ),
-              Divider(
-                height: 1,
-                color: theme.colorScheme.outlineVariant.withValues(alpha: 0.45),
-              ),
-              Expanded(
-                child: Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(context.spacing.lg),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.error_outline,
-                          size: 48,
-                          color: theme.colorScheme.error,
-                        ),
-                        SizedBox(height: context.spacing.lg),
-                        Text(
-                          l10n.podcast_downloads_load_error,
-                          style: theme.textTheme.bodyMedium,
-                          textAlign: TextAlign.center,
-                        ),
-                        SizedBox(height: context.spacing.md),
-                        FilledButton.tonal(
-                          onPressed: () => ref.invalidate(downloadsListProvider),
-                          child: Text(l10n.retry),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ],
+    return panelStateSlivers(
+      PanelStateView(
+        title: l10n.downloads_page_title,
+        subtitle: l10n.podcast_downloads_load_error,
+        hideTitle: true,
+        body: Center(
+          child: Padding(
+            padding: EdgeInsets.all(context.spacing.lg),
+            child: panelErrorBody(
+              context,
+              iconSize: 48,
+              message: l10n.podcast_downloads_load_error,
+              retryLabel: l10n.retry,
+              onRetry: () => ref.invalidate(downloadsListProvider),
+            ),
           ),
         ),
       ),
-    ];
+    );
   }
 }
 

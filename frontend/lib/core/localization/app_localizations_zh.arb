@@ -128,6 +128,10 @@
     "@no":  {
                 "description":  "否按钮标签"
             },
+    "common_dismiss":  "关闭",
+    "@common_dismiss":  {
+                            "description":  "关闭内联消息的提示标签"
+                        },
     "auth_welcome_back":  "天快亮了，我们开始吧。",
     "@auth_welcome_back":  {
                                "description":  "登录页面欢迎标题"

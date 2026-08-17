@@ -105,6 +105,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get no => '否';
 
   @override
+  String get common_dismiss => '关闭';
+
+  @override
   String get auth_welcome_back => '天快亮了，我们开始吧。';
 
   @override

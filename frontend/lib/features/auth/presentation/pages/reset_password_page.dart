@@ -234,16 +234,17 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
           RepaintBoundary(
             child: AnimatedBuilder(
               animation: _passwordController,
+              child: Text(
+                l10n.auth_password_requirements_title,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+              ),
               builder: (context, child) {
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      l10n.auth_password_requirements_title,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
-                    ),
+                    child!,
                     SizedBox(height: context.spacing.sm),
                     PasswordRequirementItem(
                       text: l10n.auth_password_requirement_min_length,

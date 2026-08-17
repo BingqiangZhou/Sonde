@@ -3,13 +3,9 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:personal_ai_assistant/core/constants/app_radius.dart';
 import 'package:personal_ai_assistant/core/constants/app_spacing.dart';
 import 'package:personal_ai_assistant/core/localization/app_localizations_extension.dart';
-import 'package:personal_ai_assistant/core/theme/app_colors.dart';
-import 'package:personal_ai_assistant/core/widgets/adaptive/adaptive_sliver_app_bar.dart';
 import 'package:personal_ai_assistant/core/widgets/app_shells.dart';
-import 'package:personal_ai_assistant/core/widgets/custom_adaptive_navigation.dart';
 import 'package:personal_ai_assistant/core/widgets/top_floating_notice.dart';
 import 'package:personal_ai_assistant/features/auth/presentation/providers/auth_provider.dart';
 import 'package:personal_ai_assistant/features/podcast/data/models/podcast_highlight_model.dart';
@@ -17,6 +13,7 @@ import 'package:personal_ai_assistant/features/podcast/presentation/providers/po
 import 'package:personal_ai_assistant/features/podcast/presentation/widgets/calendar_panel_dialog.dart';
 import 'package:personal_ai_assistant/features/podcast/presentation/widgets/highlight_card.dart';
 import 'package:personal_ai_assistant/features/podcast/presentation/widgets/shared/episode_card_utils.dart';
+import 'package:personal_ai_assistant/features/podcast/presentation/widgets/shared/panel_list_views.dart';
 import 'package:personal_ai_assistant/shared/widgets/loading_widget.dart';
 
 /// Page for displaying podcast highlights.
@@ -37,7 +34,6 @@ class _PodcastHighlightsPageState extends ConsumerState<PodcastHighlightsPage> {
   final ScrollController _scrollController = ScrollController();
   late DateTime _focusedCalendarDay;
   bool _isLoadingMore = false;
-  bool _hasMore = false;
 
   @override
   void initState() {
@@ -68,7 +64,10 @@ class _PodcastHighlightsPageState extends ConsumerState<PodcastHighlightsPage> {
   void _onScroll() {
     if (_isLoadingMore) return;
 
-    if (!_hasMore) return;
+    // Read pagination flags straight from the provider so no build-phase
+    // syncing into local fields is needed.
+    final hasMore = ref.read(highlightsProvider).value?.hasMore ?? false;
+    if (!hasMore) return;
     if (!_scrollController.hasClients) return;
 
     final maxScroll = _scrollController.position.maxScrollExtent;
@@ -134,31 +133,13 @@ class _PodcastHighlightsPageState extends ConsumerState<PodcastHighlightsPage> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    return Scaffold(
-      key: const Key('highlights_page'),
-      backgroundColor: Colors.transparent,
-      body: Material(
-        color: Colors.transparent,
-        child: ResponsiveContainer(
-          maxWidth: 1480,
-          avoidTopSafeArea: true,
-          alignment: Alignment.topCenter,
-          child: Scrollbar(
-            controller: _scrollController,
-            child: CustomScrollView(
-              controller: _scrollController,
-              slivers: [
-                AdaptiveSliverAppBar(
-                  title: l10n.podcast_highlights_title,
-                  actions: [_buildCalendarButton(context)],
-                ),
-                SliverToBoxAdapter(child: SizedBox(height: context.spacing.xs)),
-                ..._buildHighlightsSlivers(context),
-              ],
-            ),
-          ),
-        ),
-      ),
+    return PanelListPageScaffold(
+      scaffoldKey: const Key('highlights_page'),
+      appBarTitle: l10n.podcast_highlights_title,
+      appBarActions: [_buildCalendarButton(context)],
+      scrollController: _scrollController,
+      topGap: context.spacing.xs,
+      slivers: [..._buildHighlightsSlivers(context)],
     );
   }
 
@@ -176,109 +157,98 @@ class _PodcastHighlightsPageState extends ConsumerState<PodcastHighlightsPage> {
   }
 
   List<Widget> _buildHighlightsSlivers(BuildContext context) {
-    final theme = Theme.of(context);
-    final tokens = appThemeOf(context);
     final l10n = context.l10n;
     final highlightsAsync = ref.watch(highlightsProvider);
-    _hasMore = highlightsAsync.value?.hasMore ?? false;
     final selectedDate = ref.watch(selectedHighlightDateProvider);
     final headerDate = selectedDate ?? _focusedCalendarDay;
 
     if (highlightsAsync.isLoading && highlightsAsync.value == null) {
-      return [
-        SliverFillRemaining(
-          hasScrollBody: false,
-          child: _buildLoadingState(context, headerDate),
+      return panelStateSlivers(
+        PanelStateView(
+          title: EpisodeCardUtils.formatDate(headerDate),
+          subtitle: l10n.podcast_highlights_loading,
+          bare: true,
+          bareBodyGap: true,
+          body: LoadingStatusContent(
+            key: const Key('highlights_loading_content'),
+            title: l10n.podcast_highlights_loading_highlights,
+            spinnerSize: 28,
+            spinnerColor: Theme.of(context).colorScheme.primary,
+            gapAfterSpinner: 12,
+          ),
         ),
-      ];
+      );
     }
 
     if (highlightsAsync.hasError && highlightsAsync.value == null) {
-      return [
-        SliverFillRemaining(
-          hasScrollBody: false,
-          child: _buildErrorState(context, headerDate),
+      return panelStateSlivers(
+        PanelStateView(
+          title: EpisodeCardUtils.formatDate(headerDate),
+          subtitle: l10n.podcast_highlights_load_failed,
+          centerBody: false,
+          body: panelErrorBody(
+            context,
+            icon: null,
+            message: l10n.podcast_highlights_cannot_load,
+            messageStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Theme.of(context).colorScheme.error,
+            ),
+            retryLabel: l10n.podcast_highlights_retry,
+            onRetry: () {
+              final selectedDate = ref.read(selectedHighlightDateProvider);
+              ref
+                  .read(highlightsProvider.notifier)
+                  .load(date: selectedDate, forceRefresh: true);
+              ref
+                  .read(highlightDatesProvider.notifier)
+                  .load(forceRefresh: true);
+            },
+          ),
         ),
-      ];
+      );
     }
 
     final highlightsResponse = highlightsAsync.value;
     final highlights = highlightsResponse?.items ?? [];
 
     if (highlights.isEmpty) {
-      return [
-        SliverFillRemaining(
-          hasScrollBody: false,
-          child: _buildEmptyState(context, headerDate),
+      return panelStateSlivers(
+        PanelStateView(
+          title: EpisodeCardUtils.formatDate(headerDate),
+          subtitle: l10n.podcast_highlights_no_highs,
+          centerBody: false,
+          body: panelNoteBox(
+            context,
+            child: Text(
+              l10n.podcast_highlights_empty,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
         ),
-      ];
+      );
     }
 
     // Data state: panel header + divider + list items + bottom cap
-    return [
-      // Panel header with top radius
-      SliverToBoxAdapter(
-        child: Container(
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surfaceContainerLow,
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(tokens.cardRadius),
-              topRight: Radius.circular(tokens.cardRadius),
-            ),
-            border: Border.all(
-              color: theme.colorScheme.outlineVariant.withValues(alpha: 0.15),
-            ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: EdgeInsets.fromLTRB(context.spacing.mdLg, context.spacing.md, context.spacing.mdLg, context.spacing.smMd),
-                child: AppSectionHeader(
-                  title: EpisodeCardUtils.formatDate(headerDate),
-                  subtitle: l10n.podcast_highlights_items(highlightsResponse?.total ?? 0),
-                ),
-              ),
-              Divider(
-                height: 1,
-                color: theme.colorScheme.outlineVariant.withValues(alpha: 0.45),
-              ),
-            ],
-          ),
+    return panelDataSlivers(
+      context,
+      title: EpisodeCardUtils.formatDate(headerDate),
+      subtitle: l10n.podcast_highlights_items(highlightsResponse?.total ?? 0),
+      itemSlivers: [
+        // Highlight items
+        SliverList.builder(
+          itemCount: highlights.length + (_isLoadingMore ? 1 : 0),
+          itemBuilder: (itemContext, index) {
+            if (index >= highlights.length) {
+              return _buildLoadingMoreIndicator(itemContext);
+            }
+            final highlight = highlights[index];
+            return _buildHighlightCard(itemContext, highlight);
+          },
         ),
-      ),
-      // Highlight items
-      SliverList.builder(
-        itemCount: highlights.length + (_isLoadingMore ? 1 : 0),
-        itemBuilder: (itemContext, index) {
-          if (index >= highlights.length) {
-            return _buildLoadingMoreIndicator(itemContext);
-          }
-          final highlight = highlights[index];
-          return _buildHighlightCard(itemContext, highlight);
-        },
-      ),
-      // Panel bottom cap
-      SliverToBoxAdapter(
-        child: Container(
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surfaceContainerLow,
-            borderRadius: BorderRadius.only(
-              bottomLeft: Radius.circular(tokens.cardRadius),
-              bottomRight: Radius.circular(tokens.cardRadius),
-            ),
-            border: Border.all(
-              color: theme.colorScheme.outlineVariant.withValues(alpha: 0.15),
-            ),
-          ),
-          height: context.spacing.smMd,
-        ),
-      ),
-      // Bottom buffer
-      SliverPadding(
-        padding: EdgeInsets.only(bottom: context.spacing.xl),
-      ),
-    ];
+      ],
+    );
   }
 
   Widget _buildHighlightCard(
@@ -318,141 +288,6 @@ class _PodcastHighlightsPageState extends ConsumerState<PodcastHighlightsPage> {
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildLoadingState(BuildContext context, DateTime headerDate) {
-    final theme = Theme.of(context);
-    final l10n = context.l10n;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: EdgeInsets.fromLTRB(context.spacing.mdLg, context.spacing.md, context.spacing.mdLg, context.spacing.smMd),
-          child: AppSectionHeader(
-            title: EpisodeCardUtils.formatDate(headerDate),
-            subtitle: l10n.podcast_highlights_loading,
-          ),
-        ),
-        SizedBox(height: context.spacing.mdLg),
-        Expanded(
-          child: Center(
-            child: LoadingStatusContent(
-              key: const Key('highlights_loading_content'),
-              title: l10n.podcast_highlights_loading_highlights,
-              spinnerSize: 28,
-              spinnerColor: theme.colorScheme.primary,
-              gapAfterSpinner: 12,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildErrorState(BuildContext context, DateTime headerDate) {
-    final theme = Theme.of(context);
-    final l10n = context.l10n;
-
-    return SurfacePanel(
-      padding: EdgeInsets.zero,
-      showBorder: false,
-      borderRadius: appThemeOf(context).cardRadius,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: EdgeInsets.fromLTRB(context.spacing.mdLg, context.spacing.md, context.spacing.mdLg, context.spacing.smMd),
-            child: AppSectionHeader(
-              title: EpisodeCardUtils.formatDate(headerDate),
-              subtitle: l10n.podcast_highlights_load_failed,
-            ),
-          ),
-          Divider(
-            height: 1,
-            color: theme.colorScheme.outlineVariant.withValues(alpha: 0.45),
-          ),
-          Expanded(
-            child: Padding(
-              padding: EdgeInsets.all(context.spacing.mdLg),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    l10n.podcast_highlights_cannot_load,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.error,
-                    ),
-                  ),
-                  SizedBox(height: context.spacing.md),
-                  FilledButton.tonal(
-                    onPressed: () {
-                      final selectedDate =
-                          ref.read(selectedHighlightDateProvider);
-                      ref
-                          .read(highlightsProvider.notifier)
-                          .load(date: selectedDate, forceRefresh: true);
-                      ref
-                          .read(highlightDatesProvider.notifier)
-                          .load(forceRefresh: true);
-                    },
-                    child: Text(l10n.podcast_highlights_retry),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildEmptyState(BuildContext context, DateTime headerDate) {
-    final theme = Theme.of(context);
-    final tokens = appThemeOf(context);
-    final l10n = context.l10n;
-
-    return SurfacePanel(
-      padding: EdgeInsets.zero,
-      showBorder: false,
-      borderRadius: tokens.cardRadius,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: EdgeInsets.fromLTRB(context.spacing.mdLg, context.spacing.md, context.spacing.mdLg, context.spacing.smMd),
-            child: AppSectionHeader(
-              title: EpisodeCardUtils.formatDate(headerDate),
-              subtitle: l10n.podcast_highlights_no_highs,
-            ),
-          ),
-          Divider(
-            height: 1,
-            color: theme.colorScheme.outlineVariant.withValues(alpha: 0.45),
-          ),
-          Expanded(
-            child: Padding(
-              padding: EdgeInsets.all(context.spacing.mdLg),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.surfaceContainerLow,
-                  borderRadius: AppRadius.xxlCardRadius,
-                  border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.15)),
-                ),
-                padding: EdgeInsets.all(context.spacing.md),
-                child: Text(
-                  l10n.podcast_highlights_empty,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }

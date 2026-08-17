@@ -23,13 +23,10 @@ class AppColors {
   static const Color lightBackground = Color(0xFFF8F9FA);
   static const Color lightSurface = Color(0xFFFFFFFF);
   static const Color lightSurfaceVariant = Color(0xFFF2F2F7);
-  static const Color lightOnBackground = Color(0xFF1a1a2e);
-  static const Color lightOnSurface = Color(0x991a1a2e); // rgba 0.6
   static const Color lightOnSurfaceMuted = Color(0x8C1a1a2e); // rgba 0.55
 
   // Text Colors - 文字色系 (Apple HIG label colors)
   static const Color lightTextPrimary = Color(0xFF000000);
-  static const Color lightTextSecondary = Color(0xFF3C3C43);
   static const Color lightTextTertiary = Color(0xFF3C3C43);
 
   // Outline Colors - 边框色系 (Apple HIG systemGray colors)
@@ -48,11 +45,9 @@ class AppColors {
   static const Color darkOnBackground = Color(0xE6FFFFFF); // rgba 0.9
   static const Color darkOnSurface = Color(0x80FFFFFF); // rgba 0.5
   static const Color darkOnSurfaceMuted = Color(0x80FFFFFF); // rgba 0.50
-  static const Color darkBorder = Color(0x0FFFFFFF); // rgba 0.06
 
   // Text Colors - 文字色系 (Apple HIG label colors)
   static const Color darkTextPrimary = Color(0xFFFFFFFF);
-  static const Color darkTextSecondary = Color(0xFFEBEBF5);
   static const Color darkTextTertiary = Color(0xFFEBEBF5);
 
   // Outline Colors - 边框色系 (Apple HIG systemGray colors)
@@ -78,16 +73,8 @@ class AppColors {
   static const Color warmYellowSurface = Color(0xFFFEF3C7);
   static const Color warmPinkSurface = Color(0xFFFCE7F3);
 
-  // AI-specific accent tokens - using Apple system colors
-  static const Color aiBubbleUser = Color(0xFFFFCC00); // systemYellow light
-  static const Color aiBubbleAssistant = Color(0xFFFF2D55); // systemPink light
-  static const Color aiChipBackground = Color(0xFFFF9500); // systemOrange light
-  static const Color aiHighlightSurface = Color(0xFFFFF4D6); // light yellow surface
-  static const Color cosmicFilterActive = Color(0xFFFF9500); // systemOrange light
-
   // Tertiary - System Green (Apple HIG)
   static const Color tertiary = Color(0xFF34C759); // systemGreen light
-  static const Color tertiaryLight = Color(0xFF30D158); // systemGreen dark
 
   // ============================================================
   // SEMANTIC COLORS - 语义色彩 (Apple HIG system colors)
@@ -108,18 +95,15 @@ class AppColors {
 
   static const List<Color> coralColors = [Color(0xFFFF6B6B), Color(0xFFE84545)];
   static const List<Color> violetColors = [Color(0xFF7C6AEF), Color(0xFF5845D6)];
-  static const List<Color> cyanColors = [Color(0xFF4FC3D6), Color(0xFF389CAE)];
   static const List<Color> goldColors = [Color(0xFFF5A623), Color(0xFFD4901E)];
-  static const List<Color> roseColors = [Color(0xFFFF6B8A), Color(0xFFD4536E)];
-  static const List<Color> skyColors = [Color(0xFF5AC8FA), Color(0xFF4AA8D6)];
 
   static const List<List<Color>> podcastGradientColors = [
     coralColors,
     violetColors,
-    cyanColors,
+    [Color(0xFF4FC3D6), Color(0xFF389CAE)],
     goldColors,
-    roseColors,
-    skyColors,
+    [Color(0xFFFF6B8A), Color(0xFFD4536E)],
+    [Color(0xFF5AC8FA), Color(0xFF4AA8D6)],
   ];
 
   // ============================================================
@@ -129,18 +113,19 @@ class AppColors {
 
   static const Color chart5 = Color(0xFFAF52DE); // systemPurple
   static const Color chart7 = Color(0xFF5AC8FA); // systemTeal
-
-  static const List<Color> chartColors = [
-    Color(0xFF5856D6), // systemIndigo
-    Color(0xFF5E5CE6), // systemIndigo dark
-    Color(0xFF34C759), // systemGreen
-    Color(0xFFFF9500), // systemOrange
-    chart5,
-    Color(0xFFFF2D55), // systemPink
-    chart7,
-    Color(0xFF30D158), // systemGreen dark
-  ];
 }
+
+/// Chart palette used by [AppThemeExtension] (Apple HIG system tints).
+const List<Color> _chartPalette = [
+  Color(0xFF5856D6), // systemIndigo
+  Color(0xFF5E5CE6), // systemIndigo dark
+  Color(0xFF34C759), // systemGreen
+  Color(0xFFFF9500), // systemOrange
+  AppColors.chart5,
+  Color(0xFFFF2D55), // systemPink
+  AppColors.chart7,
+  Color(0xFF30D158), // systemGreen dark
+];
 
 /// ============================================================
 /// APP THEME EXTENSION
@@ -340,7 +325,7 @@ class AppThemeExtension extends ThemeExtension<AppThemeExtension> {
       blurRadius: 8,
       offset: Offset(0, 8),
     ),
-    chartColors: AppColors.chartColors,
+    chartColors: _chartPalette,
     aiPrimary: Color(0xFF5856D6),
     podcastGradientColors: AppColors.podcastGradientColors,
   );
@@ -383,33 +368,22 @@ class AppThemeExtension extends ThemeExtension<AppThemeExtension> {
       blurRadius: 8,
       offset: Offset(0, 8),
     ),
-    chartColors: AppColors.chartColors,
+    chartColors: _chartPalette,
     aiPrimary: Color(0xFFA5B4FC),
     podcastGradientColors: AppColors.podcastGradientColors,
   );
 
   /// Light theme extension for iOS (larger radii, no Material shadows).
   /// Derived from [light] via copyWith.
-  static AppThemeExtension lightIOS() => light.copyWith(
-    cardRadius: 16,
-    buttonRadius: 14,
-    navItemRadius: 12,
-    itemRadius: 10,
-    dialogRadius: 16,
-    inputFillAlpha: 0.4,
-    listTileHorizontalPadding: AppSpacing.mdLg,
-    listTileVerticalPadding: AppSpacing.xs,
-    listTileRadius: 10,
-    centerTitle: true,
-    shadowXs: const BoxShadow(color: Color(0x00000000)),
-    shadowSm: const BoxShadow(color: Color(0x00000000)),
-    shadowMd: const BoxShadow(color: Color(0x00000000)),
-    shadowLg: const BoxShadow(color: Color(0x00000000)),
-  );
+  static AppThemeExtension lightIOS() => _iosFrom(light);
 
   /// Dark theme extension for iOS (larger radii, no Material shadows).
   /// Derived from [dark] via copyWith.
-  static AppThemeExtension darkIOS() => dark.copyWith(
+  static AppThemeExtension darkIOS() => _iosFrom(dark);
+
+  /// Applies the iOS-specific tweaks (larger radii, transparent shadows,
+  /// padded list tiles) to [base].
+  static AppThemeExtension _iosFrom(AppThemeExtension base) => base.copyWith(
     cardRadius: 16,
     buttonRadius: 14,
     navItemRadius: 12,
