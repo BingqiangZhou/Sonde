@@ -209,8 +209,7 @@ GitHub Actions 自动化发布流程（`.github/workflows/release.yml`）：
 | 文档 | 说明 |
 |------|------|
 | [CHANGELOG.md](CHANGELOG.md) | 版本更新日志 |
-| [AGENTS.md](AGENTS.md) | AI Agent 开发规范（ZCode 入口） |
-| [CLAUDE.md](CLAUDE.md) | 开发规范（历史参考） |
+| [AGENTS.md](AGENTS.md) | AI Agent 开发规范（含 Gotchas） |
 | [docs/FEATURES.md](docs/FEATURES.md) | 功能特性详细说明 |
 | [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | 部署指南 |
 | [docs/ANDROID_SIGNING.md](docs/ANDROID_SIGNING.md) | Android 签名配置 |
@@ -250,7 +249,6 @@ personal-ai-assistant/
 ├── .zcode/          # ZCode 配置（skills: /commit、/release；reference: agent 角色归档）
 ├── .github/          # GitHub Actions（release.yml）
 ├── AGENTS.md         # AI Agent 开发规范（ZCode 入口）
-├── CLAUDE.md         # 开发规范（历史参考）
 ├── CHANGELOG.md      # 更新日志（git-cliff 生成）
 ├── cliff.toml        # Changelog 生成配置
 └── README.md         # 项目说明

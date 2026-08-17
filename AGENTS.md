@@ -7,7 +7,6 @@
 - `frontend/`: Flutter app with feature modules in `frontend/lib/` and tests in `frontend/test/`.
 - `docker/`: Docker Compose files and deployment assets (5 services: postgres, redis, backend, celery_worker, nginx).
 - `docs/`: detailed design notes.
-- `scripts/`: Utility scripts (SQL init, API test, optimization verify).
 
 ## Build, Test, and Development Commands
 - Backend dependencies: `cd backend && uv sync --extra dev`
@@ -31,9 +30,10 @@
 - Use `Color.withValues(alpha:)` instead of deprecated `Color.withOpacity()`.
 
 ## Testing Guidelines
-- Backend: pytest with async tests; run `uv run pytest` before PRs.
+- Backend: pytest with async tests; run `uv run pytest` before PRs (in-memory SQLite via aiosqlite, no Docker needed).
 - Frontend: widget tests are mandatory for page functionality; run `flutter test test/widget/`.
 - Verify backend via Docker (not only local uvicorn).
+- A task is NOT COMPLETE until: code compiles, tests pass, modified functionality works end-to-end.
 
 ## Commit & Pull Request Guidelines
 - Commit messages follow a Conventional Commits style: `feat:`, `fix:`, `refactor:`, `chore:`, `style:` (examples in history).
@@ -46,3 +46,23 @@
 
 ## Configuration & Requirements Notes
 - API endpoints are prefixed with `/api/v1/` and errors are bilingual: `{message_en, message_zz}`.
+- Rate limiting: 60 req/min, 1000 req/hour.
+- Health: `GET /health` and `GET /api/v1/health` (liveness), `GET /api/v1/health/ready` (readiness).
+
+## Backend Architecture Notes
+- DI: FastAPI `Depends()`. Migrations: `backend/alembic/`.
+- Exceptions: service layer raises `BaseCustomError`; routes use `HTTPException` from `app.http.errors`.
+- Celery: single `default` queue, worker runs with embedded beat (`-B` flag).
+
+## Gotchas
+
+| Wrong | Correct |
+|-------|---------|
+| `pip install` | `uv add` or `uv sync` |
+| flutter_adaptive_scaffold | `CustomAdaptiveNavigation` + `Breakpoints` |
+| Hardcoded colors/radii/spacing | `AppColors`, `AppRadius`, and `AppSpacing` tokens |
+| Edit `.g.dart` by hand | Edit source, re-run `dart run build_runner build` |
+| Bare ValueError for errors | `BaseCustomError` (service) or `HTTPException` (route) |
+| `Color.withOpacity()` | `Color.withValues(alpha:)` (former is deprecated) |
+| Skip widget tests | Required for all pages |
+| `admin` is under `domains/` | `admin/` is a separate top-level module at `app/admin/` |

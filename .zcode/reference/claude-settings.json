@@ -1,6 +1,0 @@
-{
-  "enabledPlugins": {
-    "minimax-skills@minimax-skills": true,
-    "pyright-lsp@claude-plugins-official": true
-  }
-}

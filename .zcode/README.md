@@ -10,10 +10,7 @@
 │   ├── commit/              # 智能提交命令（原 /commit 命令）
 │   └── release/             # 版本发布流程（原 /release 命令）
 └── reference/               # 归档参考（ZCode 不自动加载，agent 按需阅读）
-    ├── agents/              # 多 agent 角色定义（roles/workflows/prompts，原 .claude/agents）
-    ├── agents.json          # 旧工作流注册表（路径已更新）
-    ├── project.md           # 旧项目上下文（历史参考）
-    └── claude-settings.json # 原 Claude Code 插件配置（历史参考）
+    └── agents/              # 多 agent 角色定义（roles/workflows/prompts，原 .claude/agents）
 ```
 
 ## 说明
@@ -22,5 +19,5 @@
 - **reference/agents/** 是原 Claude 多 agent 体系的角色与工作流文档（architect、backend-dev、
   feature-development 等）。ZCode 没有项目级 agent 定义加载机制，主 agent 编排子任务时可
   直接阅读这些文件作为角色说明与流程清单。
-- 项目级指令文件为根目录 `AGENTS.md`；`CLAUDE.md` 保留作为历史参考。
+- 项目级指令文件为根目录 `AGENTS.md`。
 - 原 `.claudeignore` 的安全忽略规则已并入根 `.gitignore`（*.pem、*.sql、.vscode/settings.json）。
