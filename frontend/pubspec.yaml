@@ -32,7 +32,7 @@ dependencies:
 
   # Local Database
   drift: ^2.31.0
-  drift_flutter: ^0.2.8
+  drift_flutter: ^0.3.1
   path_provider: ^2.1.5
   path: ^1.9.1
 
@@ -49,18 +49,18 @@ dependencies:
   intl: ^0.20.2
 
   # Security
-  flutter_secure_storage: ^10.0.0
+  flutter_secure_storage: ^11.0.0
 
   # Audio Player
   audioplayers: ^6.6.0
   audio_service: ^0.18.18
-  permission_handler: ^12.0.1
+  permission_handler: ^13.0.1
 
   # File Handling
   file_selector: ^1.1.0
 
   # Desktop Info
-  package_info_plus: ^9.0.0
+  package_info_plus: ^10.2.1
 
   # Logging
   equatable: ^2.0.8
@@ -68,11 +68,12 @@ dependencies:
   window_manager: ^0.5.1
 
   # Build Tools
-  share_plus: ^12.0.1
+  share_plus: ^13.3.0
   flutter_native_splash: ^2.4.7
 
   dio_cache_interceptor: ^4.0.6
 
+  clock: any
 dev_dependencies:
   flutter_test:
     sdk: flutter

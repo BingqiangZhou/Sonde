@@ -34,14 +34,17 @@ class SettingsSectionCard extends StatelessWidget {
         ),
         Padding(
           padding: cardMargin,
-          child: Container(
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceContainerLow,
+          // Material 直接承载填充/边框/圆角，保证内部 ListTile 的
+          // 背景和水波纹绘制在最近的 Material 上（Flutter 3.47 断言要求）。
+          child: Material(
+            color: theme.colorScheme.surfaceContainerLow,
+            shape: RoundedRectangleBorder(
               borderRadius: AppRadius.mdLgRadius,
-              border: Border.all(
+              side: BorderSide(
                 color: theme.colorScheme.outlineVariant.withValues(alpha: 0.15),
               ),
             ),
+            clipBehavior: Clip.antiAlias,
             child: Column(children: children),
           ),
         ),

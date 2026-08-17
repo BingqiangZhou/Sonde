@@ -11,7 +11,7 @@ void main() {
       await _pumpWithSize(
         tester: tester,
         size: const Size(1200, 900),
-        child: _buildNavigation(platform: TargetPlatform.android),
+        child: _buildNavigation(),
       );
 
       final accessoryRect = tester.getRect(
@@ -114,7 +114,7 @@ void main() {
       await _pumpWithSize(
         tester: tester,
         size: const Size(1200, 900),
-        child: _buildNavigation(platform: TargetPlatform.android),
+        child: _buildNavigation(),
       );
 
       expect(find.text('AI Assistant'), findsOneWidget);
@@ -134,7 +134,6 @@ void main() {
         tester: tester,
         size: const Size(1200, 900),
         child: _buildNavigation(
-          platform: TargetPlatform.android,
           desktopNavExpanded: false,
         ),
       );
@@ -158,17 +157,28 @@ void main() {
         child: _buildNavigation(platform: TargetPlatform.macOS),
       );
 
-      // Apple sidebar has no title or toggle buttons
-      expect(find.text('AI Assistant'), findsNothing);
-      expect(find.byIcon(Icons.chevron_left), findsNothing);
-      expect(find.byIcon(Icons.chevron_right), findsNothing);
+      // Apple Podcasts 风格侧栏头部显示应用名，且无折叠开关
+      // （条目自带的 13px 指示箭头属于 Apple 风格，不算折叠开关）
+      expect(find.text('AI Assistant'), findsOneWidget);
+      expect(
+        find.byWidgetPredicate(
+          (w) => w is Icon && w.icon == Icons.chevron_left && (w.size ?? 24) >= 20,
+        ),
+        findsNothing,
+      );
+      expect(
+        find.byWidgetPredicate(
+          (w) => w is Icon && w.icon == Icons.chevron_right && (w.size ?? 24) >= 20,
+        ),
+        findsNothing,
+      );
 
       // Find the Apple sidebar Container by its unique CupertinoColors decoration
       // The Apple sidebar uses CupertinoColors.systemBackground with opacity
       final sidebarContainer = find.byWidgetPredicate((widget) =>
           widget is Container &&
           widget.decoration is BoxDecoration &&
-          (widget.decoration as BoxDecoration).color != null);
+          (widget.decoration! as BoxDecoration).color != null);
 
       // Should find the Apple sidebar (and possibly other containers)
       expect(sidebarContainer, findsWidgets);
@@ -185,7 +195,6 @@ Future<void> _pumpWithSize({
   required WidgetTester tester,
   required Size size,
   required Widget child,
-  TargetPlatform? platform,
 }) async {
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1.0;

@@ -65,9 +65,8 @@ void main() {
       // Check for logo (asset image)
       expect(find.byType(Image), findsOneWidget);
 
-      // Check for status badge with app name
-      expect(find.text('Personal AI Workspace'), findsOneWidget);
-      expect(find.byIcon(Icons.auto_awesome), findsOneWidget);
+      // 品牌徽章已随 UI 改版移至 onboarding 页；登录页显示欢迎副标题。
+      expect(find.text("Dawn's near. Let's begin."), findsOneWidget);
     });
 
     testWidgets('has login button with key', (tester) async {

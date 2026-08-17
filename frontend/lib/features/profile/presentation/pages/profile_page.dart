@@ -9,12 +9,12 @@ import 'package:personal_ai_assistant/core/constants/breakpoints.dart';
 import 'package:personal_ai_assistant/core/localization/app_localizations.dart';
 import 'package:personal_ai_assistant/core/localization/app_localizations_extension.dart';
 import 'package:personal_ai_assistant/core/localization/locale_provider.dart';
-import 'package:personal_ai_assistant/core/platform/platform_helper.dart';
 import 'package:personal_ai_assistant/core/platform/adaptive_haptic.dart';
+import 'package:personal_ai_assistant/core/platform/platform_helper.dart';
 import 'package:personal_ai_assistant/core/theme/theme_provider.dart';
 import 'package:personal_ai_assistant/core/widgets/adaptive/adaptive.dart';
-import 'package:personal_ai_assistant/core/widgets/app_shells.dart';
 import 'package:personal_ai_assistant/core/widgets/app_dialog_helper.dart';
+import 'package:personal_ai_assistant/core/widgets/app_shells.dart';
 import 'package:personal_ai_assistant/core/widgets/top_floating_notice.dart';
 import 'package:personal_ai_assistant/features/auth/domain/models/user.dart';
 import 'package:personal_ai_assistant/features/auth/presentation/providers/auth_provider.dart';
@@ -387,11 +387,11 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     final isIOS = PlatformHelper.isApple(dialogContext);
     final theme = Theme.of(dialogContext);
 
-    return Container(
-      decoration: BoxDecoration(
-        color: isIOS
-            ? CupertinoColors.systemBackground.resolveFrom(dialogContext)
-            : theme.colorScheme.surfaceContainerHighest,
+    return Material(
+      color: isIOS
+          ? CupertinoColors.systemBackground.resolveFrom(dialogContext)
+          : theme.colorScheme.surfaceContainerHighest,
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(isIOS ? 14 : 28),
       ),
       clipBehavior: Clip.antiAlias,
@@ -563,7 +563,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
             ),
             if (userEmail != null)
               AdaptiveButton(
-                style: AdaptiveButtonStyle.filled,
                 onPressed: () async {
                   Navigator.of(dialogContext).pop();
                   try {
@@ -775,7 +774,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   }
 
   void _showServerConfigDialog(BuildContext context) {
-    showAppDialog(
+    showAppDialog<void>(
       context: context,
       barrierDismissible: false,
       builder: (context) => const ServerConfigDialog(),
@@ -802,7 +801,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
               child: Text(l10n.cancel),
             ),
             AdaptiveButton(
-              style: AdaptiveButtonStyle.filled,
               onPressed: () async {
                 Navigator.of(dialogContext).pop();
                 await ref.read(authProvider.notifier).logout();

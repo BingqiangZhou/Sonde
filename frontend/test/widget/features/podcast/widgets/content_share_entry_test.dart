@@ -7,7 +7,6 @@ import 'package:personal_ai_assistant/features/podcast/data/models/podcast_conve
 import 'package:personal_ai_assistant/features/podcast/data/models/podcast_playback_model.dart';
 import 'package:personal_ai_assistant/features/podcast/data/models/podcast_transcription_model.dart';
 import 'package:personal_ai_assistant/features/podcast/presentation/providers/conversation_providers.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/providers/conversation_providers.dart';
 import 'package:personal_ai_assistant/features/podcast/presentation/widgets/conversation_chat_widget.dart';
 import 'package:personal_ai_assistant/features/podcast/presentation/widgets/transcript_display_widget.dart';
 import '../../../../helpers/podcast_episode_detail_helper.dart';
@@ -189,15 +188,15 @@ void main() {
 
     expect(find.byIcon(Icons.check_box_outlined), findsOneWidget);
     expect(find.byIcon(Icons.deselect), findsNothing);
-    expect(find.byIcon(Icons.share_outlined), findsNothing);
-    expect(find.byIcon(Icons.ios_share_outlined), findsOneWidget);
+    // 文字分享重构后：非选择模式仅保留"分享全部"（adaptive.share 在 Android 解析为 share）
+    expect(find.byIcon(Icons.share), findsOneWidget);
 
     await tester.tap(find.byIcon(Icons.check_box_outlined));
     await tester.pumpAndSettle();
 
     expect(find.byIcon(Icons.deselect), findsOneWidget);
-    expect(find.byIcon(Icons.share_outlined), findsOneWidget);
-    expect(find.byIcon(Icons.ios_share_outlined), findsOneWidget);
+    // 选择模式下：分享所选 + 分享全部，共两个 share 图标
+    expect(find.byIcon(Icons.share), findsNWidgets(2));
   });
 
   testWidgets('Conversation new-chat and history buttons are on title row', (

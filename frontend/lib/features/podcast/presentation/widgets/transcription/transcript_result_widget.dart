@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:personal_ai_assistant/core/constants/app_text_styles.dart';
 import 'package:personal_ai_assistant/core/constants/app_spacing.dart';
-
+import 'package:personal_ai_assistant/core/constants/app_text_styles.dart';
 import 'package:personal_ai_assistant/core/localization/app_localizations.dart';
 import 'package:personal_ai_assistant/core/localization/app_localizations_extension.dart';
 import 'package:personal_ai_assistant/core/theme/app_colors.dart';
-import 'package:personal_ai_assistant/core/theme/app_theme.dart';
 import 'package:personal_ai_assistant/core/utils/time_formatter.dart';
 import 'package:personal_ai_assistant/features/podcast/data/models/podcast_transcription_model.dart';
 
@@ -212,14 +210,17 @@ class FailedStateWidget extends StatelessWidget {
     final friendlyMessage = getFriendlyErrorMessage(context, errorMessage);
     final suggestion = getErrorSuggestion(context, errorMessage);
 
-    return Container(
-      decoration: BoxDecoration(
-        color: scheme.error.withValues(alpha: 0.05),
+    // Material 直接承载填充/边框/圆角，避免 DecoratedBox 挡住内部
+    // ExpansionTile(ListTile) 的背景与水波纹（Flutter 3.47 断言要求）。
+    return Material(
+      color: scheme.error.withValues(alpha: 0.05),
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(ext.cardRadius),
-        border: Border.all(
+        side: BorderSide(
           color: scheme.outlineVariant.withValues(alpha: 0.15),
         ),
       ),
+      clipBehavior: Clip.antiAlias,
       child: Padding(
         padding: EdgeInsets.all(context.spacing.md),
         child: Column(

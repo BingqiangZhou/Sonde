@@ -61,10 +61,12 @@ Future<void> showAdaptiveActionSheet({
     isScrollControlled: true,
     builder: (sheetContext) {
       final theme = Theme.of(sheetContext);
-      return Container(
-        decoration: BoxDecoration(
-          color: theme.colorScheme.surfaceContainerHighest,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      // Material 直接承载填充与圆角，避免 DecoratedBox 挡住 ListTile 的
+      // 背景与水波纹（Flutter 3.47 断言要求）。
+      return Material(
+        color: theme.colorScheme.surfaceContainerHighest,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
         clipBehavior: Clip.antiAlias,
         child: SafeArea(

@@ -11,6 +11,8 @@ import 'package:personal_ai_assistant/features/podcast/data/repositories/podcast
 import 'package:personal_ai_assistant/features/podcast/data/services/podcast_api_service.dart';
 import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_playback_providers.dart';
 import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_providers.dart';
+// riverpod 3.x 将 Override 移出公共导出；测试需要为 override 列表显式标注类型。
+import 'package:riverpod/src/internals.dart' show Override;
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -527,7 +529,7 @@ class _FakeAudioDownloadService implements AudioDownloadService {
 }
 
 /// Common provider overrides shared by all queue-controller tests.
-_testOverrides({
+List<Override> _testOverrides({
   required PodcastRepository repository,
   AudioPlayerNotifier? audioNotifier,
 }) {
@@ -590,8 +592,8 @@ class _FakePodcastRepository extends PodcastRepository {
   Completer<void>? getQueueCompleter;
   Completer<void>? removeCompleter;
   Completer<void>? reorderCompleter;
-  Object? removeError;
-  Object? reorderError;
+  StateError? removeError;
+  StateError? reorderError;
 
   @override
   Future<PodcastQueueModel> getQueue() async {

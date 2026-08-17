@@ -34,11 +34,14 @@ Future<T?> showAdaptiveSheet<T>({
     return showCupertinoModalPopup<T>(
       context: resolvedContext,
       builder: (sheetCtx) {
-        return Container(
-          decoration: BoxDecoration(
-            color: CupertinoColors.systemBackground.resolveFrom(sheetCtx),
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(AppRadius.mdLg)),
+        // Material 直接承载填充与圆角，避免 DecoratedBox 挡住内部
+        // ListTile 的背景与水波纹（Flutter 3.47 断言要求）。
+        return Material(
+          color: CupertinoColors.systemBackground.resolveFrom(sheetCtx),
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.mdLg)),
           ),
+          clipBehavior: Clip.antiAlias,
           child: SafeArea(child: builder(sheetCtx)),
         );
       },
@@ -58,11 +61,12 @@ Future<T?> showAdaptiveSheet<T>({
               maxWidth: desktopMaxWidth,
               maxHeight: size.height * desktopMaxHeightFraction,
             ),
-            child: Container(
-              decoration: BoxDecoration(
-                color: Theme.of(dialogCtx).colorScheme.surfaceContainerHighest,
+            child: Material(
+              color: Theme.of(dialogCtx).colorScheme.surfaceContainerHighest,
+              shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(AppRadius.xxl),
               ),
+              clipBehavior: Clip.antiAlias,
               child: builder(dialogCtx),
             ),
           ),
@@ -83,11 +87,12 @@ Future<T?> showAdaptiveSheet<T>({
       borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xxl)),
     ),
     builder: (sheetCtx) {
-      return Container(
-        decoration: BoxDecoration(
-          color: Theme.of(sheetCtx).colorScheme.surfaceContainerHighest,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(AppRadius.xxl)),
+      return Material(
+        color: Theme.of(sheetCtx).colorScheme.surfaceContainerHighest,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xxl)),
         ),
+        clipBehavior: Clip.antiAlias,
         child: builder(sheetCtx),
       );
     },
