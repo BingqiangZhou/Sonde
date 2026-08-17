@@ -13,7 +13,6 @@ approach allows configurable base URLs for any compatible endpoint.
 import asyncio
 import json
 import logging
-import random
 import time
 from collections.abc import Callable, Coroutine
 from typing import Any
@@ -23,6 +22,7 @@ from fastapi import HTTPException
 
 from app.core.config import settings
 from app.core.http_client import get_shared_http_session
+from app.core.utils import calculate_backoff
 
 
 logger = logging.getLogger(__name__)
@@ -299,7 +299,6 @@ async def call_ai_api_with_retry(
             await ai_model_repo.increment_usage(model_config.id, success=False)
 
             if attempt < max_retries - 1:
-                backoff = base_delay * (2**attempt)
                 logger.warning(
                     "%s transient error model=%s provider=%s attempt=%s/%s retryable=true error_type=%s error=%s",
                     operation_name,
@@ -310,7 +309,7 @@ async def call_ai_api_with_retry(
                     type(exc).__name__,
                     exc,
                 )
-                await asyncio.sleep(backoff + random.uniform(0, 0.5 * backoff))
+                await asyncio.sleep(calculate_backoff(attempt, base_delay))
                 continue
 
             # Retries exhausted
@@ -615,8 +614,7 @@ class AIClientService:
                         exc,
                     )
                     raise
-                backoff = base_delay * (2**attempt)
-                await asyncio.sleep(backoff + random.uniform(0, 0.5 * backoff))
+                await asyncio.sleep(calculate_backoff(attempt, base_delay))
                 logger.warning(
                     "%s transient error model=%s provider=%s attempt=%s/%s retryable=true error_type=%s error=%s",
                     operation_name,
@@ -637,7 +635,10 @@ class AIClientService:
     @staticmethod
     async def _default_post_process(content: str) -> str:
         """Default post-processing: filter thinking content and sanitize HTML."""
-        from app.core.utils import filter_thinking_content, sanitize_html
+        from app.core.utils import (
+            filter_thinking_content,
+            sanitize_html,
+        )
 
         cleaned = filter_thinking_content(content)
         return sanitize_html(cleaned)

@@ -25,7 +25,7 @@ from sqlalchemy.orm import joinedload
 from app.core.config import settings
 from app.core.database import get_async_session_factory  # noqa: F401
 from app.core.datetime_utils import ensure_timezone_aware_fetch_time
-from app.core.redis import CacheTTL, get_shared_redis
+from app.core.redis import get_shared_redis
 from app.domains.podcast.integration.secure_rss_parser import (
     SecureRSSParser,  # noqa: F401
 )
@@ -43,8 +43,11 @@ from app.domains.podcast.services.content_service import DailyReportService
 from app.domains.podcast.services.transcription_service import (  # noqa: F401
     TranscriptionWorkflowService,
 )
-from app.domains.podcast.transcription_state import get_transcription_state_manager
-from app.domains.podcast.utils.status_helpers import status_value
+from app.domains.podcast.transcription_state import (
+    claim_task_dispatch,
+    clear_task_dispatch,
+    get_transcription_state_manager,
+)
 from app.shared.storage_cleanup import StorageCleanupService
 
 
@@ -455,25 +458,10 @@ class TranscriptionOrchestrator(BaseOrchestrator):
         )
 
     async def _clear_dispatched(self, task_id: int) -> None:
-        key = f"podcast:transcription:dispatched:{task_id}"
-        await self.redis.delete_keys(key)
+        await clear_task_dispatch(self.redis, task_id)
 
     async def _claim_dispatched(self, session: AsyncSession, task_id: int) -> bool:
-        key = f"podcast:transcription:dispatched:{task_id}"
-        if await self.redis.set_if_not_exists(key, "1", ttl=CacheTTL.hours(2)):
-            return True
-
-        status_stmt = select(TranscriptionTask.status).where(
-            TranscriptionTask.id == task_id,
-        )
-        status_result = await session.execute(status_stmt)
-        status_obj = status_result.scalar_one_or_none()
-        task_status_value = status_value(status_obj)
-        if task_status_value in {"completed", "failed", "cancelled"}:
-            return False
-        raise RuntimeError(
-            f"Task {task_id} dispatch key exists while task status={task_status_value}",
-        )
+        return await claim_task_dispatch(self.redis, session, task_id)
 
     async def process_pending_transcriptions(self) -> dict:
         if not settings.TRANSCRIPTION_BACKLOG_ENABLED:

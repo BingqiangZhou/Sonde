@@ -16,7 +16,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.core.exceptions import ValidationError
-from app.core.redis import CacheTTL, RedisCache, get_shared_redis
+from app.core.redis import RedisCache, get_shared_redis
 from app.domains.ai.models import ModelType
 from app.domains.ai.repositories import AIModelConfigRepository
 from app.domains.podcast.ai_key_resolver import resolve_api_key_with_fallback
@@ -30,7 +30,11 @@ from app.domains.podcast.transcription import (
     PodcastTranscriptionService,
     SiliconFlowTranscriber,
 )
-from app.domains.podcast.transcription_state import get_transcription_state_manager
+from app.domains.podcast.transcription_state import (
+    claim_task_dispatch,
+    clear_task_dispatch,
+    get_transcription_state_manager,
+)
 from app.domains.podcast.utils.status_helpers import status_value
 
 
@@ -273,32 +277,14 @@ class TranscriptionWorkflowService:
         """Claim dispatch right for a task. Returns True if claimed successfully."""
         if self._claim_dispatched_callback is not None:
             return await self._claim_dispatched_callback(self.db, task_id)
-
-        redis = self.redis_factory()
-        key = f"podcast:transcription:dispatched:{task_id}"
-        if await redis.set_if_not_exists(key, "1", ttl=CacheTTL.hours(2)):
-            return True
-
-        status_stmt = select(TranscriptionTask.status).where(
-            TranscriptionTask.id == task_id,
-        )
-        status_result = await self.db.execute(status_stmt)
-        task_status_value = status_value(status_result.scalar_one_or_none())
-        if task_status_value in {"completed", "failed", "cancelled"}:
-            return False
-        raise RuntimeError(
-            f"Task {task_id} dispatch key exists while task status={task_status_value}",
-        )
+        return await claim_task_dispatch(self.redis_factory(), self.db, task_id)
 
     async def _clear_dispatch(self, task_id: int) -> None:
         """Clear dispatch flag for a task."""
         if self._clear_dispatched_callback is not None:
             await self._clear_dispatched_callback(task_id)
             return
-
-        redis = self.redis_factory()
-        key = f"podcast:transcription:dispatched:{task_id}"
-        await redis.delete_keys(key)
+        await clear_task_dispatch(self.redis_factory(), task_id)
 
     async def start_episode_transcription(
         self,

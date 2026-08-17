@@ -12,8 +12,10 @@ from datetime import UTC, datetime
 
 import orjson
 import redis.exceptions
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.redis import get_shared_redis
+from app.core.redis import CacheTTL, RedisCache, get_shared_redis
 
 
 logger = logging.getLogger(__name__)
@@ -596,3 +598,42 @@ async def get_transcription_state_manager() -> TranscriptionStateManager:
     if _state_manager is None:
         _state_manager = TranscriptionStateManager()
     return _state_manager
+
+
+# ── Dispatch guard (single source of truth for claim/clear semantics) ────────
+
+
+def _dispatch_key(task_id: int) -> str:
+    return f"podcast:transcription:dispatched:{task_id}"
+
+
+async def claim_task_dispatch(
+    redis: RedisCache,
+    db: AsyncSession,
+    task_id: int,
+) -> bool:
+    """Claim the dispatch right for a task.
+
+    Returns True when this caller wins the claim; False when the task is
+    already finished (guard key left over); raises when a live duplicate
+    dispatch is detected.
+    """
+    from app.domains.podcast.models import TranscriptionTask
+    from app.domains.podcast.utils.status_helpers import status_value
+
+    if await redis.set_if_not_exists(_dispatch_key(task_id), "1", ttl=CacheTTL.hours(2)):
+        return True
+
+    status_stmt = select(TranscriptionTask.status).where(TranscriptionTask.id == task_id)
+    status_result = await db.execute(status_stmt)
+    task_status_value = status_value(status_result.scalar_one_or_none())
+    if task_status_value in {"completed", "failed", "cancelled"}:
+        return False
+    raise RuntimeError(
+        f"Task {task_id} dispatch key exists while task status={task_status_value}",
+    )
+
+
+async def clear_task_dispatch(redis: RedisCache, task_id: int) -> None:
+    """Clear the dispatch flag for a task."""
+    await redis.delete_keys(_dispatch_key(task_id))
