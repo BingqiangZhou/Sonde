@@ -1,9 +1,6 @@
 """AI domain."""
 
-from .services import AIModelConfigService, TextGenerationService
+from .services import AIModelConfigService
 
 
-__all__ = [
-    "AIModelConfigService",
-    "TextGenerationService",
-]
+__all__ = ["AIModelConfigService"]

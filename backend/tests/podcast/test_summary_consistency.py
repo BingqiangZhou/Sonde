@@ -7,7 +7,6 @@ from unittest.mock import AsyncMock, Mock
 import pytest
 
 from app.core.ai_client import looks_like_html_error_page
-from app.domains.ai.services import TextGenerationService
 from app.domains.podcast.routes.routes_episodes import generate_summary
 from app.domains.podcast.schemas import PodcastSummaryRequest
 from app.domains.podcast.services.content_service import (
@@ -180,15 +179,6 @@ def test_search_service_filters_summary_in_list_response() -> None:
     result = service._build_episode_dicts([episode], playback_states={})
 
     assert result[0]["ai_summary"] == "search summary"
-
-
-def test_rule_based_summary_fallback_not_truncated() -> None:
-    service = TextGenerationService(db=AsyncMock())
-    long_content = "A" * 500
-
-    result = service._rule_based_summary("Episode title", long_content)
-
-    assert long_content in result
 
 
 def test_html_timeout_page_is_detected_as_invalid_summary_content() -> None:

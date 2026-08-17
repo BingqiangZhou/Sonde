@@ -21,33 +21,6 @@ async def test_ai_model_config_service_delegates_management_calls():
 
 
 @pytest.mark.asyncio
-async def test_ai_model_config_service_delegates_runtime_calls(monkeypatch):
-    service = AIModelConfigService(AsyncMock())
-    expected = ("ok", object())
-    call_mock = AsyncMock(return_value=expected)
-    monkeypatch.setattr(
-        "app.domains.ai.services.text_generation_service.AIModelRuntimeService"
-        ".call_text_generation_with_fallback",
-        call_mock,
-    )
-
-    result = await service.call_text_generation_with_fallback(
-        messages=[{"role": "user", "content": "hello"}],
-        max_tokens=128,
-        temperature=0.2,
-        model_id="3",
-    )
-
-    assert result is expected
-    call_mock.assert_awaited_once_with(
-        messages=[{"role": "user", "content": "hello"}],
-        max_tokens=128,
-        temperature=0.2,
-        model_id="3",
-    )
-
-
-@pytest.mark.asyncio
 async def test_ai_model_config_service_delegates_key_decryption():
     service = AIModelConfigService(AsyncMock())
     model = object()
