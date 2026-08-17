@@ -33,8 +33,10 @@ final podcastEpisodesProvider =
 class PodcastEpisodesNotifier extends Notifier<PodcastEpisodesState> {
   PodcastRepository get _repository => ref.read(podcastRepositoryProvider);
   static const Duration _episodesCacheExpiration = Duration(hours: 6);
+  // Single token covering both initial loads and load-more: a page-1 refresh
+  // must supersede an in-flight load-more (and vice versa), otherwise the
+  // stale append would interleave old pages into the refreshed list.
   final RequestToken _loadToken = RequestToken();
-  final RequestToken _loadMoreToken = RequestToken();
 
   @override
   PodcastEpisodesState build() {
@@ -220,6 +222,7 @@ class PodcastEpisodesNotifier extends Notifier<PodcastEpisodesState> {
         }
       }
     } catch (error) {
+      if (!_loadToken.isCurrent(currentRequestId)) return;
       logger.AppLogger.debug('[Error] Failed to load episodes: $error');
       state = state.copyWith(isLoading: false, error: mapErrorMessage(error));
     }
@@ -235,39 +238,39 @@ class PodcastEpisodesNotifier extends Notifier<PodcastEpisodesState> {
     if (currentState.isLoadingMore || !currentState.hasMore) return;
 
     // Assign a unique ID to this request so stale responses are discarded
-    final currentRequestId = _loadMoreToken.begin();
+    final currentRequestId = _loadToken.begin();
 
     final normalizedStatus = status?.trim().isEmpty ?? true ? null : status;
     final effectiveStatus = normalizedStatus ?? currentState.cachedStatus;
     final normalizedHasSummary = hasSummary == true ? true : null;
     final effectiveHasSummary =
         normalizedHasSummary ?? currentState.cachedHasSummary;
+    final nextPage = currentState.nextPage ?? 1;
 
     state = state.copyWith(isLoadingMore: true);
 
     try {
       final response = await _repository.listEpisodes(
         subscriptionId: subscriptionId,
-        page: currentState.nextPage ?? 1,
+        page: nextPage,
         hasSummary: effectiveHasSummary,
         isPlayed: effectiveStatus == 'played'
             ? true
             : (effectiveStatus == 'unplayed' ? false : null),
       );
 
-      // Discard if a newer load-more request was made while this one was in-flight
-      if (!_loadMoreToken.isCurrent(currentRequestId)) return;
+      // Discard if a newer request was made while this one was in-flight
+      if (!_loadToken.isCurrent(currentRequestId)) return;
 
       state = state.copyWith(
         episodes: [...state.episodes, ...response.episodes],
-        hasMore: state.nextPage != null && state.nextPage! < response.pages,
-        nextPage: state.nextPage != null && state.nextPage! < response.pages
-            ? state.nextPage! + 1
-            : null,
+        hasMore: nextPage < response.pages,
+        nextPage: nextPage < response.pages ? nextPage + 1 : null,
         isLoadingMore: false,
         clearError: true,
       );
     } catch (error) {
+      if (!_loadToken.isCurrent(currentRequestId)) return;
       state = state.copyWith(isLoadingMore: false, error: mapErrorMessage(error));
     }
   }

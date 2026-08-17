@@ -10,9 +10,6 @@ extension AudioServerSyncNotifier on AudioPlayerNotifier {
   Future<void> _updatePlaybackStateOnServer({bool immediate = false}) async {
     if (_isDisposed) return;
 
-    // Skip if a sync is already in progress (prevents duplicate requests)
-    if (_isSyncingPlaybackState) return;
-
     final episode = state.currentEpisode;
     if (episode == null) return;
     if (!shouldSyncPlaybackToServer(episode)) return;
@@ -34,10 +31,12 @@ extension AudioServerSyncNotifier on AudioPlayerNotifier {
     required PodcastEpisodeModel episode,
     required int positionMs,
     required bool isPlaying,
-  }) async {
-    if (_isSyncingPlaybackState) return;
-    _isSyncingPlaybackState = true;
-    try {
+  }) {
+    // An in-flight throttled sync must not swallow the pause/seek snapshot:
+    // chain behind it so the latest state still reaches the server.
+    final pending = _playbackSyncInFlight;
+    final future = (pending ?? Future<void>.value()).then((_) async {
+      if (_isDisposed) return;
       _timers.cancel(AudioPlayerNotifier._kSyncThrottleTimer);
       final success = await _sendPlaybackSnapshot(
         episode: episode,
@@ -47,29 +46,20 @@ extension AudioServerSyncNotifier on AudioPlayerNotifier {
       if (success) {
         _lastPlaybackSyncAt = DateTime.now();
       }
-    } finally {
-      _isSyncingPlaybackState = false;
-    }
+    });
+    return _adoptPlaybackSyncFuture(future);
   }
 
   Future<void> _scheduleThrottledSync(PodcastEpisodeModel episode) async {
     // Skip if already syncing
-    if (_isSyncingPlaybackState) return;
+    if (_playbackSyncInFlight != null) return;
 
     final now = DateTime.now();
     final lastSync = _lastPlaybackSyncAt;
 
     if (lastSync == null ||
         now.difference(lastSync) >= AudioPlayerNotifier._syncInterval) {
-      _isSyncingPlaybackState = true;
-      try {
-        final success = await _sendPlaybackUpdate(episode);
-        if (success) {
-          _lastPlaybackSyncAt = DateTime.now();
-        }
-      } finally {
-        _isSyncingPlaybackState = false;
-      }
+      await _runThrottledSyncNow(episode);
       return;
     }
 
@@ -80,19 +70,35 @@ extension AudioServerSyncNotifier on AudioPlayerNotifier {
     final remaining =
         AudioPlayerNotifier._syncInterval - now.difference(lastSync);
     _timers.create(AudioPlayerNotifier._kSyncThrottleTimer, remaining, () {
-      if (_isDisposed || _isSyncingPlaybackState) return;
       final currentEpisode = state.currentEpisode;
       if (currentEpisode == null) return;
-
-      _isSyncingPlaybackState = true;
-      _sendPlaybackUpdate(currentEpisode).then((success) {
-        if (success) {
-          _lastPlaybackSyncAt = DateTime.now();
-        }
-      }).whenComplete(() {
-        _isSyncingPlaybackState = false;
-      });
+      unawaited(_runThrottledSyncNow(currentEpisode));
     });
+  }
+
+  Future<void> _runThrottledSyncNow(PodcastEpisodeModel episode) {
+    if (_isDisposed || _playbackSyncInFlight != null) {
+      return Future<void>.value();
+    }
+    final future = _sendPlaybackUpdate(episode).then((success) {
+      if (success) {
+        _lastPlaybackSyncAt = DateTime.now();
+      }
+    });
+    return _adoptPlaybackSyncFuture(future);
+  }
+
+  /// Tracks [future] as the in-flight sync and clears the slot once it (and
+  /// anything chained behind it) drains. [_sendPlaybackSnapshot] catches all
+  /// errors, so the future never rejects.
+  Future<void> _adoptPlaybackSyncFuture(Future<void> future) {
+    _playbackSyncInFlight = future;
+    future.whenComplete(() {
+      if (identical(_playbackSyncInFlight, future)) {
+        _playbackSyncInFlight = null;
+      }
+    });
+    return future;
   }
 
   Future<bool> _sendPlaybackUpdate(PodcastEpisodeModel episode) async {

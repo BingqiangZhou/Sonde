@@ -48,16 +48,6 @@ class AppUpdateService {
     }
   }
 
-  /// Get current app version (synchronous fallback)
-  ///
-  /// This is a fallback method that returns a cached version or default
-  /// Use getCurrentVersion() for the actual version
-  static String getCurrentVersionSync() {
-    // Note: This is a fallback. The actual version should be fetched asynchronously
-    // This is kept for compatibility with existing code that needs sync access
-    return '0.0.0'; // Fallback sentinel — async getCurrentVersion() should be used
-  }
-
   /// Get current platform name
   static String getCurrentPlatform() {
     if (kIsWeb) {

@@ -63,13 +63,10 @@ class AppUpdateNotifier extends Notifier<AppUpdateState> {
 
   @override
   AppUpdateState build() {
-    // Initialize with sync version, will be updated asynchronously
-    final state = AppUpdateState(
-      currentVersion: AppUpdateService.getCurrentVersionSync(),
-    );
-    // Load actual version asynchronously
+    // package_info_plus has no sync API; the real version arrives via
+    // _loadActualVersion() shortly after build.
     _loadActualVersion();
-    return state;
+    return const AppUpdateState();
   }
 
   Future<void> _loadActualVersion() async {
@@ -207,13 +204,10 @@ class ManualUpdateCheckNotifier extends Notifier<AppUpdateState> {
 
   @override
   AppUpdateState build() {
-    // Initialize with sync version, will be updated asynchronously
-    final state = AppUpdateState(
-      currentVersion: AppUpdateService.getCurrentVersionSync(),
-    );
-    // Load actual version asynchronously
+    // package_info_plus has no sync API; the real version arrives via
+    // _loadActualVersion() shortly after build.
     _loadActualVersion();
-    return state;
+    return const AppUpdateState();
   }
 
   Future<void> _loadActualVersion() async {

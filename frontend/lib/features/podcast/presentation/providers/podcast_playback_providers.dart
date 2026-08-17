@@ -16,6 +16,7 @@ import 'package:personal_ai_assistant/core/services/download_provider.dart';
 import 'package:personal_ai_assistant/core/storage/local_storage_service.dart';
 import 'package:personal_ai_assistant/core/theme/app_colors.dart';
 import 'package:personal_ai_assistant/core/utils/app_logger.dart' as logger;
+import 'package:personal_ai_assistant/core/utils/request_dedup.dart';
 import 'package:personal_ai_assistant/core/utils/time_formatter.dart';
 import 'package:personal_ai_assistant/features/auth/presentation/providers/auth_provider.dart';
 import 'package:personal_ai_assistant/features/podcast/data/models/audio_player_state_model.dart';
@@ -97,13 +98,18 @@ class _TimerManager {
     return timer?.isActive ?? false;
   }
 
-  /// Cancels all timers and clears the manager.
-  void dispose() {
+  /// Cancels all timers and puts the manager back into a usable state.
+  ///
+  /// build() tears down managed resources before wiring anything, so the
+  /// manager is disposed on first access; a terminal dispose would silently
+  /// drop every future timer callback (sleep timer, sync throttle, snapshot
+  /// persist).
+  void reset() {
     for (final timer in timers.values) {
       timer.cancel();
     }
     timers.clear();
-    _isDisposed = true;
+    _isDisposed = false;
   }
 
   bool _isDisposed = false;
@@ -121,16 +127,10 @@ class AudioPlayerNotifier extends Notifier<AudioPlayerState> {
   ProcessingState? _lastProcessingState;
   bool _isHandlingQueueCompletion = false;
   DateTime? _lastPlaybackSyncAt;
-  bool _isSyncingPlaybackState = false; // Prevent concurrent sync requests
+  Future<void>? _playbackSyncInFlight; // Non-null while a sync request runs
   static const Duration _syncInterval = Duration(seconds: 15);
   static const Duration _lastPlaybackSnapshotDebounce = Duration(seconds: 2);
   _PlaybackRateSelectionCache? _playbackRateSelectionCache;
-
-  // Position debounce fields
-  int? _pendingPositionMs;
-  // Dynamic debounce intervals based on playback state
-  static const Duration _positionDebounceIntervalPlaying = Duration(milliseconds: 500);
-  static const Duration _positionDebounceIntervalPaused = Duration(milliseconds: 100);
 
   // Timer manager for centralized timer lifecycle management
   late final _TimerManager _timers = _TimerManager();
@@ -139,7 +139,6 @@ class AudioPlayerNotifier extends Notifier<AudioPlayerState> {
   static const String _kSyncThrottleTimer = 'syncThrottle';
   static const String _kSleepTimerTick = 'sleepTimerTick';
   static const String _kSnapshotPersist = 'snapshotPersist';
-  static const String _kPositionDebounce = 'positionDebounce';
 
   PodcastAudioHandler get _audioHandler => ref.read(audioHandlerProvider);
 
@@ -206,8 +205,7 @@ class AudioPlayerNotifier extends Notifier<AudioPlayerState> {
   }
 
   void _cancelManagedTimers() {
-    _timers.dispose();
-    _pendingPositionMs = null;
+    _timers.reset();
   }
 
   void _disposeManagedResources() {
@@ -330,38 +328,14 @@ class AudioPlayerNotifier extends Notifier<AudioPlayerState> {
     // CRITICAL: Use _audioHandler.positionStream instead of AudioService.position
     // AudioService is NOT available on desktop platforms (Windows, macOS, Linux)
     // _audioHandler.positionStream works on both mobile and desktop
+    // Ticks are already throttled by the handler (>=500ms apart, seeks pass
+    // through immediately), so commit them straight into state.
     _positionSubscription = audioHandler.positionStream.listen((position) {
       if (_isDisposed || !ref.mounted) return;
 
       final positionMs = position.inMilliseconds;
-
-      // OPTIMIZATION: Debounce position updates to reduce state changes
-      // Only update state immediately if position changed significantly (>1 second)
-      final positionDelta = (state.position - positionMs).abs();
-      final shouldUpdateImmediately = positionDelta > 1000;
-
-      if (shouldUpdateImmediately) {
-        // Immediate update for significant position changes (seek operations)
-        _timers.cancel(_kPositionDebounce);
-        _pendingPositionMs = null;
-        if (state.position != positionMs) {
-          state = state.copyWith(position: positionMs);
-        }
-      } else if (state.position != positionMs) {
-        // Debounce small position changes
-        // Use longer interval when playing to reduce UI updates
-        final debounceInterval = state.isPlaying
-            ? _positionDebounceIntervalPlaying
-            : _positionDebounceIntervalPaused;
-        _pendingPositionMs = positionMs;
-        _timers.create(_kPositionDebounce, debounceInterval, () {
-          if (_isDisposed || !ref.mounted) return;
-          final pending = _pendingPositionMs;
-          _pendingPositionMs = null;
-          if (pending != null && state.position != pending) {
-            state = state.copyWith(position: pending);
-          }
-        });
+      if (state.position != positionMs) {
+        state = state.copyWith(position: positionMs);
       }
 
       if (state.currentEpisode != null) {
@@ -515,6 +489,55 @@ class AudioPlayerNotifier extends Notifier<AudioPlayerState> {
     state = state.copyWith(queueSyncing: syncing);
   }
 
+  /// Picks the most recently played episode from [episodes], or null.
+  PodcastEpisodeModel? _latestByLastPlayedAt(
+    List<PodcastEpisodeModel> episodes,
+  ) {
+    if (episodes.isEmpty) {
+      return null;
+    }
+    final sorted = [...episodes]
+      ..sort((a, b) {
+        final aTime =
+            a.lastPlayedAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+        final bTime =
+            b.lastPlayedAt ?? DateTime.fromMillisecondsSinceEpoch(0);
+        return bTime.compareTo(aTime);
+      });
+    return sorted.first;
+  }
+
+  /// Resolves rate/position for [latest] and commits the restored player
+  /// state. Returns the resolved playback rate for follow-up speed calls.
+  Future<double> _applyRestoredEpisode(PodcastEpisodeModel latest) async {
+    final resolvedPlaybackRate = await _resolveEffectivePlaybackRate(
+      subscriptionId: latest.subscriptionId,
+      fallbackRate: _effectiveFallbackPlaybackRate(
+        currentValue: state.playbackRate,
+        episodePlaybackRate: latest.playbackRate,
+      ),
+    );
+    final resumePositionMs = normalizeResumePositionMs(
+      latest.playbackPosition,
+      latest.audioDuration,
+    );
+    final durationMs = (latest.audioDuration ?? 0) * 1000;
+
+    state = state.copyWith(
+      currentEpisode: latest.copyWith(
+        playbackRate: resolvedPlaybackRate,
+        playbackPosition: (resumePositionMs / 1000).round(),
+      ),
+      isPlaying: false,
+      isLoading: false,
+      position: resumePositionMs,
+      duration: durationMs,
+      playbackRate: resolvedPlaybackRate,
+      clearError: true,
+    );
+    return resolvedPlaybackRate;
+  }
+
   Future<void> restoreLastPlayedEpisodeIfNeeded() async {
     if (_isDisposed || !ref.mounted) {
       return;
@@ -603,27 +626,12 @@ class AudioPlayerNotifier extends Notifier<AudioPlayerState> {
         return;
       }
 
-      final episodes = [...response.episodes]
-        ..sort((a, b) {
-          final aTime =
-              a.lastPlayedAt ?? DateTime.fromMillisecondsSinceEpoch(0);
-          final bTime =
-              b.lastPlayedAt ?? DateTime.fromMillisecondsSinceEpoch(0);
-          return bTime.compareTo(aTime);
-        });
-      final latest = episodes.first;
-      final resolvedPlaybackRate = await _resolveEffectivePlaybackRate(
-        subscriptionId: latest.subscriptionId,
-        fallbackRate: _effectiveFallbackPlaybackRate(
-          currentValue: state.playbackRate,
-          episodePlaybackRate: latest.playbackRate,
-        ),
-      );
+      final latest = _latestByLastPlayedAt(response.episodes);
+      if (latest == null) return;
       final resumePositionMs = normalizeResumePositionMs(
         latest.playbackPosition,
         latest.audioDuration,
       );
-      final durationMs = (latest.audioDuration ?? 0) * 1000;
 
       logger.AppLogger.debug(
         '[PlaybackRestore] Candidate episode=${latest.id}, position=${resumePositionMs}ms',
@@ -641,7 +649,6 @@ class AudioPlayerNotifier extends Notifier<AudioPlayerState> {
         if (resumePositionMs > 0) {
           await seekAudio(Duration(milliseconds: resumePositionMs));
         }
-        await setAudioSpeed(resolvedPlaybackRate);
       } on Object catch (error) {
         logger.AppLogger.debug(
           '[PlaybackRestore] Failed to preload restored episode: $error',
@@ -658,18 +665,14 @@ class AudioPlayerNotifier extends Notifier<AudioPlayerState> {
         return;
       }
 
-      state = state.copyWith(
-        currentEpisode: latest.copyWith(
-          playbackRate: resolvedPlaybackRate,
-          playbackPosition: (resumePositionMs / 1000).round(),
-        ),
-        isPlaying: false,
-        isLoading: false,
-        position: resumePositionMs,
-        duration: durationMs,
-        playbackRate: resolvedPlaybackRate,
-        clearError: true,
-      );
+      final resolvedPlaybackRate = await _applyRestoredEpisode(latest);
+      try {
+        await setAudioSpeed(resolvedPlaybackRate);
+      } on Object catch (error) {
+        logger.AppLogger.debug(
+          '[PlaybackRestore] Failed to preload restored episode speed: $error',
+        );
+      }
 
       logger.AppLogger.debug(
         '[PlaybackRestore] Restored episode ${latest.id} to ${state.formattedPosition}',
@@ -701,45 +704,15 @@ class AudioPlayerNotifier extends Notifier<AudioPlayerState> {
       }
       if (response.episodes.isEmpty) return;
 
-      final episodes = [...response.episodes]
-        ..sort((a, b) {
-          final aTime =
-              a.lastPlayedAt ?? DateTime.fromMillisecondsSinceEpoch(0);
-          final bTime =
-              b.lastPlayedAt ?? DateTime.fromMillisecondsSinceEpoch(0);
-          return bTime.compareTo(aTime);
-        });
-      final latest = episodes.first;
-      final resolvedPlaybackRate = await _resolveEffectivePlaybackRate(
-        subscriptionId: latest.subscriptionId,
-        fallbackRate: _effectiveFallbackPlaybackRate(
-          currentValue: state.playbackRate,
-          episodePlaybackRate: latest.playbackRate,
-        ),
-      );
-      final resumePositionMs = normalizeResumePositionMs(
-        latest.playbackPosition,
-        latest.audioDuration,
-      );
-      final durationMs = (latest.audioDuration ?? 0) * 1000;
+      final latest = _latestByLastPlayedAt(response.episodes);
+      if (latest == null) return;
 
       if (expectedEpisodeId != null &&
           state.currentEpisode?.id != expectedEpisodeId) {
         return;
       }
 
-      state = state.copyWith(
-        currentEpisode: latest.copyWith(
-          playbackRate: resolvedPlaybackRate,
-          playbackPosition: (resumePositionMs / 1000).round(),
-        ),
-        isPlaying: false,
-        isLoading: false,
-        position: resumePositionMs,
-        duration: durationMs,
-        playbackRate: resolvedPlaybackRate,
-        clearError: true,
-      );
+      final resolvedPlaybackRate = await _applyRestoredEpisode(latest);
       try {
         await setAudioSpeed(resolvedPlaybackRate);
       } on Object catch (error) {

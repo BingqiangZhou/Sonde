@@ -66,9 +66,10 @@ class ServerHealthService {
 
   /// Normalize the base URL by:
   /// 1. Trimming whitespace and removing trailing slashes
-  /// 2. Adding http:// scheme if missing
+  /// 2. Stripping any `/api/vN` suffix (the health endpoint adds its own)
+  /// 3. Adding http:// scheme if missing
   static String normalizeBaseUrl(String url) {
-    return UrlNormalizer.ensureScheme(UrlNormalizer.trimTrailingSlashes(url));
+    return UrlNormalizer.ensureScheme(UrlNormalizer.normalize(url));
   }
 
   /// Verify the server connection by sending a health check request

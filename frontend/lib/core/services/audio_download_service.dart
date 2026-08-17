@@ -15,9 +15,26 @@ import 'package:personal_ai_assistant/core/utils/app_logger.dart' as logger;
 /// progress in the [DownloadTasks] table via [DownloadDao].
 class AudioDownloadService {
 
-  AudioDownloadService(this._db);
+  AudioDownloadService(this._db) {
+    // episodes_cache rows outlive their download tasks otherwise; evict
+    // stale entries once per session so the table cannot grow unbounded.
+    unawaited(
+      _db.episodeCacheDao.evictStaleEntries().then((_) {}).catchError((
+        Object e,
+      ) {
+        logger.AppLogger.debug(
+          '[Download] Stale episode cache eviction failed: $e',
+        );
+      }),
+    );
+  }
   final AppDatabase _db;
-  final HttpClient _httpClient = HttpClient();
+
+  static const Duration _connectTimeout = Duration(seconds: 30);
+  static const Duration _progressWriteInterval = Duration(milliseconds: 250);
+
+  final HttpClient _httpClient =
+      HttpClient()..connectionTimeout = _connectTimeout;
 
   /// Active download sinks keyed by episode ID for cancellation.
   final Map<int, IOSink> _activeSinks = {};
@@ -84,7 +101,7 @@ class AudioDownloadService {
       );
     }
 
-    _startDownload(episodeId, audioUrl);
+    await _startDownload(episodeId, audioUrl);
   }
 
   /// Internal method to perform the actual download.
@@ -99,9 +116,10 @@ class AudioDownloadService {
       await _dao.updateProgress(task.id, 0);
 
       final uri = Uri.parse(audioUrl);
-      final request = await _httpClient.getUrl(uri);
+      final request =
+          await _httpClient.getUrl(uri).timeout(_connectTimeout);
 
-      final response = await request.close();
+      final response = await request.close().timeout(_connectTimeout);
       final contentLength = response.contentLength;
 
       // Prepare local file
@@ -118,6 +136,7 @@ class AudioDownloadService {
       final sink = file.openWrite();
       _activeSinks[episodeId] = sink;
       var receivedBytes = 0;
+      var lastProgressWriteAt = DateTime.now();
 
       await for (final chunk in response) {
         // Check if aborted
@@ -134,7 +153,14 @@ class AudioDownloadService {
 
         if (contentLength > 0) {
           final progress = receivedBytes / contentLength;
-          await _dao.updateProgress(task.id, progress.clamp(0.0, 1.0));
+          final now = DateTime.now();
+          // One DB write per network chunk is excessive; commit progress at a
+          // fixed cadence plus the final value.
+          if (progress >= 1 ||
+              now.difference(lastProgressWriteAt) >= _progressWriteInterval) {
+            lastProgressWriteAt = now;
+            await _dao.updateProgress(task.id, progress.clamp(0.0, 1.0));
+          }
         }
       }
 
@@ -204,6 +230,9 @@ class AudioDownloadService {
         }
       }
       await _dao.deleteByEpisodeId(episodeId);
+      // Drop the cached metadata too — download() re-upserts it if the
+      // episode is ever downloaded again.
+      await _db.episodeCacheDao.deleteById(episodeId);
     }
   }
 

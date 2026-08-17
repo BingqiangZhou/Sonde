@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/misc.dart'
         NotifierProviderFamily;
 import 'package:personal_ai_assistant/core/network/exceptions/network_exceptions.dart';
 
+import 'package:personal_ai_assistant/core/utils/request_dedup.dart';
 import 'package:personal_ai_assistant/features/podcast/core/utils/html_sanitizer.dart';
 import 'package:personal_ai_assistant/features/podcast/data/models/podcast_conversation_model.dart';
 import 'package:personal_ai_assistant/features/podcast/data/models/podcast_playback_model.dart';
@@ -198,16 +199,10 @@ class ConversationNotifier extends Notifier<ConversationState> {
 
   ConversationNotifier(this.episodeId);
   final int episodeId;
-  Completer<void>? _loadCompleter;
-  int? _loadingSessionId;
+  final RequestToken _loadToken = RequestToken();
 
   @override
   ConversationState build() {
-    ref.onDispose(() {
-      _loadCompleter?.completeError('Disposed');
-      _loadCompleter = null;
-    });
-
     // Watch current session ID to reload on change
     final sessionId = ref.watch(currentSessionIdProvider(episodeId));
 
@@ -223,19 +218,7 @@ class ConversationNotifier extends Notifier<ConversationState> {
   /// Load conversation history from backend
   Future<void> _loadHistory(int? sessionId) async {
     if (sessionId == null) return;
-
-    // Cancel if session changed since last load started
-    if (_loadingSessionId != null && _loadingSessionId != sessionId) {
-      _loadCompleter?.completeError('Session changed');
-      _loadCompleter = null;
-    }
-
-    // Skip if already loading the SAME session
-    final completer = _loadCompleter;
-    if (completer != null && !completer.isCompleted) return;
-
-    _loadingSessionId = sessionId;
-    _loadCompleter = Completer<void>();
+    final token = _loadToken.begin();
 
     try {
       final repository = ref.read(podcastRepositoryProvider);
@@ -244,20 +227,20 @@ class ConversationNotifier extends Notifier<ConversationState> {
         sessionId: sessionId,
       );
 
+      // A session switch or rebuild started a newer load; this response
+      // belongs to the old session and must not clobber the newer state.
+      if (!_loadToken.isCurrent(token)) return;
+
       state = ConversationState(
         messages: response.messages,
         sessionId: sessionId,
       );
-      _loadCompleter?.complete();
     } catch (e) {
+      if (!_loadToken.isCurrent(token)) return;
       state = ConversationState(
         errorMessage: mapErrorMessage(e),
         sessionId: sessionId,
       );
-      _loadCompleter?.completeError(e);
-    } finally {
-      _loadCompleter = null;
-      _loadingSessionId = null;
     }
   }
 
@@ -272,11 +255,12 @@ class ConversationNotifier extends Notifier<ConversationState> {
   Future<void> sendMessage(String message, {String? modelName}) async {
     // Current session
     final sessionId = ref.read(currentSessionIdProvider(episodeId));
+    final token = _loadToken.begin();
 
     // Optimistically add user message to state
     final userTurn = state.messages.length;
     final optimisticUserMessage = PodcastConversationMessage(
-      id: -userTurn, // Temporary negative ID
+      id: -1 - userTurn, // Temporary negative ID; -1 - 0 never collapses to 0
       role: 'user',
       content: message,
       conversationTurn: userTurn,
@@ -315,11 +299,13 @@ class ConversationNotifier extends Notifier<ConversationState> {
           ref.read(sessionListProvider(episodeId).notifier).refresh();
       }
 
+      if (!_loadToken.isCurrent(token)) return;
       state = ConversationState(
         messages: historyResponse.messages,
         sessionId: historyResponse.sessionId ?? sessionId,
       );
     } catch (e) {
+      if (!_loadToken.isCurrent(token)) return;
       // Remove optimistic message on error
       final updatedMessages = List<PodcastConversationMessage>.from(state.messages);
       updatedMessages.removeWhere((m) => m.id < 0);
@@ -335,6 +321,7 @@ class ConversationNotifier extends Notifier<ConversationState> {
   /// Clear conversation history for current session
   Future<void> clearHistory() async {
     final sessionId = ref.read(currentSessionIdProvider(episodeId));
+    final token = _loadToken.begin();
     state = state.copyWith(isLoading: true);
 
     try {
@@ -344,10 +331,12 @@ class ConversationNotifier extends Notifier<ConversationState> {
         sessionId: sessionId,
       );
 
+      if (!_loadToken.isCurrent(token)) return;
       state = ConversationState(
         sessionId: sessionId,
       );
     } catch (e) {
+      if (!_loadToken.isCurrent(token)) return;
       state = state.copyWith(
         isLoading: false,
         errorMessage: mapErrorMessage(e),
@@ -566,10 +555,6 @@ class TranscriptionSearchResultsNotifier extends Notifier<List<String>> {
 }
 
 // Helper functions for search
-void updateTranscriptionSearchQuery(WidgetRef ref, String query) {
-  ref.read(transcriptionSearchQueryProvider.notifier).updateQuery(query);
-}
-
 void clearTranscriptionSearchQuery(WidgetRef ref) {
   ref.read(transcriptionSearchQueryProvider.notifier).clearQuery();
   ref.read(transcriptionSearchResultsProvider.notifier).clearResults();
@@ -599,24 +584,9 @@ String? getTranscriptionText(PodcastTranscriptionResponse? transcription) {
   return transcription?.displayContent;
 }
 
-// Helper function to check if transcription is processing
-bool isTranscriptionProcessing(PodcastTranscriptionResponse? transcription) {
-  return transcription?.isProcessing == true;
-}
-
 // Helper function to check if transcription is completed
 bool isTranscriptionCompleted(PodcastTranscriptionResponse? transcription) {
   return transcription?.isCompleted == true;
-}
-
-// Helper function to check if transcription failed
-bool isTranscriptionFailed(PodcastTranscriptionResponse? transcription) {
-  return transcription?.isFailed == true;
-}
-
-// Helper function to get transcription progress
-double getTranscriptionProgress(PodcastTranscriptionResponse? transcription) {
-  return transcription?.progressPercentage ?? 0.0;
 }
 
 // === Summary Providers ===
@@ -849,6 +819,11 @@ class SummaryNotifier extends Notifier<SummaryState> {
         );
         _stopPolling();
       }
+    } catch (e) {
+      // Polling runs unawaited from a Timer.periodic callback; an unhandled
+      // throw here would escalate to a zone error. Surface it and stop.
+      state = state.copyWith(isLoading: false, errorMessage: mapErrorMessage(e));
+      _stopPolling();
     } finally {
       _pollInFlight = false;
     }

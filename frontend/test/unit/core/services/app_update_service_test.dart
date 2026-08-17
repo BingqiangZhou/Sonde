@@ -178,9 +178,9 @@ void main() {
     });
   });
 
-  group('getCurrentVersionSync', () {
-    test('returns a version string', () {
-      final version = AppUpdateService.getCurrentVersionSync();
+  group('getCurrentVersion', () {
+    test('returns a version string', () async {
+      final version = await AppUpdateService.getCurrentVersion();
       expect(version, isNotEmpty);
       // Should match semver pattern
       expect(RegExp(r'^\d+\.\d+\.\d+').hasMatch(version), isTrue);
