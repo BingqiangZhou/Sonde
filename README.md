@@ -246,7 +246,7 @@ sonde/
 ├── docs/             # 详细文档
 ├── scripts/          # 工具脚本
 ├── data/             # 密钥存储
-├── .zcode/          # ZCode 配置（skills: /commit、/release；reference: agent 角色归档）
+├── .zcode/          # ZCode 配置（skills: /commit、/release）
 ├── .github/          # GitHub Actions（release.yml）
 ├── AGENTS.md         # AI Agent 开发规范（ZCode 入口）
 ├── CHANGELOG.md      # 更新日志（git-cliff 生成）

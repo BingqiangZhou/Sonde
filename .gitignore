@@ -4,152 +4,81 @@ __pycache__/
 *$py.class
 *.so
 .Python
-develop-eggs/
 dist/
-downloads/
-eggs/
-.eggs/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
 
-# Python build dir (but exclude frontend Flutter build)
-# This ensures backend/lib/ is ignored but frontend/lib/ is tracked
-backend/lib/
-backend/build/
-
-# Flutter
-frontend/.dart_tool/
-frontend/.flutter-plugins
-frontend/.flutter-plugins-dependencies
-frontend/.packages
-frontend/pub-cache/
-frontend/.pub-cache/
-frontend/build/
-frontend/.fvm/
-
-# Flutter generated files (but keep them version controlled for now)
-# frontend/lib/**/*.g.dart
-# frontend/lib/**/*.freezed.dart
-
-# Virtual Environment
+# Virtual environments (uv creates .venv)
 venv/
-env/
-ENV/
 .venv/
 
-# Environment variables
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+# Environment files (templates are negated back in)
+.env*
+!.env.example
+!.env.production.template
 
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-
-# OS
-.DS_Store
-Thumbs.db
-desktop.ini
+# Secrets & credentials
+**/.secret_key
+backend/data/.rsa_keys
+credentials.txt*
+*.pem
+*.keystore
+*.p12
+*.key
+*.jks
+frontend/android/release.keystore.b64
 
 # Database
 *.db
 *.sqlite3
+backend/data/*.sql
 
 # Logs
 *.log
 logs/
 
-# Node
-node_modules/
+# OS / IDE
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+.trae/
+*.swp
+*.swo
+*~
 
-# Flutter
+# Temp & backup files
+/temp_*
+*.tmp
+*.temp
+*.bak
+*.backup
+*.backup_*
+
+# Flutter (build output; generated *.g.dart / *.freezed.dart stay tracked)
+build/
 .dart_tool/
 .flutter-plugins
 .flutter-plugins-dependencies
-.packages
 pub-cache/
 .pub-cache/
-build/
 .fvm/
 
-# Android/Flutter
+# Android
 android/app/release/
 android/app/profile/
 android/app/debug/
-*.keystore
-*.p12
-*.key
-*.jks
 
-# iOS/Flutter
+# iOS
 ios/Flutter/flutter_assets/
 ios/Flutter/flutter_export_environment.sh
 ios/Pods/
 ios/.symlinks/
 ios/Podfile.lock
 
-# Docker
-.dockerignore
-
-# Backup files
-*.bak
-*.backup
-
-# Temporary files
-*.tmp
-*.temp
-
-# Uploads
-uploads/
-media_files/
-
-# SECURITY - Secret keys and sensitive data
-backend/data/.secret_key
-**/.secret_key
-credentials.txt
-SECURITY_DEPLOYMENT.md
-QUICKSTART.md
-*.pem
-*.sql
-.vscode/settings.json
-
-# Backup files (all variations)
-*.backup
-*.bak
-*.backup_*
-**/*.backup_*
-**/*.bak
-backend/.env.backup*
-backend/.env.bak
-docker/docker-compose.podcast.yml.backup*
-docker/docker-compose.podcast.yml.bak
-credentials.txt.backup*
-credentials.txt.bak
-temp_*
-*.tmp
-backend/data/.rsa_keys
-.trae/
+# Backend runtime artifacts
 backend/celerybeat-schedule
-backend/.env.dev
-docker/.env.dev
-frontend/android/release.keystore.b64
-docker/storage/
-docker/temp/
 
-docs/superpowers/
-
-# Worktrees
+# Agent tooling
 .worktrees/
 .superpowers/
-.zcode/
+.zcode/plans/

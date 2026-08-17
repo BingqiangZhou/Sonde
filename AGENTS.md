@@ -1,7 +1,11 @@
 # Repository Guidelines
 
+## Project Overview
+- **Sonde (声读)** — personal podcast knowledge base: subscribe, transcribe, AI summaries, daily briefs; local-first deployment.
+- The workspace directory is still named `PodcastInsight` (historical), but everything is rebranded: frontend imports use `package:sonde/...`, backend package is `sonde-backend`.
+
 ## Project Structure & Module Organization
-- `backend/`: FastAPI service (DDD layout) with core, shared, admin, and 2 domain modules (`ai`, `podcast`) in `backend/app/`.
+- `backend/`: FastAPI service (DDD layout) with `core`, `shared`, `admin`, `http`, `bootstrap`, and 2 domain modules (`ai`, `podcast`) under `backend/app/` (`domains/`).
 - `backend/alembic/`: database migrations (25 migrations).
 - `backend/tests/` and `backend/app/**/tests/`: backend test suites.
 - `frontend/`: Flutter app with feature modules in `frontend/lib/` and tests in `frontend/test/`.
@@ -17,7 +21,7 @@
 - Frontend deps: `cd frontend && flutter pub get`
 - Frontend code gen: `cd frontend && dart run build_runner build` (required after modifying `@riverpod`, `@RestApi`, `@JsonSerializable`, or Drift files)
 - Frontend tests: `flutter test` (unit: `test/unit/`, widget: `test/widget/`, integration: `test/integration/`)
-- Frontend l10n: `flutter gen-l10n` (after editing both `app_localizations_en.arb` and `app_localizations_zh.arb`)
+- Frontend l10n: `flutter gen-l10n` (after editing both `app_localizations_en.arb` and `app_localizations_zh.arb` in `lib/core/localization/`)
 - Docker backend verification (required): `cd docker && docker compose up -d`
 
 ## Coding Style & Naming Conventions
@@ -66,3 +70,5 @@
 | `Color.withOpacity()` | `Color.withValues(alpha:)` (former is deprecated) |
 | Skip widget tests | Required for all pages |
 | `admin` is under `domains/` | `admin/` is a separate top-level module at `app/admin/` |
+| Generated `AppLocalizations.localizationsDelegates` | Use app-owned `appLocalizationsDelegates` from `lib/core/localization/l10n_delegates.dart` (generated getter references old `flutter_localizations` delegates; incompatible with `material_ui`/`cupertino_ui`) |
+| Hand-edit generated `app_localizations*.dart` | Edit the `.arb` sources, re-run `flutter gen-l10n` |
