@@ -13,6 +13,7 @@ from typing import Any
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import ValidationError
+from app.domains.ai.key_resolver import resolve_api_key_with_fallback
 from app.domains.ai.model_testing import (
     test_text_generation_model,
     test_transcription_model,
@@ -21,7 +22,6 @@ from app.domains.ai.model_testing import (
 from app.domains.ai.models import ModelType
 from app.domains.ai.repositories import AIModelConfigRepository
 from app.domains.ai.schemas import APIKeyValidationResponse, ModelTestResponse
-from app.domains.podcast.ai_key_resolver import resolve_api_key_with_fallback
 
 from .model_config_service import AIModelSecurityService
 
