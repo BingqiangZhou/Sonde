@@ -200,6 +200,14 @@
     "@auth_enter_name":  {
                              "description":  "姓名字段验证"
                          },
+    "auth_email_registered":  "该邮箱已被注册",
+    "@auth_email_registered":  {
+                                  "description":  "注册邮箱重复冲突"
+                              },
+    "auth_name_autogen_hint":  "系统将自动为您生成昵称，登录后可在个人资料中随时修改。",
+    "@auth_name_autogen_hint":  {
+                                    "description":  "注册页自动生成昵称提示"
+                                },
     "auth_confirm_password":  "确认密码",
     "@auth_confirm_password":  {
                                    "description":  "确认密码字段标签"
@@ -423,6 +431,10 @@
     "@validation_too_short":  {
                                   "description":  "太短验证"
                               },
+    "validation_too_long":  "太长",
+    "@validation_too_long":  {
+                                 "description":  "太长验证"
+                             },
     "unknown_error":  "发生未知错误",
     "@unknown_error":  {
                            "description":  "未知错误消息"
@@ -586,6 +598,18 @@
     "profile_edit_profile":  "编辑个人资料",
     "@profile_edit_profile":  {
                                   "description":  "编辑个人资料按钮/标题"
+                              },
+    "profile_edit_name_hint":  "名称同时用于显示与登录。",
+    "@profile_edit_name_hint":  {
+                                    "description":  "编辑资料对话框字段提示"
+                                },
+    "profile_name_taken":  "该名称已被占用",
+    "@profile_name_taken":  {
+                                "description":  "改名冲突错误"
+                            },
+    "profile_name_updated":  "名称已更新",
+    "@profile_name_updated":  {
+                                  "description":  "改名成功提示"
                               },
     "profile_security":  "安全设置",
     "@profile_security":  {

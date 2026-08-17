@@ -879,7 +879,7 @@ void main() {
     await tester.tap(find.byKey(const Key('profile_user_menu_item_edit')));
     await tester.pumpAndSettle();
     final editDialogWidth = tester.getSize(find.byType(Dialog)).width;
-    await tester.tap(find.text(l10n.ok));
+    await tester.tap(find.text(l10n.cancel));
     await tester.pumpAndSettle();
 
     final languageTile = find.widgetWithText(ListTile, l10n.language);

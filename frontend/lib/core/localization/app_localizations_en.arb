@@ -200,6 +200,14 @@
     "@auth_enter_name":  {
                              "description":  "Name field validation"
                          },
+    "auth_email_registered":  "This email is already registered",
+    "@auth_email_registered":  {
+                                  "description":  "Register duplicate email conflict"
+                              },
+    "auth_name_autogen_hint":  "We'll generate a nickname for you automatically — change it anytime in your profile after signing in.",
+    "@auth_name_autogen_hint":  {
+                                    "description":  "Register page auto-generated nickname hint"
+                                },
     "auth_confirm_password":  "Confirm Password",
     "@auth_confirm_password":  {
                                    "description":  "Confirm password field label"
@@ -423,6 +431,10 @@
     "@validation_too_short":  {
                                   "description":  "Too short validation"
                               },
+    "validation_too_long":  "Too long",
+    "@validation_too_long":  {
+                                 "description":  "Too long validation"
+                             },
     "unknown_error":  "An unknown error occurred",
     "@unknown_error":  {
                            "description":  "Unknown error message"
@@ -586,6 +598,18 @@
     "profile_edit_profile":  "Edit Profile",
     "@profile_edit_profile":  {
                                   "description":  "Edit profile button/title"
+                              },
+    "profile_edit_name_hint":  "Your name is used for both display and sign-in.",
+    "@profile_edit_name_hint":  {
+                                    "description":  "Edit profile dialog field hint"
+                                },
+    "profile_name_taken":  "This name is already taken",
+    "@profile_name_taken":  {
+                                "description":  "Rename conflict error"
+                            },
+    "profile_name_updated":  "Name updated",
+    "@profile_name_updated":  {
+                                  "description":  "Rename success notice"
                               },
     "profile_security":  "Security",
     "@profile_security":  {

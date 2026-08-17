@@ -6,12 +6,14 @@ import 'package:sonde/core/constants/app_spacing.dart';
 import 'package:sonde/core/constants/breakpoints.dart';
 import 'package:sonde/core/localization/app_localizations_extension.dart';
 import 'package:sonde/core/localization/locale_provider.dart';
+import 'package:sonde/core/network/exceptions/network_exceptions.dart';
 import 'package:sonde/core/platform/platform_helper.dart';
 import 'package:sonde/core/theme/theme_provider.dart';
 import 'package:sonde/core/widgets/adaptive/adaptive.dart';
 import 'package:sonde/core/widgets/app_dialog_helper.dart';
 import 'package:sonde/core/widgets/top_floating_notice.dart';
 import 'package:sonde/features/auth/presentation/providers/auth_provider.dart';
+import 'package:sonde/shared/widgets/custom_text_field.dart';
 
 // Profile page dialogs, extracted from profile_page.dart. These do not use
 // showAppDialog because profile dialogs need constrained width, which
@@ -145,24 +147,152 @@ Widget buildProfileDialogContent({
 }
 
 void showEditProfileDialog(BuildContext context) {
-  final l10n = context.l10n;
   showProfileDialog<void>(
     context,
-    builder: (dialogContext) {
-      return buildProfileDialogContent(
-        dialogContext: dialogContext,
-        title: Text(l10n.profile_edit_profile),
-        content: Text(l10n.profile_edit_coming_soon_subtitle),
-        actions: [
-          AdaptiveButton(
-            style: AdaptiveButtonStyle.text,
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: Text(l10n.ok),
-          ),
-        ],
-      );
-    },
+    builder: (dialogContext) => _EditProfileDialog(outerContext: context),
   );
+}
+
+class _EditProfileDialog extends ConsumerStatefulWidget {
+  const _EditProfileDialog({required this.outerContext});
+
+  // Context below the dialog; used for post-pop notices.
+  final BuildContext outerContext;
+
+  @override
+  ConsumerState<_EditProfileDialog> createState() => _EditProfileDialogState();
+}
+
+class _EditProfileDialogState extends ConsumerState<_EditProfileDialog> {
+  final _formKey = GlobalKey<FormState>();
+  late final TextEditingController _nameController;
+  bool _isSaving = false;
+  String? _serverError;
+
+  @override
+  void initState() {
+    super.initState();
+    final user = ref.read(authProvider).user;
+    _nameController = TextEditingController(text: user?.username ?? '');
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    if (_isSaving || !(_formKey.currentState?.validate() ?? false)) return;
+    final l10n = context.l10n;
+    setState(() {
+      _isSaving = true;
+      _serverError = null;
+    });
+    try {
+      await ref
+          .read(authProvider.notifier)
+          .updateUsername(_nameController.text.trim());
+    } on ServerException catch (error) {
+      if (!mounted) return;
+      if (error.statusCode == 409) {
+        setState(() {
+          _isSaving = false;
+          _serverError = l10n.profile_name_taken;
+        });
+        return;
+      }
+      _finishWithError(error.userMessage);
+      return;
+    } on AppException catch (error) {
+      if (!mounted) return;
+      _finishWithError(error.userMessage);
+      return;
+    } catch (e) {
+      if (!mounted) return;
+      _finishWithError(e.toString());
+      return;
+    }
+    if (!mounted) return;
+    Navigator.of(context).pop();
+    showTopFloatingNotice(widget.outerContext, message: l10n.profile_name_updated);
+  }
+
+  void _finishWithError(String message) {
+    setState(() => _isSaving = false);
+    Navigator.of(context).pop();
+    if (widget.outerContext.mounted) {
+      showTopFloatingNotice(
+        widget.outerContext,
+        message: message,
+        isError: true,
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return buildProfileDialogContent(
+      dialogContext: context,
+      title: Text(l10n.profile_edit_profile),
+      content: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            CustomTextField(
+              key: const Key('edit_profile_name_field'),
+              controller: _nameController,
+              label: l10n.auth_full_name,
+              textInputAction: TextInputAction.done,
+              prefixIcon: const Icon(Icons.person_outline),
+              onChanged: (value) {
+                if (_serverError != null) {
+                  setState(() => _serverError = null);
+                }
+              },
+              validator: (value) {
+                final text = value?.trim() ?? '';
+                if (text.isEmpty) {
+                  return l10n.auth_enter_name;
+                }
+                if (text.length < 2) {
+                  return l10n.validation_too_short;
+                }
+                if (text.length > 30) {
+                  return l10n.validation_too_long;
+                }
+                return null;
+              },
+              errorText: _serverError,
+            ),
+            SizedBox(height: context.spacing.xs),
+            Text(
+              l10n.profile_edit_name_hint,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        AdaptiveButton(
+          style: AdaptiveButtonStyle.text,
+          onPressed: _isSaving ? null : () => Navigator.of(context).pop(),
+          child: Text(l10n.cancel),
+        ),
+        AdaptiveButton(
+          key: const Key('edit_profile_save_button'),
+          onPressed: _isSaving ? null : _save,
+          isLoading: _isSaving,
+          child: Text(l10n.save),
+        ),
+      ],
+    );
+  }
 }
 
 void showSecurityDialog(BuildContext context, WidgetRef ref) {

@@ -303,7 +303,6 @@ class AuthNotifier extends Notifier<AuthState> {
   Future<void> register({
     required String email,
     required String password,
-    String? username,
     bool rememberMe = false,
   }) async {
     state = state.copyWith(
@@ -315,7 +314,6 @@ class AuthNotifier extends Notifier<AuthState> {
     final request = RegisterRequest(
       email: email,
       password: password,
-      username: username,
       rememberMe: rememberMe,
     );
 
@@ -378,6 +376,15 @@ class AuthNotifier extends Notifier<AuthState> {
         error: e.toString(),
       );
     }
+  }
+
+  /// Renames the current user (PATCH /auth/me) and refreshes [AuthState.user].
+  ///
+  /// AppExceptions propagate to the caller: a [ServerException] with
+  /// statusCode 409 means the name is already taken.
+  Future<void> updateUsername(String username) async {
+    final user = await _authRepository.updateProfile(username);
+    state = state.copyWith(user: user);
   }
 
   Future<void> logout() async {

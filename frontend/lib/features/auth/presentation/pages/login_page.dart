@@ -202,6 +202,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     if (value.length < 8) {
                       return l10n.auth_password_too_short;
                     }
+                    if (value.length > 72) {
+                      return l10n.validation_too_long;
+                    }
                     return null;
                   },
                 ),

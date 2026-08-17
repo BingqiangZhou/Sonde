@@ -112,10 +112,6 @@ void main() {
 
       // Fill required fields so validation reaches confirm-password
       await tester.enterText(
-        _customTextFieldByLabel('Full Name'),
-        'Test User',
-      );
-      await tester.enterText(
         _customTextFieldByLabel('Email'),
         'test@example.com',
       );
@@ -275,7 +271,6 @@ void main() {
     ) async {
       await _pumpAuthPage(tester, const RegisterPage());
 
-      await tester.enterText(_customTextFieldByLabel('Full Name'), 'Test');
       await tester.enterText(
         _customTextFieldByLabel('Email'),
         'test@example.com',

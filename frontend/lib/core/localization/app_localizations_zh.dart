@@ -159,6 +159,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get auth_enter_name => '请输入您的姓名';
 
   @override
+  String get auth_email_registered => '该邮箱已被注册';
+
+  @override
+  String get auth_name_autogen_hint => '系统将自动为您生成昵称，登录后可在个人资料中随时修改。';
+
+  @override
   String get auth_confirm_password => '确认密码';
 
   @override
@@ -321,6 +327,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get validation_too_short => '太短';
 
   @override
+  String get validation_too_long => '太长';
+
+  @override
   String get unknown_error => '发生未知错误';
 
   @override
@@ -442,6 +451,15 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get profile_edit_profile => '编辑个人资料';
+
+  @override
+  String get profile_edit_name_hint => '名称同时用于显示与登录。';
+
+  @override
+  String get profile_name_taken => '该名称已被占用';
+
+  @override
+  String get profile_name_updated => '名称已更新';
 
   @override
   String get profile_security => '安全设置';

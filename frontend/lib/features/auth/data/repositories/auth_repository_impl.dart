@@ -148,6 +148,17 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
+  Future<User> updateProfile(String username) {
+    return _guard(() async {
+      final response = await _apiClient.patch(
+        '/auth/me',
+        data: {'username': username},
+      );
+      return User.fromJson(response.data as Map<String, dynamic>);
+    });
+  }
+
+  @override
   Future<void> forgotPassword(ForgotPasswordRequest request) {
     return _guard(() async {
       await _apiClient.post(

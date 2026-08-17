@@ -43,22 +43,34 @@ void main() {
       );
     }
 
-    testWidgets('renders register form with all required fields', (tester) async {
+    testWidgets('renders register form without a name field', (tester) async {
       await tester.pumpWidget(createTestWidget());
       await tester.pumpAndSettle();
 
       // Check for register button
       expect(find.byKey(const Key('register_button')), findsOneWidget);
 
-      // Check for text input fields:
-      // Username (CustomTextField -> TextFormField), Email (CustomTextField -> TextFormField),
+      // Text input fields: Email (CustomTextField -> TextFormField),
       // Password (PasswordTextField -> CustomTextField -> TextFormField),
       // Confirm Password (PasswordTextField -> CustomTextField -> TextFormField)
-      // Total: 4 TextFormField widgets
-      expect(find.byType(TextFormField), findsNWidgets(4));
+      // Total: 3 TextFormField widgets — no name field at signup
+      expect(find.byType(TextFormField), findsNWidgets(3));
+
+      // The name label is gone from the form
+      expect(find.text('Full Name'), findsNothing);
 
       // Check for adaptive switches: Remember Me + Terms agreement
       expect(find.byType(AdaptiveSwitch), findsNWidgets(2));
+    });
+
+    testWidgets('shows auto-generated nickname hint', (tester) async {
+      await tester.pumpWidget(createTestWidget());
+      await tester.pumpAndSettle();
+
+      expect(
+        find.textContaining('generate a nickname'),
+        findsOneWidget,
+      );
     });
 
     testWidgets('displays header icon and title text', (tester) async {
@@ -108,8 +120,8 @@ void main() {
       await tester.tap(find.byKey(const Key('register_button')));
       await tester.pumpAndSettle();
 
-      // Check for validation error messages
-      expect(find.text('Please enter your name'), findsOneWidget);
+      // Check for validation error messages (no name error anymore)
+      expect(find.text('Please enter your name'), findsNothing);
       expect(find.text('Please enter your email'), findsOneWidget);
       // "Please enter your password" appears for both password and confirm password fields
       expect(find.text('Please enter your password'), findsNWidgets(2));
@@ -120,13 +132,11 @@ void main() {
       await tester.pumpAndSettle();
 
       // Find text fields by their labels (the label Text widgets above each field)
-      final nameField = find.widgetWithText(Column, 'Full Name');
       final emailField = find.widgetWithText(Column, 'Email');
       final passwordField = find.widgetWithText(Column, 'Password');
       final confirmPasswordField = find.widgetWithText(Column, 'Confirm Password');
 
       // Enter text into each TextFormField (they are descendants of the labeled Columns)
-      await tester.enterText(find.descendant(of: nameField, matching: find.byType(TextFormField)).first, 'John');
       await tester.enterText(find.descendant(of: emailField, matching: find.byType(TextFormField)).first, 'test@example.com');
       await tester.enterText(find.descendant(of: passwordField, matching: find.byType(TextFormField)).first, 'Password1');
       await tester.enterText(find.descendant(of: confirmPasswordField, matching: find.byType(TextFormField)).first, 'DifferentPassword1');
@@ -141,6 +151,28 @@ void main() {
 
       // Check for password mismatch error
       expect(find.text('Passwords do not match'), findsOneWidget);
+    });
+
+    testWidgets('shows validation error for password longer than 72 chars', (tester) async {
+      await tester.pumpWidget(createTestWidget());
+      await tester.pumpAndSettle();
+
+      final emailField = find.widgetWithText(Column, 'Email');
+      final passwordField = find.widgetWithText(Column, 'Password');
+      final confirmPasswordField = find.widgetWithText(Column, 'Confirm Password');
+
+      final longPassword = 'Password1${'a' * 70}';
+      await tester.enterText(find.descendant(of: emailField, matching: find.byType(TextFormField)).first, 'test@example.com');
+      await tester.enterText(find.descendant(of: passwordField, matching: find.byType(TextFormField)).first, longPassword);
+      await tester.enterText(find.descendant(of: confirmPasswordField, matching: find.byType(TextFormField)).first, longPassword);
+
+      await tester.ensureVisible(find.byKey(const Key('register_button')));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('register_button')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Too long'), findsOneWidget);
     });
 
     testWidgets('has sign in link', (tester) async {

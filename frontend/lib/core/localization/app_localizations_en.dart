@@ -160,6 +160,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get auth_enter_name => 'Please enter your name';
 
   @override
+  String get auth_email_registered => 'This email is already registered';
+
+  @override
+  String get auth_name_autogen_hint =>
+      'We\'ll generate a nickname for you automatically — change it anytime in your profile after signing in.';
+
+  @override
   String get auth_confirm_password => 'Confirm Password';
 
   @override
@@ -329,6 +336,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get validation_too_short => 'Too short';
 
   @override
+  String get validation_too_long => 'Too long';
+
+  @override
   String get unknown_error => 'An unknown error occurred';
 
   @override
@@ -451,6 +461,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get profile_edit_profile => 'Edit Profile';
+
+  @override
+  String get profile_edit_name_hint =>
+      'Your name is used for both display and sign-in.';
+
+  @override
+  String get profile_name_taken => 'This name is already taken';
+
+  @override
+  String get profile_name_updated => 'Name updated';
 
   @override
   String get profile_security => 'Security';

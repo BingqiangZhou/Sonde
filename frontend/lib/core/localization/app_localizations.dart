@@ -398,6 +398,18 @@ abstract class AppLocalizations {
   /// **'Please enter your name'**
   String get auth_enter_name;
 
+  /// Register duplicate email conflict
+  ///
+  /// In en, this message translates to:
+  /// **'This email is already registered'**
+  String get auth_email_registered;
+
+  /// Register page auto-generated nickname hint
+  ///
+  /// In en, this message translates to:
+  /// **'We\'ll generate a nickname for you automatically — change it anytime in your profile after signing in.'**
+  String get auth_name_autogen_hint;
+
   /// Confirm password field label
   ///
   /// In en, this message translates to:
@@ -710,6 +722,12 @@ abstract class AppLocalizations {
   /// **'Too short'**
   String get validation_too_short;
 
+  /// Too long validation
+  ///
+  /// In en, this message translates to:
+  /// **'Too long'**
+  String get validation_too_long;
+
   /// Unknown error message
   ///
   /// In en, this message translates to:
@@ -955,6 +973,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Edit Profile'**
   String get profile_edit_profile;
+
+  /// Edit profile dialog field hint
+  ///
+  /// In en, this message translates to:
+  /// **'Your name is used for both display and sign-in.'**
+  String get profile_edit_name_hint;
+
+  /// Rename conflict error
+  ///
+  /// In en, this message translates to:
+  /// **'This name is already taken'**
+  String get profile_name_taken;
+
+  /// Rename success notice
+  ///
+  /// In en, this message translates to:
+  /// **'Name updated'**
+  String get profile_name_updated;
 
   /// Security settings
   ///

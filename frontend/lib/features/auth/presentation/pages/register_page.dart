@@ -27,7 +27,6 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  final _usernameController = TextEditingController();
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   bool _agreeToTerms = false;
@@ -38,7 +37,6 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
-    _usernameController.dispose();
     super.dispose();
   }
 
@@ -77,7 +75,6 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
     ref.read(authProvider.notifier).register(
       email: _emailController.text.trim(),
       password: _passwordController.text,
-      username: _usernameController.text.trim(),
       rememberMe: _rememberMe,
     );
   }
@@ -100,7 +97,11 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
           next.error != previous?.error &&
           next.fieldErrors == null) {
         if (mounted) {
-          showTopFloatingNotice(context, message: next.error!, isError: true);
+          // Localize the known business conflict; other errors pass through.
+          final message = next.error == 'Email already registered'
+              ? l10n.auth_email_registered
+              : next.error!;
+          showTopFloatingNotice(context, message: message, isError: true);
         }
       }
     });
@@ -130,27 +131,33 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
               child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Username field
-                CustomTextField(
-                  controller: _usernameController,
-                  label: l10n.auth_full_name,
-                  textInputAction: TextInputAction.next,
-                  prefixIcon: const Icon(Icons.person_outline),
-                  autofillHints: const [AutofillHints.newUsername],
-                  onChanged: (value) {
-                    _clearFieldErrors();
-                    setState(() {});
-                  },
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return l10n.auth_enter_name;
-                    }
-                    if (value.length < 3) {
-                      return l10n.validation_too_short;
-                    }
-                    return null;
-                  },
-                  errorText: fieldErrors?['username'],
+                // Auto-generated nickname hint — no name field at signup
+                Container(
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surfaceContainerLow,
+                    borderRadius: AppRadius.smRadius,
+                  ),
+                  padding: EdgeInsets.all(context.spacing.sm),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.auto_awesome,
+                        size: 18,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                      SizedBox(width: context.spacing.xs),
+                      Expanded(
+                        child: Text(
+                          l10n.auth_name_autogen_hint,
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
 
                 SizedBox(height: context.spacing.smMd),
@@ -199,14 +206,17 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                         });
                       },
                       onChanged: (value) => _clearFieldErrors(),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return l10n.auth_enter_password;
-                        }
-                        if (value.length < 8) {
-                          return l10n.auth_password_too_short;
-                        }
-                        if (!value.contains(RegExp('[A-Z]'))) {
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return l10n.auth_enter_password;
+                    }
+                    if (value.length < 8) {
+                      return l10n.auth_password_too_short;
+                    }
+                    if (value.length > 72) {
+                      return l10n.validation_too_long;
+                    }
+                    if (!value.contains(RegExp('[A-Z]'))) {
                           return l10n.auth_password_requirement_uppercase;
                         }
                         if (!value.contains(RegExp('[a-z]'))) {

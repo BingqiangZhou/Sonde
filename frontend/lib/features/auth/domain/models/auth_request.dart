@@ -29,14 +29,12 @@ class RegisterRequest {
   const RegisterRequest({
     required this.email,
     required this.password,
-    this.username,
     this.rememberMe = false,
   });
 
   factory RegisterRequest.fromJson(Map<String, dynamic> json) => _$RegisterRequestFromJson(json);
   final String email;
   final String password;
-  final String? username;
 
   @JsonKey(name: 'remember_me')
   final bool rememberMe;

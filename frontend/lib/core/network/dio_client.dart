@@ -71,6 +71,9 @@ class DioClient {
   Future<Response<dynamic>> put(String path, {dynamic data, bool invalidateCache = true}) =>
       _dio.put(path, data: data, options: _cacheOpts(invalidateCache));
 
+  Future<Response<dynamic>> patch(String path, {dynamic data, bool invalidateCache = true}) =>
+      _dio.patch(path, data: data, options: _cacheOpts(invalidateCache));
+
   Future<Response<dynamic>> delete(String path, {bool invalidateCache = true}) =>
       _dio.delete(path, options: _cacheOpts(invalidateCache));
 
