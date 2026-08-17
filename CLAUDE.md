@@ -81,7 +81,6 @@ frontend/lib/
 - Health: `GET /health` and `GET /api/v1/health` (liveness), `GET /api/v1/health/ready` (readiness)
 
 ### General
-- Check `specs/active/` before implementing new features
 - Conventional Commits: `feat:`, `fix:`, `refactor:`, `chore:`, `style:`
 
 ## Gotchas

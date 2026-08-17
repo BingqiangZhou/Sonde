@@ -6,7 +6,7 @@
 - `backend/tests/` and `backend/app/**/tests/`: backend test suites.
 - `frontend/`: Flutter app with feature modules in `frontend/lib/` and tests in `frontend/test/`.
 - `docker/`: Docker Compose files and deployment assets (5 services: postgres, redis, backend, celery_worker, nginx).
-- `docs/` and `specs/`: detailed design notes and active requirements.
+- `docs/`: detailed design notes.
 - `scripts/`: Utility scripts (SQL init, API test, optimization verify).
 
 ## Build, Test, and Development Commands
@@ -37,7 +37,7 @@
 
 ## Commit & Pull Request Guidelines
 - Commit messages follow a Conventional Commits style: `feat:`, `fix:`, `refactor:`, `chore:`, `style:` (examples in history).
-- PRs should include: a clear description, linked issues/specs (see `specs/active/`), and test evidence (commands + results). Add screenshots for UI changes.
+- PRs should include: a clear description, linked issues, and test evidence (commands + results). Add screenshots for UI changes.
 
 ## Environment & Secrets
 - Backend config lives in `backend/.env` (start from `.env.example`); never commit secrets.
@@ -46,4 +46,3 @@
 
 ## Configuration & Requirements Notes
 - API endpoints are prefixed with `/api/v1/` and errors are bilingual: `{message_en, message_zz}`.
-- Check `specs/active/` before implementing new work to avoid duplicating requirements.

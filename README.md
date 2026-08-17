@@ -209,8 +209,8 @@ GitHub Actions 自动化发布流程（`.github/workflows/release.yml`）：
 | 文档 | 说明 |
 |------|------|
 | [CHANGELOG.md](CHANGELOG.md) | 版本更新日志 |
-| [CLAUDE.md](CLAUDE.md) | Claude Code 开发规范 |
-| [AGENTS.md](AGENTS.md) | AI Agent 协作规范 |
+| [AGENTS.md](AGENTS.md) | AI Agent 开发规范（ZCode 入口） |
+| [CLAUDE.md](CLAUDE.md) | 开发规范（历史参考） |
 | [docs/FEATURES.md](docs/FEATURES.md) | 功能特性详细说明 |
 | [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | 部署指南 |
 | [docs/ANDROID_SIGNING.md](docs/ANDROID_SIGNING.md) | Android 签名配置 |
@@ -218,7 +218,6 @@ GitHub Actions 自动化发布流程（`.github/workflows/release.yml`）：
 | [docs/RELEASE_QUICK_REF.md](docs/RELEASE_QUICK_REF.md) | 发布快速参考 |
 | [backend/README.md](backend/README.md) | 后端开发指南 |
 | [frontend/README.md](frontend/README.md) | Flutter 开发指南 |
-| [specs/](specs/) | 功能规格说明 |
 
 ## 测试
 
@@ -246,13 +245,12 @@ personal-ai-assistant/
 ├── frontend/         # Flutter 前端（219 Dart 源文件，92 测试文件）
 ├── docker/           # Docker 配置（5 服务）
 ├── docs/             # 详细文档
-├── specs/            # 功能规格（completed / active）
 ├── scripts/          # 工具脚本
 ├── data/             # 密钥存储
-├── .claude/          # Claude Code 配置（agents, commands, skills）
+├── .zcode/          # ZCode 配置（skills: /commit、/release；reference: agent 角色归档）
 ├── .github/          # GitHub Actions（release.yml）
-├── CLAUDE.md         # Claude Code 开发规范
-├── AGENTS.md         # AI Agent 协作规范
+├── AGENTS.md         # AI Agent 开发规范（ZCode 入口）
+├── CLAUDE.md         # 开发规范（历史参考）
 ├── CHANGELOG.md      # 更新日志（git-cliff 生成）
 ├── cliff.toml        # Changelog 生成配置
 └── README.md         # 项目说明
