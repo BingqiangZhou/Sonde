@@ -579,9 +579,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profile_change_password => 'Change Password';
 
   @override
-  String get profile_biometric_auth => 'Biometric Authentication';
-
-  @override
   String get profile_two_factor_auth => 'Two-Factor Authentication';
 
   @override
@@ -2167,19 +2164,12 @@ class AppLocalizationsEn extends AppLocalizations {
       'Two-factor authentication will be available in a future update.';
 
   @override
-  String get profile_biometric_coming_soon =>
-      'Biometric authentication will be available in a future update.';
-
-  @override
   String get profile_send_reset_link => 'Send Reset Link';
 
   @override
   String profile_password_reset_email_description(String email) {
     return 'A password reset link will be sent to $email. Check your inbox after clicking Send.';
   }
-
-  @override
-  String get profile_biometric_not_available => 'Not available';
 
   @override
   String get nav_ai => 'AI';

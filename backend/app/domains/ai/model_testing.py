@@ -12,7 +12,6 @@ from typing import Any
 
 import aiohttp
 
-from app.core.config import settings
 from app.core.utils import filter_thinking_content, sanitize_html
 from app.domains.ai.models import AIModelConfig, ModelType
 from app.domains.ai.schemas import APIKeyValidationResponse
@@ -142,8 +141,8 @@ async def test_text_generation_model(
     if test_data is None:
         test_data = {}
 
-    # Use configured test prompt or allow custom prompt
-    default_prompt = settings.ASSISTANT_TEST_PROMPT
+    # Fallback sanity-check prompt when the caller does not supply one
+    default_prompt = 'Hello, please respond with "Test successful".'
     test_prompt = test_data.get("prompt", default_prompt)
 
     headers = {

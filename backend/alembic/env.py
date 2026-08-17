@@ -62,7 +62,6 @@ class MockConfig:
     RSS_POLL_INTERVAL_MINUTES = 60
     ALLOWED_AUDIO_SCHEMES = ["http", "https"]
     OPENAI_API_KEY = None
-    OPENAI_API_BASE_URL = "https://api.openai.com/v1"
     TRANSCRIPTION_API_URL = "https://api.siliconflow.cn/v1/audio/transcriptions"
     TRANSCRIPTION_API_KEY = None
     TRANSCRIPTION_CHUNK_SIZE_MB = 10

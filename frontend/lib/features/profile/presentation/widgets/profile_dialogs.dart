@@ -322,20 +322,6 @@ void showSecurityDialog(BuildContext context, WidgetRef ref) {
               },
             ),
             AdaptiveListTile(
-              leading: Icon(Icons.fingerprint, color: iconColor),
-              title: Text(l10n.profile_biometric_auth),
-              subtitle: Text(
-                l10n.profile_biometric_coming_soon,
-                style: Theme.of(dialogContext).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(dialogContext).colorScheme.onSurfaceVariant,
-                ),
-              ),
-              trailing: const Switch.adaptive(
-                value: false,
-                onChanged: null,
-              ),
-            ),
-            AdaptiveListTile(
               leading: Icon(Icons.phone_android, color: iconColor),
               title: Text(l10n.profile_two_factor_auth),
               subtitle: Text(

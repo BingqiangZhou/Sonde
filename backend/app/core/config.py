@@ -86,7 +86,6 @@ class Settings(BaseSettings):
 
     # External APIs
     OPENAI_API_KEY: str | None = None
-    OPENAI_API_BASE_URL: str = "https://api.openai.com/v1"
 
     # Transcription API Configuration
     TRANSCRIPTION_API_URL: str = "https://api.siliconflow.cn/v1/audio/transcriptions"
@@ -113,10 +112,6 @@ class Settings(BaseSettings):
     LOG_LEVEL: str = "INFO"
     LOG_DIR: str = "logs"
     LOG_RETENTION_DAYS: int = 30
-
-    # Assistant and Chat Configuration
-    ASSISTANT_TITLE_TRUNCATION_LENGTH: int = 50
-    ASSISTANT_TEST_PROMPT: str = 'Hello, please respond with "Test successful".'
 
     # Pagination and Batch Processing
     PODCAST_EPISODE_BATCH_SIZE: int = 50

@@ -758,10 +758,6 @@
     "@profile_change_password":  {
                                      "description":  "修改密码选项"
                                  },
-    "profile_biometric_auth":  "生物识别认证",
-    "@profile_biometric_auth":  {
-                                    "description":  "生物识别认证选项"
-                                },
     "profile_two_factor_auth":  "双因素认证",
     "@profile_two_factor_auth":  {
                                      "description":  "双因素认证选项"
@@ -2711,10 +2707,6 @@
     "@profile_two_factor_coming_soon":  {
                                                       "description":  "说明双因素认证尚未可用的副标题"
                                                   },
-    "profile_biometric_coming_soon":  "生物识别认证将在未来版本中提供。",
-    "@profile_biometric_coming_soon":  {
-                                                      "description":  "说明生物识别认证尚未可用的副标题"
-                                                  },
     "profile_send_reset_link":  "发送重置链接",
     "@profile_send_reset_link":  {
                                                "description":  "发送密码重置链接的按钮文本"
@@ -2728,10 +2720,6 @@
                                                                                      }
                                                                        }
                                                   },
-    "profile_biometric_not_available":  "暂不可用",
-    "@profile_biometric_not_available":  {
-                                                       "description":  "生物识别认证不可用时显示的标签"
-                                                   },
     "nav_ai": "AI",
     "@nav_ai":  {
                     "description":  "导航项： AI"

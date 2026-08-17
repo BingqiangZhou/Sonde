@@ -563,9 +563,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get profile_change_password => '修改密码';
 
   @override
-  String get profile_biometric_auth => '生物识别认证';
-
-  @override
   String get profile_two_factor_auth => '双因素认证';
 
   @override
@@ -2071,18 +2068,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get profile_two_factor_coming_soon => '双因素认证将在未来版本中提供。';
 
   @override
-  String get profile_biometric_coming_soon => '生物识别认证将在未来版本中提供。';
-
-  @override
   String get profile_send_reset_link => '发送重置链接';
 
   @override
   String profile_password_reset_email_description(String email) {
     return '密码重置链接将发送到 $email，点击发送后请检查您的收件箱。';
   }
-
-  @override
-  String get profile_biometric_not_available => '暂不可用';
 
   @override
   String get nav_ai => 'AI';

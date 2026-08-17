@@ -1178,12 +1178,6 @@ abstract class AppLocalizations {
   /// **'Change Password'**
   String get profile_change_password;
 
-  /// Biometric authentication option
-  ///
-  /// In en, this message translates to:
-  /// **'Biometric Authentication'**
-  String get profile_biometric_auth;
-
   /// Two-factor authentication option
   ///
   /// In en, this message translates to:
@@ -3974,12 +3968,6 @@ abstract class AppLocalizations {
   /// **'Two-factor authentication will be available in a future update.'**
   String get profile_two_factor_coming_soon;
 
-  /// Subtitle explaining biometric auth is not yet available
-  ///
-  /// In en, this message translates to:
-  /// **'Biometric authentication will be available in a future update.'**
-  String get profile_biometric_coming_soon;
-
   /// Button text to send password reset link
   ///
   /// In en, this message translates to:
@@ -3991,12 +3979,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'A password reset link will be sent to {email}. Check your inbox after clicking Send.'**
   String profile_password_reset_email_description(String email);
-
-  /// Label shown when biometric auth is not available
-  ///
-  /// In en, this message translates to:
-  /// **'Not available'**
-  String get profile_biometric_not_available;
 
   /// Navigation item: AI
   ///

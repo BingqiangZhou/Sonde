@@ -39,7 +39,6 @@ TRANSCRIPTION_MAX_THREADS=4
 ```env
 # OpenAI API (可选)
 OPENAI_API_KEY=your-openai-api-key-here
-OPENAI_API_BASE_URL=https://api.openai.com/v1
 ```
 
 ### 使用方法

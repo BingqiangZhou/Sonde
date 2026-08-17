@@ -758,10 +758,6 @@
     "@profile_change_password":  {
                                      "description":  "Change password option"
                                  },
-    "profile_biometric_auth":  "Biometric Authentication",
-    "@profile_biometric_auth":  {
-                                    "description":  "Biometric authentication option"
-                                },
     "profile_two_factor_auth":  "Two-Factor Authentication",
     "@profile_two_factor_auth":  {
                                      "description":  "Two-factor authentication option"
@@ -2757,10 +2753,6 @@
     "@profile_two_factor_coming_soon":  {
                                                       "description":  "Subtitle explaining 2FA is not yet available"
                                                   },
-    "profile_biometric_coming_soon":  "Biometric authentication will be available in a future update.",
-    "@profile_biometric_coming_soon":  {
-                                                      "description":  "Subtitle explaining biometric auth is not yet available"
-                                                  },
     "profile_send_reset_link":  "Send Reset Link",
     "@profile_send_reset_link":  {
                                                "description":  "Button text to send password reset link"
@@ -2774,10 +2766,6 @@
                                                                                      }
                                                                        }
                                                   },
-    "profile_biometric_not_available":  "Not available",
-    "@profile_biometric_not_available":  {
-                                                       "description":  "Label shown when biometric auth is not available"
-                                                   },
     "nav_ai": "AI",
     "@nav_ai":  {
                    "description":  "Navigation item: AI"
