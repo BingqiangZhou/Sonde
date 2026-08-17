@@ -13,7 +13,9 @@ class AdaptiveShare {
     String text, {
     String? subject,
   }) {
-    return Share.share(text, subject: subject);
+    return SharePlus.instance.share(
+      ShareParams(text: text, subject: subject),
+    );
   }
 
   /// Share a podcast episode.
@@ -37,7 +39,9 @@ class AdaptiveShare {
       buffer.write(description);
     }
 
-    return Share.share(buffer.toString().trim(), subject: title);
+    return SharePlus.instance.share(
+      ShareParams(text: buffer.toString().trim(), subject: title),
+    );
   }
 
   /// Share a podcast/show.
@@ -55,6 +59,8 @@ class AdaptiveShare {
       buffer.write(description);
     }
 
-    return Share.share(buffer.toString().trim(), subject: name);
+    return SharePlus.instance.share(
+      ShareParams(text: buffer.toString().trim(), subject: name),
+    );
   }
 }

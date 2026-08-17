@@ -229,9 +229,18 @@ class _CustomAdaptiveNavigationState extends ConsumerState<CustomAdaptiveNavigat
     );
   }
 
-  /// Build PageView children for iOS tab swipe gesture.
-  /// Only the selected page renders the actual body to avoid
-  /// duplicate GlobalKey errors from StatefulNavigationShell.
+  /// Build PageView children for the iOS tab swipe gesture.
+  ///
+  /// Tradeoff (accepted): only the selected page renders the real body —
+  /// the same [StatefulNavigationShell] instance cannot live in multiple
+  /// PageView children (duplicate GlobalKey assert), and go_router does
+  /// not expose per-branch widgets. Adjacent pages are therefore blank
+  /// while the finger drags them into view; the destination content
+  /// appears once the page settles and [didUpdateWidget] syncs the shell.
+  ///
+  /// A finger-tracking fix would need per-branch navigation containers
+  /// (custom navigatorContainerBuilder) — revisit if go_router ever
+  /// exposes branch widgets publicly.
   List<Widget> _buildPageViewChildren() {
     return List<Widget>.generate(
       widget.destinations.length,

@@ -80,5 +80,19 @@
 	<true/>
 	<key>NSUserNotificationsUsageDescription</key>
 	<string>Stella needs notification permission to alert you about new episodes and download completions.</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<!-- Custom-scheme deep links: stella://app/<router-path>.
+		     Universal Links would additionally need an AASA file on the
+		     target domain with the app's team id. -->
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>app.stella.deeplink</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>stella</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>

@@ -75,6 +75,7 @@ dependencies:
   clock: any
   cupertino_ui: ^1.0.0
   material_ui: ^1.0.0
+  app_links: ^7.2.1
 dev_dependencies:
   flutter_test:
     sdk: flutter

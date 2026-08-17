@@ -13,6 +13,7 @@ import 'package:personal_ai_assistant/core/localization/app_localizations.dart';
 import 'package:personal_ai_assistant/core/localization/app_localizations_en.dart';
 import 'package:personal_ai_assistant/core/platform/adaptive_app_bar.dart';
 import 'package:personal_ai_assistant/core/platform/adaptive_haptic.dart';
+import 'package:personal_ai_assistant/core/router/deep_links.dart';
 import 'package:personal_ai_assistant/core/services/adaptive_share.dart';
 import 'package:personal_ai_assistant/core/services/download_provider.dart';
 import 'package:personal_ai_assistant/core/theme/app_colors.dart';

@@ -676,11 +676,10 @@ extension _PodcastEpisodeDetailPageHeader on _PodcastEpisodeDetailPageState {
     AdaptiveHaptic.mediumImpact();
     final l10n = AppLocalizations.of(context) ?? AppLocalizationsEn();
 
-    // Generate a deep link to the episode
-    // For now, use the audio URL as the shareable link
-    // In production, this should be a proper deep link to the app
     final podcastName = _resolvePodcastTitle(episode, l10n);
-    final shareUrl = episode.audioUrl;
+    // stella:// deep link opens the episode directly for app users; the
+    // episode title/description travel with the share for everyone else.
+    final shareUrl = DeepLinks.episodeDeepLink(episode.id);
 
     try {
       await AdaptiveShare.shareEpisode(
