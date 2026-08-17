@@ -46,7 +46,6 @@ class AppConfig {
 
   // App Configuration
   static const String appName = 'Personal AI Assistant';
-  static const String appVersion = '1.0.0';
 
   // Timeouts - Reduced from 300s to 60s for better responsiveness
   static const Duration connectionTimeout = Duration(seconds: 60);

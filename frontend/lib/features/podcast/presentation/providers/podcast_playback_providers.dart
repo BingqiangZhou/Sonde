@@ -25,8 +25,8 @@ import 'package:personal_ai_assistant/features/podcast/data/repositories/podcast
 import 'package:personal_ai_assistant/features/podcast/presentation/constants/podcast_ui_constants.dart';
 import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_providers.dart';
 import 'package:personal_ai_assistant/shared/constants/storage_keys.dart';
+import 'package:riverpod/misc.dart' show ProviderFamily;
 import 'package:riverpod/riverpod.dart';
-import 'package:riverpod/src/providers/provider.dart';
 
 part 'audio_handler.dart';
 part 'audio_persistence_notifier.dart';
