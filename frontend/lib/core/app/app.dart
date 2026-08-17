@@ -11,7 +11,6 @@ import 'package:sonde/core/localization/l10n_delegates.dart';
 import 'package:sonde/core/localization/locale_provider.dart';
 import 'package:sonde/core/providers/route_provider.dart';
 import 'package:sonde/core/router/app_router.dart';
-import 'package:sonde/core/router/deep_links.dart';
 import 'package:sonde/core/theme/app_theme.dart';
 import 'package:sonde/core/theme/theme_provider.dart';
 import 'package:sonde/core/utils/app_logger.dart' as logger;
@@ -117,7 +116,6 @@ class PersonalAIAssistantApp extends ConsumerStatefulWidget {
 class _PersonalAIAssistantAppState
     extends ConsumerState<PersonalAIAssistantApp> {
   bool _isInitialized = false;
-  StreamSubscription<Uri>? _deepLinkSub;
   GoRouter? _routeSyncRouter;
   VoidCallback? _routeSyncListener;
   bool _routeSyncScheduled = false;
@@ -130,12 +128,10 @@ class _PersonalAIAssistantAppState
     _initializeApp();
     _setupRouteListener();
     _setupLifecycleListener();
-    _setupDeepLinks();
   }
 
   @override
   void dispose() {
-    _deepLinkSub?.cancel();
     _lifecycleListener?.dispose();
     final router = _routeSyncRouter;
     final listener = _routeSyncListener;
@@ -149,32 +145,6 @@ class _PersonalAIAssistantAppState
     // This prevents memory leaks and ensures proper cleanup on app shutdown
     AuthEventNotifier.instance.dispose();
     super.dispose();
-  }
-
-  /// Handle the link that launched the app and subscribe to links
-  /// received while running. Auth-gating is enforced by the router
-  /// redirect, not here.
-  Future<void> _setupDeepLinks() async {
-    final router = ref.read(appRouterProvider);
-
-    try {
-      final initial = await ref.read(initialDeepLinkProvider);
-      if (!mounted) return;
-      final location =
-          initial == null ? null : DeepLinks.routerLocationFromUri(initial);
-      if (location != null) {
-        router.go(location);
-      }
-    } on Exception {
-      // Platform channel unavailable (tests, desktop) — ignore.
-    }
-
-    _deepLinkSub = ref.read(deepLinkStreamProvider).listen((uri) {
-      final location = DeepLinks.routerLocationFromUri(uri);
-      if (location != null) {
-        router.go(location);
-      }
-    });
   }
 
   void _setupLifecycleListener() {

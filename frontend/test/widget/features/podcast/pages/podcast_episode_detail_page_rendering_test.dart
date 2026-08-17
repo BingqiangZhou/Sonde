@@ -137,7 +137,6 @@ void main() {
         findsOneWidget,
       );
       expect(find.text('Generated summary'), findsOneWidget);
-      expect(find.text(l10n.podcast_share_all_content), findsOneWidget);
     });
 
     testWidgets('hides mobile header after scrolling content', (tester) async {
@@ -189,12 +188,11 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // On mobile, the header uses inline icon buttons (queue, download, share)
+      // On mobile, the header uses inline icon buttons (queue, download)
       // and a source link icon button instead of a separate actions area.
       // The play button is accessed by tapping the artwork, not a separate button.
       expect(find.byIcon(Icons.playlist_add_rounded), findsOneWidget);
       expect(find.byIcon(Icons.download_outlined), findsOneWidget);
-      expect(find.byIcon(Icons.adaptive.share), findsOneWidget);
 
       // Source link on mobile uses an icon-only button with tooltip
       final sourceTooltip = find.byTooltip('Source');

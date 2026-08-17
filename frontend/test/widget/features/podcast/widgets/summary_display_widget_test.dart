@@ -16,7 +16,6 @@ void main() {
           supportedLocales: AppLocalizations.supportedLocales,
           home: const Scaffold(
             body: SummaryDisplayWidget(
-              episodeTitle: 'Test Episode',
               summary: '# Hello\n\nThis is **bold** text.\n\n- Item 1\n- Item 2',
             ),
           ),
@@ -30,38 +29,6 @@ void main() {
     expect(find.text('Hello'), findsOneWidget);
     expect(find.text('Item 1'), findsOneWidget);
     expect(find.text('Item 2'), findsOneWidget);
-    // Verify share button is present
-    expect(find.byIcon(Icons.ios_share_outlined), findsOneWidget);
-  });
-
-  testWidgets('SummaryDisplayWidget disables share button when no onShareAll callback', (
-    tester,
-  ) async {
-    await tester.pumpWidget(
-      ProviderScope(
-        child: MaterialApp(
-          theme: AppTheme.lightTheme,
-          localizationsDelegates: appLocalizationsDelegates,
-          supportedLocales: AppLocalizations.supportedLocales,
-          home: const Scaffold(
-            body: SummaryDisplayWidget(
-              episodeTitle: 'Test Episode',
-              summary: 'Simple summary',
-              compact: true,
-              // No onShareAll callback provided
-            ),
-          ),
-        ),
-      ),
-    );
-
-    await tester.pumpAndSettle();
-
-    // Verify share button is present but disabled (onPressed is null)
-    final buttonFinder = find.widgetWithText(TextButton, 'Share All');
-    expect(buttonFinder, findsOneWidget);
-    final button = tester.widget<TextButton>(buttonFinder);
-    expect(button.onPressed, isNull);
   });
 
   testWidgets('SummaryDisplayWidget with internal scrolling can scroll to top', (
@@ -79,7 +46,6 @@ void main() {
             body: SizedBox(
               height: 200,
               child: SummaryDisplayWidget(
-                episodeTitle: 'Test Episode',
                 summary: longContent,
               ),
             ),
@@ -123,7 +89,6 @@ void main() {
           supportedLocales: AppLocalizations.supportedLocales,
           home: const Scaffold(
             body: SummaryDisplayWidget(
-              episodeTitle: 'Test Episode',
               summary: 'Test summary content',
             ),
           ),
@@ -139,33 +104,5 @@ void main() {
     );
 
     expect(state.wantKeepAlive, isTrue);
-  });
-
-  testWidgets('SummaryDisplayWidget with onShareSelected callback renders correctly', (
-    tester,
-  ) async {
-    await tester.pumpWidget(
-      ProviderScope(
-        child: MaterialApp(
-          theme: AppTheme.lightTheme,
-          localizationsDelegates: appLocalizationsDelegates,
-          supportedLocales: AppLocalizations.supportedLocales,
-          home: Scaffold(
-            body: SummaryDisplayWidget(
-              episodeTitle: 'Test Episode',
-              summary: 'Test summary content for selection',
-              onShareSelected: (episodeTitle, summary, selectedText) async {
-                // Callback works
-              },
-            ),
-          ),
-        ),
-      ),
-    );
-
-    await tester.pumpAndSettle();
-
-    // Verify widget renders without errors
-    expect(find.text('Test summary content for selection'), findsOneWidget);
   });
 }

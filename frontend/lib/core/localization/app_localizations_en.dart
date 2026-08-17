@@ -57,9 +57,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get save => 'Save';
 
   @override
-  String get share => 'Share';
-
-  @override
   String get delete => 'Delete';
 
   @override
@@ -284,9 +281,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get podcast_share_as_image => 'Share as Image';
-
-  @override
   String get podcast_save_image_success => 'Image saved successfully';
 
   @override
@@ -295,36 +289,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get podcast_save_image_permission =>
       'Photo permission is required to save image';
-
-  @override
-  String get podcast_share_all_content => 'Share All';
-
-  @override
-  String get podcast_share_selection_required =>
-      'Please select content before sharing';
-
-  @override
-  String get podcast_share_not_supported =>
-      'Image sharing is not supported on this platform';
-
-  @override
-  String get podcast_share_failed => 'Failed to share image';
-
-  @override
-  String get podcast_share_preparing_image => 'Preparing image...';
-
-  @override
-  String get podcast_share_in_progress => 'Image generation is in progress';
-
-  @override
-  String podcast_share_truncated(int max) {
-    return 'Content truncated to first $max characters';
-  }
-
-  @override
-  String podcast_share_episode_failed(String error) {
-    return 'Failed to share: $error';
-  }
 
   @override
   String get podcast_default_podcast => 'Podcast';
@@ -679,17 +643,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get drop_files_here => 'Drop files here!';
-
-  @override
-  String get podcast_enter_select_mode => 'Select Mode';
-
-  @override
-  String get podcast_deselect_all => 'Deselect All';
-
-  @override
-  String podcast_selected_count(int count) {
-    return '$count selected';
-  }
 
   @override
   String get update_check_updates => 'Check for Updates';

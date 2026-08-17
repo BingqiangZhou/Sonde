@@ -150,8 +150,6 @@ extension _PodcastEpisodeDetailPageHeader on _PodcastEpisodeDetailPageState {
         _buildQueueButton(),
         SizedBox(width: context.spacing.xs),
         _buildDownloadButton(episode),
-        SizedBox(width: context.spacing.xs),
-        _buildShareButton(episode),
         if (episode.itemLink != null &&
             episode.itemLink!.trim().isNotEmpty) ...[
           SizedBox(width: context.spacing.xs),
@@ -253,8 +251,6 @@ extension _PodcastEpisodeDetailPageHeader on _PodcastEpisodeDetailPageState {
               _buildDownloadButton(episode),
               SizedBox(width: context.spacing.sm),
               _buildQueueButton(),
-              SizedBox(width: context.spacing.sm),
-              _buildShareButton(episode),
             ],
           ),
           SizedBox(height: context.spacing.sm),
@@ -648,17 +644,6 @@ extension _PodcastEpisodeDetailPageHeader on _PodcastEpisodeDetailPageState {
       padHours: false,
     );
   }
-  Widget _buildShareButton(PodcastEpisodeModel episode) {
-    final l10n = AppLocalizations.of(context) ?? AppLocalizationsEn();
-    return HeaderCapsuleActionButton(
-      tooltip: l10n.share,
-      icon: Icons.adaptive.share,
-      onPressed: () => _shareEpisode(episode),
-      circular: true,
-      density: _buttonDensity,
-    );
-  }
-
   Widget _buildSourceLinkIconButton(
     PodcastEpisodeModel episode,
     AppLocalizations l10n,
@@ -670,34 +655,6 @@ extension _PodcastEpisodeDetailPageHeader on _PodcastEpisodeDetailPageState {
       circular: true,
       density: _buttonDensity,
     );
-  }
-
-  Future<void> _shareEpisode(PodcastEpisodeModel episode) async {
-    AdaptiveHaptic.mediumImpact();
-    final l10n = AppLocalizations.of(context) ?? AppLocalizationsEn();
-
-    final podcastName = _resolvePodcastTitle(episode, l10n);
-    // sonde:// deep link opens the episode directly for app users; the
-    // episode title/description travel with the share for everyone else.
-    final shareUrl = DeepLinks.episodeDeepLink(episode.id);
-
-    try {
-      await AdaptiveShare.shareEpisode(
-        title: episode.title,
-        url: shareUrl,
-        podcastName: podcastName,
-        description: episode.description?.trim(),
-      );
-    } catch (error) {
-      if (mounted) {
-        showTopFloatingNotice(
-          context,
-          message: l10n.podcast_share_episode_failed(error.toString()),
-          isError: true,
-          extraTopOffset: 72,
-        );
-      }
-    }
   }
 
   Widget _buildDownloadButton(PodcastEpisodeModel episode) {

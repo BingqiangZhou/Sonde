@@ -64,7 +64,6 @@ dependencies:
   window_manager: ^0.5.1
 
   # Build Tools
-  share_plus: ^13.3.0
   flutter_native_splash: ^2.4.7
 
   dio_cache_interceptor: ^4.0.6
@@ -72,7 +71,6 @@ dependencies:
   clock: any
   cupertino_ui: ^1.0.0
   material_ui: ^1.0.0
-  app_links: ^7.2.1
 dev_dependencies:
   flutter_test:
     sdk: flutter

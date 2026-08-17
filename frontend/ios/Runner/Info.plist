@@ -26,10 +26,6 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
-	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>We need photo library access to save shared images.</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>We need photo library access to save shared images.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
@@ -80,19 +76,5 @@
 	<true/>
 	<key>NSUserNotificationsUsageDescription</key>
 	<string>Sonde needs notification permission to alert you about new episodes and download completions.</string>
-	<key>CFBundleURLTypes</key>
-	<array>
-		<!-- Custom-scheme deep links: sonde://app/<router-path>.
-		     Universal Links would additionally need an AASA file on the
-		     target domain with the app's team id. -->
-		<dict>
-			<key>CFBundleURLName</key>
-			<string>app.sonde.deeplink</string>
-			<key>CFBundleURLSchemes</key>
-			<array>
-				<string>sonde</string>
-			</array>
-		</dict>
-	</array>
 </dict>
 </plist>

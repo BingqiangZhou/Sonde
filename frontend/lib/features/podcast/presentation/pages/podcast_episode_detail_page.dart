@@ -12,9 +12,6 @@ import 'package:sonde/core/database/app_database.dart';
 import 'package:sonde/core/localization/app_localizations.dart';
 import 'package:sonde/core/localization/app_localizations_en.dart';
 import 'package:sonde/core/platform/adaptive_app_bar.dart';
-import 'package:sonde/core/platform/adaptive_haptic.dart';
-import 'package:sonde/core/router/deep_links.dart';
-import 'package:sonde/core/services/adaptive_share.dart';
 import 'package:sonde/core/services/download_provider.dart';
 import 'package:sonde/core/theme/app_colors.dart';
 import 'package:sonde/core/utils/app_logger.dart' as logger;
@@ -66,7 +63,6 @@ class _PodcastEpisodeDetailPageState
   _transcriptionNoticeSubscription;
   bool _hasTrackedEpisodeView = false;
   bool _isAddingToQueue = false;
-  String _selectedSummaryText = '';
   bool _summaryUpdateScheduled = false;
 
   // Sticky header animation
@@ -308,7 +304,6 @@ class _PodcastEpisodeDetailPageState
       // Reset tab selection
       _selectedTabIndex = 0;
       _shownotesAnchors = const <ShownotesAnchor>[];
-      _selectedSummaryText = '';
       _summaryUpdateScheduled = false;
 
       _bindTranscriptionNoticeListener();

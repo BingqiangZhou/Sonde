@@ -64,10 +64,6 @@
     "@save":  {
                   "description":  "Save button label"
               },
-    "share":  "Share",
-    "@share":  {
-                   "description":  "Share button label"
-               },
     "delete":  "Delete",
     "@delete":  {
                     "description":  "Delete button label"
@@ -361,10 +357,6 @@
                                                                        }
                                                          }
                                     },
-    "podcast_share_as_image":  "Share as Image",
-    "@podcast_share_as_image":  {
-                                    "description":  "Share selected text as image action"
-                                },
     "podcast_save_image_success":  "Image saved successfully",
     "@podcast_save_image_success":  {
                                         "description":  "Image save success message"
@@ -377,48 +369,6 @@
     "@podcast_save_image_permission":  {
                                            "description":  "Permission message for saving image"
                                        },
-    "podcast_share_all_content":  "Share All",
-    "@podcast_share_all_content":  {
-                                       "description":  "Share all content as image action"
-                                   },
-    "podcast_share_selection_required":  "Please select content before sharing",
-    "@podcast_share_selection_required":  {
-                                              "description":  "Selection required message before sharing as image"
-                                          },
-    "podcast_share_not_supported":  "Image sharing is not supported on this platform",
-    "@podcast_share_not_supported":  {
-                                         "description":  "Platform not supported message for image sharing"
-                                     },
-    "podcast_share_failed":  "Failed to share image",
-    "@podcast_share_failed":  {
-                                  "description":  "Share image failed message"
-                              },
-    "podcast_share_preparing_image":  "Preparing image...",
-    "@podcast_share_preparing_image":  {
-                                           "description":  "Progress message while generating share image"
-                                       },
-    "podcast_share_in_progress":  "Image generation is in progress",
-    "@podcast_share_in_progress":  {
-                                       "description":  "Message shown when share image generation is already running"
-                                   },
-    "podcast_share_truncated":  "Content truncated to first {max} characters",
-    "@podcast_share_truncated":  {
-                                     "description":  "Content truncation message for long share text",
-                                     "placeholders":  {
-                                                          "max":  {
-                                                                      "type":  "int"
-                                                                  }
-                                                      }
-                                 },
-    "podcast_share_episode_failed":  "Failed to share: {error}",
-    "@podcast_share_episode_failed":  {
-                                          "description":  "Error message when sharing an episode fails",
-                                          "placeholders":  {
-                                                               "error":  {
-                                                                             "type":  "String"
-                                                                         }
-                                                           }
-                                      },
     "podcast_default_podcast":  "Podcast",
     "@podcast_default_podcast":  {
                                      "description":  "Default podcast name"
@@ -886,23 +836,6 @@
     "@drop_files_here":  {
                              "description":  "Drop files hint"
                          },
-    "podcast_enter_select_mode":  "Select Mode",
-    "@podcast_enter_select_mode":  {
-                                       "description":  "Tooltip to enter selection mode"
-                                   },
-    "podcast_deselect_all":  "Deselect All",
-    "@podcast_deselect_all":  {
-                                  "description":  "Deselect all tooltip"
-                              },
-    "podcast_selected_count":  "{count} selected",
-    "@podcast_selected_count":  {
-                                    "description":  "Selected count label",
-                                    "placeholders":  {
-                                                         "count":  {
-                                                                       "type":  "int"
-                                                                   }
-                                                     }
-                                },
     "update_check_updates":  "Check for Updates",
     "@update_check_updates":  {
                                   "description":  "Check for updates button/label"

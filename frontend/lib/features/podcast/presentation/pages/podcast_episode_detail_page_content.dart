@@ -121,21 +121,6 @@ extension _PodcastEpisodeDetailPageContent on _PodcastEpisodeDetailPageState {
     );
   }
 
-
-  Future<void> _shareSelectedSummaryAsImage(
-    String episodeTitle,
-    String fullSummaryMarkdown,
-  ) async {
-    await AdaptiveShare.shareText(_selectedSummaryText);
-  }
-
-  Future<void> _shareAllSummaryAsImage(
-    String episodeTitle,
-    String summary,
-  ) async {
-    await AdaptiveShare.shareText(summary);
-  }
-
   Widget _buildAiSummarySection(
     PodcastEpisodeModel episode, {
     bool compact = false,
@@ -206,29 +191,17 @@ extension _PodcastEpisodeDetailPageContent on _PodcastEpisodeDetailPageState {
           )
         else if (summaryState.hasSummary)
           SummaryDisplayWidget(
-            episodeTitle: episode.title,
             summary: summaryState.summary!,
             compact: compact,
             useInternalScrolling: false,
-            onShareAll: _shareAllSummaryAsImage,
-            onShareSelected: (episodeTitle, summary, selectedText) {
-              _selectedSummaryText = selectedText;
-              return _shareSelectedSummaryAsImage(episodeTitle, summary);
-            },
           )
         else if (episodeSummaryFailure != null)
           _buildAiSummaryErrorState(context, episodeSummaryFailure)
         else if (sanitizedEpisodeSummary.isNotEmpty)
           SummaryDisplayWidget(
-            episodeTitle: episode.title,
             summary: sanitizedEpisodeSummary,
             compact: compact,
             useInternalScrolling: false,
-            onShareAll: _shareAllSummaryAsImage,
-            onShareSelected: (episodeTitle, summary, selectedText) {
-              _selectedSummaryText = selectedText;
-              return _shareSelectedSummaryAsImage(episodeTitle, summary);
-            },
           )
         else
           _buildAiSummaryEmptyState(context),

@@ -57,9 +57,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get save => '保存';
 
   @override
-  String get share => '分享';
-
-  @override
   String get delete => '删除';
 
   @override
@@ -278,9 +275,6 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get podcast_share_as_image => '分享为图片';
-
-  @override
   String get podcast_save_image_success => '图片已保存';
 
   @override
@@ -288,34 +282,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get podcast_save_image_permission => '需要照片权限才能保存图片';
-
-  @override
-  String get podcast_share_all_content => '分享全部';
-
-  @override
-  String get podcast_share_selection_required => '请先选择要分享的内容';
-
-  @override
-  String get podcast_share_not_supported => '当前平台暂不支持图片分享';
-
-  @override
-  String get podcast_share_failed => '图片分享失败';
-
-  @override
-  String get podcast_share_preparing_image => '正在生成图片...';
-
-  @override
-  String get podcast_share_in_progress => '图片正在生成中，请稍候';
-
-  @override
-  String podcast_share_truncated(int max) {
-    return '内容已截断为前 $max 个字符';
-  }
-
-  @override
-  String podcast_share_episode_failed(String error) {
-    return '分享失败：$error';
-  }
 
   @override
   String get podcast_default_podcast => '播客';
@@ -660,17 +626,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get drop_files_here => '拖放文件到这里！';
-
-  @override
-  String get podcast_enter_select_mode => '选择模式';
-
-  @override
-  String get podcast_deselect_all => '取消全选';
-
-  @override
-  String podcast_selected_count(int count) {
-    return '已选择 $count 个';
-  }
 
   @override
   String get update_check_updates => '检查更新';

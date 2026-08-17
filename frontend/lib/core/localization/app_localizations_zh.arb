@@ -64,10 +64,6 @@
     "@save":  {
                   "description":  "保存按钮标签"
               },
-    "share":  "分享",
-    "@share":  {
-                   "description":  "分享按钮标签"
-               },
     "delete":  "删除",
     "@delete":  {
                     "description":  "删除按钮标签"
@@ -361,10 +357,6 @@
                                                                        }
                                                          }
                                     },
-    "podcast_share_as_image":  "分享为图片",
-    "@podcast_share_as_image":  {
-                                    "description":  "将选中文本分享为图片"
-                                },
     "podcast_save_image_success":  "图片已保存",
     "@podcast_save_image_success":  {
                                         "description":  "图片保存成功提示"
@@ -377,48 +369,6 @@
     "@podcast_save_image_permission":  {
                                            "description":  "保存图片权限提示"
                                        },
-    "podcast_share_all_content":  "分享全部",
-    "@podcast_share_all_content":  {
-                                       "description":  "将全部内容分享为图片"
-                                   },
-    "podcast_share_selection_required":  "请先选择要分享的内容",
-    "@podcast_share_selection_required":  {
-                                              "description":  "分享为图片前需要选择内容提示"
-                                          },
-    "podcast_share_not_supported":  "当前平台暂不支持图片分享",
-    "@podcast_share_not_supported":  {
-                                         "description":  "平台不支持图片分享提示"
-                                     },
-    "podcast_share_failed":  "图片分享失败",
-    "@podcast_share_failed":  {
-                                  "description":  "图片分享失败提示"
-                              },
-    "podcast_share_preparing_image":  "正在生成图片...",
-    "@podcast_share_preparing_image":  {
-                                           "description":  "生成分享图片时的进度提示"
-                                       },
-    "podcast_share_in_progress":  "图片正在生成中，请稍候",
-    "@podcast_share_in_progress":  {
-                                       "description":  "重复触发分享时的提示"
-                                   },
-    "podcast_share_truncated":  "内容已截断为前 {max} 个字符",
-    "@podcast_share_truncated":  {
-                                     "description":  "超长内容截断提示",
-                                     "placeholders":  {
-                                                          "max":  {
-                                                                      "type":  "int"
-                                                                  }
-                                                      }
-                                 },
-    "podcast_share_episode_failed":  "分享失败：{error}",
-    "@podcast_share_episode_failed":  {
-                                          "description":  "分享单集失败时的错误提示",
-                                          "placeholders":  {
-                                                               "error":  {
-                                                                             "type":  "String"
-                                                                         }
-                                                           }
-                                      },
     "podcast_default_podcast":  "播客",
     "@podcast_default_podcast":  {
                                      "description":  "默认播客名称"
@@ -886,23 +836,6 @@
     "@drop_files_here":  {
                              "description":  "拖放文件提示"
                          },
-    "podcast_enter_select_mode":  "选择模式",
-    "@podcast_enter_select_mode":  {
-                                       "description":  "进入选择模式提示"
-                                   },
-    "podcast_deselect_all":  "取消全选",
-    "@podcast_deselect_all":  {
-                                  "description":  "取消全选提示"
-                              },
-    "podcast_selected_count":  "已选择 {count} 个",
-    "@podcast_selected_count":  {
-                                    "description":  "选中数量标签",
-                                    "placeholders":  {
-                                                         "count":  {
-                                                                       "type":  "int"
-                                                                   }
-                                                     }
-                                },
     "update_check_updates":  "检查更新",
     "@update_check_updates":  {
                                   "description":  "检查更新按钮/标签"

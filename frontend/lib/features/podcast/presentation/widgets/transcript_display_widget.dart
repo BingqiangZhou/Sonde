@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:cupertino_ui/cupertino_ui.dart';
 import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,7 +8,6 @@ import 'package:sonde/core/constants/app_spacing.dart';
 import 'package:sonde/core/constants/app_text_styles.dart';
 import 'package:sonde/core/localization/app_localizations_extension.dart';
 import 'package:sonde/core/platform/platform_helper.dart';
-import 'package:sonde/core/services/adaptive_share.dart';
 import 'package:sonde/core/theme/app_colors.dart';
 import 'package:sonde/core/utils/debounce.dart';
 import 'package:sonde/core/utils/text_processing_cache.dart';
@@ -54,8 +51,6 @@ class TranscriptDisplayWidgetState
   final ScrollController _fullTranscriptScrollController = ScrollController();
   List<String> _searchResults = [];
   bool _isSearching = false;
-  String _lastSelectedTranscriptText = '';
-  final Map<String, String> _selectedTranscriptSegments = <String, String>{};
   DebounceTimer? _searchDebounce;
 
   // View mode state - always default to highlights view
@@ -97,7 +92,6 @@ class TranscriptDisplayWidgetState
 
   void _onSearchChanged() {
     final query = _searchController.text;
-    _clearSelectedTranscriptSegments();
     if (query.isNotEmpty) {
       setState(() {
         _isSearching = true;
@@ -130,76 +124,11 @@ class TranscriptDisplayWidgetState
 
   void _clearSearch() {
     _searchController.clear();
-    _clearSelectedTranscriptSegments();
     setState(() {
       _isSearching = false;
       _searchResults.clear();
     });
     clearTranscriptionSearchQuery(ref);
-  }
-
-  void _toggleTranscriptSegmentSelection(String key, String segment) {
-    final normalized = segment.trim();
-    if (normalized.isEmpty) {
-      return;
-    }
-    setState(() {
-      if (_selectedTranscriptSegments.containsKey(key)) {
-        _selectedTranscriptSegments.remove(key);
-      } else {
-        _selectedTranscriptSegments[key] = normalized;
-      }
-    });
-  }
-
-  void _clearSelectedTranscriptSegments() {
-    if (_selectedTranscriptSegments.isEmpty) {
-      return;
-    }
-    setState(_selectedTranscriptSegments.clear);
-  }
-
-  int _segmentOrderFromKey(String key) {
-    final parts = key.split('_');
-    if (parts.length < 2) {
-      return 0;
-    }
-    final index = int.tryParse(parts.last) ?? 0;
-    final bucket = parts.first == 'full' ? 0 : 100000;
-    return bucket + index;
-  }
-
-  String _buildSelectedTranscriptContent() {
-    final entries = _selectedTranscriptSegments.entries.toList()
-      ..sort(
-        (a, b) =>
-            _segmentOrderFromKey(a.key).compareTo(_segmentOrderFromKey(b.key)),
-      );
-    return entries.map((entry) => entry.value).join('\n\n').trim();
-  }
-
-  void _updateSelectedTranscriptText(
-    String sourceText,
-    TextSelection selection,
-  ) {
-    if (selection.isCollapsed ||
-        selection.start < 0 ||
-        selection.end <= selection.start ||
-        selection.end > sourceText.length) {
-      _lastSelectedTranscriptText = '';
-      return;
-    }
-    _lastSelectedTranscriptText = sourceText
-        .substring(selection.start, selection.end)
-        .trim();
-  }
-
-  Future<void> _shareSelectedTranscriptAsImage() async {
-    await AdaptiveShare.shareText(_lastSelectedTranscriptText);
-  }
-
-  Future<void> _shareSelectedTranscriptSegmentsAsImage() async {
-    await AdaptiveShare.shareText(_buildSelectedTranscriptContent());
   }
 
   @override
@@ -296,40 +225,6 @@ class TranscriptDisplayWidgetState
         isError: true,
       );
     }
-  }
-
-  Widget _buildSelectionToolbar(BuildContext context) {
-    final l10n = context.l10n;
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
-    final selectedCount = _selectedTranscriptSegments.length;
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.symmetric(horizontal: context.spacing.md, vertical: context.spacing.sm),
-      color: scheme.primaryContainer.withValues(alpha: 0.35),
-      child: Row(
-        children: [
-          Text(
-            l10n.podcast_selected_count(selectedCount),
-            style: theme.textTheme.labelLarge?.copyWith(
-              color: scheme.onPrimaryContainer,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const Spacer(),
-          TextButton.icon(
-            onPressed: () =>
-                unawaited(_shareSelectedTranscriptSegmentsAsImage()),
-            icon: const Icon(Icons.ios_share_outlined, size: 16),
-            label: Text(l10n.podcast_share_as_image),
-          ),
-          TextButton(
-            onPressed: _clearSelectedTranscriptSegments,
-            child: Text(l10n.podcast_deselect_all),
-          ),
-        ],
-      ),
-    );
   }
 
   Widget _buildSearchBar(BuildContext context) {
@@ -537,10 +432,6 @@ class TranscriptDisplayWidgetState
         // Search bar (only in full transcript view)
         _buildSearchBar(context),
 
-        // Selection toolbar (only in full transcript view)
-        if (_selectedTranscriptSegments.isNotEmpty)
-          _buildSelectionToolbar(context),
-
         // Content area
         Expanded(
           child: _isSearching
@@ -570,11 +461,8 @@ class TranscriptDisplayWidgetState
     String sentence,
     int index,
   ) {
-    final l10n = context.l10n;
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final selectionKey = 'full_$index';
-    final isSelected = _selectedTranscriptSegments.containsKey(selectionKey);
     return Container(
       padding: EdgeInsets.all(context.spacing.smMd),
       decoration: BoxDecoration(
@@ -584,56 +472,14 @@ class TranscriptDisplayWidgetState
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Text(
-                '#${index + 1}',
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: scheme.onSurfaceVariant,
-                ),
-              ),
-              const Spacer(),
-              IconButton(
-                onPressed: () =>
-                    _toggleTranscriptSegmentSelection(selectionKey, sentence),
-                icon: Icon(
-                  isSelected
-                      ? Icons.check_circle
-                      : Icons.radio_button_unchecked,
-                ),
-                tooltip: isSelected
-                    ? l10n.podcast_deselect_all
-                    : l10n.podcast_enter_select_mode,
-                iconSize: 18,
-                visualDensity: VisualDensity.compact,
-              ),
-            ],
+          Text(
+            '#${index + 1}',
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: scheme.onSurfaceVariant,
+            ),
           ),
           SelectableText(
             sentence,
-            onSelectionChanged: (selection, _) {
-              _updateSelectedTranscriptText(sentence, selection);
-            },
-            contextMenuBuilder: (context, editableTextState) {
-              return AdaptiveTextSelectionToolbar.buttonItems(
-                anchors: editableTextState.contextMenuAnchors,
-                buttonItems: [
-                  ...editableTextState.contextMenuButtonItems,
-                  ContextMenuButtonItem(
-                    label: l10n.podcast_share_as_image,
-                    onPressed: () {
-                      final value = editableTextState.textEditingValue;
-                      final selected = value.selection
-                          .textInside(value.text)
-                          .trim();
-                      _lastSelectedTranscriptText = selected;
-                      ContextMenuController.removeAny();
-                      unawaited(_shareSelectedTranscriptAsImage());
-                    },
-                  ),
-                ],
-              );
-            },
             style: AppTextStyles.transcriptBody(scheme.onSurface),
           ),
         ],
@@ -691,8 +537,6 @@ class TranscriptDisplayWidgetState
     final l10n = context.l10n;
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final selectionKey = 'search_$index';
-    final isSelected = _selectedTranscriptSegments.containsKey(selectionKey);
     final query = _searchController.text;
     final highlightedText = _highlightSearchText(result, query);
 
@@ -706,59 +550,15 @@ class TranscriptDisplayWidgetState
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Text(
-                l10n.podcast_transcript_match(index + 1),
-                style: theme.textTheme.labelMedium?.copyWith(
-                  color: scheme.onSurfaceVariant,
-                ),
-              ),
-              const Spacer(),
-              IconButton(
-                onPressed: () =>
-                    _toggleTranscriptSegmentSelection(selectionKey, result),
-                icon: Icon(
-                  isSelected
-                      ? Icons.check_circle
-                      : Icons.radio_button_unchecked,
-                ),
-                tooltip: isSelected
-                    ? l10n.podcast_deselect_all
-                    : l10n.podcast_enter_select_mode,
-                iconSize: 18,
-                visualDensity: VisualDensity.compact,
-              ),
-            ],
+          Text(
+            l10n.podcast_transcript_match(index + 1),
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: scheme.onSurfaceVariant,
+            ),
           ),
           SizedBox(height: context.spacing.xs),
           // Highlighted text
-          SelectableText.rich(
-            highlightedText,
-            onSelectionChanged: (selection, _) {
-              _updateSelectedTranscriptText(result, selection);
-            },
-            contextMenuBuilder: (context, editableTextState) {
-              return AdaptiveTextSelectionToolbar.buttonItems(
-                anchors: editableTextState.contextMenuAnchors,
-                buttonItems: [
-                  ...editableTextState.contextMenuButtonItems,
-                  ContextMenuButtonItem(
-                    label: l10n.podcast_share_as_image,
-                    onPressed: () {
-                      final value = editableTextState.textEditingValue;
-                      final selected = value.selection
-                          .textInside(value.text)
-                          .trim();
-                      _lastSelectedTranscriptText = selected;
-                      ContextMenuController.removeAny();
-                      unawaited(_shareSelectedTranscriptAsImage());
-                    },
-                  ),
-                ],
-              );
-            },
-          ),
+          SelectableText.rich(highlightedText),
         ],
       ),
     );

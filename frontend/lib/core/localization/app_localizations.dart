@@ -194,12 +194,6 @@ abstract class AppLocalizations {
   /// **'Save'**
   String get save;
 
-  /// Share button label
-  ///
-  /// In en, this message translates to:
-  /// **'Share'**
-  String get share;
-
   /// Delete button label
   ///
   /// In en, this message translates to:
@@ -632,12 +626,6 @@ abstract class AppLocalizations {
   /// **'{count} items'**
   String podcast_daily_report_items(int count);
 
-  /// Share selected text as image action
-  ///
-  /// In en, this message translates to:
-  /// **'Share as Image'**
-  String get podcast_share_as_image;
-
   /// Image save success message
   ///
   /// In en, this message translates to:
@@ -655,54 +643,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Photo permission is required to save image'**
   String get podcast_save_image_permission;
-
-  /// Share all content as image action
-  ///
-  /// In en, this message translates to:
-  /// **'Share All'**
-  String get podcast_share_all_content;
-
-  /// Selection required message before sharing as image
-  ///
-  /// In en, this message translates to:
-  /// **'Please select content before sharing'**
-  String get podcast_share_selection_required;
-
-  /// Platform not supported message for image sharing
-  ///
-  /// In en, this message translates to:
-  /// **'Image sharing is not supported on this platform'**
-  String get podcast_share_not_supported;
-
-  /// Share image failed message
-  ///
-  /// In en, this message translates to:
-  /// **'Failed to share image'**
-  String get podcast_share_failed;
-
-  /// Progress message while generating share image
-  ///
-  /// In en, this message translates to:
-  /// **'Preparing image...'**
-  String get podcast_share_preparing_image;
-
-  /// Message shown when share image generation is already running
-  ///
-  /// In en, this message translates to:
-  /// **'Image generation is in progress'**
-  String get podcast_share_in_progress;
-
-  /// Content truncation message for long share text
-  ///
-  /// In en, this message translates to:
-  /// **'Content truncated to first {max} characters'**
-  String podcast_share_truncated(int max);
-
-  /// Error message when sharing an episode fails
-  ///
-  /// In en, this message translates to:
-  /// **'Failed to share: {error}'**
-  String podcast_share_episode_failed(String error);
 
   /// Default podcast name
   ///
@@ -1369,24 +1309,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Drop files here!'**
   String get drop_files_here;
-
-  /// Tooltip to enter selection mode
-  ///
-  /// In en, this message translates to:
-  /// **'Select Mode'**
-  String get podcast_enter_select_mode;
-
-  /// Deselect all tooltip
-  ///
-  /// In en, this message translates to:
-  /// **'Deselect All'**
-  String get podcast_deselect_all;
-
-  /// Selected count label
-  ///
-  /// In en, this message translates to:
-  /// **'{count} selected'**
-  String podcast_selected_count(int count);
 
   /// Check for updates button/label
   ///

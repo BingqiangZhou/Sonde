@@ -59,15 +59,17 @@ void main() {
         expect(container.read(currentRouteProvider), routeWithQuery);
       });
 
-      test('should handle deep link routes', () {
+      test('should handle episode detail routes with query params', () {
         // Arrange
-        const deepLinkRoute = '/podcast/episode/detail/456?position=120';
+        const routeWithIdAndQuery = '/podcast/episode/detail/456?position=120';
 
         // Act
-        container.read(currentRouteProvider.notifier).setRoute(deepLinkRoute);
+        container
+            .read(currentRouteProvider.notifier)
+            .setRoute(routeWithIdAndQuery);
 
         // Assert
-        expect(container.read(currentRouteProvider), deepLinkRoute);
+        expect(container.read(currentRouteProvider), routeWithIdAndQuery);
       });
     });
 

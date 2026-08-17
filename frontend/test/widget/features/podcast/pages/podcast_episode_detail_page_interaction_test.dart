@@ -131,35 +131,9 @@ void main() {
   });
 
   // =========================================================================
-  // From podcast_episode_detail_page_share_test.dart
+  // Summary tab behavior
   // =========================================================================
-  group('PodcastEpisodeDetailPage share behavior', () {
-    testWidgets('summary tab shows share-all when summary exists', (
-      tester,
-    ) async {
-      addTearDown(() async => tester.binding.setSurfaceSize(null));
-      await tester.binding.setSurfaceSize(const Size(390, 844));
-      await tester.pumpWidget(
-        createEpisodeDetailWidget(
-          episode: createTestEpisode(description: 'Description'),
-        ),
-      );
-      await tester.pumpAndSettle();
-
-      final context = tester.element(find.byType(PodcastEpisodeDetailPage));
-      final l10n = AppLocalizations.of(context)!;
-
-      // Tab switching is now handled by AdaptiveSegmentedControl<int>,
-      // which renders a Material SegmentedButton on non-iOS platforms.
-      // Tap the "Summary" segment label to switch to tab index 2.
-      final summaryTabFinder = find.text(l10n.podcast_tab_summary);
-      await tester.ensureVisible(summaryTabFinder);
-      await tester.tap(summaryTabFinder);
-      await tester.pumpAndSettle();
-
-      expect(find.text(l10n.podcast_share_all_content), findsOneWidget);
-    });
-
+  group('PodcastEpisodeDetailPage summary behavior', () {
     testWidgets('summary tab hides generated content when summary is empty', (
       tester,
     ) async {
