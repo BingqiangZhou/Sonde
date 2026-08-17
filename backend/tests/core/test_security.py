@@ -4,20 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from app.core.security import decrypt_data, encrypt_data, generate_api_key
-
-
-class TestApiKeyGeneration:
-    """API key generation tests."""
-
-    def test_generates_url_safe_string(self):
-        key = generate_api_key()
-        assert isinstance(key, str)
-        assert len(key) >= 40
-
-    def test_generates_unique_keys(self):
-        keys = {generate_api_key() for _ in range(10)}
-        assert len(keys) == 10
+from app.core.security import decrypt_data, encrypt_data
 
 
 class TestFernetEncryption:

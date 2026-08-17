@@ -98,7 +98,9 @@ async def _make_ai_http_request(
         RetryableAIModelError: For retryable HTTP status codes.
         HTTPException: For non-retryable failures or invalid responses.
     """
-    async with session.post(url, headers=headers, json=payload, timeout=timeout) as response:
+    async with session.post(
+        url, headers=headers, json=payload, timeout=timeout
+    ) as response:
         response_text = await response.text()
         content_type = response.headers.get("Content-Type", "")
 

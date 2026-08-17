@@ -569,7 +569,9 @@ class FeedParser:
                     parsed = urlparse(base_link)
                     url = f"{parsed.scheme}://{parsed.netloc}{url}"
                 except ValueError as exc:
-                    logger.debug("URL normalization failed for %r: %s", base_link[:80], exc)
+                    logger.debug(
+                        "URL normalization failed for %r: %s", base_link[:80], exc
+                    )
 
         return url
 

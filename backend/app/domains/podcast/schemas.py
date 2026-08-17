@@ -135,7 +135,7 @@ class PodcastSubscriptionResponse(PodcastTimestampedSchema):
 
 
 class PodcastSubscriptionListResponse(PodcastBaseSchema):
-    """播客订阅列表响应 -- unified with PaginatedResponse shape."""
+    """播客订阅列表响应"""
 
     items: list[PodcastSubscriptionResponse]
     total: int
@@ -206,7 +206,7 @@ class PodcastEpisodeResponse(PodcastTimestampedSchema):
 
 
 class PodcastEpisodeListResponse(PodcastBaseSchema):
-    """播客单集列表响应 -- unified with PaginatedResponse shape."""
+    """播客单集列表响应"""
 
     items: list[PodcastEpisodeResponse]
     total: int
@@ -233,7 +233,7 @@ class PodcastPlaybackHistoryItemResponse(PodcastBaseSchema):
 
 
 class PodcastPlaybackHistoryListResponse(PodcastBaseSchema):
-    """Lightweight playback history list response -- unified with PaginatedResponse shape."""
+    """Lightweight playback history list response"""
 
     items: list[PodcastPlaybackHistoryItemResponse]
     total: int
@@ -301,7 +301,7 @@ class DailyReportDateItem(PodcastBaseSchema):
 
 
 class PodcastDailyReportDatesResponse(PodcastBaseSchema):
-    """Paginated report date list response -- unified with PaginatedResponse shape."""
+    """Paginated report date list response"""
 
     items: list[DailyReportDateItem] = Field(default_factory=list)
     total: int
@@ -738,7 +738,7 @@ class PodcastPendingTranscriptionTaskResponse(PodcastBaseSchema):
 
 
 class PodcastPendingTranscriptionsResponse(PodcastBaseSchema):
-    """待处理转录任务列表响应 -- unified with PaginatedResponse shape."""
+    """待处理转录任务列表响应"""
 
     items: list[PodcastPendingTranscriptionTaskResponse] = Field(default_factory=list)
     total: int
@@ -812,7 +812,7 @@ class ConversationSessionResponse(PodcastBaseSchema):
 
 
 class ConversationSessionListResponse(PodcastBaseSchema):
-    """对话会话列表响应 -- unified with PaginatedResponse shape."""
+    """对话会话列表响应"""
 
     items: list[ConversationSessionResponse]
     total: int
@@ -972,7 +972,7 @@ class HighlightResponse(PodcastBaseSchema):
 
 
 class HighlightListResponse(PodcastBaseSchema):
-    """高光列表响应 -- unified with PaginatedResponse shape."""
+    """高光列表响应"""
 
     items: list[HighlightResponse] = Field(default_factory=list)
     total: int

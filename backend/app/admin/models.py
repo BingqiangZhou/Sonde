@@ -37,4 +37,3 @@ class SystemSettings(Base):
 
     def __repr__(self):
         return f"<SystemSettings(id={self.id}, key={self.key})>"
-

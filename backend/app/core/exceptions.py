@@ -2,7 +2,6 @@
 
 Convention:
 - Service/Repository layer: raise BaseCustomError subclasses for business errors.
-- Route layer: use bilingual_http_exception() from app.http.errors for user-facing messages.
 - NEVER use bare ValueError/string comparison for control flow.
 """
 
@@ -76,10 +75,6 @@ class ValidationError(BaseCustomError):
 class InternalServerError(BaseCustomError):
     def __init__(self, message: str = "Internal server error", **kwargs):
         super().__init__(message, 500, "INTERNAL_ERROR", **kwargs)
-
-
-# Backward compatibility alias
-CustomValidationError = ValidationError
 
 
 class DatabaseError(BaseCustomError):

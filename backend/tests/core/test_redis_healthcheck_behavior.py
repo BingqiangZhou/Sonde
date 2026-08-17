@@ -89,6 +89,4 @@ async def test_acquire_lock_accepts_custom_value():
     )
 
     assert acquired is True
-    assert client.set_calls == [
-        ("lock:transcription:episode:42", "task:77", 60, True)
-    ]
+    assert client.set_calls == [("lock:transcription:episode:42", "task:77", 60, True)]

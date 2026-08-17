@@ -87,9 +87,7 @@ def get_engine() -> AsyncEngine:
     if _engine is not None and _engine_url == database_url:
         return _engine
 
-    _engine = create_async_engine(
-        database_url, **_build_engine_kwargs(database_url)
-    )
+    _engine = create_async_engine(database_url, **_build_engine_kwargs(database_url))
     _engine_url = database_url
     return _engine
 
@@ -193,46 +191,6 @@ async def close_db() -> None:
     _engine_url = None
 
     await asyncio.sleep(0.1)
-
-
-async def close_worker_db_runtimes() -> None:
-    """Dispose DB engines for worker runtime cleanup (shutdown hook)."""
-    await close_db()
-
-
-async def check_db_health() -> dict[str, Any]:
-    """Return runtime DB health metrics."""
-    if not is_database_configured():
-        return {
-            "status": "not_configured",
-            "connection_url": None,
-        }
-
-    import time
-
-    engine = get_engine()
-    password = engine.url.password
-    connection_url = str(engine.url)
-    if password:
-        connection_url = connection_url.replace(password, "***")
-
-    health_info: dict = {
-        "connection_url": connection_url,
-    }
-
-    start_time = time.time()
-    try:
-        async with engine.connect() as conn:
-            result = await conn.execute(text("SELECT 1 as ping"))
-            health_info["connect_time_ms"] = round((time.time() - start_time) * 1000, 2)
-            health_info["status"] = "healthy"
-            health_info["query_result"] = result.scalar()
-    except Exception as exc:
-        logger.error("Database health check failed: %s", exc)
-        health_info["status"] = "unhealthy"
-        health_info["error"] = str(exc)
-
-    return health_info
 
 
 async def check_db_readiness(timeout_seconds: float = 1.5) -> dict[str, Any]:

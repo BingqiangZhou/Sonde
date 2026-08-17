@@ -38,7 +38,13 @@ def configure_middlewares(app: FastAPI) -> None:
         allow_origins=settings.ALLOWED_HOSTS,
         allow_credentials=True,
         allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-        allow_headers=["Authorization", "Content-Type", "Accept", "X-Requested-With", "X-API-Key"],
+        allow_headers=[
+            "Authorization",
+            "Content-Type",
+            "Accept",
+            "X-Requested-With",
+            "X-API-Key",
+        ],
     )
 
 
@@ -77,7 +83,8 @@ def register_internal_routes(app: FastAPI) -> None:
             db_status = await check_db_readiness()
             overall_status = (
                 "healthy"
-                if db_status["status"] == "healthy" and redis_status["status"] == "healthy"
+                if db_status["status"] == "healthy"
+                and redis_status["status"] == "healthy"
                 else "unhealthy"
             )
             payload = {

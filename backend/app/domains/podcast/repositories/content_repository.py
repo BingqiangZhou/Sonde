@@ -115,8 +115,7 @@ class SubscriptionRepository:
         base_query = base_query.where(UserSubscription.is_archived.is_(False))
 
         query = (
-            base_query
-            .add_columns(func.count(Subscription.id).over())
+            base_query.add_columns(func.count(Subscription.id).over())
             .offset(skip)
             .limit(size)
             .order_by(Subscription.updated_at.desc())
@@ -228,7 +227,9 @@ class SubscriptionRepository:
         if remaining_count == 0:
             from sqlalchemy import delete as sa_delete
 
-            await self.db.execute(sa_delete(Subscription).where(Subscription.id == sub_id))
+            await self.db.execute(
+                sa_delete(Subscription).where(Subscription.id == sub_id)
+            )
 
         await self.db.commit()
         return True

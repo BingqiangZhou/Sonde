@@ -342,9 +342,7 @@ async def get_episode_transcript_endpoint(
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except Exception as exc:
         logger.error("Failed to get transcript for episode %s: %s", episode_id, exc)
-        raise HTTPException(
-            status_code=500, detail="Failed to get transcript"
-        ) from exc
+        raise HTTPException(status_code=500, detail="Failed to get transcript") from exc
 
 
 @router.post(

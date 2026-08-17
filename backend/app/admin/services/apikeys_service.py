@@ -315,7 +315,10 @@ class AdminApiKeysService:
         self, *, request, user_id, mode: str, export_password: str | None
     ):
         if mode != "plaintext":
-            return {"success": False, "message": "Only plaintext export is supported"}, 400
+            return {
+                "success": False,
+                "message": "Only plaintext export is supported",
+            }, 400
 
         result = await self.db.execute(
             select(AIModelConfig).order_by(
@@ -364,7 +367,9 @@ class AdminApiKeysService:
             filename,
         )
 
-    async def import_json(self, *, request, user_id, raw_body: bytes) -> tuple[dict, int]:
+    async def import_json(
+        self, *, request, user_id, raw_body: bytes
+    ) -> tuple[dict, int]:
         if not raw_body:
             return {"success": False, "message": "Empty request body"}, 400
 

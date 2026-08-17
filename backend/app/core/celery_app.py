@@ -82,7 +82,6 @@ def create_celery_app() -> Celery:
 # ---------------------------------------------------------------------------
 
 try:
-    from celery.signals import worker_process_shutdown  # type: ignore[import-untyped]
 
     @worker_process_shutdown.connect
     def _on_worker_process_shutdown(**kwargs):  # type: ignore[misc]

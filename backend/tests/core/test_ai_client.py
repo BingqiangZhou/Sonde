@@ -163,10 +163,13 @@ class TestCallAiApi:
         mock_response = _FakeResponse(status=500, text="Server Error")
         mock_session = _make_mock_session(mock_response)
 
-        with patch(
-            "app.core.ai_client.get_shared_http_session",
-            AsyncMock(return_value=mock_session),
-        ), pytest.raises(RetryableAIModelError):
+        with (
+            patch(
+                "app.core.ai_client.get_shared_http_session",
+                AsyncMock(return_value=mock_session),
+            ),
+            pytest.raises(RetryableAIModelError),
+        ):
             await call_ai_api(model_config, "test-key", "Say hello")
 
     async def test_401_raises_http_exception(self):
@@ -174,10 +177,13 @@ class TestCallAiApi:
         mock_response = _FakeResponse(status=401, text="Unauthorized")
         mock_session = _make_mock_session(mock_response)
 
-        with patch(
-            "app.core.ai_client.get_shared_http_session",
-            AsyncMock(return_value=mock_session),
-        ), pytest.raises(Exception, match="AI service error"):
+        with (
+            patch(
+                "app.core.ai_client.get_shared_http_session",
+                AsyncMock(return_value=mock_session),
+            ),
+            pytest.raises(Exception, match="AI service error"),
+        ):
             await call_ai_api(model_config, "test-key", "Say hello")
 
     async def test_html_error_page(self):
@@ -189,10 +195,13 @@ class TestCallAiApi:
         )
         mock_session = _make_mock_session(mock_response)
 
-        with patch(
-            "app.core.ai_client.get_shared_http_session",
-            AsyncMock(return_value=mock_session),
-        ), pytest.raises(Exception, match="HTML error page"):
+        with (
+            patch(
+                "app.core.ai_client.get_shared_http_session",
+                AsyncMock(return_value=mock_session),
+            ),
+            pytest.raises(Exception, match="HTML error page"),
+        ):
             await call_ai_api(model_config, "test-key", "Say hello")
 
     async def test_prompt_truncation(self):
@@ -263,10 +272,13 @@ class TestCallAiApiWithRetry:
         response_parser = AsyncMock(return_value="parsed")
         ai_model_repo = AsyncMock()
 
-        with patch(
-            "app.core.ai_client.get_shared_http_session",
-            AsyncMock(return_value=mock_session),
-        ), patch("app.core.ai_client.settings") as mock_settings:
+        with (
+            patch(
+                "app.core.ai_client.get_shared_http_session",
+                AsyncMock(return_value=mock_session),
+            ),
+            patch("app.core.ai_client.settings") as mock_settings,
+        ):
             mock_settings.AI_CLIENT_MAX_RETRIES = 3
             mock_settings.AI_CLIENT_BASE_DELAY = 0
             mock_settings.AI_CLIENT_MAX_PROMPT_LENGTH = 1000000
@@ -287,10 +299,13 @@ class TestCallAiApiWithRetry:
         response_parser = AsyncMock(return_value="parsed")
         ai_model_repo = AsyncMock()
 
-        with patch(
-            "app.core.ai_client.get_shared_http_session",
-            AsyncMock(return_value=mock_session),
-        ), pytest.raises(Exception, match="AI service error"):
+        with (
+            patch(
+                "app.core.ai_client.get_shared_http_session",
+                AsyncMock(return_value=mock_session),
+            ),
+            pytest.raises(Exception, match="AI service error"),
+        ):
             await call_ai_api_with_retry(
                 model_config,
                 "test-key",
@@ -390,12 +405,14 @@ class TestAIClientService:
         mock_resp = _FakeResponse(status=500, text="Error")
         mock_session = _make_mock_session(mock_resp)
 
-        with patch(
-            "app.core.ai_client.get_shared_http_session",
-            AsyncMock(return_value=mock_session),
-        ), patch("app.core.ai_client.asyncio.sleep", AsyncMock()), patch(
-            "app.core.ai_client.settings"
-        ) as mock_settings:
+        with (
+            patch(
+                "app.core.ai_client.get_shared_http_session",
+                AsyncMock(return_value=mock_session),
+            ),
+            patch("app.core.ai_client.asyncio.sleep", AsyncMock()),
+            patch("app.core.ai_client.settings") as mock_settings,
+        ):
             mock_settings.AI_CLIENT_MAX_RETRIES = 1
             mock_settings.AI_CLIENT_BASE_DELAY = 0
             with pytest.raises(ValidationError, match="models failed"):
@@ -414,12 +431,14 @@ class TestAIClientService:
         mock_session = _make_mock_session(mock_resp)
         fallback = AsyncMock(return_value="fallback response")
 
-        with patch(
-            "app.core.ai_client.get_shared_http_session",
-            AsyncMock(return_value=mock_session),
-        ), patch("app.core.ai_client.asyncio.sleep", AsyncMock()), patch(
-            "app.core.ai_client.settings"
-        ) as mock_settings:
+        with (
+            patch(
+                "app.core.ai_client.get_shared_http_session",
+                AsyncMock(return_value=mock_session),
+            ),
+            patch("app.core.ai_client.asyncio.sleep", AsyncMock()),
+            patch("app.core.ai_client.settings") as mock_settings,
+        ):
             mock_settings.AI_CLIENT_MAX_RETRIES = 1
             mock_settings.AI_CLIENT_BASE_DELAY = 0
             content, returned_model = await service.call_with_fallback(

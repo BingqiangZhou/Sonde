@@ -88,7 +88,6 @@ async def application_lifespan(app: FastAPI):
         for issue in config_issues:
             logger.warning("Configuration warning: %s", issue)
 
-
     if settings.ENVIRONMENT == "production" and settings.DEBUG:
         logger.warning("DEBUG is enabled in production — set DEBUG=false")
 

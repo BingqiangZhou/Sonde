@@ -54,7 +54,9 @@ async def test_remove_subscriptions_bulk_all_success(
     # execute sequence: validate select, delete user-subscriptions,
     # remaining-subscribers select (empty -> all orphaned), delete orphans
     mock_db.execute.side_effect = [
-        _result_with_rows([SimpleNamespace(id=1), SimpleNamespace(id=2), SimpleNamespace(id=3)]),
+        _result_with_rows(
+            [SimpleNamespace(id=1), SimpleNamespace(id=2), SimpleNamespace(id=3)]
+        ),
         MagicMock(),
         _result_with_rows([]),
         MagicMock(),
@@ -166,7 +168,9 @@ async def test_bulk_delete_succeeds_when_redis_unavailable(
     mock_redis: AsyncMock,
 ):
     mock_db.execute.side_effect = [
-        _result_with_rows([SimpleNamespace(id=1), SimpleNamespace(id=2), SimpleNamespace(id=3)]),
+        _result_with_rows(
+            [SimpleNamespace(id=1), SimpleNamespace(id=2), SimpleNamespace(id=3)]
+        ),
         MagicMock(),
         _result_with_rows([]),
         MagicMock(),

@@ -85,8 +85,12 @@ class PodcastStatsService:
         try:
             await self.redis.delete(f"podcast:stats:{self.user_id}")
         except Exception as e:
-            logger.warning(f"Redis user stats cache invalidation failed for user_id={self.user_id}: {e}")
+            logger.warning(
+                f"Redis user stats cache invalidation failed for user_id={self.user_id}: {e}"
+            )
         try:
             await self.redis.delete(f"podcast:stats:profile:{self.user_id}")
         except Exception as e:
-            logger.warning(f"Redis profile stats cache invalidation failed for user_id={self.user_id}: {e}")
+            logger.warning(
+                f"Redis profile stats cache invalidation failed for user_id={self.user_id}: {e}"
+            )

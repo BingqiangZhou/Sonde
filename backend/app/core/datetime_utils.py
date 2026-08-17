@@ -101,4 +101,3 @@ def ensure_timezone_aware_fetch_time(fetch_time: datetime | None) -> datetime | 
 
     # If naive, assume it's UTC and add timezone
     return fetch_time.replace(tzinfo=UTC)
-

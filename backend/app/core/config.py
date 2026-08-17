@@ -192,9 +192,7 @@ class Settings(BaseSettings):
                     "Specify exact domains in production."
                 )
             if not self.API_KEY:
-                issues.append(
-                    "API_KEY must be set in production for authentication"
-                )
+                issues.append("API_KEY must be set in production for authentication")
         return issues
 
     def require_database_url(self) -> str:
@@ -218,11 +216,6 @@ class Settings(BaseSettings):
 def get_settings() -> Settings:
     """Get cached settings instance."""
     return Settings()
-
-
-def get_required_database_url() -> str:
-    """Get DATABASE_URL and fail only when the runtime actually needs it."""
-    return get_settings().require_database_url()
 
 
 class _LazySettingsProxy:

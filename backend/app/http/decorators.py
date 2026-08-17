@@ -30,7 +30,11 @@ def handle_errors(
                 raise
             except Exception as exc:
                 status_code = getattr(exc, "status_code", None)
-                detail = getattr(exc, "message", None) or error_message or f"Failed to {operation}"
+                detail = (
+                    getattr(exc, "message", None)
+                    or error_message
+                    or f"Failed to {operation}"
+                )
                 if status_code is None:
                     status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
                     detail = error_message or f"Failed to {operation}"
@@ -50,7 +54,11 @@ def handle_errors(
                 raise
             except Exception as exc:
                 status_code = getattr(exc, "status_code", None)
-                detail = getattr(exc, "message", None) or error_message or f"Failed to {operation}"
+                detail = (
+                    getattr(exc, "message", None)
+                    or error_message
+                    or f"Failed to {operation}"
+                )
                 if status_code is None:
                     status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
                     detail = error_message or f"Failed to {operation}"
@@ -67,8 +75,3 @@ def handle_errors(
         return sync_wrapper  # type: ignore
 
     return decorator
-
-
-# Backward-compatible aliases
-handle_api_errors = handle_errors
-handle_admin_errors = handle_errors

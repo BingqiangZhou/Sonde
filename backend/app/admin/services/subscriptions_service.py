@@ -90,11 +90,11 @@ class AdminSubscriptionsService:
             # In single-user mode, no user filtering is available
             return self._empty_context(
                 page=page,
-                    per_page=per_page,
-                    status_filter=status_filter,
-                    search_query=search_query,
-                    user_filter=user_filter,
-                )
+                per_page=per_page,
+                status_filter=status_filter,
+                search_query=search_query,
+                user_filter=user_filter,
+            )
 
         count_query = select(func.count()).select_from(query.subquery())
         total_count_result = await self.db.execute(count_query)
@@ -544,7 +544,9 @@ class AdminSubscriptionsService:
             "failed_items": failed_items,
         }
 
-    async def delete_subscription(self, *, request, user_id, sub_id: int) -> dict | None:
+    async def delete_subscription(
+        self, *, request, user_id, sub_id: int
+    ) -> dict | None:
         result = await self.db.execute(
             select(Subscription).where(Subscription.id == sub_id),
         )
@@ -555,7 +557,9 @@ class AdminSubscriptionsService:
         await self._delete_subscription_records([subscription])
         return {"success": True}
 
-    async def refresh_subscription(self, *, request, user_id, sub_id: int) -> dict | None:
+    async def refresh_subscription(
+        self, *, request, user_id, sub_id: int
+    ) -> dict | None:
         result = await self.db.execute(
             select(Subscription).where(Subscription.id == sub_id),
         )

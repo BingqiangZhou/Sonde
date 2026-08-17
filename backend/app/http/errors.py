@@ -1,93 +1,11 @@
-"""HTTP error helpers for route handlers.
+"""Admin-specific HTTP exception handling for route handlers.
 
-Convention:
-- Route layer uses these helpers for user-facing error messages.
-- All helpers now raise BaseCustomError subclasses so responses include
-  consistent {"detail", "type", "status_code"} JSON via the global
-  custom_exception_handler.
-- Service layer should also raise typed exceptions from app.core.exceptions.
+The historical raise_* helper family was removed (zero call sites);
+routes raise typed exceptions from app.core.exceptions directly.
 """
-
-from typing import Any
 
 from fastapi import FastAPI, HTTPException, status
 from fastapi.responses import RedirectResponse
-
-from app.core.exceptions import (
-    BadRequestError,
-    ConflictError,
-    ForbiddenError,
-    InternalServerError,
-    NotFoundError,
-    UnauthorizedError,
-    ValidationError,
-)
-
-
-def raise_not_found(
-    entity_type: str,
-    entity_id: int | str | None = None,
-) -> None:
-    """Raise standardized 404 Not Found error."""
-    detail = f"{entity_type} not found"
-    if entity_id:
-        detail += f" (id={entity_id})"
-    raise NotFoundError(detail)
-
-
-def raise_validation_error(
-    field_name: str,
-    reason: str,
-) -> None:
-    """Raise standardized 400 Bad Request validation error."""
-    raise ValidationError(f"Invalid {field_name}: {reason}")
-
-
-def raise_unauthorized(message: str = "Unauthorized") -> None:
-    """Raise standardized 401 Unauthorized error."""
-    raise UnauthorizedError(message)
-
-
-def raise_forbidden(message: str = "Forbidden") -> None:
-    """Raise standardized 403 Forbidden error."""
-    raise ForbiddenError(message)
-
-
-def raise_conflict(message: str) -> None:
-    """Raise standardized 409 Conflict error."""
-    raise ConflictError(message)
-
-
-def raise_internal_error(
-    operation: str,
-    exc: Exception | None = None,
-) -> None:
-    """Raise standardized 500 Internal Server Error."""
-    raise InternalServerError(
-        f"Internal error during {operation}"
-    ) from exc
-
-
-def raise_bad_request(message: str) -> None:
-    """Raise standardized 400 Bad Request error."""
-    raise BadRequestError(message)
-
-
-def raise_not_implemented(feature: str) -> None:
-    """Raise standardized 501 Not Implemented error."""
-    raise NotImplementedError(f"Feature not implemented: {feature}")
-
-
-def create_error_response(
-    message: str,
-    status_code: int = 500,
-) -> dict[str, Any]:
-    """Create a standardized error response dict without raising."""
-    return {
-        "error": True,
-        "status_code": status_code,
-        "message": message,
-    }
 
 
 def register_admin_http_exception_handler(app: FastAPI) -> None:

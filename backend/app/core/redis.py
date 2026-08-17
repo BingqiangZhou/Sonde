@@ -29,11 +29,11 @@ logger = logging.getLogger(__name__)
 class CacheTTL:
     """Cache TTL constants (seconds)."""
 
-    DEFAULT: int = 1800           # 30 minutes
-    SHORT: int = 60               # 1 minute
-    LONG: int = 86400             # 1 day
+    DEFAULT: int = 1800  # 30 minutes
+    SHORT: int = 60  # 1 minute
+    LONG: int = 86400  # 1 day
     EPISODE_METADATA: int = 3600  # 1 hour
-    LOCK_TIMEOUT: int = 30        # 30 seconds
+    LOCK_TIMEOUT: int = 30  # 30 seconds
 
 
 def redis_json_default(obj: Any) -> Any:
@@ -187,7 +187,9 @@ class RedisCache:
         client = await self._get_client()
         return int(await client.ttl(key) or -1)
 
-    async def set_if_not_exists(self, key: str, value: str, *, ttl: int | None = None) -> bool:
+    async def set_if_not_exists(
+        self, key: str, value: str, *, ttl: int | None = None
+    ) -> bool:
         client = await self._get_client()
         return bool(await client.set(key, value, ex=ttl, nx=True))
 
@@ -228,12 +230,12 @@ class RedisCache:
 
     # ── Simple locks ───────────────────────────────────────────────────────
 
-    async def acquire_lock(self, lock_name: str, expire: int = CacheTTL.LOCK_TIMEOUT, value: str = "1") -> bool:
+    async def acquire_lock(
+        self, lock_name: str, expire: int = CacheTTL.LOCK_TIMEOUT, value: str = "1"
+    ) -> bool:
         """Acquire a lock with optional custom value."""
         client = await self._get_client()
-        return bool(
-            await client.set(f"lock:{lock_name}", value, ex=expire, nx=True)
-        )
+        return bool(await client.set(f"lock:{lock_name}", value, ex=expire, nx=True))
 
     async def release_lock(self, lock_name: str) -> None:
         client = await self._get_client()
@@ -263,11 +265,15 @@ class RedisCache:
         client = await self._get_client()
         return await client.zcard(key)
 
-    async def sorted_set_range_by_score(self, key: str, min_score: float | str, max_score: float | str) -> list[str]:
+    async def sorted_set_range_by_score(
+        self, key: str, min_score: float | str, max_score: float | str
+    ) -> list[str]:
         client = await self._get_client()
         return await client.zrangebyscore(key, min_score, max_score)
 
-    async def sorted_set_remove_by_score(self, key: str, min_score: float | str, max_score: float | str) -> int:
+    async def sorted_set_remove_by_score(
+        self, key: str, min_score: float | str, max_score: float | str
+    ) -> int:
         client = await self._get_client()
         return await client.zremrangebyscore(key, min_score, max_score)
 
@@ -276,11 +282,6 @@ class RedisCache:
 
 _shared_redis: RedisCache | None = None
 _shared_redis_lock = threading.Lock()
-
-
-def get_redis() -> RedisCache:
-    """Create a new Redis cache helper."""
-    return RedisCache()
 
 
 def get_shared_redis() -> RedisCache:
@@ -306,6 +307,5 @@ __all__ = [
     "CacheTTL",
     "RedisCache",
     "close_shared_redis",
-    "get_redis",
     "get_shared_redis",
 ]

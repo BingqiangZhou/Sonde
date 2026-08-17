@@ -554,9 +554,15 @@ class PodcastTranscriptionService:
 
                         try:
                             api_key = decrypt_data(model_config.api_key)
-                            logger.debug("API key decrypted for model %s", model_config.name)
+                            logger.debug(
+                                "API key decrypted for model %s", model_config.name
+                            )
                         except Exception as e:
-                            logger.error("Failed to decrypt API key for model %s: %s", model_config.name, e)
+                            logger.error(
+                                "Failed to decrypt API key for model %s: %s",
+                                model_config.name,
+                                e,
+                            )
                             api_key = model_config.api_key
                     else:
                         api_key = model_config.api_key

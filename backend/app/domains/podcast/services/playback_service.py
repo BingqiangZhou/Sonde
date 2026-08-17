@@ -121,6 +121,7 @@ class PodcastPlaybackService:
         subscription_id: int | None = None,
     ) -> dict[str, Any]:
         """Resolve effective playback-rate preference (cached)."""
+
         async def _loader() -> dict[str, Any]:
             return await self.repo.get_effective_playback_rate(
                 user_id=self.user_id,

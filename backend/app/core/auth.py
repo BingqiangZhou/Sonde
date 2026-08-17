@@ -13,7 +13,7 @@ from collections.abc import AsyncGenerator
 from fastapi import HTTPException, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.config import Settings, get_settings
+from app.core.config import get_settings
 from app.core.database import get_db_session
 
 
@@ -82,8 +82,3 @@ async def get_redis_client():
     from app.core.redis import get_shared_redis
 
     return get_shared_redis()
-
-
-def get_settings_dependency() -> Settings:
-    """Provide cached application settings."""
-    return get_settings()

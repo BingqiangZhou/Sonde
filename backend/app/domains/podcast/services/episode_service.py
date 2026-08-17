@@ -336,6 +336,7 @@ class PodcastEpisodeService:
             Episode details dict or None
 
         """
+
         async def _load_from_db() -> dict[str, Any] | None:
             episode = await self.repo.get_episode_by_id(episode_id, self.user_id)
             if not episode:
@@ -1243,7 +1244,9 @@ class PodcastSubscriptionService:
     ) -> None:
         """Invalidate caches without failing the business operation."""
         try:
-            await self.redis.delete_pattern(f"podcast:episodes:list:{subscription_id}:*")
+            await self.redis.delete_pattern(
+                f"podcast:episodes:list:{subscription_id}:*"
+            )
         except Exception as e:
             logger.warning(
                 f"Cache invalidation skipped: "

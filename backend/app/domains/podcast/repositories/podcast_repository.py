@@ -40,6 +40,7 @@ from app.shared.repository_helpers import resolve_window_total
 if TYPE_CHECKING:
     pass
 
+
 def _get_subscription_models():
     """Lazy import subscription models to maintain domain boundaries.
 
@@ -54,13 +55,9 @@ def _get_subscription_models():
 
     return Subscription, UserSubscription
 
-if TYPE_CHECKING:
-    pass
 
 if TYPE_CHECKING:
     pass
-
-logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     pass
@@ -71,6 +68,12 @@ if TYPE_CHECKING:
     pass
 
 logger = logging.getLogger(__name__)
+
+if TYPE_CHECKING:
+    pass
+
+logger = logging.getLogger(__name__)
+
 
 def _get_user_subscription_model():
     """Lazy import UserSubscription model to maintain domain boundaries.
@@ -81,6 +84,7 @@ def _get_user_subscription_model():
     from app.domains.podcast.models import UserSubscription
 
     return UserSubscription
+
 
 class PodcastRepository:
     """Unified podcast data access."""
@@ -2367,7 +2371,6 @@ class PodcastRepository:
             elapsed_ms=(perf_counter() - started_at) * 1000,
         )
         return await self._refresh_queue_with_items(queue)
-
 
 
 # Backward compatibility aliases

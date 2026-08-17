@@ -1,4 +1,5 @@
 """Display formatting utilities for admin templates."""
+
 from datetime import UTC, datetime
 
 

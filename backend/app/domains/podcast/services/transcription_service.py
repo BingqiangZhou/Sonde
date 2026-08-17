@@ -238,11 +238,13 @@ class TranscriptionWorkflowService:
         transcription_service_factory: Callable[
             [AsyncSession],
             PodcastTranscriptionRuntimeService,
-        ] | None = None,
+        ]
+        | None = None,
         scheduler_factory: Callable[
             [AsyncSession],
             PodcastTranscriptionScheduleService,
-        ] | None = None,
+        ]
+        | None = None,
         state_manager_factory: Callable[
             [],
             Awaitable[Any],

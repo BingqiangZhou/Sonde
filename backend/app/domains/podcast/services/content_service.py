@@ -250,8 +250,10 @@ class PodcastSummaryGenerationService:
             from sqlalchemy import select
             from sqlalchemy.orm import selectinload
 
-            stmt = select(PodcastEpisode).where(PodcastEpisode.id == episode_id).options(
-                selectinload(PodcastEpisode.transcript)
+            stmt = (
+                select(PodcastEpisode)
+                .where(PodcastEpisode.id == episode_id)
+                .options(selectinload(PodcastEpisode.transcript))
             )
             result = await self.db.execute(stmt)
             episode = result.scalar_one_or_none()
@@ -280,7 +282,9 @@ class PodcastSummaryGenerationService:
             await self._update_episode_summary(episode_id, summary_result)
             # Invalidate episode detail cache so next fetch picks up new summary
             try:
-                await self.redis.delete_pattern(f"podcast:episode:detail:{episode_id}:*")
+                await self.redis.delete_pattern(
+                    f"podcast:episode:detail:{episode_id}:*"
+                )
             except Exception as e:
                 logger.warning(
                     f"Cache invalidation skipped: op=generate_summary "
@@ -385,9 +389,7 @@ class SummaryWorkflowService:
         self,
         db: AsyncSession,
         *,
-        repo_factory: Callable[[AsyncSession], PodcastRepository] = (
-            PodcastRepository
-        ),
+        repo_factory: Callable[[AsyncSession], PodcastRepository] = (PodcastRepository),
         summary_service_factory: Callable[
             [AsyncSession],
             PodcastSummaryGenerationService,
@@ -745,7 +747,14 @@ class HighlightModelManager(BaseModelManager):
                     "processing_time": total_processing_time,
                     "tokens_used": total_tokens_used,
                 }
-            except (aiohttp.ClientError, TimeoutError, ValueError, ValidationError, RuntimeError, OSError) as exc:  # noqa: BLE001
+            except (
+                aiohttp.ClientError,
+                TimeoutError,
+                ValueError,
+                ValidationError,
+                RuntimeError,
+                OSError,
+            ) as exc:  # noqa: BLE001
                 last_error = exc
                 logger.warning(
                     "Highlight extraction failed with model %s: %s",
@@ -1196,7 +1205,12 @@ class HighlightExtractionService:
                         episode_id, str(exc)
                     )
                     return "failed"
-                except (aiohttp.ClientError, TimeoutError, RuntimeError, OSError) as exc:
+                except (
+                    aiohttp.ClientError,
+                    TimeoutError,
+                    RuntimeError,
+                    OSError,
+                ) as exc:
                     logger.exception(
                         "Failed to extract highlights for episode %s", episode_id
                     )
@@ -1512,7 +1526,10 @@ class HighlightService:
                 select(func.date(EpisodeHighlight.created_at).label("highlight_date"))
                 .join(PodcastEpisode, EpisodeHighlight.episode_id == PodcastEpisode.id)
                 .join(Subscription, PodcastEpisode.subscription_id == Subscription.id)
-                .join(UserSubscription, Subscription.id == UserSubscription.subscription_id)
+                .join(
+                    UserSubscription,
+                    Subscription.id == UserSubscription.subscription_id,
+                )
                 .where(
                     and_(
                         UserSubscription.user_id == self.user_id,

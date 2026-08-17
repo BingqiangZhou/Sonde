@@ -47,9 +47,7 @@ async def process_pending_transcriptions_handler(session) -> dict:
     ).process_pending_transcriptions()
 
 
-@celery_app.task(
-    bind=True, max_retries=3, soft_time_limit=25 * 60, time_limit=28 * 60
-)
+@celery_app.task(bind=True, max_retries=3, soft_time_limit=25 * 60, time_limit=28 * 60)
 def process_audio_transcription(self, task_id: int, config_db_id: int | None = None):
     try:
         return run_async(

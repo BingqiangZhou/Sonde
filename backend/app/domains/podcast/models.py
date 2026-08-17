@@ -279,7 +279,6 @@ class PodcastQueueItem(Base):
         return f"<PodcastQueueItem(queue={self.queue_id}, episode={self.episode_id}, position={self.position})>"
 
 
-
 # ---------------------------------------------------------------------------
 # Helper
 # ---------------------------------------------------------------------------
@@ -734,7 +733,6 @@ class TranscriptionTask(Base):
 
     def __repr__(self):
         return f"<TranscriptionTask(id={self.id}, episode_id={self.episode_id}, status='{self.status}')>"
-
 
 
 # ---------------------------------------------------------------------------
