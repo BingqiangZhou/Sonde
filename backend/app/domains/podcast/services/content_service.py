@@ -9,6 +9,7 @@ import re
 import time
 from collections.abc import Callable
 from datetime import UTC, date, datetime, timedelta
+from datetime import time as dt_time
 from typing import Any
 from zoneinfo import ZoneInfo
 
@@ -1433,13 +1434,13 @@ class HighlightService:
         if date_from is not None:
             # Use datetime range instead of func.date() to allow index usage
             base_query = base_query.where(
-                EpisodeHighlight.created_at >= datetime.combine(date_from, time.min)
+                EpisodeHighlight.created_at >= datetime.combine(date_from, dt_time.min)
             )
 
         if date_to is not None:
             # Use datetime range instead of func.date() to allow index usage
             base_query = base_query.where(
-                EpisodeHighlight.created_at <= datetime.combine(date_to, time.max)
+                EpisodeHighlight.created_at <= datetime.combine(date_to, dt_time.max)
             )
 
         if favorited_only:
@@ -1880,7 +1881,7 @@ class DailyReportService:
 
     def _compute_window_utc(self, report_date: date) -> tuple[datetime, datetime]:
         tz = ZoneInfo(self.REPORT_TIMEZONE)
-        start_local = datetime.combine(report_date, time.min, tzinfo=tz)
+        start_local = datetime.combine(report_date, dt_time.min, tzinfo=tz)
         end_local = start_local + timedelta(days=1)
         return start_local.astimezone(UTC), end_local.astimezone(UTC)
 

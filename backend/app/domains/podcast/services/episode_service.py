@@ -666,13 +666,6 @@ class PodcastSubscriptionService:
             episodes_data=episodes_payload,
         )
 
-        try:
-            await self.redis.delete_pattern(f"podcast:subscription:list:{self.user_id}:*")
-        except Exception as e:
-            logger.warning(
-                f"Cache invalidation skipped: op=add cache=subscription_list user_id={self.user_id}: {e}"
-            )
-
         logger.info(
             f"User {self.user_id} added podcast: {feed.title}, {len(new_episodes)} new episodes",
         )
@@ -1255,13 +1248,5 @@ class PodcastSubscriptionService:
             logger.warning(
                 f"Cache invalidation skipped: "
                 f"op={operation} cache=episode_list user_id={self.user_id} "
-                f"subscription_id={subscription_id}: {e}"
-            )
-        try:
-            await self.redis.delete_pattern(f"podcast:subscription:list:{self.user_id}:*")
-        except Exception as e:
-            logger.warning(
-                f"Cache invalidation skipped: "
-                f"op={operation} cache=subscription_list user_id={self.user_id} "
                 f"subscription_id={subscription_id}: {e}"
             )
