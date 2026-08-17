@@ -306,7 +306,7 @@ class _TrackingPodcastRepository extends PodcastRepository {
   }) async {
     effectivePlaybackRateRequests.add(subscriptionId);
     if (effectivePlaybackRateError != null) {
-      throw effectivePlaybackRateError as Exception;
+      throw effectivePlaybackRateError!;
     }
     return effectiveResponse;
   }

@@ -1,10 +1,9 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-
+import 'package:material_ui/material_ui.dart';
 import 'package:personal_ai_assistant/core/constants/app_spacing.dart';
 import 'package:personal_ai_assistant/core/constants/breakpoints.dart';
 import 'package:personal_ai_assistant/core/constants/scroll_constants.dart';
@@ -384,7 +383,7 @@ class _FeedContent extends ConsumerWidget {
       return Scrollbar(
         controller: scrollController,
         child: ListView.builder(
-          scrollCacheExtent: ScrollCacheExtent.pixels(ScrollConstants.largeListCacheExtent), controller: scrollController,
+          scrollCacheExtent: const ScrollCacheExtent.pixels(ScrollConstants.largeListCacheExtent), controller: scrollController,
           padding: EdgeInsets.symmetric(vertical: context.spacing.sm),
           itemCount: itemCount,
           itemBuilder: (context, index) =>

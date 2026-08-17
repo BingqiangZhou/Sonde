@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:personal_ai_assistant/core/constants/app_spacing.dart';
 import 'package:personal_ai_assistant/core/localization/app_localizations.dart';
 import 'package:personal_ai_assistant/core/localization/app_localizations_extension.dart';
@@ -77,7 +77,7 @@ class PodcastSearchResultsList extends ConsumerWidget {
 
   Widget _buildEpisodeResults(BuildContext context, AppLocalizations l10n) {
     return ListView.builder(
-      scrollCacheExtent: ScrollCacheExtent.pixels(200), key: const Key('podcast_discover_search_results'),
+      scrollCacheExtent: const ScrollCacheExtent.pixels(200), key: const Key('podcast_discover_search_results'),
       itemCount: searchState.episodeResults.length,
       itemBuilder: (context, index) {
         final episode = searchState.episodeResults[index];
@@ -103,7 +103,7 @@ class PodcastSearchResultsList extends ConsumerWidget {
     );
 
     return ListView.builder(
-      scrollCacheExtent: ScrollCacheExtent.pixels(200), key: const Key('podcast_discover_search_results'),
+      scrollCacheExtent: const ScrollCacheExtent.pixels(200), key: const Key('podcast_discover_search_results'),
       itemCount: searchState.podcastResults.length,
       itemBuilder: (context, index) {
         final result = searchState.podcastResults[index];

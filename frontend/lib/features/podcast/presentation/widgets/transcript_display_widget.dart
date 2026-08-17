@@ -1,9 +1,9 @@
 import 'dart:async';
 
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
+import 'package:cupertino_ui/cupertino_ui.dart';
 import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:personal_ai_assistant/core/constants/app_durations.dart';
 import 'package:personal_ai_assistant/core/constants/app_radius.dart';
 import 'package:personal_ai_assistant/core/constants/app_spacing.dart';
@@ -474,7 +474,7 @@ class TranscriptDisplayWidgetState
     final sortedHighlights = _cachedSortedHighlights!;
 
     return ListView.builder(
-      scrollCacheExtent: ScrollCacheExtent.pixels(500), controller: _highlightsScrollController,
+      scrollCacheExtent: const ScrollCacheExtent.pixels(500), controller: _highlightsScrollController,
       padding: EdgeInsets.all(context.spacing.md),
       itemCount: sortedHighlights.length,
       itemBuilder: (context, index) {
@@ -548,7 +548,7 @@ class TranscriptDisplayWidgetState
               : Container(
                   padding: EdgeInsets.zero,
                   child: ListView.separated(
-                    scrollCacheExtent: ScrollCacheExtent.pixels(500), controller: _fullTranscriptScrollController,
+                    scrollCacheExtent: const ScrollCacheExtent.pixels(500), controller: _fullTranscriptScrollController,
                     itemCount: segments.length,
                     separatorBuilder: (context, index) => SizedBox(height: context.spacing.smMd),
                     itemBuilder: (context, index) {
@@ -670,7 +670,7 @@ class TranscriptDisplayWidgetState
     return Container(
       padding: EdgeInsets.all(context.spacing.md),
       child: ListView.builder(
-        scrollCacheExtent: ScrollCacheExtent.pixels(500), controller: _fullTranscriptScrollController,
+        scrollCacheExtent: const ScrollCacheExtent.pixels(500), controller: _fullTranscriptScrollController,
         itemCount: _searchResults.length,
         itemBuilder: (context, index) {
           final result = _searchResults[index];
@@ -875,7 +875,7 @@ class _FormattedTranscriptWidgetState
     return Container(
       padding: EdgeInsets.all(context.spacing.md),
       child: ListView.builder(
-        scrollCacheExtent: ScrollCacheExtent.pixels(500), itemCount: segments.length,
+        scrollCacheExtent: const ScrollCacheExtent.pixels(500), itemCount: segments.length,
         itemBuilder: (context, index) {
           final segment = segments[index];
           return RepaintBoundary(

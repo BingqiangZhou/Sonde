@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// Named text style helpers for sizes not covered by standard TextTheme slots.
 ///

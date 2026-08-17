@@ -1,6 +1,7 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' as legacy_material;
+import 'package:material_ui/material_ui.dart';
 import 'package:personal_ai_assistant/core/constants/app_durations.dart';
 import 'package:personal_ai_assistant/core/constants/app_spacing.dart';
 import 'package:personal_ai_assistant/core/constants/app_text_styles.dart';
@@ -43,20 +44,19 @@ Future<void> showCalendarPanelDialog({
   String? loadingText,
 }) async {
   final screenWidth = MediaQuery.sizeOf(context).width;
-  final horizontalPadding =
-      screenWidth < Breakpoints.medium ? 12.0 : 16.0;
+  final horizontalPadding = screenWidth < Breakpoints.medium ? 12.0 : 16.0;
 
   await showGeneralDialog<void>(
     context: context,
     barrierDismissible: true,
-    barrierColor:
-        Theme.of(context).colorScheme.scrim.withValues(alpha: 0.12),
-    barrierLabel:
-        MaterialLocalizations.of(context).modalBarrierDismissLabel,
+    barrierColor: Theme.of(context).colorScheme.scrim.withValues(alpha: 0.12),
+    barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
     transitionDuration: AppDurations.entranceFast,
     pageBuilder: (dialogContext, animation, secondaryAnimation) {
-      final maxPanelWidth = (screenWidth - horizontalPadding * 2)
-          .clamp(0.0, CalendarPanelHelper.maxPanelWidth);
+      final maxPanelWidth = (screenWidth - horizontalPadding * 2).clamp(
+        0.0,
+        CalendarPanelHelper.maxPanelWidth,
+      );
       return SafeArea(
         child: Align(
           alignment: Alignment.topRight,
@@ -92,13 +92,11 @@ Future<void> showCalendarPanelDialog({
         ),
       );
     },
-    transitionBuilder:
-        (dialogContext, animation, secondaryAnimation, child) {
+    transitionBuilder: (dialogContext, animation, secondaryAnimation, child) {
       return AnimatedBuilder(
         animation: animation,
         builder: (context, _) {
-          final curvedValue =
-              Curves.easeOutCubic.transform(animation.value);
+          final curvedValue = Curves.easeOutCubic.transform(animation.value);
           return Opacity(
             opacity: curvedValue,
             child: Transform.scale(
@@ -168,8 +166,7 @@ class CalendarPanelContent extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final now = CalendarPanelHelper.toDateOnly(DateTime.now());
-    final displayFocusedDay =
-        focusedDay.isAfter(now) ? now : focusedDay;
+    final displayFocusedDay = focusedDay.isAfter(now) ? now : focusedDay;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -185,130 +182,148 @@ class CalendarPanelContent extends StatelessWidget {
         SizedBox(
           key: Key(calendarKey),
           height: CalendarPanelHelper.calendarHeight,
-          child: TableCalendar<bool>(
-            firstDay: DateTime(2000),
-            lastDay: now,
-            focusedDay: displayFocusedDay,
-            availableCalendarFormats: {
-              CalendarFormat.month: context.l10n.calendar_month_format,
-            },
-            rowHeight: CalendarPanelHelper.calendarRowHeight,
-            daysOfWeekHeight: CalendarPanelHelper.calendarDaysOfWeekHeight,
-            headerStyle: HeaderStyle(
-              formatButtonVisible: false,
-              titleCentered: true,
-              leftChevronIcon: Icon(
-                Icons.chevron_left_rounded,
-                color: theme.colorScheme.onSurface,
-              ),
-              rightChevronIcon: Icon(
-                Icons.chevron_right_rounded,
-                color: theme.colorScheme.onSurface,
-              ),
-              titleTextStyle:
-                  theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ) ??
-                  AppTextStyles.metaSmall().copyWith(fontWeight: FontWeight.w700),
-            ),
-            daysOfWeekStyle: DaysOfWeekStyle(
-              weekdayStyle:
-                  theme.textTheme.labelMedium?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ) ??
-                  AppTextStyles.metaSmall(theme.colorScheme.onSurfaceVariant),
-              weekendStyle:
-                  theme.textTheme.labelMedium?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ) ??
-                  AppTextStyles.metaSmall(theme.colorScheme.onSurfaceVariant),
-            ),
-            selectedDayPredicate: (day) =>
-                CalendarPanelHelper.isSameDate(day, selectedDate),
-            enabledDayPredicate: (day) {
-              final normalizedDay = CalendarPanelHelper.toDateOnly(day);
-              return !normalizedDay.isAfter(now);
-            },
-            eventLoader: (day) {
-              final hasData =
-                  dateKeys.contains(EpisodeCardUtils.formatDate(day));
-              return hasData ? const [true] : const [];
-            },
-            onDaySelected: (pickedDay, focusedDay) {
-              onDaySelected(pickedDay, focusedDay);
-              // Pop the dialog after selection.
-              final navigator = Navigator.of(context);
-              if (navigator.canPop()) {
-                navigator.pop();
-              }
-            },
-            onPageChanged: (focusedDay) {
-              final normalizedFocused =
-                  CalendarPanelHelper.toDateOnly(focusedDay);
-              onPageChanged(normalizedFocused);
-            },
-            calendarBuilders: CalendarBuilders<bool>(
-              defaultBuilder: (context, day, _) =>
-                  CalendarPanelHelper.buildCalendarDayCell(
-                context,
-                day,
-                selectedDate: selectedDate,
-                keyPrefix: '${calendarKey}_day',
-              ),
-              outsideBuilder: (context, day, _) =>
-                  CalendarPanelHelper.buildCalendarDayCell(
-                context,
-                day,
-                selectedDate: selectedDate,
-                keyPrefix: '${calendarKey}_day',
-                isOutside: true,
-              ),
-              disabledBuilder: (context, day, _) =>
-                  CalendarPanelHelper.buildCalendarDayCell(
-                context,
-                day,
-                selectedDate: selectedDate,
-                keyPrefix: '${calendarKey}_day',
-                isDisabled: true,
-              ),
-              todayBuilder: (context, day, _) =>
-                  CalendarPanelHelper.buildCalendarDayCell(
-                context,
-                day,
-                selectedDate: selectedDate,
-                keyPrefix: '${calendarKey}_day',
-                isToday: true,
-              ),
-              selectedBuilder: (context, day, _) =>
-                  CalendarPanelHelper.buildCalendarDayCell(
-                context,
-                day,
-                selectedDate: selectedDate,
-                keyPrefix: '${calendarKey}_day',
-                isSelected: true,
-              ),
-              markerBuilder: (context, day, events) {
-                if (events.isEmpty) return null;
-                final isSelected =
-                    CalendarPanelHelper.isSameDate(day, selectedDate);
-                final markerColor = isSelected
-                    ? theme.colorScheme.onPrimary
-                    : theme.colorScheme.primary;
-                return Positioned(
-                  key: Key(
-                    '${calendarKey}_marker_${EpisodeCardUtils.formatDate(day)}',
+          // table_calendar 尚未迁移 material_ui：其 InkWell 需要旧版
+          // Material/Theme 祖先——兼容桥 + 透明 legacy Material 过渡
+          //（table_calendar 迁移完成后整体移除）。
+          child: MaterialUiCompatibilityBridge(
+            child: legacy_material.Material(
+              type: legacy_material.MaterialType.transparency,
+              child: TableCalendar<bool>(
+                firstDay: DateTime(2000),
+                lastDay: now,
+                focusedDay: displayFocusedDay,
+                availableCalendarFormats: {
+                  CalendarFormat.month: context.l10n.calendar_month_format,
+                },
+                rowHeight: CalendarPanelHelper.calendarRowHeight,
+                daysOfWeekHeight: CalendarPanelHelper.calendarDaysOfWeekHeight,
+                headerStyle: HeaderStyle(
+                  formatButtonVisible: false,
+                  titleCentered: true,
+                  leftChevronIcon: Icon(
+                    Icons.chevron_left_rounded,
+                    color: theme.colorScheme.onSurface,
                   ),
-                  bottom: CalendarPanelHelper.markerBottomOffset,
-                  child: Container(
-                    width: CalendarPanelHelper.markerDotSize,
-                    height: CalendarPanelHelper.markerDotSize,
-                    decoration: BoxDecoration(
-                      color: markerColor,
-                      shape: BoxShape.circle,
-                    ),
+                  rightChevronIcon: Icon(
+                    Icons.chevron_right_rounded,
+                    color: theme.colorScheme.onSurface,
                   ),
-                );
-              },
+                  titleTextStyle:
+                      theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ) ??
+                      AppTextStyles.metaSmall().copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+                daysOfWeekStyle: DaysOfWeekStyle(
+                  weekdayStyle:
+                      theme.textTheme.labelMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ) ??
+                      AppTextStyles.metaSmall(
+                        theme.colorScheme.onSurfaceVariant,
+                      ),
+                  weekendStyle:
+                      theme.textTheme.labelMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ) ??
+                      AppTextStyles.metaSmall(
+                        theme.colorScheme.onSurfaceVariant,
+                      ),
+                ),
+                selectedDayPredicate: (day) =>
+                    CalendarPanelHelper.isSameDate(day, selectedDate),
+                enabledDayPredicate: (day) {
+                  final normalizedDay = CalendarPanelHelper.toDateOnly(day);
+                  return !normalizedDay.isAfter(now);
+                },
+                eventLoader: (day) {
+                  final hasData = dateKeys.contains(
+                    EpisodeCardUtils.formatDate(day),
+                  );
+                  return hasData ? const [true] : const [];
+                },
+                onDaySelected: (pickedDay, focusedDay) {
+                  onDaySelected(pickedDay, focusedDay);
+                  // Pop the dialog after selection.
+                  final navigator = Navigator.of(context);
+                  if (navigator.canPop()) {
+                    navigator.pop();
+                  }
+                },
+                onPageChanged: (focusedDay) {
+                  final normalizedFocused = CalendarPanelHelper.toDateOnly(
+                    focusedDay,
+                  );
+                  onPageChanged(normalizedFocused);
+                },
+                calendarBuilders: CalendarBuilders<bool>(
+                  defaultBuilder: (context, day, _) =>
+                      CalendarPanelHelper.buildCalendarDayCell(
+                        context,
+                        day,
+                        selectedDate: selectedDate,
+                        keyPrefix: '${calendarKey}_day',
+                      ),
+                  outsideBuilder: (context, day, _) =>
+                      CalendarPanelHelper.buildCalendarDayCell(
+                        context,
+                        day,
+                        selectedDate: selectedDate,
+                        keyPrefix: '${calendarKey}_day',
+                        isOutside: true,
+                      ),
+                  disabledBuilder: (context, day, _) =>
+                      CalendarPanelHelper.buildCalendarDayCell(
+                        context,
+                        day,
+                        selectedDate: selectedDate,
+                        keyPrefix: '${calendarKey}_day',
+                        isDisabled: true,
+                      ),
+                  todayBuilder: (context, day, _) =>
+                      CalendarPanelHelper.buildCalendarDayCell(
+                        context,
+                        day,
+                        selectedDate: selectedDate,
+                        keyPrefix: '${calendarKey}_day',
+                        isToday: true,
+                      ),
+                  selectedBuilder: (context, day, _) =>
+                      CalendarPanelHelper.buildCalendarDayCell(
+                        context,
+                        day,
+                        selectedDate: selectedDate,
+                        keyPrefix: '${calendarKey}_day',
+                        isSelected: true,
+                      ),
+                  markerBuilder: (context, day, events) {
+                    if (events.isEmpty) return null;
+                    final isSelected = CalendarPanelHelper.isSameDate(
+                      day,
+                      selectedDate,
+                    );
+                    final markerColor = isSelected
+                        ? theme.colorScheme.onPrimary
+                        : theme.colorScheme.primary;
+                    return Positioned(
+                      key: Key(
+                        '${calendarKey}_marker_${EpisodeCardUtils.formatDate(day)}',
+                      ),
+                      bottom: CalendarPanelHelper.markerBottomOffset,
+                      child: Container(
+                        width: CalendarPanelHelper.markerDotSize,
+                        height: CalendarPanelHelper.markerDotSize,
+                        decoration: BoxDecoration(
+                          color: markerColor,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
             ),
           ),
         ),

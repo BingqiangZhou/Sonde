@@ -1,8 +1,7 @@
-import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:personal_ai_assistant/core/constants/app_spacing.dart';
-
 import 'package:personal_ai_assistant/core/constants/breakpoints.dart';
 import 'package:personal_ai_assistant/core/constants/scroll_constants.dart';
 import 'package:personal_ai_assistant/core/localization/app_localizations_extension.dart';
@@ -53,7 +52,7 @@ class DiscoverChartsList extends ConsumerWidget {
 
         if (isMobile) {
           return ListView.builder(
-            scrollCacheExtent: ScrollCacheExtent.pixels(ScrollConstants.largeListCacheExtent), key: const Key('podcast_discover_list'),
+            scrollCacheExtent: const ScrollCacheExtent.pixels(ScrollConstants.largeListCacheExtent), key: const Key('podcast_discover_list'),
             controller: scrollController,
             physics: const AlwaysScrollableScrollPhysics(),
             padding:
@@ -75,7 +74,7 @@ class DiscoverChartsList extends ConsumerWidget {
         final childAspectRatio = cardWidth / cardHeight;
 
         return GridView.builder(
-          scrollCacheExtent: ScrollCacheExtent.pixels(ScrollConstants.largeListCacheExtent), key: const Key('podcast_discover_grid'),
+          scrollCacheExtent: const ScrollCacheExtent.pixels(ScrollConstants.largeListCacheExtent), key: const Key('podcast_discover_grid'),
           controller: scrollController,
           physics: const AlwaysScrollableScrollPhysics(),
           padding:

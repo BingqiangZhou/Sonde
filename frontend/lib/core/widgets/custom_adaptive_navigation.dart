@@ -1,8 +1,8 @@
 import 'dart:ui';
 
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
+import 'package:cupertino_ui/cupertino_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:personal_ai_assistant/core/constants/app_durations.dart';
 import 'package:personal_ai_assistant/core/constants/app_radius.dart';
 import 'package:personal_ai_assistant/core/constants/app_spacing.dart';
@@ -59,7 +59,6 @@ class _CustomAdaptiveNavigationState extends ConsumerState<CustomAdaptiveNavigat
     // Initialize sidebar state from SharedPreferences
     _sidebarExpanded = ValueNotifier<bool>(widget.desktopNavExpanded);
     _pageController = PageController(initialPage: widget.selectedIndex);
-    // ignore: discarded_futures
     _loadSidebarState();
   }
 

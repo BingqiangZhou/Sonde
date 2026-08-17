@@ -1,7 +1,7 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:personal_ai_assistant/features/auth/presentation/providers/auth_provider.dart';
 import 'package:personal_ai_assistant/features/splash/presentation/pages/splash_page.dart';
 
@@ -75,8 +75,7 @@ Widget _app({required bool authenticated}) {
 void main() {
   testWidgets('SplashPage shows loader and redirects to login', (tester) async {
     await tester.pumpWidget(_app(authenticated: false));
-    await tester.pump();
-
+    // 首帧即加载态：导航在 postFrameCallback 中执行，额外 pump 会跳转走
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
 
     await tester.pumpAndSettle();
@@ -85,8 +84,6 @@ void main() {
 
   testWidgets('SplashPage shows loader and redirects to home', (tester) async {
     await tester.pumpWidget(_app(authenticated: true));
-    await tester.pump();
-
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
 
     await tester.pumpAndSettle();
