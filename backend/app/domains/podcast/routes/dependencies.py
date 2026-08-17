@@ -12,16 +12,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.auth import get_db_session_dependency, get_redis_client, require_api_key
 from app.core.redis import RedisCache
 from app.domains.podcast.repositories.content_repository import SubscriptionRepository
-from app.domains.podcast.services.content_service import (
-    DailyReportService,
-    HighlightService,
-    SummaryWorkflowService,
-)
 from app.domains.podcast.services.conversation_service import ConversationService
+from app.domains.podcast.services.daily_report_service import DailyReportService
 from app.domains.podcast.services.episode_service import (
     PodcastEpisodeService,
     PodcastSubscriptionService,
 )
+from app.domains.podcast.services.highlight_service import HighlightService
 from app.domains.podcast.services.playback_service import (
     PodcastPlaybackService,
     PodcastQueueService,
@@ -29,6 +26,7 @@ from app.domains.podcast.services.playback_service import (
 from app.domains.podcast.services.schedule_service import PodcastScheduleService
 from app.domains.podcast.services.search_service import PodcastSearchService
 from app.domains.podcast.services.stats_service import PodcastStatsService
+from app.domains.podcast.services.summary_service import SummaryWorkflowService
 from app.domains.podcast.services.transcription_service import (
     TranscriptionWorkflowService,
 )

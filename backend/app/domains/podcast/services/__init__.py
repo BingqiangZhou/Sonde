@@ -1,12 +1,15 @@
 """Podcast domain services."""
 
-from .content_service import (
-    DailyReportService,
+from app.domains.podcast.services.daily_report_service import DailyReportService
+from app.domains.podcast.services.highlight_service import (
     HighlightExtractionService,
     HighlightService,
+)
+from app.domains.podcast.services.summary_service import (
     PodcastSummaryGenerationService,
     SummaryWorkflowService,
 )
+
 from .episode_service import PodcastEpisodeService, PodcastSubscriptionService
 from .playback_service import PodcastPlaybackService, PodcastQueueService
 from .schedule_service import PodcastScheduleService

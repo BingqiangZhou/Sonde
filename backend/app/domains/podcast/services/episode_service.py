@@ -15,9 +15,7 @@ from app.domains.podcast.integration.secure_rss_parser import SecureRSSParser
 from app.domains.podcast.models import PodcastEpisode, Subscription, TranscriptionTask
 from app.domains.podcast.repositories import PodcastRepository
 from app.domains.podcast.repositories.content_repository import SubscriptionRepository
-from app.domains.podcast.services.content_service import (
-    extract_one_line_summary,
-)
+from app.domains.podcast.services.daily_report_service import extract_one_line_summary
 from app.domains.podcast.services.episode_mapper import build_episode_dicts
 
 
