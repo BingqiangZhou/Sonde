@@ -50,7 +50,7 @@ uv run alembic upgrade head
 uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-API 文档: http://localhost:8000/docs
+API 文档: http://localhost:8000/api/v1/docs
 
 ## Celery 任务
 

@@ -10,12 +10,12 @@ logger = logging.getLogger(__name__)
 
 SLOW_API_THRESHOLD_MS = 5000
 SKIP_LOGGING_PATHS = {
-    "/health",
+    "/api/v1/",
     "/api/v1/health",
     "/api/v1/health/ready",
-    "/docs",
-    "/redoc",
-    "/openapi.json",
+    "/api/v1/docs",
+    "/api/v1/docs/oauth2-redirect",
+    "/api/v1/redoc",
     "/api/v1/openapi.json",
 }
 

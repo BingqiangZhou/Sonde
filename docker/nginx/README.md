@@ -63,7 +63,7 @@ cd ../..
 docker-compose --env-file .env up -d
 
 # 6. 验证
-curl https://your-domain.com/health
+curl https://your-domain.com/api/v1/health
 ```
 
 ---

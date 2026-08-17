@@ -18,14 +18,23 @@ def create_application() -> FastAPI:
     settings = get_settings()
 
     openapi_url = f"{settings.API_V1_STR}/openapi.json"
+    docs_url = f"{settings.API_V1_STR}/docs"
+    redoc_url = f"{settings.API_V1_STR}/redoc"
+    oauth2_redirect_url = f"{settings.API_V1_STR}/docs/oauth2-redirect"
     if settings.ENVIRONMENT == "production":
         openapi_url = None
+        docs_url = None
+        redoc_url = None
+        oauth2_redirect_url = None
 
     app = FastAPI(
         title=settings.PROJECT_NAME,
         description="Sonde API",
         version=settings.VERSION,
         openapi_url=openapi_url,
+        docs_url=docs_url,
+        redoc_url=redoc_url,
+        swagger_ui_oauth2_redirect_url=oauth2_redirect_url,
         lifespan=application_lifespan,
         default_response_class=CustomJSONResponse,
     )

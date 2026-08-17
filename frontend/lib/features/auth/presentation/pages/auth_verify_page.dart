@@ -39,6 +39,9 @@ class AuthVerifyNotifier extends Notifier<_VerifyStatus> {
   String get _baseUrl =>
       '${ref.read(serverConfigProvider).serverUrl}/api/v1/auth';
 
+  String get _healthUrl =>
+      '${ref.read(serverConfigProvider).serverUrl}/api/v1/health';
+
   @override
   _VerifyStatus build() {
     _dio = Dio(BaseOptions(
@@ -58,7 +61,7 @@ class AuthVerifyNotifier extends Notifier<_VerifyStatus> {
 
     try {
       final response = await _dio
-          .get<dynamic>('$_baseUrl/health')
+          .get<dynamic>(_healthUrl)
           .timeout(const Duration(seconds: 5));
 
       if (response.statusCode == 200) {

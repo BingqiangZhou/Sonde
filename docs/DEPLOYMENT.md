@@ -115,7 +115,7 @@ docker-compose down -v
 curl http://localhost:8000/api/v1/health
 
 # API 文档
-# 浏览器打开: http://localhost:8000/docs
+# 浏览器打开: http://localhost:8000/api/v1/docs
 ```
 
 ### 生产环境

@@ -7,6 +7,21 @@ def _route_paths() -> set[str]:
     return {route.path for route in app.routes}
 
 
+def test_all_routes_use_api_v1_prefix() -> None:
+    """Every HTTP route must live under /api/v1/ — no bare-root paths."""
+    paths = _route_paths()
+
+    assert "/api/v1/" in paths
+    assert "/api/v1/health" in paths
+    assert "/api/v1/health/ready" in paths
+    assert "/api/v1/docs" in paths
+    assert "/api/v1/redoc" in paths
+    assert "/api/v1/openapi.json" in paths
+
+    for path in paths:
+        assert path.startswith("/api/v1/"), f"route outside /api/v1/: {path}"
+
+
 def test_podcast_subscription_routes_use_podcast_domain_prefix() -> None:
     paths = _route_paths()
 

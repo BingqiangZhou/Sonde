@@ -55,25 +55,21 @@ def configure_exception_handlers(app: FastAPI) -> None:
 
 
 def register_internal_routes(app: FastAPI) -> None:
-    """Register health and root routes."""
+    """Register root info and health routes (all under the API prefix)."""
     settings = get_settings()
 
-    @app.get("/")
-    async def root():
+    @app.get(f"{settings.API_V1_STR}/")
+    async def api_root():
         return {
             "message": "Sonde API is running",
             "status": "healthy",
             "version": settings.VERSION,
-            "docs": "/api/v1/docs",
-            "health": "/health",
+            "docs": f"{settings.API_V1_STR}/docs",
+            "health": f"{settings.API_V1_STR}/health",
         }
 
-    @app.get("/health")
-    async def health_check():
-        return {"status": "healthy"}
-
     @app.get(f"{settings.API_V1_STR}/health")
-    async def health_check_v1():
+    async def health_check():
         return {"status": "healthy"}
 
     @app.get(f"{settings.API_V1_STR}/health/ready")

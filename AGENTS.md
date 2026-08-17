@@ -49,9 +49,9 @@
 - Use the health check once running: `curl http://localhost:8000/api/v1/health`.
 
 ## Configuration & Requirements Notes
-- API endpoints are prefixed with `/api/v1/` and errors are bilingual: `{message_en, message_zz}`.
+- All API routes live under `/api/v1/` (including `/api/v1/` root info and `/api/v1/docs` Swagger UI); errors are bilingual: `{message_en, message_zz}`.
 - Rate limiting: 60 req/min, 1000 req/hour.
-- Health: `GET /health` and `GET /api/v1/health` (liveness), `GET /api/v1/health/ready` (readiness).
+- Health: `GET /api/v1/health` (liveness), `GET /api/v1/health/ready` (readiness).
 
 ## Backend Architecture Notes
 - DI: FastAPI `Depends()`. Migrations: `backend/alembic/`.

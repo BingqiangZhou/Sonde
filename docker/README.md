@@ -33,7 +33,7 @@ docker compose up -d --build
 ### 3. 访问服务
 
 - Backend: http://localhost:8000
-- API 文档: http://localhost:8000/docs
+- API 文档: http://localhost:8000/api/v1/docs
 - 健康检查: http://localhost:8000/api/v1/health
 
 ### SSL 证书（生产环境）
@@ -80,7 +80,7 @@ curl http://localhost:8000/api/v1/health
 curl http://localhost:8000/api/v1/health/ready
 
 # 4. 访问 API 文档
-# 浏览器打开: http://localhost:8000/docs
+# 浏览器打开: http://localhost:8000/api/v1/docs
 ```
 
 ---
@@ -153,7 +153,7 @@ docker compose exec backend uv run pytest
 - [ ] 配置 `docker/.env` 并修改密码、域名
 - [ ] 服务启动: `docker compose ps` 显示 5 个服务 **Up**
 - [ ] 健康检查: `curl http://localhost:8000/api/v1/health` 返回健康
-- [ ] API 文档可访问: `http://localhost:8000/docs` 正常显示
+- [ ] API 文档可访问: `http://localhost:8000/api/v1/docs` 正常显示
 - [ ] 功能测试: 能添加播客订阅
 
 ### 生产环境额外检查
