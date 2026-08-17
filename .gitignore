@@ -152,3 +152,4 @@ docs/superpowers/
 # Worktrees
 .worktrees/
 .superpowers/
+.zcode/

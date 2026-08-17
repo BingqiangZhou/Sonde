@@ -457,7 +457,13 @@ extension _PodcastEpisodeDetailPageHeader on _PodcastEpisodeDetailPageState {
     return RepaintBoundary(
       child: Consumer(
       builder: (context, ref, _) {
-        final playStateInfo = ref.watch(audioEpisodePlayStateProvider);
+        // Select the resolved state so position ticks don't rebuild the
+        // button while the play/resume/playing state itself is unchanged.
+        final playState = ref.watch(
+          audioEpisodePlayStateProvider.select(
+            (info) => _resolveEpisodePlayState(info, episode),
+          ),
+        );
         final effectiveDensity =
             density ??
             (_isUltraCompactPhoneLayout
@@ -465,7 +471,6 @@ extension _PodcastEpisodeDetailPageHeader on _PodcastEpisodeDetailPageState {
                 : _isCompactPhoneLayout || compact
                 ? HeaderCapsuleActionButtonDensity.compact
                 : HeaderCapsuleActionButtonDensity.regular);
-        final playState = _resolveEpisodePlayState(playStateInfo, episode);
         final showLabel =
             effectiveDensity != HeaderCapsuleActionButtonDensity.iconOnly;
 
@@ -546,9 +551,19 @@ extension _PodcastEpisodeDetailPageHeader on _PodcastEpisodeDetailPageState {
       child: Consumer(
       builder: (context, ref, _) {
         final theme = Theme.of(context);
-        final playStateInfo = ref.watch(audioEpisodePlayStateProvider);
-        final playState = _resolveEpisodePlayState(playStateInfo, episode);
-        final resumePositionMs = _resolveResumePositionMs(playStateInfo, episode);
+        // Position only matters for the resume label; while playing the
+        // badge shows the playing state, so ticks must not rebuild it.
+        final (playState, resumePositionMs) = ref.watch(
+          audioEpisodePlayStateProvider.select((info) {
+            final state = _resolveEpisodePlayState(info, episode);
+            return (
+              state,
+              state == _EpisodeDetailPlayState.resume
+                  ? _resolveResumePositionMs(info, episode)
+                  : null,
+            );
+          }),
+        );
 
         return switch (playState) {
           _EpisodeDetailPlayState.playing => StatusBadge(
@@ -557,7 +572,7 @@ extension _PodcastEpisodeDetailPageHeader on _PodcastEpisodeDetailPageState {
           ),
           _EpisodeDetailPlayState.resume => StatusBadge(
             label:
-                '${l10n.podcast_resume_episode} ${_formatPlaybackProgress(resumePositionMs)}',
+                '${l10n.podcast_resume_episode} ${_formatPlaybackProgress(resumePositionMs ?? 0)}',
             icon: Icons.history_rounded,
             color: theme.colorScheme.secondary,
           ),
