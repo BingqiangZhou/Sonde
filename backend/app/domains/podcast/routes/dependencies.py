@@ -11,15 +11,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.auth import get_db_session_dependency, get_redis_client, require_api_key
 from app.core.redis import RedisCache
-from app.domains.podcast.conversation_service import ConversationService
-from app.domains.podcast.repositories.content_repository import (
-    SubscriptionRepository,
-)
+from app.domains.podcast.repositories.content_repository import SubscriptionRepository
 from app.domains.podcast.services.content_service import (
     DailyReportService,
     HighlightService,
     SummaryWorkflowService,
 )
+from app.domains.podcast.services.conversation_service import ConversationService
 from app.domains.podcast.services.episode_service import (
     PodcastEpisodeService,
     PodcastSubscriptionService,
@@ -51,23 +49,15 @@ def _get_repositories():
     global _cached_repos
     if _cached_repos is not None:
         return _cached_repos
-    from app.domains.podcast.repositories import (
-        PodcastEpisodeRepository,
-        PodcastPlaybackRepository,
-        PodcastQueueRepository,
-        PodcastRepository,
-        PodcastSearchRepository,
-        PodcastStatsRepository,
-        PodcastSubscriptionRepository,
-    )
+    from app.domains.podcast.repositories import PodcastRepository
 
     _cached_repos = {
-        "episode": PodcastEpisodeRepository,
-        "playback": PodcastPlaybackRepository,
-        "queue": PodcastQueueRepository,
-        "search": PodcastSearchRepository,
-        "stats": PodcastStatsRepository,
-        "subscription": PodcastSubscriptionRepository,
+        "episode": PodcastRepository,
+        "playback": PodcastRepository,
+        "queue": PodcastRepository,
+        "search": PodcastRepository,
+        "stats": PodcastRepository,
+        "subscription": PodcastRepository,
         "summary": PodcastRepository,
     }
     return _cached_repos

@@ -51,7 +51,7 @@ class TestPodcastSubscriptionService:
     @pytest.fixture
     def mock_repo(self):
         with patch(
-            "app.domains.podcast.services.episode_service.PodcastSubscriptionRepository",
+            "app.domains.podcast.services.episode_service.PodcastRepository",
         ) as mock:
             repo_instance = AsyncMock()
             mock.return_value = repo_instance
@@ -123,7 +123,7 @@ class TestPodcastEpisodeService:
     @pytest.fixture
     def mock_repo(self):
         with patch(
-            "app.domains.podcast.services.episode_service.PodcastEpisodeRepository",
+            "app.domains.podcast.services.episode_service.PodcastRepository",
         ) as mock:
             repo_instance = AsyncMock()
             mock.return_value = repo_instance
@@ -303,7 +303,7 @@ class TestPodcastPlaybackService:
     @pytest.fixture
     def mock_repo(self):
         with patch(
-            "app.domains.podcast.services.playback_service.PodcastPlaybackRepository",
+            "app.domains.podcast.services.playback_service.PodcastRepository",
         ) as mock:
             repo_instance = AsyncMock()
             mock.return_value = repo_instance
@@ -365,7 +365,7 @@ class TestPodcastQueueService:
     @pytest.fixture
     def mock_repo(self):
         with patch(
-            "app.domains.podcast.services.playback_service.PodcastQueueRepository",
+            "app.domains.podcast.services.playback_service.PodcastRepository",
         ) as mock:
             repo_instance = AsyncMock()
             mock.return_value = repo_instance
@@ -419,7 +419,7 @@ class TestPodcastSearchService:
     @pytest.fixture
     def mock_repo(self):
         with patch(
-            "app.domains.podcast.services.search_service.PodcastSearchRepository",
+            "app.domains.podcast.services.search_service.PodcastRepository",
         ) as mock:
             repo_instance = AsyncMock()
             mock.return_value = repo_instance

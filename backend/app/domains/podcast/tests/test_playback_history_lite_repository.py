@@ -3,7 +3,7 @@ from unittest.mock import AsyncMock, Mock
 
 import pytest
 
-from app.domains.podcast.repositories import PodcastEpisodeRepository
+from app.domains.podcast.repositories import PodcastRepository
 
 
 def _build_rows_result(rows: list[dict]) -> Mock:
@@ -71,7 +71,7 @@ async def test_get_playback_history_lite_paginated_subscription_image_fallback(
     expected: str | None,
 ):
     db = AsyncMock()
-    repository = PodcastEpisodeRepository(db)
+    repository = PodcastRepository(db)
     row = {
         **_build_history_row(subscription_image_url, subscription_config),
         "total_count": 1,

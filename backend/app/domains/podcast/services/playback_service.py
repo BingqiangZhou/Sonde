@@ -10,10 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.exceptions import EpisodeNotFoundError
 from app.core.redis import RedisCache, get_shared_redis
 from app.domains.podcast.models import PodcastEpisode, PodcastPlaybackState
-from app.domains.podcast.repositories import (
-    PodcastPlaybackRepository,
-    PodcastQueueRepository,
-)
+from app.domains.podcast.repositories import PodcastRepository
 
 
 logger = logging.getLogger(__name__)
@@ -34,7 +31,7 @@ class PodcastPlaybackService:
         db: AsyncSession,
         user_id: int,
         *,
-        repo: PodcastPlaybackRepository | None = None,
+        repo: PodcastRepository | None = None,
         redis: RedisCache | None = None,
     ):
         """Initialize playback service.
@@ -46,7 +43,7 @@ class PodcastPlaybackService:
         """
         self.db = db
         self.user_id = user_id
-        self.repo = repo or PodcastPlaybackRepository(db)
+        self.repo = repo or PodcastRepository(db)
         self.redis = redis or get_shared_redis()
 
     async def update_playback_progress(
@@ -291,11 +288,11 @@ class PodcastQueueService:
         db: AsyncSession,
         user_id: int,
         *,
-        repo: PodcastQueueRepository | None = None,
+        repo: PodcastRepository | None = None,
     ):
         self.db = db
         self.user_id = user_id
-        self.repo = repo or PodcastQueueRepository(db)
+        self.repo = repo or PodcastRepository(db)
 
     async def get_queue(self) -> dict[str, Any]:
         queue = await self.repo.get_queue_with_items(self.user_id)

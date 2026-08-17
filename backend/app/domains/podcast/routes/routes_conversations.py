@@ -16,7 +16,7 @@ from app.domains.podcast.routes.response_assemblers import (
     build_conversation_history_response,
     build_conversation_session_list_response,
 )
-from app.domains.podcast.conversation_service import ConversationService
+from app.domains.podcast.services.conversation_service import ConversationService
 from app.domains.podcast.schemas import (
     ConversationSessionCreateRequest,
     ConversationSessionListResponse,

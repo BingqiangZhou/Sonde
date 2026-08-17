@@ -12,7 +12,7 @@ import pytest
 
 from app.core.datetime_utils import ensure_timezone_aware_fetch_time
 from app.domains.podcast.models import PodcastEpisode, Subscription
-from app.domains.podcast.repositories import PodcastSubscriptionRepository
+from app.domains.podcast.repositories import PodcastRepository
 
 
 @pytest.mark.asyncio
@@ -30,7 +30,7 @@ async def test_update_subscription_fetch_time_preserves_timezone():
     )
     db_session = AsyncMock()
     db_session.execute = AsyncMock(return_value=execute_result)
-    repo = PodcastSubscriptionRepository(db_session)
+    repo = PodcastRepository(db_session)
 
     fetch_time = datetime.now(UTC)
     await repo.update_subscription_fetch_time(subscription.id, fetch_time)

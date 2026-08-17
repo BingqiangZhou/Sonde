@@ -2371,12 +2371,3 @@ class PodcastRepository:
             elapsed_ms=(perf_counter() - started_at) * 1000,
         )
         return await self._refresh_queue_with_items(queue)
-
-
-# Backward compatibility aliases
-PodcastEpisodeRepository = PodcastRepository
-PodcastSubscriptionRepository = PodcastRepository
-PodcastPlaybackRepository = PodcastRepository
-PodcastQueueRepository = PodcastRepository
-PodcastSearchRepository = PodcastRepository
-PodcastStatsRepository = PodcastRepository

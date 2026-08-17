@@ -13,7 +13,7 @@ from app.core.redis import (
     RedisCache,
     get_shared_redis,
 )
-from app.domains.podcast.repositories import PodcastStatsRepository
+from app.domains.podcast.repositories import PodcastRepository
 from app.domains.podcast.services.playback_service import PodcastPlaybackService
 
 
@@ -28,13 +28,13 @@ class PodcastStatsService:
         db: AsyncSession,
         user_id: int,
         *,
-        repo: PodcastStatsRepository | None = None,
+        repo: PodcastRepository | None = None,
         redis: RedisCache | None = None,
         playback_service: PodcastPlaybackService | None = None,
     ):
         self.db = db
         self.user_id = user_id
-        self.repo = repo or PodcastStatsRepository(db)
+        self.repo = repo or PodcastRepository(db)
         self.playback_service = playback_service or PodcastPlaybackService(db, user_id)
         self.redis = redis or get_shared_redis()
 

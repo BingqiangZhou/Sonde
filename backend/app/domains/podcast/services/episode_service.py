@@ -13,13 +13,8 @@ from app.core.redis import RedisCache, get_shared_redis
 from app.core.utils import filter_thinking_content
 from app.domains.podcast.integration.secure_rss_parser import SecureRSSParser
 from app.domains.podcast.models import PodcastEpisode, Subscription, TranscriptionTask
-from app.domains.podcast.repositories import (
-    PodcastEpisodeRepository,
-    PodcastSubscriptionRepository,
-)
-from app.domains.podcast.repositories.content_repository import (
-    SubscriptionRepository,
-)
+from app.domains.podcast.repositories import PodcastRepository
+from app.domains.podcast.repositories.content_repository import SubscriptionRepository
 from app.domains.podcast.services.content_service import (
     extract_one_line_summary,
 )
@@ -58,7 +53,7 @@ class PodcastEpisodeService:
         db: AsyncSession,
         user_id: int,
         *,
-        repo: PodcastEpisodeRepository | None = None,
+        repo: PodcastRepository | None = None,
         redis: RedisCache | None = None,
     ):
         """Initialize episode service.
@@ -70,7 +65,7 @@ class PodcastEpisodeService:
         """
         self.db = db
         self.user_id = user_id
-        self.repo = repo or PodcastEpisodeRepository(db)
+        self.repo = repo or PodcastRepository(db)
         self.redis = redis or get_shared_redis()
         self._feed_description_max_length = 320
 
@@ -581,7 +576,7 @@ class PodcastSubscriptionService:
         db: AsyncSession,
         user_id: int,
         *,
-        repo: PodcastSubscriptionRepository | None = None,
+        repo: PodcastRepository | None = None,
         redis: RedisCache | None = None,
         parser: SecureRSSParser | None = None,
         subscription_repo: SubscriptionRepository | None = None,
@@ -595,7 +590,7 @@ class PodcastSubscriptionService:
         """
         self.db = db
         self.user_id = user_id
-        self.repo = repo or PodcastSubscriptionRepository(db)
+        self.repo = repo or PodcastRepository(db)
         self.redis = redis or get_shared_redis()
         self.parser = parser or SecureRSSParser(user_id)
         self.subscription_repo = subscription_repo or SubscriptionRepository(db)

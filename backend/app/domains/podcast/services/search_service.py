@@ -13,7 +13,7 @@ from app.core.redis import (
     get_shared_redis,
 )
 from app.domains.podcast.models import PodcastEpisode
-from app.domains.podcast.repositories import PodcastSearchRepository
+from app.domains.podcast.repositories import PodcastRepository
 from app.domains.podcast.services.episode_mapper import build_episode_dicts
 
 
@@ -32,7 +32,7 @@ class PodcastSearchService:
         db: AsyncSession,
         user_id: int,
         *,
-        repo: PodcastSearchRepository | None = None,
+        repo: PodcastRepository | None = None,
         redis: RedisCache | None = None,
     ):
         """Initialize search service.
@@ -44,7 +44,7 @@ class PodcastSearchService:
         """
         self.db = db
         self.user_id = user_id
-        self.repo = repo or PodcastSearchRepository(db)
+        self.repo = repo or PodcastRepository(db)
         self.redis = redis or get_shared_redis()
 
     async def search_podcasts(

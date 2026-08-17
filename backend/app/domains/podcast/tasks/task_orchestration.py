@@ -39,7 +39,7 @@ from app.domains.podcast.models import (
     TranscriptionTask,
     UserSubscription,
 )
-from app.domains.podcast.repositories import PodcastSubscriptionRepository  # noqa: F401
+from app.domains.podcast.repositories import PodcastRepository  # noqa: F401
 from app.domains.podcast.services.content_service import DailyReportService
 from app.domains.podcast.services.transcription_service import (  # noqa: F401
     TranscriptionWorkflowService,
@@ -251,7 +251,7 @@ class FeedSyncOrchestrator(BaseOrchestrator):
 
         session_factory = get_async_session_factory()
         async with session_factory() as session:
-            repo = PodcastSubscriptionRepository(session)
+            repo = PodcastRepository(session)
             subscription = await repo.get_subscription_by_id_direct(subscription_id)
             if subscription is None:
                 return {
@@ -341,7 +341,7 @@ class FeedSyncOrchestrator(BaseOrchestrator):
         user_id: int,
         source_url: str,
     ) -> dict:
-        repo = PodcastSubscriptionRepository(self.session)
+        repo = PodcastRepository(self.session)
         parser = SecureRSSParser(user_id)
 
         try:

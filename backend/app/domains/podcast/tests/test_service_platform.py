@@ -21,7 +21,7 @@ class TestPodcastSubscriptionPlatform:
     def mock_repo(self):
         """Mock repository"""
         with patch(
-            "app.domains.podcast.services.episode_service.PodcastSubscriptionRepository",
+            "app.domains.podcast.services.episode_service.PodcastRepository",
         ) as mock:
             repo_instance = AsyncMock()
             mock.return_value = repo_instance
