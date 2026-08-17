@@ -11,24 +11,35 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     UV_LINK_MODE=copy \
     UV_PYTHON=/usr/local/bin/python3.11 \
     UV_PYTHON_DOWNLOADS=never \
-    UV_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple \
-    UV_EXTRA_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple
+    UV_INDEX_URL=https://mirrors.aliyun.com/pypi/web/simple \
+    UV_EXTRA_INDEX_URL=https://mirrors.aliyun.com/pypi/web/simple
 
-# 配置国内 Debian 镜像源（清华大学）
-RUN sed -i 's/deb.debian.org/mirrors.tuna.tsinghua.edu.cn/g' /etc/apt/sources.list.d/debian.sources \
-    && sed -i 's/security.debian.org/mirrors.tuna.tsinghua.edu.cn/g' /etc/apt/sources.list.d/debian.sources
+# 配置国内 Debian 镜像源（阿里云，清华源对 trixie 仓库返回 403）
+RUN sed -i 's/deb.debian.org/mirrors.aliyun.com/g' /etc/apt/sources.list.d/debian.sources \
+    && sed -i 's/security.debian.org/mirrors.aliyun.com\/debian-security/g' /etc/apt/sources.list.d/debian.sources
 
 # Configure apt to use mirrors and retry on failure
 RUN echo "Acquire::Retries \"3\";" > /etc/apt/apt.conf.d/80-retries \
     && echo "Acquire::http::Timeout \"30\";" > /etc/apt/apt.conf.d/80-timeout
 
-# Install system dependencies
+# Install system dependencies (aliyun mirror occasionally 502s random
+# packages; retry the whole install to ride out transient errors)
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
-        build-essential \
-        libpq-dev \
-        curl \
-        ffmpeg \
+    && (apt-get install -y --no-install-recommends \
+            build-essential \
+            libpq-dev \
+            curl \
+            ffmpeg \
+        || (sleep 15 && apt-get update && apt-get install -y --no-install-recommends \
+            build-essential \
+            libpq-dev \
+            curl \
+            ffmpeg) \
+        || (sleep 30 && apt-get update && apt-get install -y --no-install-recommends \
+            build-essential \
+            libpq-dev \
+            curl \
+            ffmpeg)) \
     && rm -rf /var/lib/apt/lists/*
 
 # Set work directory
@@ -38,8 +49,8 @@ WORKDIR /app
 COPY pyproject.toml uv.lock ./
 
 # Configure pip to use Chinese mirrors for faster downloads
-RUN pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple \
-    && pip config set global.trusted-host pypi.tuna.tsinghua.edu.cn
+RUN pip config set global.index-url https://mirrors.aliyun.com/pypi/web/simple \
+    && pip config set global.trusted-host mirrors.aliyun.com
 
 # Install uv first (faster than regular pip for Python package management)
 RUN pip install --no-cache-dir uv
