@@ -8,6 +8,10 @@ import pytest
 from fastapi import HTTPException, Request
 
 
+def _request_with_headers(headers: list[tuple[bytes, bytes]]) -> Request:
+    return Request(scope={"type": "http", "headers": headers})
+
+
 class TestApiKeyAuth:
     """API key validation tests."""
 
@@ -110,3 +114,77 @@ class TestApiKeyAuth:
 
         request = Request(scope={"type": "http", "headers": []})
         assert _extract_api_key(request) is None
+
+
+class TestJwtDualModeAuth:
+    """JWT access tokens resolve to real user IDs alongside API-key mode."""
+
+    def _mock_settings(self, api_key: str) -> MagicMock:
+        mock_settings = MagicMock()
+        mock_settings.API_KEY = api_key
+        return mock_settings
+
+    async def test_valid_jwt_resolves_real_user_id(self):
+        from app.domains.auth.security import issue_tokens
+
+        with patch(
+            "app.core.auth.get_settings",
+            return_value=self._mock_settings("server-key"),
+        ):
+            from app.core.auth import require_api_key
+
+            token = issue_tokens(42).access_token
+            request = _request_with_headers(
+                [(b"authorization", f"Bearer {token}".encode())]
+            )
+            assert await require_api_key(request) == 42
+
+    async def test_invalid_jwt_falls_through_to_api_key_check(self):
+        with patch(
+            "app.core.auth.get_settings",
+            return_value=self._mock_settings("server-key"),
+        ):
+            from app.core.auth import require_api_key
+
+            # Garbage Bearer token: JWT parsing fails, API key mismatch -> 401.
+            request = _request_with_headers([(b"authorization", b"Bearer garbage")])
+            with pytest.raises(HTTPException) as exc_info:
+                await require_api_key(request)
+            assert exc_info.value.status_code == 401
+
+    async def test_api_key_still_returns_single_user_id(self):
+        with patch(
+            "app.core.auth.get_settings",
+            return_value=self._mock_settings("server-key"),
+        ):
+            from app.core.auth import require_api_key
+
+            request = _request_with_headers([(b"authorization", b"Bearer server-key")])
+            assert await require_api_key(request) == 1
+
+    async def test_refresh_token_does_not_authenticate_api_requests(self):
+        from app.domains.auth.security import issue_tokens
+
+        with patch(
+            "app.core.auth.get_settings",
+            return_value=self._mock_settings("server-key"),
+        ):
+            from app.core.auth import require_api_key
+
+            token = issue_tokens(7).refresh_token
+            request = _request_with_headers(
+                [(b"authorization", f"Bearer {token}".encode())]
+            )
+            with pytest.raises(HTTPException) as exc_info:
+                await require_api_key(request)
+            assert exc_info.value.status_code == 401
+
+    async def test_dev_mode_without_api_key_allows_all(self):
+        with patch(
+            "app.core.auth.get_settings",
+            return_value=self._mock_settings(""),
+        ):
+            from app.core.auth import require_api_key
+
+            request = _request_with_headers([])
+            assert await require_api_key(request) == 1

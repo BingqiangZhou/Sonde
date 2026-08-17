@@ -30,6 +30,8 @@ dependencies = [
     "jinja2>=3.1.6",
     "cryptography>=46.0.6",
     "slowapi>=0.1.9",
+    "pyjwt>=2.13.0",
+    "bcrypt>=5.0.0",
 ]
 
 [project.optional-dependencies]

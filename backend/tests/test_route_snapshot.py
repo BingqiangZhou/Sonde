@@ -36,6 +36,16 @@ def test_legacy_subscription_podcasts_routes_removed() -> None:
 # Monitoring routes have been removed
 
 
+def test_auth_routes_exist() -> None:
+    paths = _route_paths()
+
+    assert "/api/v1/auth/register" in paths
+    assert "/api/v1/auth/login" in paths
+    assert "/api/v1/auth/refresh" in paths
+    assert "/api/v1/auth/logout" in paths
+    assert "/api/v1/auth/me" in paths
+
+
 def test_queue_routes_exist() -> None:
     paths = _route_paths()
 

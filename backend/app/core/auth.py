@@ -1,7 +1,10 @@
 """Authentication and request-level FastAPI dependencies.
 
-Single-user mode: API key authentication via Authorization header or
-X-API-Key header. User ID is hardcoded to 1.
+Dual mode:
+- Single-user API key: Authorization: Bearer <API key> or X-API-Key header.
+  User ID is hardcoded to 1.
+- Multi-user JWT: Authorization: Bearer <access token> issued by
+  /api/v1/auth/* resolves to the real user ID.
 """
 
 from __future__ import annotations
@@ -41,15 +44,36 @@ def _extract_api_key(request: Request) -> str | None:
     return None
 
 
-async def require_api_key(request: Request) -> int:
-    """Validate API key and return the hardcoded single-user ID.
+async def _user_id_from_bearer(token: str) -> int | None:
+    """Resolve a JWT access token to its user ID, or None if invalid."""
+    import jwt as pyjwt
 
-    Raises HTTPException 401 if the key is missing or invalid.
+    from app.domains.auth.security import decode_token
+
+    try:
+        payload = decode_token(token, "access")
+        return int(payload["sub"])
+    except (pyjwt.InvalidTokenError, KeyError, ValueError):
+        return None
+
+
+async def require_api_key(request: Request) -> int:
+    """Authenticate the request and return the acting user ID.
+
+    Resolution order: valid JWT access token first (real multi-user ID),
+    then the configured API key (single-user ID 1), then the dev bypass when
+    no API key is configured. Raises HTTPException 401 otherwise.
     """
     settings = get_settings()
 
-    # If no API_KEY configured (development), allow all requests
+    authorization = request.headers.get("Authorization", "")
+    if authorization.startswith("Bearer "):
+        user_id = await _user_id_from_bearer(authorization[7:])
+        if user_id is not None:
+            return user_id
+
     if not settings.API_KEY:
+        # If no API_KEY configured (development), allow all requests
         return SINGLE_USER_ID
 
     api_key = _extract_api_key(request)
