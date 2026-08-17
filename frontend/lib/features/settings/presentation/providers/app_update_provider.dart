@@ -1,8 +1,7 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:personal_ai_assistant/core/network/exceptions/network_exceptions.dart';
 import 'package:personal_ai_assistant/core/services/app_update_service.dart';
 import 'package:personal_ai_assistant/shared/models/github_release.dart';
-import 'package:riverpod_annotation/riverpod_annotation.dart';
-
-part 'app_update_provider.g.dart';
 
 /// App Update State / 应用更新状态
 class AppUpdateState {
@@ -59,8 +58,7 @@ class AppUpdateState {
 }
 
 /// App Update Notifier / 应用更新通知器
-@riverpod
-class AppUpdate extends _$AppUpdate {
+class AppUpdateNotifier extends Notifier<AppUpdateState> {
   AppUpdateService get _updateService => ref.read(appUpdateServiceProvider);
 
   @override
@@ -116,7 +114,7 @@ class AppUpdate extends _$AppUpdate {
       if (!ref.mounted) return;
       state = state.copyWith(
         isLoading: false,
-        error: e.toString(),
+        error: mapErrorMessage(e),
       );
     }
   }
@@ -158,10 +156,13 @@ class AppUpdate extends _$AppUpdate {
 }
 
 /// Provider for AppUpdateService
-@riverpod
-AppUpdateService appUpdateService(Ref ref) {
-  return AppUpdateService();
-}
+final Provider<AppUpdateService> appUpdateServiceProvider =
+    Provider.autoDispose<AppUpdateService>((ref) => AppUpdateService());
+
+final NotifierProvider<AppUpdateNotifier, AppUpdateState> appUpdateProvider =
+    NotifierProvider.autoDispose<AppUpdateNotifier, AppUpdateState>(
+  AppUpdateNotifier.new,
+);
 
 /// Stream provider that automatically checks for updates on app start
 ///
@@ -172,8 +173,8 @@ AppUpdateService appUpdateService(Ref ref) {
 ///   ShowUpdateDialog(release: updateState.latestRelease);
 /// }
 /// ```
-@riverpod
-Future<AppUpdateState> autoUpdateCheck(Ref ref) async {
+final FutureProvider<AppUpdateState> autoUpdateCheckProvider =
+    FutureProvider.autoDispose<AppUpdateState>((ref) async {
   final service = ref.watch(appUpdateServiceProvider);
   final currentVersion = await AppUpdateService.getCurrentVersion();
 
@@ -191,7 +192,7 @@ Future<AppUpdateState> autoUpdateCheck(Ref ref) async {
     currentVersion: currentVersion,
     platformAsset: asset,
   );
-}
+});
 
 /// Provider for manual update checking with loading state
 ///
@@ -201,8 +202,7 @@ Future<AppUpdateState> autoUpdateCheck(Ref ref) async {
 /// final state = ref.watch(manualUpdateCheckProvider);
 /// if (state.hasUpdate) { ... }
 /// ```
-@riverpod
-class ManualUpdateCheck extends _$ManualUpdateCheck {
+class ManualUpdateCheckNotifier extends Notifier<AppUpdateState> {
   AppUpdateService get _updateService => ref.read(appUpdateServiceProvider);
 
   @override
@@ -253,7 +253,7 @@ class ManualUpdateCheck extends _$ManualUpdateCheck {
       if (!ref.mounted) return;
       state = state.copyWith(
         isLoading: false,
-        error: e.toString(),
+        error: mapErrorMessage(e),
       );
     }
   }
@@ -268,3 +268,9 @@ class ManualUpdateCheck extends _$ManualUpdateCheck {
     }
   }
 }
+
+final NotifierProvider<ManualUpdateCheckNotifier, AppUpdateState>
+manualUpdateCheckProvider =
+    NotifierProvider.autoDispose<ManualUpdateCheckNotifier, AppUpdateState>(
+  ManualUpdateCheckNotifier.new,
+);
