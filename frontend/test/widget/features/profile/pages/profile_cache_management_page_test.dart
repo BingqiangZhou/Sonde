@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:personal_ai_assistant/core/localization/app_localizations.dart';
+import 'package:personal_ai_assistant/core/localization/l10n_delegates.dart';
 import 'package:personal_ai_assistant/core/network/dio_client.dart';
 import 'package:personal_ai_assistant/core/providers/core_providers.dart';
 import 'package:personal_ai_assistant/core/services/app_cache_service.dart';
@@ -64,7 +65,7 @@ void main() {
             dioClientProvider.overrideWithValue(_MockDioClient()),
           ],
           child: const MaterialApp(
-            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            localizationsDelegates: appLocalizationsDelegates,
             supportedLocales: AppLocalizations.supportedLocales,
             home: Scaffold(body: ProfileCacheManagementPage()),
           ),
@@ -89,7 +90,7 @@ void main() {
             dioClientProvider.overrideWithValue(_MockDioClient()),
           ],
           child: const MaterialApp(
-            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            localizationsDelegates: appLocalizationsDelegates,
             supportedLocales: AppLocalizations.supportedLocales,
             home: Scaffold(body: ProfileCacheManagementPage()),
           ),
@@ -120,7 +121,7 @@ void main() {
             dioClientProvider.overrideWithValue(_MockDioClient()),
           ],
           child: const MaterialApp(
-            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            localizationsDelegates: appLocalizationsDelegates,
             supportedLocales: AppLocalizations.supportedLocales,
             home: Scaffold(body: ProfileCacheManagementPage()),
           ),
@@ -158,7 +159,7 @@ void main() {
             dioClientProvider.overrideWithValue(_MockDioClient()),
           ],
           child: const MaterialApp(
-            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            localizationsDelegates: appLocalizationsDelegates,
             supportedLocales: AppLocalizations.supportedLocales,
             home: Scaffold(body: ProfileCacheManagementPage()),
           ),
@@ -189,7 +190,7 @@ void main() {
             dioClientProvider.overrideWithValue(_MockDioClient()),
           ],
           child: const MaterialApp(
-            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            localizationsDelegates: appLocalizationsDelegates,
             supportedLocales: AppLocalizations.supportedLocales,
             home: Scaffold(body: ProfileCacheManagementPage()),
           ),

@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:personal_ai_assistant/core/localization/app_localizations.dart';
+import 'package:personal_ai_assistant/core/localization/l10n_delegates.dart';
 import 'package:personal_ai_assistant/features/podcast/data/models/podcast_state_models.dart';
 import 'package:personal_ai_assistant/features/podcast/presentation/pages/podcast_feed_page.dart';
 import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_feed_providers.dart';
@@ -49,7 +50,7 @@ void main() {
           container: container,
           child: const MaterialApp(
             localizationsDelegates:
-                AppLocalizations.localizationsDelegates,
+                appLocalizationsDelegates,
             supportedLocales: AppLocalizations.supportedLocales,
             home: PodcastFeedPage(),
           ),
@@ -88,7 +89,7 @@ void main() {
           container: container,
           child: const MaterialApp(
             localizationsDelegates:
-                AppLocalizations.localizationsDelegates,
+                appLocalizationsDelegates,
             supportedLocales: AppLocalizations.supportedLocales,
             home: PodcastFeedPage(),
           ),

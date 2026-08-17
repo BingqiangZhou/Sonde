@@ -1,11 +1,9 @@
 import 'dart:async';
 
-import 'package:cupertino_ui/cupertino_ui.dart' as cupertino_ui;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/intl.dart' as intl;
-import 'package:material_ui/material_ui.dart' as material_ui;
 
 import 'app_localizations_en.dart';
 import 'app_localizations_zh.dart';
@@ -86,15 +84,11 @@ abstract class AppLocalizations {
   /// Additional delegates can be added by appending to this list in
   /// MaterialApp. This list does not have to be used at all if a custom list
   /// of delegates is preferred or required.
-  ///
-  /// 注意：GlobalMaterial/GlobalCupertino 采用 material_ui / cupertino_ui
-  /// 版本（Flutter 解耦迁移后组件查找这两类 Localizations）；重新生成
-  /// l10n 后需保持此改写。
   static const List<LocalizationsDelegate<dynamic>> localizationsDelegates =
       <LocalizationsDelegate<dynamic>>[
         delegate,
-        material_ui.GlobalMaterialLocalizations.delegate,
-        cupertino_ui.GlobalCupertinoLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
       ];
 
