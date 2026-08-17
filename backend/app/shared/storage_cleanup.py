@@ -13,9 +13,9 @@ from datetime import UTC, datetime, timedelta
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.admin.models import SystemSettings
 from app.core.config import settings
 from app.core.display_utils import format_bytes
+from app.shared.system_settings import SystemSettings
 
 
 logger = logging.getLogger(__name__)

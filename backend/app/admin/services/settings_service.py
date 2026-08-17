@@ -4,14 +4,13 @@ from fastapi import HTTPException, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.admin.models import SystemSettings
-from app.admin.settings_helpers import persist_setting
-from app.admin.storage_service import StorageCleanupService
 from app.domains.podcast.models import (
     Subscription,
     UpdateFrequency,
     UserSubscription,
 )
+from app.shared.storage_cleanup import StorageCleanupService
+from app.shared.system_settings import SystemSettings, persist_setting
 
 
 class AdminSettingsService:

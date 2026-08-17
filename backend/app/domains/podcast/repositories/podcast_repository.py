@@ -14,7 +14,6 @@ from sqlalchemy.exc import DBAPIError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import attributes, joinedload, lazyload
 
-from app.admin.settings_provider import DatabaseSettingsProvider
 from app.core.datetime_utils import (
     ensure_timezone_aware_fetch_time,
     sanitize_published_date,
@@ -35,6 +34,7 @@ from app.domains.podcast.models import (
     PodcastQueueItem,
 )
 from app.shared.repository_helpers import resolve_window_total
+from app.shared.system_settings import DatabaseSettingsProvider
 
 
 if TYPE_CHECKING:

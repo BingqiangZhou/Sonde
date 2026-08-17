@@ -7,7 +7,6 @@ from datetime import UTC, datetime
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.admin.settings_provider import DatabaseSettingsProvider
 from app.domains.podcast.models import (
     Subscription,
     SubscriptionStatus,
@@ -16,6 +15,7 @@ from app.domains.podcast.models import (
 )
 from app.domains.podcast.schemas import SubscriptionCreate, SubscriptionUpdate
 from app.shared.repository_helpers import resolve_window_total
+from app.shared.system_settings import DatabaseSettingsProvider
 
 
 class SubscriptionRepository:

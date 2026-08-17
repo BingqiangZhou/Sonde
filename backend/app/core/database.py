@@ -113,7 +113,7 @@ def register_orm_models() -> None:
         return
 
     for module in (
-        "app.admin.models",
+        "app.shared.system_settings",
         "app.domains.ai.models",
         "app.domains.podcast.models",
     ):

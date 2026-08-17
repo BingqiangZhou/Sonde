@@ -22,7 +22,6 @@ from sqlalchemy import and_, delete, exists, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
-from app.admin.storage_service import StorageCleanupService
 from app.core.config import settings
 from app.core.database import get_async_session_factory  # noqa: F401
 from app.core.datetime_utils import ensure_timezone_aware_fetch_time
@@ -46,6 +45,7 @@ from app.domains.podcast.services.transcription_service import (  # noqa: F401
 )
 from app.domains.podcast.transcription_state import get_transcription_state_manager
 from app.domains.podcast.utils.status_helpers import status_value
+from app.shared.storage_cleanup import StorageCleanupService
 
 
 logger = logging.getLogger(__name__)
