@@ -8,7 +8,6 @@ class AppConstants {
   static const String userProfileKey = 'user_profile';
   static const String savedUsernameKey = 'saved_username';
   static const String savedPasswordKey = 'saved_password';
-  static const String hasCompletedOnboardingKey = 'has_completed_onboarding';
 }
 
 // App Update Constants / 应用更新常量

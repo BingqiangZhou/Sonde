@@ -8,11 +8,9 @@ import 'package:sonde/core/widgets/app_shells.dart';
 import 'package:sonde/features/auth/presentation/pages/auth_verify_page.dart';
 import 'package:sonde/features/auth/presentation/pages/forgot_password_page.dart';
 import 'package:sonde/features/auth/presentation/pages/login_page.dart';
-import 'package:sonde/features/auth/presentation/pages/onboarding_page.dart';
 import 'package:sonde/features/auth/presentation/pages/register_page.dart';
 import 'package:sonde/features/auth/presentation/pages/reset_password_page.dart';
 import 'package:sonde/features/auth/presentation/providers/auth_provider.dart';
-import 'package:sonde/features/auth/presentation/providers/onboarding_provider.dart';
 import 'package:sonde/features/home/presentation/pages/home_page.dart';
 import 'package:sonde/features/podcast/presentation/navigation/podcast_navigation.dart';
 import 'package:sonde/features/podcast/presentation/pages/podcast_daily_report_page.dart';
@@ -119,16 +117,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             child: ResetPasswordPage(token: token),
           );
         },
-      ),
-
-      // Onboarding
-      GoRoute(
-        path: '/onboarding',
-        name: 'onboarding',
-        pageBuilder: (context, state) => _buildPageWithTransition(
-          state: state,
-          child: const OnboardingPage(),
-        ),
       ),
 
       // Main app shell with persistent tab navigation
@@ -333,7 +321,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final isLoggingIn = state.matchedLocation == '/login';
       final isRegistering = state.matchedLocation == '/register';
       final isSplash = state.matchedLocation == '/splash';
-      final isOnboarding = state.matchedLocation == '/onboarding';
       final isForgotPassword = state.matchedLocation.startsWith(
         '/forgot-password',
       );
@@ -365,16 +352,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           return '/feed';
         }
 
-        // Onboarding check: if not completed, redirect to onboarding
-        final hasCompletedOnboarding = ref.read(onboardingCompletedProvider);
-        if (!hasCompletedOnboarding && !isOnboarding) {
-          return '/onboarding';
-        }
-        // Don't let authenticated users go back to onboarding if completed
-        if (hasCompletedOnboarding && isOnboarding) {
-          return '/feed';
-        }
-
         return null;
       }
     },
@@ -384,14 +361,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
   );
 });
 
-// Helper for refreshListenable - notifies on auth status or onboarding changes
+// Helper for refreshListenable - notifies on auth status changes
 class AuthStateListenable extends ChangeNotifier {
 
   AuthStateListenable(this.ref) {
     ref.listen(authProvider.select((s) => s.isAuthenticated), (previous, next) {
-      notifyListeners();
-    });
-    ref.listen(onboardingCompletedProvider, (previous, next) {
       notifyListeners();
     });
   }

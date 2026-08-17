@@ -13,7 +13,6 @@ import 'package:sonde/core/providers/core_providers.dart';
 import 'package:sonde/core/storage/local_storage_service.dart';
 import 'package:sonde/core/theme/theme_provider.dart';
 import 'package:sonde/core/utils/app_logger.dart' as logger;
-import 'package:sonde/features/auth/presentation/providers/onboarding_provider.dart';
 import 'package:sonde/features/podcast/presentation/providers/podcast_playback_providers.dart';
 import 'package:sonde/features/podcast/presentation/providers/podcast_providers.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -138,12 +137,6 @@ void main() {
         logger.AppLogger.info('[AppInit] Loaded server URL: $initialServerUrl');
       }
 
-      final hasCompletedOnboarding =
-          await storageService.getBool(
-            AppConstants.hasCompletedOnboardingKey,
-          ) ??
-          false;
-
       runApp(
         ProviderScope(
           overrides: [
@@ -151,9 +144,6 @@ void main() {
             audioHandlerProvider.overrideWithValue(platformAudioHandler),
             initialThemeModeCodeProvider.overrideWithValue(
               initialThemeModeCode,
-            ),
-            initialOnboardingCompletedProvider.overrideWithValue(
-              hasCompletedOnboarding,
             ),
             if (initialServerUrl.isNotEmpty)
               bootstrapServerUrlProvider.overrideWithValue(initialServerUrl),

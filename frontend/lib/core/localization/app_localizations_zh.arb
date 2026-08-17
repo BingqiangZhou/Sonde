@@ -2482,46 +2482,6 @@
     "@sleep_timer_after_episode":  {
                                               "description":  "睡眠定时选项：在当前剧集结束后停止"
                                           },
-    "onboarding_welcome_title":  "欢迎使用 声读",
-    "@onboarding_welcome_title":  {
-                                            "description":  "首个引导页面标题"
-                                        },
-    "onboarding_welcome_subtitle":  "你的 AI 智能播客助手",
-    "@onboarding_welcome_subtitle":  {
-                                               "description":  "首个引导页面副标题"
-                                           },
-    "onboarding_welcome_body":  "发现、订阅并收听你喜爱的播客——由智能 AI 驱动，让你随时掌握最新动态。",
-    "@onboarding_welcome_body":  {
-                                           "description":  "首个引导页面正文"
-                                       },
-    "onboarding_summary_title":  "每日 AI 摘要",
-    "@onboarding_summary_title":  {
-                                            "description":  "AI 摘要引导页面标题"
-                                        },
-    "onboarding_summary_body":  "获取个性化的每日播客摘要和剧集要点。几分钟内了解最新动态，无需花数小时收听。",
-    "@onboarding_summary_body":  {
-                                           "description":  "AI 摘要引导页面正文"
-                                       },
-    "onboarding_chat_title":  "AI 对话",
-    "@onboarding_chat_title":  {
-                                          "description":  "AI 对话引导页面标题"
-                                      },
-    "onboarding_chat_body":  "与 AI 聊天讨论任何播客剧集。提出问题、深入探索话题，从你的收听库中获取即时洞察。",
-    "@onboarding_chat_body":  {
-                                           "description":  "AI 对话引导页面正文"
-                                       },
-    "onboarding_skip":  "跳过",
-    "@onboarding_skip":  {
-                                       "description":  "引导页面跳过按钮"
-                                   },
-    "onboarding_next":  "下一步",
-    "@onboarding_next":  {
-                                       "description":  "引导页面下一步按钮"
-                                   },
-    "onboarding_get_started":  "开始使用",
-    "@onboarding_get_started":  {
-                                              "description":  "最后一个引导页面的开始按钮"
-                                          },
     "terms_of_service_title":  "服务条款",
     "@terms_of_service_title":  {
                                     "description":  "服务条款页面标题"

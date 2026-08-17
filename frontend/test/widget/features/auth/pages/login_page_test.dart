@@ -66,7 +66,7 @@ void main() {
       // Check for logo (asset image)
       expect(find.byType(Image), findsOneWidget);
 
-      // 品牌徽章已随 UI 改版移至 onboarding 页；登录页显示欢迎副标题。
+      // 登录页显示欢迎副标题。
       expect(find.text("Dawn's near. Let's begin."), findsOneWidget);
     });
 
