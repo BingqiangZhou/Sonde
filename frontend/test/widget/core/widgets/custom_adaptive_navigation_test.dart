@@ -1,8 +1,12 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:personal_ai_assistant/core/localization/app_localizations.dart';
 import 'package:personal_ai_assistant/core/localization/l10n_delegates.dart';
+import 'package:personal_ai_assistant/core/storage/local_storage_service.dart';
 import 'package:personal_ai_assistant/core/widgets/custom_adaptive_navigation.dart';
+
+import '../../../helpers/mock_local_storage_service.dart';
 
 void main() {
   group('CustomAdaptiveNavigation bottomAccessory layout', () {
@@ -211,12 +215,16 @@ Widget _buildNavigation({
   bool includeAccessory = true,
   TargetPlatform platform = TargetPlatform.android,
 }) {
-  return MaterialApp(
-    locale: const Locale('en'),
-    localizationsDelegates: appLocalizationsDelegates,
-    supportedLocales: AppLocalizations.supportedLocales,
-    theme: ThemeData(platform: platform),
-    home: CustomAdaptiveNavigation(
+  return ProviderScope(
+    overrides: [
+      localStorageServiceProvider.overrideWithValue(MockLocalStorageService()),
+    ],
+    child: MaterialApp(
+      locale: const Locale('en'),
+      localizationsDelegates: appLocalizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      theme: ThemeData(platform: platform),
+      home: CustomAdaptiveNavigation(
       destinations: const [
         NavigationDestination(
           icon: Icon(Icons.home_outlined),
@@ -246,6 +254,7 @@ Widget _buildNavigation({
               color: Colors.blue,
             )
           : null,
+      ),
     ),
   );
 }

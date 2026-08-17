@@ -11,10 +11,13 @@ import 'package:personal_ai_assistant/core/constants/breakpoints.dart';
 import 'package:personal_ai_assistant/core/localization/app_localizations_extension.dart';
 import 'package:personal_ai_assistant/core/platform/adaptive_haptic.dart';
 import 'package:personal_ai_assistant/core/platform/platform_helper.dart';
+import 'package:personal_ai_assistant/core/storage/local_storage_service.dart';
 import 'package:personal_ai_assistant/core/theme/app_colors.dart';
 import 'package:personal_ai_assistant/core/widgets/adaptive/adaptive.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/constants/podcast_ui_constants.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+
+part 'custom_adaptive_navigation_sidebar.dart';
+part 'custom_adaptive_navigation_items.dart';
+part 'custom_adaptive_navigation_mobile.dart';
 
 const Duration _kBottomAccessoryPaddingTransition = AppDurations.navigationTransition;
 
@@ -26,6 +29,9 @@ class CustomAdaptiveNavigation extends ConsumerStatefulWidget {
     this.appBar,
     this.bottomAccessory,
     this.bottomAccessoryBodyPadding = 60,
+    this.mobileOverlayReserve,
+    this.mobileNavDockInset = 12,
+    this.mobileNavBarHeight = 60,
     this.globalOverlayBodyPadding = 0,
     this.desktopNavExpanded = true,
     this.onDesktopNavToggle,
@@ -39,6 +45,19 @@ class CustomAdaptiveNavigation extends ConsumerStatefulWidget {
   final PreferredSizeWidget? appBar;
   final Widget? bottomAccessory;
   final double bottomAccessoryBodyPadding;
+
+  /// Vertical space reserved below the body for a feature-owned floating
+  /// overlay such as the global player dock (safe-area + dock height +
+  /// gap). Callers that know the overlay geometry should pass it; when
+  /// null a default matching the standard mobile dock is reserved.
+  final double? mobileOverlayReserve;
+
+  /// Horizontal and bottom inset of the floating mobile nav dock.
+  final double mobileNavDockInset;
+
+  /// Visual height of the mobile nav bar content.
+  final double mobileNavBarHeight;
+
   final double globalOverlayBodyPadding;
   final bool desktopNavExpanded;
   final VoidCallback? onDesktopNavToggle;
@@ -56,15 +75,15 @@ class _CustomAdaptiveNavigationState extends ConsumerState<CustomAdaptiveNavigat
   @override
   void initState() {
     super.initState();
-    // Initialize sidebar state from SharedPreferences
+    // Initialize sidebar state from local storage
     _sidebarExpanded = ValueNotifier<bool>(widget.desktopNavExpanded);
     _pageController = PageController(initialPage: widget.selectedIndex);
     _loadSidebarState();
   }
 
   Future<void> _loadSidebarState() async {
-    final prefs = await SharedPreferences.getInstance();
-    final saved = prefs.getBool(_sidebarExpandedKey);
+    final saved =
+        await ref.read(localStorageServiceProvider).getBool(_sidebarExpandedKey);
     if (saved != null) {
       _sidebarExpanded.value = saved;
     }
@@ -72,8 +91,9 @@ class _CustomAdaptiveNavigationState extends ConsumerState<CustomAdaptiveNavigat
 
   Future<void> _toggleSidebar() async {
     _sidebarExpanded.value = !_sidebarExpanded.value;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_sidebarExpandedKey, _sidebarExpanded.value);
+    await ref
+        .read(localStorageServiceProvider)
+        .saveBool(_sidebarExpandedKey, _sidebarExpanded.value);
   }
 
   void _handlePageChanged(int index) {
@@ -122,15 +142,16 @@ class _CustomAdaptiveNavigationState extends ConsumerState<CustomAdaptiveNavigat
     );
   }
 
-  Widget _buildMobileLayout(BuildContext context, double width) {
+  /// Default overlay reserve when the caller does not supply one:
+  /// safe-area bottom (or 12 inset) + 60 dock height + 2 gap.
+  static double _defaultMobileOverlayReserve(BuildContext context) {
     final safeAreaBottom = MediaQuery.viewPaddingOf(context).bottom;
-    final dockBottomPadding = safeAreaBottom > 0.0
-        ? safeAreaBottom
-        : kPodcastGlobalPlayerMobileViewportPadding;
+    return (safeAreaBottom > 0.0 ? safeAreaBottom : 12) + 60 + 2;
+  }
+
+  Widget _buildMobileLayout(BuildContext context, double width) {
     final dockReserve =
-        dockBottomPadding +
-        kPodcastGlobalPlayerMobileDockHeight +
-        kPodcastGlobalPlayerMobileDockGap;
+        widget.mobileOverlayReserve ?? _defaultMobileOverlayReserve(context);
     final accessoryBodyPadding = widget.bottomAccessory != null
         ? widget.bottomAccessoryBodyPadding
         : 0.0;
@@ -186,17 +207,17 @@ class _CustomAdaptiveNavigationState extends ConsumerState<CustomAdaptiveNavigat
             bottom: 0,
             child: SafeArea(
               top: false,
-              minimum: const EdgeInsets.fromLTRB(
-                kPodcastGlobalPlayerMobileViewportPadding,
+              minimum: EdgeInsets.fromLTRB(
+                widget.mobileNavDockInset,
                 0,
-                kPodcastGlobalPlayerMobileViewportPadding,
-                kPodcastGlobalPlayerMobileViewportPadding,
+                widget.mobileNavDockInset,
+                widget.mobileNavDockInset,
               ),
               child: Align(
                 child: _CleanDock(
                   key: const Key('custom_adaptive_navigation_mobile_dock'),
                   width: width < Breakpoints.mini
-                      ? width - (kPodcastGlobalPlayerMobileViewportPadding * 2)
+                      ? width - (widget.mobileNavDockInset * 2)
                       : 396,
                   child: _buildMobileNavBar(context),
                 ),
@@ -330,276 +351,6 @@ class _CustomAdaptiveNavigationState extends ConsumerState<CustomAdaptiveNavigat
     );
   }
 
-  Widget _buildAppleSidebarAnimated(BuildContext context) {
-    return ValueListenableBuilder<bool>(
-      valueListenable: _sidebarExpanded,
-      builder: (context, expanded, _) {
-        return RepaintBoundary(
-          child: TweenAnimationBuilder<double>(
-            tween: Tween<double>(end: expanded ? 220 : 64),
-            duration: AppDurations.navigationTransition,
-            curve: Curves.easeOutCubic,
-            builder: (context, animatedWidth, _) {
-              final showCompact = animatedWidth < 120;
-              return SizedBox(
-                key: const ValueKey('apple_desktop_sidebar'),
-                width: animatedWidth,
-                child: _AppleSidebarContainer(
-                  child: showCompact
-                      ? _buildAppleSidebarCompact(context)
-                      : _buildAppleSidebarExpanded(context),
-                ),
-              );
-            },
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildAppleSidebarExpanded(BuildContext context) {
-    return Column(
-      children: [
-        // Brand header
-        Padding(
-          padding: const EdgeInsets.fromLTRB(14, 14, 14, 8),
-          child: Row(
-            children: [
-              _buildBrandLogoBadge(context),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  context.l10n.sidebarAppTitle,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: -0.3,
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
-                ),
-              ),
-              _buildAppleSidebarToggle(context, Icons.chevron_left),
-            ],
-          ),
-        ),
-        const SizedBox(height: 8),
-        // Main navigation items
-        ...List.generate(
-          widget.destinations.length > 1
-              ? widget.destinations.length - 1
-              : widget.destinations.length,
-          (index) => _buildAppleSidebarItem(context, index, compact: false),
-        ),
-        const Spacer(),
-        // Separator
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14),
-          child: _buildAppleSeparator(context),
-        ),
-        // Profile item
-        if (widget.destinations.length > 1)
-          Padding(
-            padding: const EdgeInsets.only(top: 4, bottom: 12),
-            child: _buildAppleSidebarItem(
-              context,
-              widget.destinations.length - 1,
-              compact: false,
-            ),
-          ),
-      ],
-    );
-  }
-
-  Widget _buildAppleSidebarCompact(BuildContext context) {
-    return Column(
-      children: [
-        // Brand logo
-        Padding(
-          padding: const EdgeInsets.fromLTRB(0, 14, 0, 4),
-          child: _buildBrandLogoBadge(context),
-        ),
-        _buildAppleSidebarToggle(context, Icons.chevron_right),
-        const SizedBox(height: 4),
-        // Main navigation items
-        ...List.generate(
-          widget.destinations.length > 1
-              ? widget.destinations.length - 1
-              : widget.destinations.length,
-          (index) => _buildAppleSidebarItem(context, index, compact: true),
-        ),
-        const Spacer(),
-        // Separator
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 13),
-          child: _buildAppleSeparator(context),
-        ),
-        // Profile item
-        if (widget.destinations.length > 1)
-          Padding(
-            padding: const EdgeInsets.only(top: 4, bottom: 12),
-            child: _buildAppleSidebarItem(
-              context,
-              widget.destinations.length - 1,
-              compact: true,
-            ),
-          ),
-      ],
-    );
-  }
-
-  Widget _buildAppleSidebarToggle(BuildContext context, IconData icon) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return GestureDetector(
-      onTap: _toggleSidebar,
-      child: MouseRegion(
-        cursor: SystemMouseCursors.click,
-        child: Container(
-          padding: const EdgeInsets.all(4),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(5),
-          ),
-          child: Tooltip(
-            message: icon == Icons.chevron_left
-                ? context.l10n.sidebarCollapseMenu
-                : context.l10n.sidebarExpandMenu,
-            child: Icon(
-              icon,
-              size: 13,
-              color: isDark
-                  ? Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.3)
-                  : Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.25),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAppleSeparator(BuildContext context) {
-    return Divider(
-      height: 0.5,
-      thickness: 0.5,
-      color: Theme.of(context).colorScheme.outlineVariant,
-    );
-  }
-
-  Widget _buildAppleSidebarItem(
-    BuildContext context,
-    int index, {
-    required bool compact,
-  }) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final isSelected = index == widget.selectedIndex;
-    final destination = widget.destinations[index];
-
-    final selectedBgColor = isDark
-        ? AppColors.primary.withValues(alpha: 0.18)
-        : AppColors.primary.withValues(alpha: 0.12);
-    const selectedIconColor = AppColors.primary;
-    final selectedTextColor = theme.colorScheme.onSurface;
-    final unselectedIconColor = theme.colorScheme.onSurfaceVariant;
-    final unselectedTextColor = theme.colorScheme.onSurfaceVariant;
-
-    if (compact) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
-        child: Semantics(
-          button: true,
-          selected: isSelected,
-          label: destination.label,
-          child: Tooltip(
-            message: destination.label,
-            child: _NavInkWell(
-              onTap: () => widget.onDestinationSelected?.call(index),
-              borderRadius: 8,
-              isSelected: isSelected,
-              child: Container(
-                width: 38,
-                height: 38,
-                decoration: BoxDecoration(
-                  color: isSelected ? selectedBgColor : null,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Center(
-                  child: IconTheme(
-                    data: IconThemeData(
-                      size: 18,
-                      color: isSelected
-                          ? selectedIconColor
-                          : unselectedIconColor,
-                    ),
-                    child: isSelected
-                        ? (destination.selectedIcon ?? destination.icon)
-                        : destination.icon,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      );
-    }
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 10),
-      child: Semantics(
-        button: true,
-        selected: isSelected,
-        label: destination.label,
-        child: _NavInkWell(
-          onTap: () => widget.onDestinationSelected?.call(index),
-          borderRadius: 7,
-          isSelected: isSelected,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-            decoration: BoxDecoration(
-              color: isSelected ? selectedBgColor : null,
-              borderRadius: BorderRadius.circular(7),
-            ),
-            child: Row(
-              children: [
-                SizedBox(
-                  width: 17,
-                  height: 17,
-                  child: FittedBox(
-                    child: IconTheme(
-                      data: IconThemeData(
-                        color: isSelected
-                            ? selectedIconColor
-                            : unselectedIconColor,
-                      ),
-                      child: isSelected
-                          ? (destination.selectedIcon ?? destination.icon)
-                          : destination.icon,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    destination.label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: isSelected ? FontWeight.w500 : FontWeight.normal,
-                      color: isSelected
-                          ? selectedTextColor
-                          : unselectedTextColor,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildContentStack({
     required double bottomPadding,
     required double fabBottom,
@@ -623,427 +374,6 @@ class _CustomAdaptiveNavigationState extends ConsumerState<CustomAdaptiveNavigat
         if (widget.bottomAccessory != null)
           Positioned(left: 0, right: 0, bottom: 0, child: widget.bottomAccessory!),
       ],
-    );
-  }
-
-  Widget _buildDesktopExpandedSidebar(BuildContext context) {
-    final l10n = context.l10n;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: EdgeInsets.fromLTRB(context.spacing.smMd, context.spacing.smMd, context.spacing.smMd, context.spacing.sm),
-          child: Row(
-            children: [
-              _buildBrandLogoBadge(context),
-              SizedBox(width: context.spacing.smMd),
-              Expanded(
-                child: Text(
-                  l10n.sidebarAppTitle,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-              ),
-              IconButton(
-                onPressed: _toggleSidebar,
-                tooltip: l10n.sidebarCollapseMenu,
-                icon: const Icon(Icons.chevron_left),
-              ),
-            ],
-          ),
-        ),
-        SizedBox(height: context.spacing.sm),
-        ..._buildNavigationItems(context, compact: false),
-        const Spacer(),
-        if (widget.destinations.isNotEmpty)
-          _buildProfileNavigationItem(context, compact: false),
-      ],
-    );
-  }
-
-  Widget _buildDesktopCollapsedSidebar(BuildContext context) {
-    final l10n = context.l10n;
-    return Column(
-      children: [
-        SizedBox(height: context.spacing.smMd),
-        _buildBrandLogoBadge(context),
-        IconButton(
-          onPressed: _toggleSidebar,
-          tooltip: l10n.sidebarExpandMenu,
-          icon: const Icon(Icons.chevron_right),
-        ),
-        SizedBox(height: context.spacing.sm),
-        ..._buildNavigationItems(context, compact: true),
-        const Spacer(),
-        if (widget.destinations.isNotEmpty)
-          _buildProfileNavigationItem(context, compact: true),
-      ],
-    );
-  }
-
-  Widget _buildBrandLogoBadge(BuildContext context) {
-    return SizedBox(
-      width: 38,
-      height: 38,
-      child: ClipRRect(
-        borderRadius: AppRadius.smRadius,
-        child: Image.asset('assets/icons/Logo3.png', fit: BoxFit.contain),
-      ),
-    );
-  }
-
-  List<Widget> _buildNavigationItems(
-    BuildContext context, {
-    required bool compact,
-  }) {
-    if (widget.destinations.length <= 1) {
-      return const <Widget>[];
-    }
-
-    final items = <Widget>[];
-    for (var index = 0; index < widget.destinations.length - 1; index++) {
-      final destination = widget.destinations[index];
-      final isSelected = index == widget.selectedIndex;
-      items.add(
-        _buildNavItem(
-          context,
-          destination,
-          isSelected,
-          compact,
-          () => widget.onDestinationSelected?.call(index),
-        ),
-      );
-    }
-    return items;
-  }
-
-  Widget _buildProfileNavigationItem(
-    BuildContext context, {
-    required bool compact,
-  }) {
-    final profileIndex = widget.destinations.length - 1;
-    final destination = widget.destinations[profileIndex];
-    final isSelected = profileIndex == widget.selectedIndex;
-    return _buildNavItem(
-      context,
-      destination,
-      isSelected,
-      compact,
-      () => widget.onDestinationSelected?.call(profileIndex),
-    );
-  }
-
-  Widget _buildNavItem(
-    BuildContext context,
-    NavigationDestination destination,
-    bool isSelected,
-    bool compact,
-    VoidCallback onTap,
-  ) {
-    if (compact) {
-      return _buildCompactNavItem(
-        context,
-        destination,
-        isSelected,
-        onTap,
-      );
-    }
-    return _buildExpandedNavItem(
-      context,
-      destination,
-      isSelected,
-      onTap,
-    );
-  }
-
-  Widget _buildCompactNavItem(
-    BuildContext context,
-    NavigationDestination destination,
-    bool isSelected,
-    VoidCallback onTap,
-  ) {
-    final extension = appThemeOf(context);
-    return Semantics(
-      button: true,
-      selected: isSelected,
-      label: destination.label,
-      child: Tooltip(
-        message: destination.label,
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: context.spacing.xs, vertical: context.spacing.xs),
-          child: _NavInkWell(
-            onTap: onTap,
-            borderRadius: extension.navItemRadius,
-            isSelected: isSelected,
-            child: AnimatedScale(
-              scale: isSelected ? 1.05 : 1.0,
-              duration: AppDurations.scaleFast,
-              curve: Curves.easeOutCubic,
-              child: Container(
-                width: 44,
-                height: 44,
-                decoration: _buildNavDecoration(isSelected: isSelected, context: context),
-                child: Center(
-                  child: IconTheme(
-                    data: const IconThemeData(size: 20),
-                    child: isSelected
-                        ? (destination.selectedIcon ?? destination.icon)
-                        : destination.icon,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildExpandedNavItem(
-    BuildContext context,
-    NavigationDestination destination,
-    bool isSelected,
-    VoidCallback onTap,
-  ) {
-    final theme = Theme.of(context);
-    final extension = appThemeOf(context);
-
-    return Semantics(
-      button: true,
-      selected: isSelected,
-      label: destination.label,
-      child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: context.spacing.smMd, vertical: context.spacing.xs),
-        child: _NavInkWell(
-          onTap: onTap,
-          borderRadius: extension.navItemRadius,
-          isSelected: isSelected,
-          child: AnimatedScale(
-            scale: isSelected ? 1.02 : 1.0,
-            duration: AppDurations.scaleFast,
-            curve: Curves.easeOutCubic,
-            child: Container(
-              height: 56,
-              padding: EdgeInsets.symmetric(horizontal: context.spacing.md),
-              decoration: _buildNavDecoration(isSelected: isSelected, context: context),
-              child: Row(
-                children: [
-                  SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: isSelected
-                        ? (destination.selectedIcon ?? destination.icon)
-                        : destination.icon,
-                  ),
-                  SizedBox(width: context.spacing.smMd),
-                  Expanded(
-                    child: Text(
-                      destination.label,
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        color: isSelected
-                            ? Theme.of(context).colorScheme.onSurface
-                            : Theme.of(context).colorScheme.onSurfaceVariant,
-                        fontWeight: isSelected ? FontWeight.w700 : null,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  BoxDecoration _buildNavDecoration({
-    required bool isSelected,
-    required BuildContext context,
-  }) {
-    final extension = appThemeOf(context);
-    if (isSelected) {
-      // Gradient background for active state
-      return BoxDecoration(
-        gradient: const LinearGradient(
-          colors: AppColors.violetColors,
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(extension.navItemRadius),
-      );
-    }
-    return BoxDecoration(
-      color: Colors.transparent,
-      borderRadius: BorderRadius.circular(extension.navItemRadius),
-    );
-  }
-
-  Widget _buildMobileNavBar(BuildContext context) {
-    if (PlatformHelper.isApple(context)) {
-      return _buildIOSMobileNavBar(context);
-    }
-    return SizedBox(
-      key: const Key('custom_adaptive_navigation_mobile_nav_bar'),
-      height: kPodcastGlobalPlayerMobileDockHeight,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: List.generate(widget.destinations.length, (index) {
-          final destination = widget.destinations[index];
-          final isSelected = index == widget.selectedIndex;
-          return Expanded(
-            child: _buildMobileNavItem(
-              context,
-              destination,
-              isSelected,
-              () => widget.onDestinationSelected?.call(index),
-            ),
-          );
-        }),
-      ),
-    );
-  }
-
-  /// iOS-style bottom navigation (CupertinoTabBar aesthetic).
-  /// Uses system icon colors instead of gradient background.
-  Widget _buildIOSMobileNavBar(BuildContext context) {
-    final theme = Theme.of(context);
-    return SizedBox(
-      height: kPodcastGlobalPlayerMobileDockHeight,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: List.generate(widget.destinations.length, (index) {
-          final destination = widget.destinations[index];
-          final isSelected = index == widget.selectedIndex;
-          return Expanded(
-            child: GestureDetector(
-              onTap: () {
-                // Update PageController for iOS swipe gesture
-                if (_pageController.hasClients) {
-                  _pageController.jumpToPage(index);
-                }
-                widget.onDestinationSelected?.call(index);
-              },
-              onDoubleTap: isSelected
-                  ? () {
-                      AdaptiveHaptic.lightImpact();
-                      // Scroll to top via PrimaryScrollController
-                      PrimaryScrollController.of(context).animateTo(
-                        0,
-                        duration: AppDurations.scrollAnimation,
-                        curve: Curves.easeOut,
-                      );
-                    }
-                  : null,
-              behavior: HitTestBehavior.opaque,
-              child: Padding(
-                padding: EdgeInsets.symmetric(vertical: context.spacing.xs),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    IconTheme(
-                      data: IconThemeData(
-                        size: 22,
-                        color: isSelected
-                            ? theme.colorScheme.primary
-                            : theme.colorScheme.onSurfaceVariant,
-                      ),
-                      child: isSelected
-                          ? (destination.selectedIcon ?? destination.icon)
-                          : destination.icon,
-                    ),
-                    SizedBox(height: context.spacing.xxs),
-                    Text(
-                      destination.label,
-                      style: AppTextStyles.navLabel(
-                        isSelected
-                            ? theme.colorScheme.primary
-                            : theme.colorScheme.onSurfaceVariant,
-                        weight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          );
-        }),
-      ),
-    );
-  }
-
-  Widget _buildMobileNavItem(
-    BuildContext context,
-    NavigationDestination destination,
-    bool isSelected,
-    VoidCallback onTap,
-  ) {
-    return Semantics(
-      button: true,
-      selected: isSelected,
-      label: destination.label,
-      child: Material(
-        color: Colors.transparent,
-        child: AdaptiveInkWell(
-          onTap: onTap,
-          borderRadius: AppRadius.mdLgRadius,
-          splashColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.12),
-          highlightColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.08),
-          child: Padding(
-            padding: EdgeInsets.symmetric(vertical: context.spacing.xs),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                AnimatedScale(
-                  scale: isSelected ? 1.05 : 1.0,
-                  duration: AppDurations.scaleFast,
-                  curve: Curves.easeOutCubic,
-                  child: Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: context.spacing.md,
-                      vertical: context.spacing.xxs,
-                    ),
-                    decoration: BoxDecoration(
-                      gradient: isSelected
-                          ? const LinearGradient(
-                              colors: AppColors.violetColors,
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            )
-                          : null,
-                      color: isSelected ? null : Colors.transparent,
-                      borderRadius: AppRadius.mdLgRadius,
-                    ),
-                    child: ColorFiltered(
-                  colorFilter: ColorFilter.mode(
-                    isSelected ? Theme.of(context).colorScheme.onPrimary : Theme.of(context).colorScheme.onSurfaceVariant,
-                    BlendMode.srcIn,
-                  ),
-                  child: isSelected
-                      ? (destination.selectedIcon ?? destination.icon)
-                      : destination.icon,
-                ),
-                  ),
-                ),
-                SizedBox(height: context.spacing.xxs),
-                Text(
-                  destination.label,
-                  style: AppTextStyles.navLabel(
-                    isSelected ? Theme.of(context).colorScheme.onSurface : Theme.of(context).colorScheme.onSurfaceVariant,
-                    weight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
     );
   }
 }
@@ -1106,135 +436,3 @@ class ResponsiveContainer extends StatelessWidget {
 }
 
 /// macOS-native sidebar with vibrancy (backdrop blur + translucent surface)
-class _AppleSidebarContainer extends StatelessWidget {
-  const _AppleSidebarContainer({required this.child});
-
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final surfaceColor = isDark
-        ? CupertinoColors.systemBackground.darkColor.withValues(alpha: 0.75)
-        : CupertinoColors.systemBackground.color.withValues(alpha: 0.80);
-    final borderColor = isDark
-        ? CupertinoColors.separator.darkColor
-        : CupertinoColors.separator.color;
-
-    return ClipRRect(
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
-        child: Container(
-          decoration: BoxDecoration(
-            color: surfaceColor,
-            border: BorderDirectional(
-              end: BorderSide(color: borderColor, width: 0.5),
-            ),
-          ),
-          child: child,
-        ),
-      ),
-    );
-  }
-}
-
-/// Arc+Linear style sidebar with theme-aware surface
-class _CleanSidebar extends StatelessWidget {
-  const _CleanSidebar({required this.child, required this.expanded});
-
-  final Widget child;
-  final bool expanded;
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Container(
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.darkSurface : AppColors.lightSurfaceVariant,
-        borderRadius: expanded
-            ? const BorderRadiusDirectional.horizontal(end: Radius.circular(AppRadius.lg))
-            : AppRadius.lgXlRadius,
-      ),
-      child: child,
-    );
-  }
-}
-
-/// Nav item ink well with hover effect
-class _NavInkWell extends StatefulWidget {
-  const _NavInkWell({
-    required this.borderRadius,
-    required this.child,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  final VoidCallback onTap;
-  final double borderRadius;
-  final bool isSelected;
-  final Widget child;
-
-  @override
-  State<_NavInkWell> createState() => _NavInkWellState();
-}
-
-class _NavInkWellState extends State<_NavInkWell> {
-  bool _isHovered = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final overlayColor = Theme.of(context).colorScheme.onSurface;
-    return MouseRegion(
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      child: InkWell(
-        onTap: widget.onTap,
-        borderRadius: BorderRadius.circular(widget.borderRadius),
-        splashColor: overlayColor.withValues(alpha: 0.12),
-        highlightColor: overlayColor.withValues(alpha: 0.08),
-        hoverColor: Colors.transparent, // We handle hover manually
-        child: AnimatedContainer(
-          duration: AppDurations.scaleFast,
-          curve: Curves.easeOut,
-          decoration: BoxDecoration(
-            color: _isHovered && !widget.isSelected
-                ? overlayColor.withValues(alpha: 0.06)
-                : Colors.transparent,
-            borderRadius: BorderRadius.circular(widget.borderRadius),
-          ),
-          child: widget.child,
-        ),
-      ),
-    );
-  }
-}
-
-/// Arc+Linear style dock with theme-aware surface + blur
-class _CleanDock extends StatelessWidget {
-  const _CleanDock({required this.child, required this.width, super.key});
-
-  final Widget child;
-  final double width;
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final surfaceColor = isDark ? AppColors.darkSurface : AppColors.lightSurface;
-    return SizedBox(
-      width: width,
-      child: ClipRRect(
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-          child: Container(
-            height: 64,
-            decoration: BoxDecoration(
-              color: surfaceColor.withValues(alpha: 0.9),
-            ),
-            child: child,
-          ),
-        ),
-      ),
-    );
-  }
-}

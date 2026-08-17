@@ -10,6 +10,7 @@ import 'package:personal_ai_assistant/core/router/app_router.dart';
 import 'package:personal_ai_assistant/core/widgets/custom_adaptive_navigation.dart';
 import 'package:personal_ai_assistant/core/widgets/keyboard_shortcuts.dart';
 import 'package:personal_ai_assistant/features/auth/presentation/providers/auth_provider.dart';
+import 'package:personal_ai_assistant/features/podcast/presentation/constants/podcast_ui_constants.dart';
 import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_feed_providers.dart';
 import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_playback_providers.dart';
 import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_providers.dart';
@@ -149,6 +150,16 @@ class _HomeShellWidgetState extends ConsumerState<HomeShellWidget>
     );
   }
 
+  double _mobilePlayerOverlayReserve(BuildContext context) {
+    final safeAreaBottom = MediaQuery.viewPaddingOf(context).bottom;
+    final dockBottomPadding = safeAreaBottom > 0.0
+        ? safeAreaBottom
+        : kPodcastGlobalPlayerMobileViewportPadding;
+    return dockBottomPadding +
+        kPodcastGlobalPlayerMobileDockHeight +
+        kPodcastGlobalPlayerMobileDockGap;
+  }
+
   List<NavigationDestination> _buildDestinations(BuildContext context) {
     final l10n = context.l10n;
     return [
@@ -192,6 +203,9 @@ class _HomeShellWidgetState extends ConsumerState<HomeShellWidget>
       onTabSwitch: isDesktop ? _handleNavigation : null,
       child: CustomAdaptiveNavigation(
         key: const ValueKey('home_custom_adaptive_navigation'),
+        // The global player dock floats above mobile nav; reserve its
+        // geometry here so the core shell stays feature-agnostic.
+        mobileOverlayReserve: _mobilePlayerOverlayReserve(context),
         destinations: _buildDestinations(context),
         selectedIndex: widget.navigationShell.currentIndex,
         onDestinationSelected: _handleNavigation,
