@@ -24,6 +24,7 @@ import 'package:personal_ai_assistant/features/podcast/data/models/podcast_playb
 import 'package:personal_ai_assistant/features/podcast/data/models/podcast_queue_model.dart';
 import 'package:personal_ai_assistant/features/podcast/data/repositories/podcast_repository.dart';
 import 'package:personal_ai_assistant/features/podcast/presentation/constants/podcast_ui_constants.dart';
+import 'package:personal_ai_assistant/features/podcast/presentation/providers/audio_handler_logic.dart';
 import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_providers.dart';
 import 'package:personal_ai_assistant/shared/constants/storage_keys.dart';
 import 'package:riverpod/misc.dart' show ProviderFamily;

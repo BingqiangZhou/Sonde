@@ -97,28 +97,6 @@ class PodcastAudioHandler extends BaseAudioHandler with SeekHandler {
   // All stream subscriptions to be cancelled on disposal
   final List<StreamSubscription<dynamic>> _subs = [];
 
-  /// Validate and sanitize artUri for Vivo/OriginOS lock screen compatibility
-  /// Only returns http/https URLs, returns null for invalid protocols
-  static Uri? _validateArtUri(String? urlString) {
-    if (urlString == null || urlString.isEmpty) return null;
-
-    final uri = Uri.tryParse(urlString);
-    if (uri == null) return null;
-
-    // Vivo/OriginOS lock screen ONLY supports http/https protocols
-    // Reject asset://, file://, content://, and other schemes
-    if (uri.scheme != 'http' && uri.scheme != 'https') {
-      if (kDebugMode) {
-        logger.AppLogger.debug(
-          '⚠️ [ART_URI] Invalid scheme: ${uri.scheme} (only http/https allowed)',
-        );
-      }
-      return null;
-    }
-
-    return uri;
-  }
-
   void _listenPlayerEvents() {
     final player = _player!;
     // Listen to player state changes
@@ -145,11 +123,14 @@ class PodcastAudioHandler extends BaseAudioHandler with SeekHandler {
     _subs.add(player.onPositionChanged.listen((position) {
       if (_isDisposed) return;
       final now = DateTime.now();
-      final dt = now.difference(_lastPosEmit).inMilliseconds;
-      final dp = (position - _lastPos).abs().inMilliseconds;
-
-      // Throttle: 500ms OR position change >= 1000ms
-      if (dt < 500 && dp < 1000) return;
+      if (!shouldEmitPositionTick(
+        now: now,
+        lastEmitAt: _lastPosEmit,
+        lastEmittedPosition: _lastPos,
+        position: position,
+      )) {
+        return;
+      }
 
       _lastPosEmit = now;
       _lastPos = position;
@@ -199,7 +180,7 @@ class PodcastAudioHandler extends BaseAudioHandler with SeekHandler {
     if (_player == null) return;
 
     final playing = _player.state == PlayerState.playing;
-    final processingState = _mapProcessingState(_player.state);
+    final processingState = mapPlayerProcessingState(_player.state);
     final updateTime = DateTime.now();
 
     // Build controls list based on current state
@@ -207,18 +188,13 @@ class PodcastAudioHandler extends BaseAudioHandler with SeekHandler {
         processingState != AudioProcessingState.idle &&
         processingState != AudioProcessingState.loading;
 
-    final controls = hasContent
-        ? [
-            MediaControl.rewind,
-            if (playing) MediaControl.pause else MediaControl.play,
-            MediaControl.fastForward,
-          ]
-        : [MediaControl.play];
-
-    // Set compact action indices based on available controls
-    final androidCompactActionIndices = hasContent
-        ? const [0, 1, 2] // Show all 3 buttons in compact view
-        : const [0]; // Show only play button
+    final controls = buildMediaControls(
+      playing: playing,
+      hasContent: hasContent,
+    );
+    final androidCompactActionIndices = buildAndroidCompactActionIndices(
+      hasContent: hasContent,
+    );
 
     if (kDebugMode) {
       logger.AppLogger.debug(
@@ -257,19 +233,6 @@ class PodcastAudioHandler extends BaseAudioHandler with SeekHandler {
     );
   }
 
-  AudioProcessingState _mapProcessingState(PlayerState state) {
-    switch (state) {
-      case PlayerState.stopped:
-        return AudioProcessingState.idle;
-      case PlayerState.disposed:
-        return AudioProcessingState.idle;
-      case PlayerState.playing:
-      case PlayerState.paused:
-        return AudioProcessingState.ready;
-      case PlayerState.completed:
-        return AudioProcessingState.completed;
-    }
-  }
 
   Future<void> _setAudioSourceWithCache(String url) async {
     if (_player == null) return;
@@ -320,7 +283,7 @@ class PodcastAudioHandler extends BaseAudioHandler with SeekHandler {
     bool autoPlay = false,
   }) async {
     // CRITICAL: Validate artUri - ONLY http/https URLs allowed for Vivo/OriginOS
-    final validArtUri = artUri != null ? _validateArtUri(artUri) : null;
+    final validArtUri = artUri != null ? validateArtUri(artUri) : null;
 
     if (artUri != null && validArtUri == null && kDebugMode) {
       logger.AppLogger.debug(
@@ -531,10 +494,11 @@ class PodcastAudioHandler extends BaseAudioHandler with SeekHandler {
 
   @override
   Future<void> rewind() async {
-    final newPosition = _currentPosition - const Duration(seconds: 15);
-    final clampedPosition = newPosition < Duration.zero
-        ? Duration.zero
-        : newPosition;
+    final clampedPosition = clampSeek(
+      position: _currentPosition,
+      delta: -const Duration(seconds: 15),
+      duration: _currentDuration,
+    );
     await _player?.seek(clampedPosition);
     _currentPosition = clampedPosition;
     _broadcastPosition(position: clampedPosition);
@@ -542,9 +506,11 @@ class PodcastAudioHandler extends BaseAudioHandler with SeekHandler {
 
   @override
   Future<void> fastForward() async {
-    final duration = _currentDuration ?? Duration.zero;
-    final newPosition = _currentPosition + const Duration(seconds: 30);
-    final clampedPosition = newPosition > duration ? duration : newPosition;
+    final clampedPosition = clampSeek(
+      position: _currentPosition,
+      delta: const Duration(seconds: 30),
+      duration: _currentDuration,
+    );
     await _player?.seek(clampedPosition);
     _currentPosition = clampedPosition;
     _broadcastPosition(position: clampedPosition);
