@@ -1,7 +1,7 @@
 import 'package:drift/drift.dart';
 import 'package:personal_ai_assistant/core/database/dao/download_dao.dart';
 import 'package:personal_ai_assistant/core/database/dao/episode_cache_dao.dart';
-import 'package:personal_ai_assistant/core/database/dao/playback_dao.dart';
+import 'package:personal_ai_assistant/core/database/dao/response_cache_dao.dart';
 
 part 'app_database.g.dart';
 
@@ -17,14 +17,14 @@ enum DownloadStatus {
 }
 
 @DriftDatabase(
-  tables: [DownloadTasks, PlaybackStates, EpisodesCache],
-  daos: [DownloadDao, PlaybackDao, EpisodeCacheDao],
+  tables: [DownloadTasks, EpisodesCache, ResponseCache],
+  daos: [DownloadDao, EpisodeCacheDao, ResponseCacheDao],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -53,6 +53,13 @@ class AppDatabase extends _$AppDatabase {
           'ON episodes_cache (subscription_id, published_at DESC)',
         );
       }
+      if (from < 6) {
+        // Drop the unused playback_states table; playback persistence lives
+        // in server snapshots and local storage. Add the response blob cache
+        // that replaces large JSON payloads in SharedPreferences.
+        await migrator.deleteTable('playback_states');
+        await migrator.createTable(responseCache);
+      }
     },
   );
 }
@@ -75,26 +82,6 @@ class DownloadTasks extends Table {
   DateTimeColumn get completedAt => dateTime().nullable()();
 }
 
-// === Playback States Table ===
-
-class PlaybackStates extends Table {
-  @override
-  String get tableName => 'playback_states';
-
-  IntColumn get episodeId => integer()();
-  IntColumn get positionSeconds =>
-      integer().withDefault(const Constant(0))();
-  RealColumn get playbackRate =>
-      real().withDefault(const Constant(1))();
-  IntColumn get playCount => integer().withDefault(const Constant(0))();
-  BoolColumn get isCompleted =>
-      boolean().withDefault(const Constant(false))();
-  DateTimeColumn get lastUpdatedAt => dateTime()();
-
-  @override
-  Set<Column> get primaryKey => {episodeId};
-}
-
 // === Episodes Cache Table ===
 
 class EpisodesCache extends Table {
@@ -114,4 +101,23 @@ class EpisodesCache extends Table {
 
   @override
   Set<Column> get primaryKey => {id};
+}
+
+// === Response Cache Table ===
+
+/// Opaque JSON response blobs cached for instant rendering, keyed by a
+/// composite cache key. Replaces large JSON payloads previously stored in
+/// SharedPreferences so app startup does not have to load them into memory.
+class ResponseCache extends Table {
+  @override
+  String get tableName => 'response_cache';
+
+  TextColumn get key => text()();
+  TextColumn get payload => text()();
+  DateTimeColumn get cachedAt =>
+      dateTime().withDefault(currentDateAndTime)();
+  DateTimeColumn get expiresAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {key};
 }

@@ -21,6 +21,12 @@ class EpisodeCacheDao extends DatabaseAccessor<AppDatabase>
     });
   }
 
+  /// Watches a single cached episode by ID.
+  Stream<EpisodesCacheData?> watchById(int id) {
+    return (select(episodesCache)..where((t) => t.id.equals(id)))
+        .watchSingleOrNull();
+  }
+
   /// Get a cached episode by ID.
   Future<EpisodesCacheData?> getById(int id) {
     return (select(episodesCache)..where((t) => t.id.equals(id)))

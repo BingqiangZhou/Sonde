@@ -1,19 +1,31 @@
+import 'package:drift/native.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:personal_ai_assistant/core/database/app_database.dart';
+import 'package:personal_ai_assistant/core/database/database_provider.dart';
 import 'package:personal_ai_assistant/features/podcast/data/models/podcast_episode_model.dart';
 import 'package:personal_ai_assistant/features/podcast/data/repositories/podcast_repository.dart';
 import 'package:personal_ai_assistant/features/podcast/data/services/podcast_api_service.dart';
 import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_episodes_providers.dart';
 import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_providers.dart';
 
+ProviderContainer _createContainer(_FakePodcastRepository repository) {
+  return ProviderContainer(
+    overrides: [
+      podcastRepositoryProvider.overrideWithValue(repository),
+      appDatabaseProvider.overrideWithValue(
+        AppDatabase(NativeDatabase.memory()),
+      ),
+    ],
+  );
+}
+
 void main() {
   group('PodcastEpisodesNotifier cache scope', () {
     test('reuses fresh cache only for same subscription and filters', () async {
       final repository = _FakePodcastRepository();
-      final container = ProviderContainer(
-        overrides: [podcastRepositoryProvider.overrideWithValue(repository)],
-      );
+      final container = _createContainer(repository);
       addTearDown(container.dispose);
 
       final notifier = container.read(podcastEpisodesProvider.notifier);
@@ -26,9 +38,7 @@ void main() {
 
     test('does not reuse fresh cache across different subscriptions', () async {
       final repository = _FakePodcastRepository();
-      final container = ProviderContainer(
-        overrides: [podcastRepositoryProvider.overrideWithValue(repository)],
-      );
+      final container = _createContainer(repository);
       addTearDown(container.dispose);
 
       final notifier = container.read(podcastEpisodesProvider.notifier);
@@ -45,9 +55,7 @@ void main() {
       'does not reuse fresh cache when status/summary filters differ',
       () async {
         final repository = _FakePodcastRepository();
-        final container = ProviderContainer(
-          overrides: [podcastRepositoryProvider.overrideWithValue(repository)],
-        );
+        final container = _createContainer(repository);
         addTearDown(container.dispose);
 
         final notifier = container.read(podcastEpisodesProvider.notifier);

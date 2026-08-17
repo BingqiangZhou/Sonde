@@ -1,8 +1,10 @@
+import 'dart:convert';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show FutureProviderFamily;
 
+import 'package:personal_ai_assistant/core/database/database_provider.dart';
 import 'package:personal_ai_assistant/core/network/exceptions/network_exceptions.dart';
-import 'package:personal_ai_assistant/core/storage/local_storage_service.dart';
 import 'package:personal_ai_assistant/core/utils/app_logger.dart' as logger;
 import 'package:personal_ai_assistant/core/utils/request_dedup.dart';
 import 'package:personal_ai_assistant/features/podcast/data/models/podcast_episode_model.dart';
@@ -57,17 +59,21 @@ class PodcastEpisodesNotifier extends Notifier<PodcastEpisodesState> {
     required bool? hasSummary,
   }) async {
     try {
-      final storage = ref.read(localStorageServiceProvider);
-      final cached = await storage.getCachedData<dynamic>(
-        _episodesCacheKey(
-          subscriptionId: subscriptionId,
-          status: status,
-          hasSummary: hasSummary,
-          size: size,
-        ),
-      );
-      if (cached is Map<String, dynamic>) {
-        return PodcastEpisodeListResponse.fromJson(cached);
+      final payload = await ref
+          .read(appDatabaseProvider)
+          .responseCacheDao
+          .getPayload(
+            _episodesCacheKey(
+              subscriptionId: subscriptionId,
+              status: status,
+              hasSummary: hasSummary,
+              size: size,
+            ),
+          );
+      if (payload != null) {
+        return PodcastEpisodeListResponse.fromJson(
+          jsonDecode(payload) as Map<String, dynamic>,
+        );
       }
     } catch (e) {
       logger.AppLogger.debug('[Episodes] Failed to read episodes from cache: $e');
@@ -196,17 +202,19 @@ class PodcastEpisodesNotifier extends Notifier<PodcastEpisodesState> {
 
       if (page == 1) {
         try {
-          final storage = ref.read(localStorageServiceProvider);
-          await storage.cacheData(
-            _episodesCacheKey(
-              subscriptionId: subscriptionId,
-              status: normalizedStatus,
-              hasSummary: normalizedHasSummary,
-              size: size,
-            ),
-            response.toJson(),
-            expiration: _episodesCacheExpiration,
-          );
+          await ref
+              .read(appDatabaseProvider)
+              .responseCacheDao
+              .putPayload(
+                _episodesCacheKey(
+                  subscriptionId: subscriptionId,
+                  status: normalizedStatus,
+                  hasSummary: normalizedHasSummary,
+                  size: size,
+                ),
+                jsonEncode(response.toJson()),
+                ttl: _episodesCacheExpiration,
+              );
         } catch (e) {
           logger.AppLogger.debug('[Episodes] Failed to cache episodes: $e');
         }

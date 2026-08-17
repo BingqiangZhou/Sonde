@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:personal_ai_assistant/core/app/config/app_config.dart';
+import 'package:personal_ai_assistant/core/database/database_provider.dart';
 import 'package:personal_ai_assistant/core/network/dio_client.dart';
 import 'package:personal_ai_assistant/core/network/server_health_service.dart';
 import 'package:personal_ai_assistant/core/services/app_cache_service.dart';
@@ -90,6 +91,10 @@ class ServerConfigNotifier extends Notifier<ServerConfigState> {
     // 2. Clear network cache
     await dioClient.clearCache();
     dioClient.clearETagCache();
+
+    // 2b. Clear cached list responses (Drift response_cache). Best effort;
+    // stale rows would expire via TTL anyway.
+    await ref.read(appDatabaseProvider).responseCacheDao.clearAll();
 
     // 3. Clear media cache
     await ref.read(appCacheServiceProvider).clearAll();
