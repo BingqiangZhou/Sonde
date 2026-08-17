@@ -5,11 +5,7 @@ from fastapi import HTTPException, status
 from app.domains.podcast.models import PodcastEpisode
 from app.domains.podcast.schemas import PodcastTranscriptionResponse
 from app.domains.podcast.services.episode_service import PodcastEpisodeService
-
-
-def status_value(status_obj) -> str:
-    """Normalize enum-like status values to strings."""
-    return status_obj.value if hasattr(status_obj, "value") else str(status_obj)
+from app.domains.podcast.utils.status_helpers import status_value
 
 
 async def validate_episode_and_permission(

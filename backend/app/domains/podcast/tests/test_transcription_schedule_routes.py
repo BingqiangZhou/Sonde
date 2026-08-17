@@ -20,7 +20,7 @@ def test_schedule_episode_transcription_returns_assembled_response(
 
     response = client.post(
         "/api/v1/podcasts/episodes/7/transcribe/schedule",
-        json={"force": False, "frequency": "manual"},
+        json={"force": False},
     )
 
     assert response.status_code == 201

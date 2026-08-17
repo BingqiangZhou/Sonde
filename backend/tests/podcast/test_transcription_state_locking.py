@@ -188,34 +188,3 @@ async def test_release_task_lock_cleans_legacy_key_for_matching_owner() -> None:
     assert released is True
     assert "podcast:lock:transcription:episode:60329" not in fake_redis.client.store
     assert "podcast:transcription:lock_value:60329" not in fake_redis.client.store
-
-
-@pytest.mark.asyncio
-async def test_get_active_tasks_count_reads_sorted_set_index() -> None:
-    manager, _fake_redis = _build_state_manager()
-
-    await manager.set_task_progress(41, "in_progress", 35.0, "working", ttl_seconds=120)
-
-    assert await manager.get_active_tasks_count() == 1
-
-    await manager.clear_task_progress(41)
-
-    assert await manager.get_active_tasks_count() == 0
-
-
-@pytest.mark.asyncio
-async def test_cleanup_stale_locks_uses_indexed_episode_ids() -> None:
-    manager, fake_redis = _build_state_manager()
-    lock_key = "podcast:lock:transcription:episode:60329"
-    legacy_key = "podcast:transcription:lock_value:60329"
-    fake_redis.client.store[lock_key] = "task:42"
-    fake_redis.client.store[legacy_key] = "42"
-    fake_redis.client.ttl_map[lock_key] = -1
-    fake_redis.client.sorted_sets["podcast:transcription:lock_index"] = {"60329": 0.0}
-
-    cleaned = await manager.cleanup_stale_locks(max_age_seconds=7200)
-
-    assert cleaned == 1
-    assert lock_key not in fake_redis.client.store
-    assert legacy_key not in fake_redis.client.store
-    assert fake_redis.client.sorted_sets["podcast:transcription:lock_index"] == {}

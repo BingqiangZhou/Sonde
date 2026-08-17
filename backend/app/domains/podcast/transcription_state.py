@@ -9,7 +9,6 @@ Provides fast state management for podcast transcription tasks:
 import logging
 import time
 from datetime import UTC, datetime
-from typing import Any
 
 import orjson
 import redis.exceptions
@@ -392,20 +391,6 @@ class TranscriptionStateManager:
         await self.redis.set(key, str(task_id), ttl=ttl_seconds)
         logger.debug(f"Mapped episode {episode_id} to task {task_id}")
 
-    async def get_episode_task(self, episode_id: int) -> int | None:
-        """Get the active task ID for an episode
-
-        Args:
-            episode_id: Episode ID
-
-        Returns:
-            Task ID if found, None otherwise
-
-        """
-        key = TranscriptionStateKeys.EPISODE_TASK.format(episode_id=episode_id)
-        task_id_str = await self.redis.get(key)
-        return int(task_id_str) if task_id_str else None
-
     async def clear_episode_task(self, episode_id: int) -> None:
         """Clear the episode-to-task mapping (e.g., when task completes or lock is stale)
 
@@ -477,26 +462,6 @@ class TranscriptionStateManager:
                 f"转录进度 [PROGRESS] Task {task_id}: {progress:.1f}% - {message}"
             )
 
-    async def get_task_progress(self, task_id: int) -> dict[str, Any] | None:
-        """Get cached task progress
-
-        Args:
-            task_id: Task ID
-
-        Returns:
-            Progress data dict or None if not found
-
-        """
-        key = TranscriptionStateKeys.TASK_PROGRESS.format(task_id=task_id)
-        data = await self.redis.get(key)
-
-        if data:
-            try:
-                return orjson.loads(data)
-            except orjson.JSONDecodeError:
-                logger.warning(f"Invalid cached progress data for task {task_id}")
-        return None
-
     async def clear_task_progress(self, task_id: int) -> None:
         """Clear cached task progress
 
@@ -544,26 +509,6 @@ class TranscriptionStateManager:
         await self.redis.set(
             key, orjson.dumps(status_data).decode("utf-8"), ttl=ttl_seconds
         )
-
-    async def get_task_status(self, task_id: int) -> dict[str, Any] | None:
-        """Get lightweight task status
-
-        Args:
-            task_id: Task ID
-
-        Returns:
-            Status data dict or None if not found
-
-        """
-        key = TranscriptionStateKeys.TASK_STATUS.format(task_id=task_id)
-        data = await self.redis.get(key)
-
-        if data:
-            try:
-                return orjson.loads(data)
-            except orjson.JSONDecodeError:
-                logger.warning(f"Invalid cached status data for task {task_id}")
-        return None
 
     # === Cleanup ===
 
@@ -639,94 +584,6 @@ class TranscriptionStateManager:
 
         logger.error(f"[STATE] Task {task_id} failed: {error_message}")
 
-    # === Batch Operations ===
-
-    async def get_active_tasks_count(self) -> int:
-        """Get count of tasks currently in progress (from Redis)
-
-        Returns:
-            Number of active tasks
-
-        """
-        try:
-            await self.redis.sorted_set_remove_by_score(
-                self._active_task_index_key(),
-                "-inf",
-                time.time(),
-            )
-            return await self.redis.sorted_set_cardinality(
-                self._active_task_index_key()
-            )
-        except (
-            redis.exceptions.RedisError,
-            orjson.JSONDecodeError,
-            ValueError,
-            TypeError,
-            OSError,
-        ) as e:
-            logger.error(f"Failed to get active tasks count: {e}")
-            return 0
-
-    async def cleanup_stale_locks(self, max_age_seconds: int = 7200) -> int:
-        """Cleanup stale locks older than max_age_seconds (2 hours default)
-
-        Args:
-            max_age_seconds: Maximum age of locks to keep
-
-        Returns:
-            Number of locks cleaned up
-
-        """
-        try:
-            stale_episode_ids = await self.redis.sorted_set_range_by_score(
-                self._lock_index_key(),
-                "-inf",
-                time.time() - max_age_seconds,
-            )
-
-            cleaned = 0
-            for episode_id_str in stale_episode_ids:
-                if not episode_id_str.isdigit():
-                    await self.redis.sorted_set_remove(
-                        self._lock_index_key(),
-                        episode_id_str,
-                    )
-                    continue
-
-                episode_id = int(episode_id_str)
-                lock_key = self._task_lock_key(episode_id)
-                ttl = await self.redis.get_ttl(lock_key)
-                if ttl in (-2,) or (ttl != -1 and ttl <= max_age_seconds):
-                    await self.redis.sorted_set_remove(
-                        self._lock_index_key(),
-                        episode_id_str,
-                    )
-                    continue
-
-                deleted = await self.redis.delete_keys(
-                    lock_key,
-                    self._legacy_task_lock_value_key(episode_id),
-                )
-                await self.redis.sorted_set_remove(
-                    self._lock_index_key(), episode_id_str
-                )
-                if deleted > 0:
-                    cleaned += 1
-
-            if cleaned > 0:
-                logger.info(f"[STATE] Cleaned up {cleaned} stale locks")
-
-            return cleaned
-
-        except (
-            redis.exceptions.RedisError,
-            orjson.JSONDecodeError,
-            ValueError,
-            TypeError,
-            OSError,
-        ) as e:
-            logger.error(f"Failed to cleanup stale locks: {e}")
-            return 0
 
 
 # Singleton instance

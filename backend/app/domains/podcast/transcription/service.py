@@ -419,26 +419,6 @@ class PodcastTranscriptionService:
         config_db_id = model_config.id if model_config else None
         return task, config_db_id
 
-    async def start_transcription(
-        self,
-        episode_id: int,
-        model: str | None = None,
-        force: bool = False,
-    ) -> TranscriptionTask:
-        """"""
-        # 1.
-        task, config_db_id = await self.create_transcription_task_record(
-            episode_id,
-            model=model,
-            force=force,
-        )
-
-        logger.info(
-            f"[TRANSCRIPTION] Task {task.id} created successfully. config_db_id={config_db_id}",
-        )
-
-        return task
-
     async def execute_transcription_task(
         self,
         task_id: int,

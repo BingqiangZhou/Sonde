@@ -41,7 +41,6 @@ from app.domains.podcast.services.episode_service import (
 from app.domains.podcast.services.transcription_service import (
     TranscriptionWorkflowService,
 )
-from app.domains.podcast.transcription_types import ScheduleFrequency
 
 
 router = APIRouter(prefix="")
@@ -282,12 +281,11 @@ async def get_transcription_status(
     status_code=201,
     response_model=PodcastTranscriptionScheduleResponse,
     summary="Schedule episode transcription",
-    description="Schedule transcription task with frequency settings",
+    description="Schedule transcription task",
 )
 async def schedule_episode_transcription_endpoint(
     episode_id: int,
-    force: bool = Body(False, description="Force retranscription"),
-    frequency: str = Body("manual", description="hourly, daily, weekly, manual"),
+    force: bool = Body(False, embed=True, description="Force retranscription"),
     episode_service: PodcastEpisodeService = Depends(get_podcast_episode_service),
     transcription_workflow: TranscriptionWorkflowService = Depends(
         get_transcription_workflow_service,
@@ -296,7 +294,6 @@ async def schedule_episode_transcription_endpoint(
     try:
         result = await transcription_workflow.schedule_episode_transcription(
             episode_id=episode_id,
-            frequency=ScheduleFrequency(frequency),
             force=force,
             episode_lookup=episode_service.get_episode_by_id,
         )

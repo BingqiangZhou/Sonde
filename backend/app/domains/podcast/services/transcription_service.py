@@ -31,7 +31,6 @@ from app.domains.podcast.transcription import (
     SiliconFlowTranscriber,
 )
 from app.domains.podcast.transcription_state import get_transcription_state_manager
-from app.domains.podcast.transcription_types import ScheduleFrequency
 from app.domains.podcast.utils.status_helpers import status_value
 
 
@@ -414,7 +413,6 @@ class TranscriptionWorkflowService:
         self,
         episode_id: int,
         *,
-        frequency: ScheduleFrequency,
         force: bool,
         episode_lookup: Callable[[int], Awaitable[PodcastEpisode | None]],
     ) -> dict[str, Any]:
@@ -424,7 +422,6 @@ class TranscriptionWorkflowService:
         scheduler = self.scheduler_factory(self.db)
         return await scheduler.schedule_transcription(
             episode_id=episode_id,
-            frequency=frequency,
             force=force,
         )
 
@@ -597,8 +594,6 @@ class TranscriptionWorkflowService:
             "processed_at": datetime.now(UTC).isoformat(),
         }
 
-
-logger = logging.getLogger(__name__)
 
 
 async def _directory_has_files_async(path: str) -> bool:
@@ -1083,10 +1078,6 @@ class PodcastTranscriptionRuntimeService(PodcastTranscriptionService):
         }
 
 
-DatabaseBackedTranscriptionService = PodcastTranscriptionRuntimeService
-
-
-logger = logging.getLogger(__name__)
 
 
 class PodcastTranscriptionScheduleService:
@@ -1099,11 +1090,8 @@ class PodcastTranscriptionScheduleService:
     async def schedule_transcription(
         self,
         episode_id: int,
-        frequency: ScheduleFrequency = ScheduleFrequency.MANUAL,
-        custom_interval: int | None = None,
         force: bool = False,
     ) -> dict[str, Any]:
-        del frequency, custom_interval
         episode = await self._get_episode(episode_id)
         if not episode:
             raise ValidationError(f"Episode {episode_id} not found")
@@ -1149,7 +1137,6 @@ class PodcastTranscriptionScheduleService:
     async def batch_schedule_transcription(
         self,
         subscription_id: int,
-        frequency: ScheduleFrequency = ScheduleFrequency.DAILY,
         limit: int | None = None,
         skip_existing: bool = True,
         max_episodes: int = 50,
@@ -1182,7 +1169,6 @@ class PodcastTranscriptionScheduleService:
             try:
                 schedule_result = await self.schedule_transcription(
                     episode_id=episode.id,
-                    frequency=frequency,
                     force=False,
                 )
                 if (
@@ -1192,7 +1178,6 @@ class PodcastTranscriptionScheduleService:
                 ):
                     schedule_result = await self.schedule_transcription(
                         episode_id=episode.id,
-                        frequency=frequency,
                         force=True,
                     )
                 results.append(
@@ -1255,7 +1240,6 @@ class PodcastTranscriptionScheduleService:
             try:
                 schedule_result = await self.schedule_transcription(
                     episode_id=episode.id,
-                    frequency=ScheduleFrequency.MANUAL,
                     force=False,
                 )
                 detail_results.append(
