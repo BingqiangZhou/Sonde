@@ -1,12 +1,14 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:personal_ai_assistant/core/constants/app_durations.dart';
 import 'package:personal_ai_assistant/core/constants/app_spacing.dart';
 import 'package:personal_ai_assistant/core/constants/app_radius.dart';
 import 'package:personal_ai_assistant/core/constants/scroll_constants.dart';
+import 'package:personal_ai_assistant/core/database/app_database.dart';
 import 'package:personal_ai_assistant/core/localization/app_localizations.dart';
 import 'package:personal_ai_assistant/core/services/download_provider.dart';
 import 'package:personal_ai_assistant/core/theme/app_colors.dart';
@@ -15,7 +17,6 @@ import 'package:personal_ai_assistant/core/widgets/top_floating_notice.dart';
 import 'package:personal_ai_assistant/core/widgets/adaptive/adaptive.dart';
 import 'package:personal_ai_assistant/features/podcast/data/models/podcast_queue_model.dart';
 import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_playback_providers.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_providers.dart';
 import 'package:personal_ai_assistant/features/podcast/presentation/widgets/podcast_image_widget.dart';
 
 // ---------------------------------------------------------------------------
@@ -23,7 +24,7 @@ import 'package:personal_ai_assistant/features/podcast/presentation/widgets/podc
 // ---------------------------------------------------------------------------
 
 class QueueList extends ConsumerStatefulWidget {
-  const QueueList({super.key, required this.queue});
+  const QueueList({required this.queue, super.key});
 
   final PodcastQueueModel queue;
 
@@ -100,10 +101,9 @@ class _QueueListState extends ConsumerState<QueueList> {
     final currentEpisodeId = widget.queue.currentEpisodeId;
 
     return ReorderableListView.builder(
-      scrollController: _scrollController,
+      scrollCacheExtent: ScrollCacheExtent.pixels(ScrollConstants.defaultCacheExtent), scrollController: _scrollController,
       padding: EdgeInsets.fromLTRB(context.spacing.md, context.spacing.smMd, context.spacing.md, context.spacing.mdLg),
       itemExtent: ScrollConstants.queueItemExtent,
-      cacheExtent: ScrollConstants.defaultCacheExtent,
       buildDefaultDragHandles: false,
       physics: const AlwaysScrollableScrollPhysics(),
       proxyDecorator: (child, index, animation) {
@@ -228,13 +228,7 @@ class _QueueListState extends ConsumerState<QueueList> {
 
 class QueueListItem extends ConsumerWidget {
   const QueueListItem({
-    super.key,
-    required this.item,
-    required this.index,
-    required this.isCurrent,
-    required this.isRemoving,
-    required this.onTap,
-    required this.onRemove,
+    required this.item, required this.index, required this.isCurrent, required this.isRemoving, required this.onTap, required this.onRemove, super.key,
   });
 
   final PodcastQueueItemModel item;
@@ -363,7 +357,7 @@ class QueueListItem extends ConsumerWidget {
 // ---------------------------------------------------------------------------
 
 class StaticQueueSubtitle extends StatelessWidget {
-  const StaticQueueSubtitle({super.key, required this.item});
+  const StaticQueueSubtitle({required this.item, super.key});
 
   final PodcastQueueItemModel item;
 
@@ -386,7 +380,7 @@ class StaticQueueSubtitle extends StatelessWidget {
 }
 
 class CurrentQueueSubtitle extends ConsumerWidget {
-  const CurrentQueueSubtitle({super.key, required this.item});
+  const CurrentQueueSubtitle({required this.item, super.key});
 
   final PodcastQueueItemModel item;
 
@@ -422,10 +416,7 @@ class CurrentQueueSubtitle extends ConsumerWidget {
 
 class QueueItemCover extends StatelessWidget {
   const QueueItemCover({
-    super.key,
-    required this.item,
-    required this.isCurrent,
-    required this.size,
+    required this.item, required this.isCurrent, required this.size, super.key,
   });
 
   final PodcastQueueItemModel item;
@@ -534,7 +525,7 @@ class EqualizerBadge extends StatelessWidget {
 
 /// Compact download status indicator for queue items.
 class QueueItemDownloadIndicator extends ConsumerWidget {
-  const QueueItemDownloadIndicator({super.key, required this.episodeId});
+  const QueueItemDownloadIndicator({required this.episodeId, super.key});
 
   final int episodeId;
 
@@ -555,7 +546,7 @@ class QueueItemDownloadIndicator extends ConsumerWidget {
         }
 
         return switch (task.status) {
-          'pending' || 'downloading' => SizedBox(
+          DownloadStatus.pending || DownloadStatus.downloading => SizedBox(
               width: 14,
               height: 14,
               child: Theme(
@@ -569,12 +560,12 @@ class QueueItemDownloadIndicator extends ConsumerWidget {
                 ),
               ),
             ),
-          'completed' => Icon(
+          DownloadStatus.completed => Icon(
               Icons.download_done,
               size: 14,
               color: theme.colorScheme.primary,
             ),
-          'failed' => Icon(
+          DownloadStatus.failed => Icon(
               Icons.error_outline,
               size: 14,
               color: theme.colorScheme.error,

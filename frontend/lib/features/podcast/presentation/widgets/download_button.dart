@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:personal_ai_assistant/core/database/app_database.dart';
 import 'package:personal_ai_assistant/core/localization/app_localizations_extension.dart';
 import 'package:personal_ai_assistant/core/services/download_provider.dart';
 
@@ -54,26 +55,26 @@ class DownloadButton extends ConsumerWidget {
         }
 
         return switch (task.status) {
-          'pending' => _IconButton(
+          DownloadStatus.pending => _IconButton(
               icon: Icons.downloading,
               size: size,
               color: theme.colorScheme.primary,
               tooltip: l10n.download_button_downloading,
               onPressed: () => _cancel(ref),
             ),
-          'downloading' => _StreamProgress(
+          DownloadStatus.downloading => _StreamProgress(
               episodeId: episodeId,
               size: size,
               onCancel: () => _cancel(ref),
             ),
-          'completed' => _IconButton(
+          DownloadStatus.completed => _IconButton(
               icon: Icons.download_done,
               size: size,
               color: theme.colorScheme.primary,
               tooltip: l10n.download_button_delete,
               onPressed: () => _delete(ref),
             ),
-          'failed' => _IconButton(
+          DownloadStatus.failed => _IconButton(
               icon: Icons.error_outline,
               size: size,
               color: theme.colorScheme.error,
