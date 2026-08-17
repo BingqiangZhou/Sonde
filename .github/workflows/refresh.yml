@@ -1,0 +1,74 @@
+name: Refresh Data
+
+on:
+  schedule:
+    - cron: '0 8 * * 1'   # 每周一 08:00 UTC: fetch-rankings
+    - cron: '0 8 * * *'   # 每日 08:00 UTC: parse-rss + scrape-episode
+  workflow_dispatch:
+    inputs:
+      skill:
+        description: '要运行的 skill (rankings | rss | scrape | all)'
+        required: false
+        default: 'all'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Determine skills to run
+        id: plan
+        run: |
+          SKILL="${{ github.event.inputs.skill || 'all' }}"
+          EVENT="${{ github.event_name }}"
+          if [ "$EVENT" = "schedule" ]; then
+            CRON="${{ github.event.schedule }}"
+            case "$CRON" in
+              "0 8 * * 1") SKILL="rankings" ;;
+              "0 8 * * *") SKILL="rss" ;;
+            esac
+          fi
+          echo "skill=$SKILL" >> $GITHUB_OUTPUT
+
+      - name: Run fetch-rankings
+        if: steps.plan.outputs.skill == 'rankings' || steps.plan.outputs.skill == 'all'
+        run: pnpm --filter @podcastinsight/skill-fetch-rankings refresh
+
+      - name: Run parse-rss
+        if: steps.plan.outputs.skill == 'rss' || steps.plan.outputs.skill == 'all'
+        run: pnpm --filter @podcastinsight/skill-parse-rss refresh
+
+      - name: Run scrape-episode
+        if: steps.plan.outputs.skill == 'rss' || steps.plan.outputs.skill == 'all'
+        run: pnpm --filter @podcastinsight/skill-scrape-episode refresh
+
+      - name: Commit data changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/
+          if git diff --cached --quiet; then
+            echo "无数据变更"
+          else
+            git commit -m "chore(data): auto-refresh by refresh.yml [skip ci]"
+            git push
+          fi
