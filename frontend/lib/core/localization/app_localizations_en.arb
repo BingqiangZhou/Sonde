@@ -1233,10 +1233,6 @@
     "@podcast_tab_summary":  {
                                  "description":  "Episode detail tab: Summary"
                              },
-    "podcast_tab_chat":  "Chat",
-    "@podcast_tab_chat":  {
-                              "description":  "Episode detail tab: Chat"
-                          },
     "podcast_transcription_processing":  "Transcription in progress...",
     "@podcast_transcription_processing":  {
                                               "description":  "Transcription status: Processing"
@@ -1245,71 +1241,6 @@
     "@podcast_transcription_auto_starting":  {
                                                  "description":  "Transcription auto-starting message"
                                              },
-    "podcast_conversation_title":  "Chat with AI",
-    "@podcast_conversation_title":  {
-                                        "description":  "Conversation screen title"
-                                    },
-    "podcast_conversation_empty_title":  "Start a conversation",
-    "@podcast_conversation_empty_title":  {
-                                              "description":  "Empty conversation title"
-                                          },
-    "podcast_conversation_empty_hint":  "Ask questions about this episode and get AI-powered answers based on the transcript.",
-    "@podcast_conversation_empty_hint":  {
-                                             "description":  "Empty conversation hint"
-                                         },
-    "podcast_conversation_history":  "Chat History",
-    "@podcast_conversation_history":  {
-                                          "description":  "Chat history title"
-                                      },
-    "podcast_conversation_delete_title":  "Delete Chat",
-    "@podcast_conversation_delete_title":  {
-                                               "description":  "Delete chat dialog title"
-                                           },
-    "podcast_conversation_delete_confirm":  "Are you sure you want to delete this chat? This action cannot be undone.",
-    "@podcast_conversation_delete_confirm":  {
-                                                 "description":  "Delete chat confirmation message"
-                                             },
-    "podcast_conversation_send_hint":  "Send message (Ctrl+Enter)",
-    "@podcast_conversation_send_hint":  {
-                                            "description":  "Send message hint text"
-                                        },
-    "podcast_conversation_no_summary_hint":  "Conversation requires a completed transcript. Please wait for transcription to complete.",
-    "@podcast_conversation_no_summary_hint":  {
-                                                  "description":  "No summary hint for conversation"
-                                              },
-    "podcast_conversation_loading_failed":  "Failed to load conversation history",
-    "@podcast_conversation_loading_failed":  {
-                                                 "description":  "Failed to load conversation message"
-                                             },
-    "podcast_conversation_user":  "You",
-    "@podcast_conversation_user":  {
-                                       "description":  "User label in conversation"
-                                   },
-    "podcast_conversation_assistant":  "AI Assistant",
-    "@podcast_conversation_assistant":  {
-                                            "description":  "Assistant label in conversation"
-                                        },
-    "podcast_conversation_reload":  "Reload",
-    "@podcast_conversation_reload":  {
-                                         "description":  "Reload button label"
-                                     },
-    "podcast_conversation_new_chat":  "New Chat",
-    "@podcast_conversation_new_chat":  {
-                                           "description":  "New chat button tooltip"
-                                       },
-    "podcast_conversation_new_chat_confirm":  "Starting a new chat will clear the current conversation history. Are you sure?",
-    "@podcast_conversation_new_chat_confirm":  {
-                                                   "description":  "New chat confirmation message"
-                                               },
-    "podcast_conversation_message_count":  "{count} messages",
-    "@podcast_conversation_message_count":  {
-                                                "description":  "Conversation message count",
-                                                "placeholders":  {
-                                                                     "count":  {
-                                                                                   "type":  "int"
-                                                                               }
-                                                                 }
-                                            },
     "podcast_error_loading":  "Failed to load content",
     "@podcast_error_loading":  {
                                    "description":  "Generic error loading message"
@@ -2391,14 +2322,6 @@
     "@error_validation":  {
                               "description":  "Validation error message"
                           },
-    "session_create_failed":  "Failed to create new conversation",
-    "@session_create_failed":  {
-                                   "description":  "Error when creating a new chat session fails"
-                               },
-    "session_delete_failed":  "Failed to delete conversation",
-    "@session_delete_failed":  {
-                                   "description":  "Error when deleting a chat session fails"
-                               },
     "download_button_download":  "Download",
     "@download_button_download":  {
                                         "description":  "Download button label"

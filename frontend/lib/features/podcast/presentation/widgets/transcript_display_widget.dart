@@ -19,7 +19,7 @@ import 'package:sonde/core/widgets/app_shells.dart';
 import 'package:sonde/core/widgets/top_floating_notice.dart';
 import 'package:sonde/features/podcast/data/models/podcast_highlight_model.dart';
 import 'package:sonde/features/podcast/data/models/podcast_transcription_model.dart';
-import 'package:sonde/features/podcast/presentation/providers/conversation_providers.dart';
+import 'package:sonde/features/podcast/presentation/providers/transcription_providers.dart';
 import 'package:sonde/features/podcast/presentation/providers/podcast_highlights_providers.dart';
 import 'package:sonde/features/podcast/presentation/widgets/highlight_card.dart';
 import 'package:sonde/features/podcast/presentation/widgets/highlight_detail_sheet.dart';

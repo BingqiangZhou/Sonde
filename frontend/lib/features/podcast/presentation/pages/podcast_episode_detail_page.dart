@@ -26,13 +26,13 @@ import 'package:sonde/features/podcast/core/utils/html_sanitizer.dart';
 import 'package:sonde/features/podcast/data/models/audio_player_state_model.dart';
 import 'package:sonde/features/podcast/data/models/podcast_episode_model.dart';
 import 'package:sonde/features/podcast/data/models/podcast_transcription_model.dart';
-import 'package:sonde/features/podcast/presentation/providers/conversation_providers.dart';
 import 'package:sonde/features/podcast/presentation/providers/podcast_episodes_providers.dart';
 import 'package:sonde/features/podcast/presentation/providers/podcast_highlights_providers.dart';
 import 'package:sonde/features/podcast/presentation/providers/podcast_playback_providers.dart';
 import 'package:sonde/features/podcast/presentation/providers/podcast_providers.dart';
+import 'package:sonde/features/podcast/presentation/providers/summary_providers.dart';
+import 'package:sonde/features/podcast/presentation/providers/transcription_providers.dart';
 import 'package:sonde/features/podcast/presentation/widgets/ai_summary_control_widget.dart';
-import 'package:sonde/features/podcast/presentation/widgets/conversation_chat_widget.dart';
 import 'package:sonde/features/podcast/presentation/widgets/podcast_image_widget.dart';
 import 'package:sonde/features/podcast/presentation/widgets/scrollable_content_wrapper.dart';
 import 'package:sonde/features/podcast/presentation/widgets/shared/episode_card_utils.dart';
@@ -61,7 +61,6 @@ class PodcastEpisodeDetailPage extends ConsumerStatefulWidget {
 class _PodcastEpisodeDetailPageState
     extends ConsumerState<PodcastEpisodeDetailPage> {
   static const double _wideLayoutBreakpoint = Breakpoints.wideLayout;
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   int _selectedTabIndex = 0; // 0 = Shownotes, 1 = Transcript, 2 = Summary
   ProviderSubscription<AsyncValue<PodcastTranscriptionResponse?>>?
   _transcriptionNoticeSubscription;
@@ -89,8 +88,6 @@ class _PodcastEpisodeDetailPageState
       GlobalKey<TranscriptDisplayWidgetState>();
   final GlobalKey<ScrollableContentWrapperState> _summaryKey =
       GlobalKey<ScrollableContentWrapperState>();
-  final GlobalKey<ConversationChatWidgetState> _conversationKey =
-      GlobalKey<ConversationChatWidgetState>();
 
   @override
   void initState() {
@@ -256,24 +253,11 @@ class _PodcastEpisodeDetailPageState
       builder: (context, constraints) {
         final episodeDetail = episodeDetailAsync.asData?.value;
         return Scaffold(
-          key: _scaffoldKey,
           backgroundColor: Colors.transparent,
           appBar: adaptiveAppBar(
             context,
             titleWidget: Text(episodeDetail?.title ?? ''),
-            actions: [
-              if (episodeDetail != null)
-                IconButton(
-                  icon: const Icon(Icons.auto_awesome_outlined),
-                  tooltip: (AppLocalizations.of(context) ?? AppLocalizationsEn()).podcast_tab_chat,
-                  onPressed: _openChatDrawer,
-                ),
-            ],
           ),
-          endDrawerEnableOpenDragGesture: false,
-          endDrawer: episodeDetail == null
-              ? null
-              : _buildChatDrawer(episodeDetail),
           body: episodeDetailAsync.when(
             data: (episodeDetail) {
               if (episodeDetail == null) {
@@ -392,10 +376,6 @@ class _PodcastEpisodeDetailPageState
       case 2: // Summary
         _summaryKey.currentState?.scrollToTop();
     }
-  }
-
-  void _openChatDrawer() {
-    _scaffoldKey.currentState?.openEndDrawer();
   }
 
   void _updateShownotesAnchors(List<ShownotesAnchor> anchors) {

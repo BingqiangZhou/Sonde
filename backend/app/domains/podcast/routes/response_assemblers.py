@@ -5,13 +5,9 @@ from __future__ import annotations
 from typing import Any
 
 from app.domains.podcast.schemas import (
-    ConversationSessionListResponse,
-    ConversationSessionResponse,
     DailyReportDateItem,
     HighlightListResponse,
     HighlightResponse,
-    PodcastConversationHistoryResponse,
-    PodcastConversationMessage,
     PodcastDailyReportDatesResponse,
     PodcastEpisodeListResponse,
     PodcastEpisodeResponse,
@@ -84,32 +80,6 @@ def build_playback_history_list_response(
         size=size,
         pages=(total + size - 1) // size,
         next_cursor=next_cursor,
-    )
-
-
-def build_conversation_session_list_response(
-    sessions: list[dict[str, Any]],
-) -> ConversationSessionListResponse:
-    """Build the conversation session list response."""
-    return ConversationSessionListResponse(
-        items=[ConversationSessionResponse(**session) for session in sessions],
-        total=len(sessions),
-    )
-
-
-def build_conversation_history_response(
-    *,
-    episode_id: int,
-    session_id: int | None,
-    messages: list[dict[str, Any]],
-) -> PodcastConversationHistoryResponse:
-    """Build the conversation history response."""
-    message_responses = [PodcastConversationMessage(**message) for message in messages]
-    return PodcastConversationHistoryResponse(
-        episode_id=episode_id,
-        session_id=session_id,
-        messages=message_responses,
-        total=len(message_responses),
     )
 
 

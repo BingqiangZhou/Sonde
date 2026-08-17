@@ -618,7 +618,6 @@ class AdminSubscriptionsService:
         Optimized to use batch DELETE operations instead of per-subscription loops.
         """
         from app.domains.podcast.models import (
-            PodcastConversation,
             PodcastEpisode,
             PodcastPlaybackState,
             TranscriptionTask,
@@ -645,11 +644,6 @@ class AdminSubscriptionsService:
 
             if episode_ids:
                 # Delete all related records in bulk
-                await self.db.execute(
-                    delete(PodcastConversation).where(
-                        PodcastConversation.episode_id.in_(episode_ids),
-                    ),
-                )
                 await self.db.execute(
                     delete(PodcastPlaybackState).where(
                         PodcastPlaybackState.episode_id.in_(episode_ids),

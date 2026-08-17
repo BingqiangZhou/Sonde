@@ -5,7 +5,6 @@ External API paths remain unchanged; this module only composes split route modul
 
 from fastapi import APIRouter
 
-from .routes_conversations import router as conversations_router
 from .routes_episodes import router as episodes_router
 from .routes_highlights import router as highlights_router
 from .routes_queue import router as queue_router
@@ -20,7 +19,6 @@ router.include_router(reports_router)
 router.include_router(queue_router)
 router.include_router(stats_router)
 router.include_router(transcriptions_router)
-router.include_router(conversations_router)
 router.include_router(highlights_router)
 
 __all__ = ["router"]

@@ -1844,12 +1844,6 @@ abstract class AppLocalizations {
   /// **'Summary'**
   String get podcast_tab_summary;
 
-  /// Episode detail tab: Chat
-  ///
-  /// In en, this message translates to:
-  /// **'Chat'**
-  String get podcast_tab_chat;
-
   /// Transcription status: Processing
   ///
   /// In en, this message translates to:
@@ -1861,96 +1855,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Auto-starting transcription...'**
   String get podcast_transcription_auto_starting;
-
-  /// Conversation screen title
-  ///
-  /// In en, this message translates to:
-  /// **'Chat with AI'**
-  String get podcast_conversation_title;
-
-  /// Empty conversation title
-  ///
-  /// In en, this message translates to:
-  /// **'Start a conversation'**
-  String get podcast_conversation_empty_title;
-
-  /// Empty conversation hint
-  ///
-  /// In en, this message translates to:
-  /// **'Ask questions about this episode and get AI-powered answers based on the transcript.'**
-  String get podcast_conversation_empty_hint;
-
-  /// Chat history title
-  ///
-  /// In en, this message translates to:
-  /// **'Chat History'**
-  String get podcast_conversation_history;
-
-  /// Delete chat dialog title
-  ///
-  /// In en, this message translates to:
-  /// **'Delete Chat'**
-  String get podcast_conversation_delete_title;
-
-  /// Delete chat confirmation message
-  ///
-  /// In en, this message translates to:
-  /// **'Are you sure you want to delete this chat? This action cannot be undone.'**
-  String get podcast_conversation_delete_confirm;
-
-  /// Send message hint text
-  ///
-  /// In en, this message translates to:
-  /// **'Send message (Ctrl+Enter)'**
-  String get podcast_conversation_send_hint;
-
-  /// No summary hint for conversation
-  ///
-  /// In en, this message translates to:
-  /// **'Conversation requires a completed transcript. Please wait for transcription to complete.'**
-  String get podcast_conversation_no_summary_hint;
-
-  /// Failed to load conversation message
-  ///
-  /// In en, this message translates to:
-  /// **'Failed to load conversation history'**
-  String get podcast_conversation_loading_failed;
-
-  /// User label in conversation
-  ///
-  /// In en, this message translates to:
-  /// **'You'**
-  String get podcast_conversation_user;
-
-  /// Assistant label in conversation
-  ///
-  /// In en, this message translates to:
-  /// **'AI Assistant'**
-  String get podcast_conversation_assistant;
-
-  /// Reload button label
-  ///
-  /// In en, this message translates to:
-  /// **'Reload'**
-  String get podcast_conversation_reload;
-
-  /// New chat button tooltip
-  ///
-  /// In en, this message translates to:
-  /// **'New Chat'**
-  String get podcast_conversation_new_chat;
-
-  /// New chat confirmation message
-  ///
-  /// In en, this message translates to:
-  /// **'Starting a new chat will clear the current conversation history. Are you sure?'**
-  String get podcast_conversation_new_chat_confirm;
-
-  /// Conversation message count
-  ///
-  /// In en, this message translates to:
-  /// **'{count} messages'**
-  String podcast_conversation_message_count(int count);
 
   /// Generic error loading message
   ///
@@ -3386,18 +3290,6 @@ abstract class AppLocalizations {
   /// **'Invalid input. Please check and try again.'**
   String get error_validation;
 
-  /// Error when creating a new chat session fails
-  ///
-  /// In en, this message translates to:
-  /// **'Failed to create new conversation'**
-  String get session_create_failed;
-
-  /// Error when deleting a chat session fails
-  ///
-  /// In en, this message translates to:
-  /// **'Failed to delete conversation'**
-  String get session_delete_failed;
-
   /// Download button label
   ///
   /// In en, this message translates to:
@@ -3571,66 +3463,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'After current episode'**
   String get sleep_timer_after_episode;
-
-  /// Title of the first onboarding screen
-  ///
-  /// In en, this message translates to:
-  /// **'Welcome to Sonde'**
-  String get onboarding_welcome_title;
-
-  /// Subtitle of the first onboarding screen
-  ///
-  /// In en, this message translates to:
-  /// **'Your AI-Powered Podcast Assistant'**
-  String get onboarding_welcome_subtitle;
-
-  /// Body text of the first onboarding screen
-  ///
-  /// In en, this message translates to:
-  /// **'Discover, subscribe, and listen to your favorite podcasts — powered by intelligent AI that keeps you informed.'**
-  String get onboarding_welcome_body;
-
-  /// Title of the AI summary onboarding screen
-  ///
-  /// In en, this message translates to:
-  /// **'Daily AI Summaries'**
-  String get onboarding_summary_title;
-
-  /// Body text of the AI summary onboarding screen
-  ///
-  /// In en, this message translates to:
-  /// **'Get personalized daily digests with episode highlights and key takeaways. Stay on top of your podcasts in minutes, not hours.'**
-  String get onboarding_summary_body;
-
-  /// Title of the AI chat onboarding screen
-  ///
-  /// In en, this message translates to:
-  /// **'AI Conversations'**
-  String get onboarding_chat_title;
-
-  /// Body text of the AI chat onboarding screen
-  ///
-  /// In en, this message translates to:
-  /// **'Chat with AI about any podcast episode. Ask questions, explore topics in depth, and get instant insights from your listening library.'**
-  String get onboarding_chat_body;
-
-  /// Skip button on onboarding screens
-  ///
-  /// In en, this message translates to:
-  /// **'Skip'**
-  String get onboarding_skip;
-
-  /// Next button on onboarding screens
-  ///
-  /// In en, this message translates to:
-  /// **'Next'**
-  String get onboarding_next;
-
-  /// Get started button on the last onboarding screen
-  ///
-  /// In en, this message translates to:
-  /// **'Get Started'**
-  String get onboarding_get_started;
 
   /// Title for the Terms of Service page
   ///

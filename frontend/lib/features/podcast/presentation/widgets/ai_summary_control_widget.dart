@@ -8,7 +8,7 @@ import 'package:sonde/core/theme/app_colors.dart';
 import 'package:sonde/core/widgets/adaptive/adaptive.dart';
 import 'package:sonde/core/widgets/top_floating_notice.dart';
 import 'package:sonde/features/podcast/data/models/podcast_playback_model.dart';
-import 'package:sonde/features/podcast/presentation/providers/conversation_providers.dart';
+import 'package:sonde/features/podcast/presentation/providers/summary_providers.dart';
 
 /// AI summary controls for generating and regenerating summaries.
 class AISummaryControlWidget extends ConsumerStatefulWidget {

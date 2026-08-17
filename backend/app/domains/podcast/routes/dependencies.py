@@ -12,7 +12,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.auth import get_db_session_dependency, get_redis_client, require_api_key
 from app.core.redis import RedisCache
 from app.domains.podcast.repositories.content_repository import SubscriptionRepository
-from app.domains.podcast.services.conversation_service import ConversationService
 from app.domains.podcast.services.daily_report_service import DailyReportService
 from app.domains.podcast.services.episode_service import (
     PodcastEpisodeService,
@@ -254,15 +253,7 @@ def get_podcast_task_orchestration_service(
     return PodcastTaskOrchestrationService(db)
 
 
-def get_conversation_service(
-    db: AsyncSession = Depends(get_db_session_dependency),
-) -> ConversationService:
-    """Provide request-scoped conversation service."""
-    return ConversationService(db)
-
-
 __all__ = [
-    "get_conversation_service",
     "get_daily_report_service",
     "get_highlight_service",
     "get_podcast_episode_repository",

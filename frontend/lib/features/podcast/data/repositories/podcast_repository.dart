@@ -2,7 +2,6 @@ import 'package:dio/dio.dart';
 import 'package:sonde/core/network/exceptions/network_exceptions.dart';
 import 'package:sonde/core/utils/time_formatter.dart';
 import 'package:sonde/features/podcast/data/models/playback_history_lite_model.dart';
-import 'package:sonde/features/podcast/data/models/podcast_conversation_model.dart';
 import 'package:sonde/features/podcast/data/models/podcast_daily_report_model.dart';
 import 'package:sonde/features/podcast/data/models/podcast_episode_model.dart';
 import 'package:sonde/features/podcast/data/models/podcast_highlight_model.dart';
@@ -307,46 +306,6 @@ class PodcastRepository {
 
   Future<void> deleteTranscription(int episodeId) =>
       _apiCall(() => _apiService.deleteTranscription(episodeId));
-
-  // === Conversation Management ===
-
-  Future<ConversationSessionListResponse> getConversationSessions({
-    required int episodeId,
-  }) =>
-      _apiCall(() => _apiService.getConversationSessions(episodeId));
-
-  Future<ConversationSession> createConversationSession({
-    required int episodeId,
-    String? title,
-  }) =>
-      _apiCall(() => _apiService.createConversationSession(episodeId, {
-            'title': title,
-          }));
-
-  Future<PodcastConversationClearResponse> deleteConversationSession({
-    required int episodeId,
-    required int sessionId,
-  }) =>
-      _apiCall(() => _apiService.deleteConversationSession(episodeId, sessionId));
-
-  Future<PodcastConversationHistoryResponse> getConversationHistory({
-    required int episodeId,
-    int limit = 50,
-    int? sessionId,
-  }) =>
-      _apiCall(() => _apiService.getConversationHistory(episodeId, limit, sessionId));
-
-  Future<PodcastConversationSendResponse> sendConversationMessage({
-    required int episodeId,
-    required PodcastConversationSendRequest request,
-  }) =>
-      _apiCall(() => _apiService.sendConversationMessage(episodeId, request));
-
-  Future<PodcastConversationClearResponse> clearConversationHistory({
-    required int episodeId,
-    int? sessionId,
-  }) =>
-      _apiCall(() => _apiService.clearConversationHistory(episodeId, sessionId));
 
   // === Highlights Management ===
 

@@ -7,7 +7,7 @@ import 'package:sonde/core/theme/app_colors.dart';
 import 'package:sonde/core/widgets/adaptive/adaptive.dart';
 import 'package:sonde/core/widgets/top_floating_notice.dart';
 import 'package:sonde/features/podcast/data/models/podcast_transcription_model.dart';
-import 'package:sonde/features/podcast/presentation/providers/conversation_providers.dart';
+import 'package:sonde/features/podcast/presentation/providers/transcription_providers.dart';
 import 'package:sonde/features/podcast/presentation/widgets/transcription/transcript_result_widget.dart';
 import 'package:sonde/features/podcast/presentation/widgets/transcription/transcription_progress_widget.dart';
 

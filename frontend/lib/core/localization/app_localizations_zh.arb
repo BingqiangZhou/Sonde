@@ -1233,10 +1233,6 @@
     "@podcast_tab_summary":  {
                                  "description":  "分集详情标签：摘要"
                              },
-    "podcast_tab_chat":  "AI对话",
-    "@podcast_tab_chat":  {
-                              "description":  "分集详情标签：AI对话"
-                          },
     "podcast_transcription_processing":  "正在转录中...",
     "@podcast_transcription_processing":  {
                                               "description":  "转录状态：处理中"
@@ -1245,71 +1241,6 @@
     "@podcast_transcription_auto_starting":  {
                                                  "description":  "转录自动开始消息"
                                              },
-    "podcast_conversation_title":  "AI对话",
-    "@podcast_conversation_title":  {
-                                        "description":  "对话界面标题"
-                                    },
-    "podcast_conversation_empty_title":  "开始对话",
-    "@podcast_conversation_empty_title":  {
-                                              "description":  "空对话标题"
-                                          },
-    "podcast_conversation_empty_hint":  "向AI提问本集节目的相关问题，基于文字稿获取智能回答。",
-    "@podcast_conversation_empty_hint":  {
-                                             "description":  "空对话提示"
-                                         },
-    "podcast_conversation_send_hint":  "发送消息（Ctrl+Enter）",
-    "@podcast_conversation_send_hint":  {
-                                            "description":  "发送消息提示文本"
-                                        },
-    "podcast_conversation_no_summary_hint":  "对话功能需要先完成转录。请等待转录完成。",
-    "@podcast_conversation_no_summary_hint":  {
-                                                  "description":  "无摘要提示的对话"
-                                              },
-    "podcast_conversation_loading_failed":  "加载对话历史失败",
-    "@podcast_conversation_loading_failed":  {
-                                                 "description":  "加载对话失败消息"
-                                             },
-    "podcast_conversation_user":  "你",
-    "@podcast_conversation_user":  {
-                                       "description":  "对话中的用户标签"
-                                   },
-    "podcast_conversation_assistant":  "AI助手",
-    "@podcast_conversation_assistant":  {
-                                            "description":  "对话中的助手标签"
-                                        },
-    "podcast_conversation_reload":  "重新加载",
-    "@podcast_conversation_reload":  {
-                                         "description":  "重新加载按钮标签"
-                                     },
-    "podcast_conversation_new_chat":  "新对话",
-    "@podcast_conversation_new_chat":  {
-                                           "description":  "新建对话按钮提示"
-                                       },
-    "podcast_conversation_new_chat_confirm":  "确定要开始新的对话吗？当前的对话将会被清除。",
-    "@podcast_conversation_new_chat_confirm":  {
-                                                   "description":  "新建对话确认消息"
-                                               },
-    "podcast_conversation_history":  "对话历史",
-    "@podcast_conversation_history":  {
-                                          "description":  "对话历史标题"
-                                      },
-    "podcast_conversation_delete_title":  "删除对话",
-    "@podcast_conversation_delete_title":  {
-                                               "description":  "删除对话确认框标题"
-                                           },
-    "podcast_conversation_delete_confirm":  "确定要删除这个对话吗？此操作无法撤销。",
-    "@podcast_conversation_delete_confirm":  {
-                                                 "description":  "删除对话确认消息"
-                                             },
-    "podcast_conversation_message_count":  "{count}条消息",
-    "@podcast_conversation_message_count":  {
-                                                "description":  "对话消息数量",
-                                                "placeholders":  {
-                                                                     "count":  {
-                                                                                   "type":  "int"
-                                                                               }
-                                                                 }
-                                            },
     "podcast_error_loading":  "加载内容失败",
     "@podcast_error_loading":  {
                                    "description":  "通用加载错误消息"
@@ -2345,14 +2276,6 @@
     "@error_validation":  {
                               "description":  "验证错误消息"
                           },
-    "session_create_failed":  "创建新对话失败",
-    "@session_create_failed":  {
-                                   "description":  "创建聊天会话失败时的错误"
-                               },
-    "session_delete_failed":  "删除对话失败",
-    "@session_delete_failed":  {
-                                   "description":  "删除聊天会话失败时的错误"
-                               },
     "download_button_download":  "下载",
     "@download_button_download":  {
                                         "description":  "下载按钮标签"

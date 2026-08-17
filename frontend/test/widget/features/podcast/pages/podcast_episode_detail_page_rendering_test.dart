@@ -43,10 +43,6 @@ void main() {
       expect(find.text(l10n.podcast_tab_transcript), findsOneWidget);
       expect(find.text(l10n.podcast_tab_summary), findsOneWidget);
 
-      // Chat is no longer a tab; it's in the AppBar as an IconButton
-      expect(find.text(l10n.podcast_tab_chat), findsNothing);
-      expect(find.byIcon(Icons.auto_awesome_outlined), findsOneWidget);
-
       // Summary section is not visible initially (tab 0 = shownotes)
       expect(
         find.byKey(const Key('podcast_episode_detail_summary_section')),
@@ -319,30 +315,6 @@ void main() {
       expect(
         find.byKey(const Key('podcast_episode_detail_summary_section')),
         findsNothing,
-      );
-    });
-
-    testWidgets('opens chat drawer from AppBar action', (tester) async {
-      addTearDown(() async => tester.binding.setSurfaceSize(null));
-      await tester.binding.setSurfaceSize(const Size(1280, 900));
-
-      await tester.pumpWidget(
-        createEpisodeDetailWidget(
-          episode: createTestEpisode(
-            description:
-                '<h2>Opening</h2><p>Description</p><h2>Deep Dive</h2><p>More content</p>',
-          ),
-        ),
-      );
-      await tester.pumpAndSettle();
-
-      // Chat is now an IconButton in the AppBar with auto_awesome_outlined icon
-      await tester.tap(find.byIcon(Icons.auto_awesome_outlined));
-      await tester.pumpAndSettle();
-
-      expect(
-        find.byKey(const Key('podcast_episode_detail_chat_drawer')),
-        findsOneWidget,
       );
     });
 

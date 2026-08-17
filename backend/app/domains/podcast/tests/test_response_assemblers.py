@@ -1,8 +1,6 @@
 from datetime import UTC, datetime
 
 from app.domains.podcast.routes.response_assemblers import (
-    build_conversation_history_response,
-    build_conversation_session_list_response,
     build_daily_report_dates_response,
     build_episode_list_response,
     build_feed_response,
@@ -13,7 +11,6 @@ from app.domains.podcast.routes.response_assemblers import (
     build_summary_response,
 )
 from app.domains.podcast.schemas import (
-    PodcastConversationClearResponse,
     PodcastSummaryPendingResponse,
     ScheduleConfigResponse,
 )
@@ -112,47 +109,6 @@ def test_build_playback_history_list_response_uses_lightweight_items():
     assert response.total == 1
     assert response.pages == 1
     assert response.items[0].playback_position == 45
-
-
-def test_build_conversation_responses_wrap_payloads():
-    now = datetime.now(UTC)
-
-    session_list = build_conversation_session_list_response(
-        [
-            {
-                "id": 3,
-                "episode_id": 9,
-                "title": "Session A",
-                "message_count": 2,
-                "created_at": now,
-                "updated_at": now,
-            },
-        ],
-    )
-    history = build_conversation_history_response(
-        episode_id=9,
-        session_id=3,
-        messages=[
-            {
-                "id": 1,
-                "role": "user",
-                "content": "Hello",
-                "conversation_turn": 0,
-                "created_at": now.isoformat(),
-            },
-        ],
-    )
-    clear = PodcastConversationClearResponse(
-        episode_id=9,
-        session_id=3,
-        deleted_count=4,
-    )
-
-    assert session_list.total == 1
-    assert session_list.items[0].message_count == 2
-    assert history.total == 1
-    assert history.messages[0].content == "Hello"
-    assert clear.deleted_count == 4
 
 
 def test_build_report_dates_response():

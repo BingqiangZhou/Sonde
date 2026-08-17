@@ -5,8 +5,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:sonde/features/podcast/data/models/podcast_transcription_model.dart';
 import 'package:sonde/features/podcast/data/repositories/podcast_repository.dart';
 import 'package:sonde/features/podcast/data/services/podcast_api_service.dart';
-import 'package:sonde/features/podcast/presentation/providers/conversation_providers.dart';
 import 'package:sonde/features/podcast/presentation/providers/podcast_providers.dart';
+import 'package:sonde/features/podcast/presentation/providers/transcription_providers.dart';
 
 void main() {
   test('transcription polling stops after terminal state', () {

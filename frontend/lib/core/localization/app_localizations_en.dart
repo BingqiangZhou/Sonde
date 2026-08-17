@@ -932,66 +932,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get podcast_tab_summary => 'Summary';
 
   @override
-  String get podcast_tab_chat => 'Chat';
-
-  @override
   String get podcast_transcription_processing => 'Transcription in progress...';
 
   @override
   String get podcast_transcription_auto_starting =>
       'Auto-starting transcription...';
-
-  @override
-  String get podcast_conversation_title => 'Chat with AI';
-
-  @override
-  String get podcast_conversation_empty_title => 'Start a conversation';
-
-  @override
-  String get podcast_conversation_empty_hint =>
-      'Ask questions about this episode and get AI-powered answers based on the transcript.';
-
-  @override
-  String get podcast_conversation_history => 'Chat History';
-
-  @override
-  String get podcast_conversation_delete_title => 'Delete Chat';
-
-  @override
-  String get podcast_conversation_delete_confirm =>
-      'Are you sure you want to delete this chat? This action cannot be undone.';
-
-  @override
-  String get podcast_conversation_send_hint => 'Send message (Ctrl+Enter)';
-
-  @override
-  String get podcast_conversation_no_summary_hint =>
-      'Conversation requires a completed transcript. Please wait for transcription to complete.';
-
-  @override
-  String get podcast_conversation_loading_failed =>
-      'Failed to load conversation history';
-
-  @override
-  String get podcast_conversation_user => 'You';
-
-  @override
-  String get podcast_conversation_assistant => 'AI Assistant';
-
-  @override
-  String get podcast_conversation_reload => 'Reload';
-
-  @override
-  String get podcast_conversation_new_chat => 'New Chat';
-
-  @override
-  String get podcast_conversation_new_chat_confirm =>
-      'Starting a new chat will clear the current conversation history. Are you sure?';
-
-  @override
-  String podcast_conversation_message_count(int count) {
-    return '$count messages';
-  }
 
   @override
   String get podcast_error_loading => 'Failed to load content';
@@ -1832,12 +1777,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get error_validation => 'Invalid input. Please check and try again.';
 
   @override
-  String get session_create_failed => 'Failed to create new conversation';
-
-  @override
-  String get session_delete_failed => 'Failed to delete conversation';
-
-  @override
   String get download_button_download => 'Download';
 
   @override
@@ -1936,39 +1875,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sleep_timer_after_episode => 'After current episode';
-
-  @override
-  String get onboarding_welcome_title => 'Welcome to Sonde';
-
-  @override
-  String get onboarding_welcome_subtitle => 'Your AI-Powered Podcast Assistant';
-
-  @override
-  String get onboarding_welcome_body =>
-      'Discover, subscribe, and listen to your favorite podcasts — powered by intelligent AI that keeps you informed.';
-
-  @override
-  String get onboarding_summary_title => 'Daily AI Summaries';
-
-  @override
-  String get onboarding_summary_body =>
-      'Get personalized daily digests with episode highlights and key takeaways. Stay on top of your podcasts in minutes, not hours.';
-
-  @override
-  String get onboarding_chat_title => 'AI Conversations';
-
-  @override
-  String get onboarding_chat_body =>
-      'Chat with AI about any podcast episode. Ask questions, explore topics in depth, and get instant insights from your listening library.';
-
-  @override
-  String get onboarding_skip => 'Skip';
-
-  @override
-  String get onboarding_next => 'Next';
-
-  @override
-  String get onboarding_get_started => 'Get Started';
 
   @override
   String get terms_of_service_title => 'Terms of Service';

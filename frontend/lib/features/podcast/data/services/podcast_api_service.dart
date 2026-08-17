@@ -1,6 +1,5 @@
 import 'package:dio/dio.dart';
 import 'package:sonde/features/podcast/data/models/playback_history_lite_model.dart';
-import 'package:sonde/features/podcast/data/models/podcast_conversation_model.dart';
 import 'package:sonde/features/podcast/data/models/podcast_daily_report_model.dart';
 import 'package:sonde/features/podcast/data/models/podcast_episode_model.dart';
 import 'package:sonde/features/podcast/data/models/podcast_highlight_model.dart';
@@ -187,44 +186,6 @@ abstract class PodcastApiService {
 
   @DELETE('/podcasts/episodes/{episodeId}/transcription')
   Future<void> deleteTranscription(@Path('episodeId') int episodeId);
-
-  // === Conversation Management ===
-
-  @GET('/podcasts/episodes/{episodeId}/conversation-sessions')
-  Future<ConversationSessionListResponse> getConversationSessions(
-    @Path('episodeId') int episodeId,
-  );
-
-  @POST('/podcasts/episodes/{episodeId}/conversation-sessions')
-  Future<ConversationSession> createConversationSession(
-    @Path('episodeId') int episodeId,
-    @Body() Map<String, dynamic> body,
-  );
-
-  @DELETE('/podcasts/episodes/{episodeId}/conversation-sessions/{sessionId}')
-  Future<PodcastConversationClearResponse> deleteConversationSession(
-    @Path('episodeId') int episodeId,
-    @Path('sessionId') int sessionId,
-  );
-
-  @GET('/podcasts/episodes/{episodeId}/conversations')
-  Future<PodcastConversationHistoryResponse> getConversationHistory(
-    @Path('episodeId') int episodeId,
-    @Query('limit') int limit,
-    @Query('session_id') int? sessionId,
-  );
-
-  @POST('/podcasts/episodes/{episodeId}/conversations')
-  Future<PodcastConversationSendResponse> sendConversationMessage(
-    @Path('episodeId') int episodeId,
-    @Body() PodcastConversationSendRequest request,
-  );
-
-  @DELETE('/podcasts/episodes/{episodeId}/conversations')
-  Future<PodcastConversationClearResponse> clearConversationHistory(
-    @Path('episodeId') int episodeId,
-    @Query('session_id') int? sessionId,
-  );
 
   // === Highlights Management ===
 

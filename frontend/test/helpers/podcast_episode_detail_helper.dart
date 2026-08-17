@@ -6,14 +6,14 @@ import 'package:sonde/core/localization/app_localizations.dart';
 import 'package:sonde/core/localization/l10n_delegates.dart';
 import 'package:sonde/core/providers/route_provider.dart';
 import 'package:sonde/features/podcast/data/models/audio_player_state_model.dart';
-import 'package:sonde/features/podcast/data/models/podcast_conversation_model.dart';
 import 'package:sonde/features/podcast/data/models/podcast_episode_model.dart';
 import 'package:sonde/features/podcast/data/models/podcast_playback_model.dart';
 import 'package:sonde/features/podcast/data/models/podcast_transcription_model.dart';
 import 'package:sonde/features/podcast/presentation/pages/podcast_episode_detail_page.dart';
-import 'package:sonde/features/podcast/presentation/providers/conversation_providers.dart';
 import 'package:sonde/features/podcast/presentation/providers/podcast_episodes_providers.dart';
 import 'package:sonde/features/podcast/presentation/providers/podcast_playback_providers.dart';
+import 'package:sonde/features/podcast/presentation/providers/summary_providers.dart';
+import 'package:sonde/features/podcast/presentation/providers/transcription_providers.dart';
 import 'package:sonde/features/podcast/presentation/widgets/podcast_bottom_player_widget.dart';
 
 import 'mock_audio_player_notifier.dart';
@@ -58,27 +58,6 @@ class SummaryEmptyNotifier extends SummaryNotifier {
 
   @override
   SummaryState build() => const SummaryState();
-}
-
-class ConversationWithoutMessagesNotifier extends ConversationNotifier {
-  ConversationWithoutMessagesNotifier() : super(1);
-
-  @override
-  ConversationState build() => const ConversationState();
-}
-
-class EmptySessionListNotifier extends SessionListNotifier {
-  EmptySessionListNotifier() : super(1);
-
-  @override
-  Future<List<ConversationSession>> build() async => [];
-}
-
-class NullSessionIdNotifier extends SessionIdNotifier {
-  NullSessionIdNotifier() : super(1);
-
-  @override
-  int? build() => null;
 }
 
 class TestCurrentRouteNotifier extends CurrentRouteNotifier {
@@ -171,10 +150,6 @@ Widget createEpisodeDetailWidget({
       ),
       transcriptionProvider(1)
           .overrideWith(() => NoopTranscriptionNotifier(1)),
-      conversationProvider(1)
-          .overrideWith(ConversationWithoutMessagesNotifier.new),
-      sessionListProvider(1).overrideWith(EmptySessionListNotifier.new),
-      currentSessionIdProvider(1).overrideWith(NullSessionIdNotifier.new),
       availableModelsProvider
           .overrideWith((ref) async => <SummaryModelInfo>[]),
     ],
@@ -220,10 +195,6 @@ Widget createEpisodeDetailWidgetWithPlayer({
       summaryProvider(1).overrideWith(SummaryWithContentNotifier.new),
       transcriptionProvider(1)
           .overrideWith(() => NoopTranscriptionNotifier(1)),
-      conversationProvider(1)
-          .overrideWith(ConversationWithoutMessagesNotifier.new),
-      sessionListProvider(1).overrideWith(EmptySessionListNotifier.new),
-      currentSessionIdProvider(1).overrideWith(NullSessionIdNotifier.new),
       availableModelsProvider
           .overrideWith((ref) async => <SummaryModelInfo>[]),
     ],

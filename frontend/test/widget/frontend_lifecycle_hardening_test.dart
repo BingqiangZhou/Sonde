@@ -5,19 +5,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
+// riverpod 3.x 将 Override 移出公共导出，测试需受控导入。
+import 'package:riverpod/src/internals.dart' show Override;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sonde/core/app/config/app_config.dart';
 import 'package:sonde/core/localization/app_localizations.dart';
 import 'package:sonde/core/localization/l10n_delegates.dart';
 import 'package:sonde/core/storage/local_storage_service.dart';
 import 'package:sonde/features/auth/presentation/pages/login_page.dart';
 import 'package:sonde/features/auth/presentation/providers/auth_provider.dart';
-import 'package:sonde/features/podcast/data/models/podcast_playback_model.dart';
-import 'package:sonde/features/podcast/presentation/providers/conversation_providers.dart';
-import 'package:sonde/features/podcast/presentation/widgets/conversation_chat_widget.dart';
 import 'package:sonde/shared/widgets/server_config_dialog.dart';
-// riverpod 3.x 将 Override 移出公共导出，测试需受控导入。
-import 'package:riverpod/src/internals.dart' show Override;
-import 'package:shared_preferences/shared_preferences.dart';
 
 const MethodChannel _secureStorageChannel = MethodChannel(
   'plugins.it_nomads.com/flutter_secure_storage',
@@ -114,39 +111,6 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
-
-  testWidgets('ConversationChatWidget cancels delayed auto-scroll on dispose', (
-    tester,
-  ) async {
-    await tester.pumpWidget(
-      _buildTestApp(
-        const Scaffold(
-          body: ConversationChatWidget(
-            episodeId: 1,
-            episodeTitle: 'Episode',
-            aiSummary: 'Summary',
-          ),
-        ),
-        overrides: [
-          conversationProvider(
-            1,
-          ).overrideWith(_ReadyConversationNotifier.new),
-          availableModelsProvider.overrideWith(
-            (ref) async => const <SummaryModelInfo>[],
-          ),
-        ],
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.byType(TextField).first);
-    await tester.pump();
-
-    await tester.pumpWidget(const SizedBox.shrink());
-    await tester.pump(const Duration(milliseconds: 400));
-
-    expect(tester.takeException(), isNull);
-  });
 }
 
 Widget _buildTestApp(Widget home, {List<Override> overrides = const []}) {
@@ -174,13 +138,6 @@ Widget _buildTestApp(Widget home, {List<Override> overrides = const []}) {
 class _IdleAuthNotifier extends AuthNotifier {
   @override
   AuthState build() => const AuthState();
-}
-
-class _ReadyConversationNotifier extends ConversationNotifier {
-  _ReadyConversationNotifier() : super(1);
-
-  @override
-  ConversationState build() => const ConversationState();
 }
 
 class _FakeLocalStorageService implements LocalStorageService {

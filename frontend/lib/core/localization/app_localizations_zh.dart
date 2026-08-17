@@ -909,60 +909,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get podcast_tab_summary => '摘要';
 
   @override
-  String get podcast_tab_chat => 'AI对话';
-
-  @override
   String get podcast_transcription_processing => '正在转录中...';
 
   @override
   String get podcast_transcription_auto_starting => '自动开始转录...';
-
-  @override
-  String get podcast_conversation_title => 'AI对话';
-
-  @override
-  String get podcast_conversation_empty_title => '开始对话';
-
-  @override
-  String get podcast_conversation_empty_hint => '向AI提问本集节目的相关问题，基于文字稿获取智能回答。';
-
-  @override
-  String get podcast_conversation_history => '对话历史';
-
-  @override
-  String get podcast_conversation_delete_title => '删除对话';
-
-  @override
-  String get podcast_conversation_delete_confirm => '确定要删除这个对话吗？此操作无法撤销。';
-
-  @override
-  String get podcast_conversation_send_hint => '发送消息（Ctrl+Enter）';
-
-  @override
-  String get podcast_conversation_no_summary_hint => '对话功能需要先完成转录。请等待转录完成。';
-
-  @override
-  String get podcast_conversation_loading_failed => '加载对话历史失败';
-
-  @override
-  String get podcast_conversation_user => '你';
-
-  @override
-  String get podcast_conversation_assistant => 'AI助手';
-
-  @override
-  String get podcast_conversation_reload => '重新加载';
-
-  @override
-  String get podcast_conversation_new_chat => '新对话';
-
-  @override
-  String get podcast_conversation_new_chat_confirm => '确定要开始新的对话吗？当前的对话将会被清除。';
-
-  @override
-  String podcast_conversation_message_count(int count) {
-    return '$count条消息';
-  }
 
   @override
   String get podcast_error_loading => '加载内容失败';
@@ -1755,12 +1705,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get error_validation => '输入无效，请检查后重试。';
 
   @override
-  String get session_create_failed => '创建新对话失败';
-
-  @override
-  String get session_delete_failed => '删除对话失败';
-
-  @override
   String get download_button_download => '下载';
 
   @override
@@ -1850,38 +1794,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get sleep_timer_after_episode => '当前剧集结束后';
-
-  @override
-  String get onboarding_welcome_title => '欢迎使用 声读';
-
-  @override
-  String get onboarding_welcome_subtitle => '你的 AI 智能播客助手';
-
-  @override
-  String get onboarding_welcome_body => '发现、订阅并收听你喜爱的播客——由智能 AI 驱动，让你随时掌握最新动态。';
-
-  @override
-  String get onboarding_summary_title => '每日 AI 摘要';
-
-  @override
-  String get onboarding_summary_body =>
-      '获取个性化的每日播客摘要和剧集要点。几分钟内了解最新动态，无需花数小时收听。';
-
-  @override
-  String get onboarding_chat_title => 'AI 对话';
-
-  @override
-  String get onboarding_chat_body =>
-      '与 AI 聊天讨论任何播客剧集。提出问题、深入探索话题，从你的收听库中获取即时洞察。';
-
-  @override
-  String get onboarding_skip => '跳过';
-
-  @override
-  String get onboarding_next => '下一步';
-
-  @override
-  String get onboarding_get_started => '开始使用';
 
   @override
   String get terms_of_service_title => '服务条款';
