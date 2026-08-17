@@ -10,7 +10,7 @@ import 'package:sonde/features/podcast/data/models/audio_player_state_model.dart
 import 'package:sonde/features/podcast/data/models/podcast_episode_model.dart';
 import 'package:sonde/features/podcast/presentation/constants/podcast_ui_constants.dart';
 import 'package:sonde/features/podcast/presentation/providers/podcast_playback_providers.dart';
-import 'package:sonde/features/podcast/presentation/widgets/global_podcast_player_host.dart';
+import 'package:sonde/features/podcast/presentation/widgets/podcast_bottom_player_widget.dart';
 
 import '../../helpers/podcast_episode_detail_helper.dart';
 
@@ -194,11 +194,30 @@ Widget _createRouterHarness({
         initialEntries: [
           OverlayEntry(builder: (_) => child ?? const SizedBox.shrink()),
           OverlayEntry(builder: (_) => _RouteSyncBridge(router: router)),
-          OverlayEntry(builder: (_) => const GlobalPodcastPlayerHost()),
+          OverlayEntry(builder: (_) => const _GlobalPodcastPlayerHost()),
         ],
       ),
     ),
   );
+}
+
+class _GlobalPodcastPlayerHost extends ConsumerWidget {
+  const _GlobalPodcastPlayerHost();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return const SizedBox(
+      key: Key('global_podcast_player_host'),
+      width: double.infinity,
+      child: PodcastPlayerLayoutFrame(
+        manageBottomPadding: false,
+        manageDesktopPanelPadding: false,
+        child: SizedBox.expand(
+          child: SizedBox(key: Key('global_podcast_player')),
+        ),
+      ),
+    );
+  }
 }
 
 class _RouteSyncBridge extends ConsumerStatefulWidget {

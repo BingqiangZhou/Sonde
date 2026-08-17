@@ -55,9 +55,6 @@ dependencies:
   audio_service: ^0.18.18
   permission_handler: ^13.0.1
 
-  # File Handling
-  file_selector: ^1.1.0
-
   # Desktop Info
   package_info_plus: ^10.2.1
 
