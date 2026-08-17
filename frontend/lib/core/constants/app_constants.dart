@@ -15,7 +15,7 @@ class AppConstants {
 class AppUpdateConstants {
   // GitHub Configuration / GitHub 配置
   static const String githubOwner = 'BingqiangZhou';
-  static const String githubRepo = 'Personal-AI-Assistant';
+  static const String githubRepo = 'Sonde';
   static const String githubApiBaseUrl = 'https://api.github.com';
 
   // GitHub API Endpoints / GitHub API 端点

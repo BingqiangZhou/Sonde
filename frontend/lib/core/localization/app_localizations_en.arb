@@ -1,6 +1,6 @@
 {
     "@@locale":  "en",
-    "appTitle":  "Stella",
+    "appTitle":  "Sonde",
     "@appTitle":  {
                       "description":  "The title of the application"
                   },
@@ -2504,7 +2504,7 @@
     "@sleep_timer_after_episode":  {
                                               "description":  "Label for sleep timer option to stop after current episode"
                                           },
-    "onboarding_welcome_title":  "Welcome to Stella",
+    "onboarding_welcome_title":  "Welcome to Sonde",
     "@onboarding_welcome_title":  {
                                             "description":  "Title of the first onboarding screen"
                                         },
@@ -2556,7 +2556,7 @@
     "@terms_section_acceptance":  {
                                       "description":  "Terms section: acceptance heading"
                                   },
-    "terms_section_acceptance_body":  "By accessing and using Stella (\"the Service\"), you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use the Service.",
+    "terms_section_acceptance_body":  "By accessing and using Sonde (\"the Service\"), you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use the Service.",
     "@terms_section_acceptance_body":  {
                                            "description":  "Terms section: acceptance body"
                                        },
@@ -2572,7 +2572,7 @@
     "@terms_section_ip":  {
                               "description":  "Terms section: intellectual property heading"
                           },
-    "terms_section_ip_body":  "All content, features, and functionality of the Service, including but not limited to text, graphics, logos, and software, are the property of Stella and are protected by copyright, trademark, and other intellectual property laws. Podcast content belongs to their respective creators.",
+    "terms_section_ip_body":  "All content, features, and functionality of the Service, including but not limited to text, graphics, logos, and software, are the property of Sonde and are protected by copyright, trademark, and other intellectual property laws. Podcast content belongs to their respective creators.",
     "@terms_section_ip_body":  {
                                    "description":  "Terms section: intellectual property body"
                                },
@@ -2620,7 +2620,7 @@
     "@privacy_section_intro":  {
                                    "description":  "Privacy section: introduction heading"
                                },
-    "privacy_section_intro_body":  "Stella (\"we\", \"our\", \"us\") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, and safeguard your personal information when you use our Service.",
+    "privacy_section_intro_body":  "Sonde (\"we\", \"our\", \"us\") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, and safeguard your personal information when you use our Service.",
     "@privacy_section_intro_body":  {
                                         "description":  "Privacy section: introduction body"
                                     },

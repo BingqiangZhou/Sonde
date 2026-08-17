@@ -2,17 +2,17 @@ import 'dart:async';
 
 import 'package:equatable/equatable.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:personal_ai_assistant/core/constants/app_durations.dart';
-import 'package:personal_ai_assistant/core/constants/cache_constants.dart';
-import 'package:personal_ai_assistant/core/network/exceptions/network_exceptions.dart';
-import 'package:personal_ai_assistant/core/storage/local_storage_service.dart';
-import 'package:personal_ai_assistant/core/utils/debounce.dart' as utils;
-import 'package:personal_ai_assistant/core/utils/request_dedup.dart';
-import 'package:personal_ai_assistant/features/podcast/data/models/itunes_episode_lookup_model.dart';
-import 'package:personal_ai_assistant/features/podcast/data/models/podcast_discover_chart_model.dart';
-import 'package:personal_ai_assistant/features/podcast/data/models/podcast_search_model.dart';
-import 'package:personal_ai_assistant/features/podcast/data/services/apple_podcast_rss_service.dart';
-import 'package:personal_ai_assistant/features/podcast/data/services/itunes_search_service.dart';
+import 'package:sonde/core/constants/app_durations.dart';
+import 'package:sonde/core/constants/cache_constants.dart';
+import 'package:sonde/core/network/exceptions/network_exceptions.dart';
+import 'package:sonde/core/storage/local_storage_service.dart';
+import 'package:sonde/core/utils/debounce.dart' as utils;
+import 'package:sonde/core/utils/request_dedup.dart';
+import 'package:sonde/features/podcast/data/models/itunes_episode_lookup_model.dart';
+import 'package:sonde/features/podcast/data/models/podcast_discover_chart_model.dart';
+import 'package:sonde/features/podcast/data/models/podcast_search_model.dart';
+import 'package:sonde/features/podcast/data/services/apple_podcast_rss_service.dart';
+import 'package:sonde/features/podcast/data/services/itunes_search_service.dart';
 
 enum PodcastSearchMode { podcasts, episodes }
 

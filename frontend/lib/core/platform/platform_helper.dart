@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:material_ui/material_ui.dart';
-import 'package:personal_ai_assistant/core/constants/breakpoints.dart' show Breakpoints;
+import 'package:sonde/core/constants/breakpoints.dart' show Breakpoints;
 
 class PlatformHelper {
   PlatformHelper._();

@@ -1,13 +1,13 @@
 import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:personal_ai_assistant/core/constants/app_spacing.dart';
-import 'package:personal_ai_assistant/core/constants/breakpoints.dart';
-import 'package:personal_ai_assistant/core/constants/scroll_constants.dart';
-import 'package:personal_ai_assistant/core/localization/app_localizations_extension.dart';
-import 'package:personal_ai_assistant/features/podcast/data/models/podcast_discover_chart_model.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_search_provider.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/widgets/discover/discover_chart_row.dart';
+import 'package:sonde/core/constants/app_spacing.dart';
+import 'package:sonde/core/constants/breakpoints.dart';
+import 'package:sonde/core/constants/scroll_constants.dart';
+import 'package:sonde/core/localization/app_localizations_extension.dart';
+import 'package:sonde/features/podcast/data/models/podcast_discover_chart_model.dart';
+import 'package:sonde/features/podcast/presentation/providers/podcast_search_provider.dart';
+import 'package:sonde/features/podcast/presentation/widgets/discover/discover_chart_row.dart';
 
 /// Charts list widget for displaying discover items with pagination.
 ///

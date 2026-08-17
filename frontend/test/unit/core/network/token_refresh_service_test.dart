@@ -4,8 +4,8 @@ import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:personal_ai_assistant/core/network/token_refresh_service.dart';
-import 'package:personal_ai_assistant/core/storage/secure_storage_service.dart';
+import 'package:sonde/core/network/token_refresh_service.dart';
+import 'package:sonde/core/storage/secure_storage_service.dart';
 
 class _MockSecureStorage extends Mock implements SecureStorageService {}
 

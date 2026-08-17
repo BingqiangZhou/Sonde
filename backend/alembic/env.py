@@ -22,7 +22,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 class MinimalSettings(BaseSettings):
     DATABASE_URL: str = (
-        "postgresql+asyncpg://user:password@localhost:5432/personal_ai_assistant"
+        "postgresql+asyncpg://user:password@localhost:5432/personal_ai"
     )
 
     class Config:
@@ -41,7 +41,7 @@ minimal_settings = get_minimal_settings()
 
 # Complete mock config to avoid importing app.core.config
 class MockConfig:
-    PROJECT_NAME = "Personal AI Assistant"
+    PROJECT_NAME = "Sonde"
     VERSION = "1.0.0"
     API_V1_STR = "/api/v1"
     SECRET_KEY = "migration-secret-key-placeholder"

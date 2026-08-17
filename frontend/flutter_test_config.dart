@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:personal_ai_assistant/core/utils/app_logger.dart';
+import 'package:sonde/core/utils/app_logger.dart';
 
 Future<void> testExecutable(FutureOr<void> Function() testMain) async {
   const silentConfig = AppLoggerConfig(

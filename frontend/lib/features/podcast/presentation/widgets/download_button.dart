@@ -1,8 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:personal_ai_assistant/core/database/app_database.dart';
-import 'package:personal_ai_assistant/core/localization/app_localizations_extension.dart';
-import 'package:personal_ai_assistant/core/services/download_provider.dart';
+import 'package:sonde/core/database/app_database.dart';
+import 'package:sonde/core/localization/app_localizations_extension.dart';
+import 'package:sonde/core/services/download_provider.dart';
 
 /// A compact download status button for episode cards and detail pages.
 ///

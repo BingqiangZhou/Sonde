@@ -1,10 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:personal_ai_assistant/core/localization/app_localizations.dart';
-import 'package:personal_ai_assistant/core/localization/l10n_delegates.dart';
-import 'package:personal_ai_assistant/core/router/app_router.dart';
-import 'package:personal_ai_assistant/features/auth/presentation/providers/auth_provider.dart';
+import 'package:sonde/core/localization/app_localizations.dart';
+import 'package:sonde/core/localization/l10n_delegates.dart';
+import 'package:sonde/core/router/app_router.dart';
+import 'package:sonde/features/auth/presentation/providers/auth_provider.dart';
 
 void main() {
   testWidgets(

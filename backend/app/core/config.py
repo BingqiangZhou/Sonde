@@ -44,7 +44,7 @@ class Settings(BaseSettings):
     """Application settings."""
 
     # Basic
-    PROJECT_NAME: str = "Personal AI Assistant"
+    PROJECT_NAME: str = "Sonde"
     VERSION: str = "1.0.0"
     API_V1_STR: str = "/api/v1"
     SECRET_KEY: str | None = None

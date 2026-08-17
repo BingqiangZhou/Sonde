@@ -1,10 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:personal_ai_assistant/core/storage/local_storage_service.dart';
-import 'package:personal_ai_assistant/features/podcast/data/models/podcast_discover_chart_model.dart';
-import 'package:personal_ai_assistant/features/podcast/data/models/podcast_search_model.dart';
-import 'package:personal_ai_assistant/features/podcast/data/services/apple_podcast_rss_service.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_search_provider.dart';
+import 'package:sonde/core/storage/local_storage_service.dart';
+import 'package:sonde/features/podcast/data/models/podcast_discover_chart_model.dart';
+import 'package:sonde/features/podcast/data/models/podcast_search_model.dart';
+import 'package:sonde/features/podcast/data/services/apple_podcast_rss_service.dart';
+import 'package:sonde/features/podcast/presentation/providers/podcast_search_provider.dart';
 
 import '../../../../helpers/mock_local_storage_service.dart';
 

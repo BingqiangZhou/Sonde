@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:personal_ai_assistant/core/network/exceptions/network_exceptions.dart';
-import 'package:personal_ai_assistant/core/services/app_update_service.dart';
-import 'package:personal_ai_assistant/shared/models/github_release.dart';
+import 'package:sonde/core/network/exceptions/network_exceptions.dart';
+import 'package:sonde/core/services/app_update_service.dart';
+import 'package:sonde/shared/models/github_release.dart';
 
 /// App Update State / 应用更新状态
 class AppUpdateState {

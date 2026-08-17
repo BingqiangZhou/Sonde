@@ -1,6 +1,6 @@
-import 'package:personal_ai_assistant/features/auth/domain/models/auth_request.dart';
-import 'package:personal_ai_assistant/features/auth/domain/models/auth_response.dart';
-import 'package:personal_ai_assistant/features/auth/domain/models/user.dart';
+import 'package:sonde/features/auth/domain/models/auth_request.dart';
+import 'package:sonde/features/auth/domain/models/auth_response.dart';
+import 'package:sonde/features/auth/domain/models/user.dart';
 
 abstract class AuthRepository {
   Future<AuthResponse> login(LoginRequest request);

@@ -1,21 +1,21 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:personal_ai_assistant/core/constants/app_spacing.dart';
-import 'package:personal_ai_assistant/core/localization/app_localizations.dart';
-import 'package:personal_ai_assistant/core/localization/app_localizations_extension.dart';
-import 'package:personal_ai_assistant/core/theme/app_colors.dart';
-import 'package:personal_ai_assistant/core/widgets/adaptive/adaptive.dart';
-import 'package:personal_ai_assistant/core/widgets/app_dialog_helper.dart';
-import 'package:personal_ai_assistant/core/widgets/app_shells.dart';
-import 'package:personal_ai_assistant/features/podcast/core/utils/episode_description_helper.dart';
-import 'package:personal_ai_assistant/features/podcast/data/models/podcast_subscription_model.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/constants/podcast_ui_constants.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_providers.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/widgets/add_podcast_dialog.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/widgets/podcast_image_widget.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/widgets/shared/panel_list_views.dart';
-import 'package:personal_ai_assistant/shared/widgets/loading_widget.dart';
+import 'package:sonde/core/constants/app_spacing.dart';
+import 'package:sonde/core/localization/app_localizations.dart';
+import 'package:sonde/core/localization/app_localizations_extension.dart';
+import 'package:sonde/core/theme/app_colors.dart';
+import 'package:sonde/core/widgets/adaptive/adaptive.dart';
+import 'package:sonde/core/widgets/app_dialog_helper.dart';
+import 'package:sonde/core/widgets/app_shells.dart';
+import 'package:sonde/features/podcast/core/utils/episode_description_helper.dart';
+import 'package:sonde/features/podcast/data/models/podcast_subscription_model.dart';
+import 'package:sonde/features/podcast/presentation/constants/podcast_ui_constants.dart';
+import 'package:sonde/features/podcast/presentation/providers/podcast_providers.dart';
+import 'package:sonde/features/podcast/presentation/widgets/add_podcast_dialog.dart';
+import 'package:sonde/features/podcast/presentation/widgets/podcast_image_widget.dart';
+import 'package:sonde/features/podcast/presentation/widgets/shared/panel_list_views.dart';
+import 'package:sonde/shared/widgets/loading_widget.dart';
 
 class ProfileSubscriptionsPage extends ConsumerStatefulWidget {
   const ProfileSubscriptionsPage({super.key});

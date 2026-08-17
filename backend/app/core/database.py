@@ -55,7 +55,7 @@ def _build_engine_kwargs(database_url: str) -> dict[str, Any]:
                 "isolation_level": "READ COMMITTED",
                 "connect_args": {
                     "server_settings": {
-                        "application_name": "personal-ai-assistant",
+                        "application_name": "sonde",
                         "client_encoding": "utf8",
                         "statement_timeout": str(settings.DATABASE_STATEMENT_TIMEOUT),
                     },

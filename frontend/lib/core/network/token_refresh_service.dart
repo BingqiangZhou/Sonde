@@ -2,10 +2,10 @@ import 'dart:async';
 
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:personal_ai_assistant/core/app/config/app_config.dart' as config;
-import 'package:personal_ai_assistant/core/storage/secure_storage_service.dart';
-import 'package:personal_ai_assistant/core/utils/app_logger.dart' as logger;
-import 'package:personal_ai_assistant/features/auth/data/events/auth_event.dart';
+import 'package:sonde/core/app/config/app_config.dart' as config;
+import 'package:sonde/core/storage/secure_storage_service.dart';
+import 'package:sonde/core/utils/app_logger.dart' as logger;
+import 'package:sonde/features/auth/data/events/auth_event.dart';
 
 /// Reason why token refresh failed.
 enum TokenRefreshFailureReason {

@@ -23,7 +23,7 @@ def create_application() -> FastAPI:
 
     app = FastAPI(
         title=settings.PROJECT_NAME,
-        description="Personal AI Assistant API",
+        description="Sonde API",
         version=settings.VERSION,
         openapi_url=openapi_url,
         lifespan=application_lifespan,

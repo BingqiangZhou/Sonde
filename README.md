@@ -1,14 +1,14 @@
-# Personal AI Assistant
+# Sonde（声读）
 
-[![Version](https://img.shields.io/badge/version-0.52.0-blue)](https://github.com/BingqiangZhou/Personal-AI-Assistant/releases/tag/v0.52.0)
+[![Version](https://img.shields.io/badge/version-0.52.0-blue)](https://github.com/BingqiangZhou/Sonde/releases/tag/v0.52.0)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.11+-blue)](https://www.python.org/)
 [![Dart](https://img.shields.io/badge/dart-3.8+-cyan)](https://dart.dev/)
 [![Docker](https://img.shields.io/badge/docker-supported-blue)](https://www.docker.com/)
 
-一个可扩展的私人 AI 助手，集成了播客订阅、音频播放和 AI 功能。旨在通过本地化部署和 AI 能力，打造个人化的信息处理中心。
+「声读（Sonde）」——个人播客知识库：订阅、转录、AI 摘要与每日简报；本地部署，深度收听。
 
-**当前版本: [v0.52.0](https://github.com/BingqiangZhou/Personal-AI-Assistant/releases/tag/v0.52.0)** (2026-04-21)
+**当前版本: [v0.52.0](https://github.com/BingqiangZhou/Sonde/releases/tag/v0.52.0)** (2026-04-21)
 
 ## 更新日志
 
@@ -239,7 +239,7 @@ flutter test test/integration/        # 集成测试
 ## 项目结构
 
 ```
-personal-ai-assistant/
+sonde/
 ├── backend/          # FastAPI 后端（121 Python 源文件，36 测试文件）
 ├── frontend/         # Flutter 前端（219 Dart 源文件，92 测试文件）
 ├── docker/           # Docker 配置（5 服务）

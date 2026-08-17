@@ -1,4 +1,4 @@
-# Personal AI Assistant - Flutter 前端
+# Sonde - Flutter 前端
 
 跨平台移动应用，提供播客订阅管理、音频播放、AI 对话等功能。
 

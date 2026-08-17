@@ -2,9 +2,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart'
     show FutureProviderFamily, StreamProviderFamily;
 
-import 'package:personal_ai_assistant/core/database/app_database.dart';
-import 'package:personal_ai_assistant/core/database/database_provider.dart';
-import 'package:personal_ai_assistant/core/services/audio_download_service.dart';
+import 'package:sonde/core/database/app_database.dart';
+import 'package:sonde/core/database/database_provider.dart';
+import 'package:sonde/core/services/audio_download_service.dart';
 
 /// Provides the [AudioDownloadService] singleton.
 final downloadManagerProvider = Provider<AudioDownloadService>((ref) {

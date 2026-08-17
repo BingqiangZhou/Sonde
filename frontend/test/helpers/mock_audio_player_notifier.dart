@@ -1,6 +1,6 @@
-import 'package:personal_ai_assistant/features/podcast/data/models/audio_player_state_model.dart';
-import 'package:personal_ai_assistant/features/podcast/data/models/podcast_episode_model.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_playback_providers.dart';
+import 'package:sonde/features/podcast/data/models/audio_player_state_model.dart';
+import 'package:sonde/features/podcast/data/models/podcast_episode_model.dart';
+import 'package:sonde/features/podcast/presentation/providers/podcast_playback_providers.dart';
 
 class MockAudioPlayerNotifier extends AudioPlayerNotifier {
   MockAudioPlayerNotifier([this._initialState = const AudioPlayerState()]);

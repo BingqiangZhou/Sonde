@@ -848,7 +848,7 @@ async function exportOPML() {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = 'stella.opml';
+        a.download = 'sonde.opml';
         document.body.appendChild(a);
         a.click();
 

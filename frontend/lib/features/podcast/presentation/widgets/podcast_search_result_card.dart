@@ -1,11 +1,11 @@
 import 'package:material_ui/material_ui.dart';
-import 'package:personal_ai_assistant/core/constants/app_durations.dart';
-import 'package:personal_ai_assistant/core/constants/app_spacing.dart';
-import 'package:personal_ai_assistant/core/localization/app_localizations.dart';
-import 'package:personal_ai_assistant/core/theme/app_colors.dart';
-import 'package:personal_ai_assistant/features/podcast/data/models/podcast_search_model.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/constants/podcast_ui_constants.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/widgets/shared/base_episode_card.dart';
+import 'package:sonde/core/constants/app_durations.dart';
+import 'package:sonde/core/constants/app_spacing.dart';
+import 'package:sonde/core/localization/app_localizations.dart';
+import 'package:sonde/core/theme/app_colors.dart';
+import 'package:sonde/features/podcast/data/models/podcast_search_model.dart';
+import 'package:sonde/features/podcast/presentation/constants/podcast_ui_constants.dart';
+import 'package:sonde/features/podcast/presentation/widgets/shared/base_episode_card.dart';
 
 class PodcastSearchResultCard extends StatelessWidget {
   const PodcastSearchResultCard({

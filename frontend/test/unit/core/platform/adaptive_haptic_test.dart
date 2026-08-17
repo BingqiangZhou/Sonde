@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:personal_ai_assistant/core/platform/adaptive_haptic.dart';
+import 'package:sonde/core/platform/adaptive_haptic.dart';
 
 void main() {
   group('AdaptiveHaptic', () {

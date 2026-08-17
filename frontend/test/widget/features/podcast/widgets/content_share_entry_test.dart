@@ -1,15 +1,15 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:personal_ai_assistant/core/localization/app_localizations.dart';
-import 'package:personal_ai_assistant/core/localization/l10n_delegates.dart';
-import 'package:personal_ai_assistant/core/theme/app_theme.dart';
-import 'package:personal_ai_assistant/features/podcast/data/models/podcast_conversation_model.dart';
-import 'package:personal_ai_assistant/features/podcast/data/models/podcast_playback_model.dart';
-import 'package:personal_ai_assistant/features/podcast/data/models/podcast_transcription_model.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/providers/conversation_providers.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/widgets/conversation_chat_widget.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/widgets/transcript_display_widget.dart';
+import 'package:sonde/core/localization/app_localizations.dart';
+import 'package:sonde/core/localization/l10n_delegates.dart';
+import 'package:sonde/core/theme/app_theme.dart';
+import 'package:sonde/features/podcast/data/models/podcast_conversation_model.dart';
+import 'package:sonde/features/podcast/data/models/podcast_playback_model.dart';
+import 'package:sonde/features/podcast/data/models/podcast_transcription_model.dart';
+import 'package:sonde/features/podcast/presentation/providers/conversation_providers.dart';
+import 'package:sonde/features/podcast/presentation/widgets/conversation_chat_widget.dart';
+import 'package:sonde/features/podcast/presentation/widgets/transcript_display_widget.dart';
 
 import '../../../../helpers/podcast_episode_detail_helper.dart';
 

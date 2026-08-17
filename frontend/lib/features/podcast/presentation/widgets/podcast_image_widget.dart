@@ -1,10 +1,10 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:material_ui/material_ui.dart';
 
-import 'package:personal_ai_assistant/core/constants/app_durations.dart';
-import 'package:personal_ai_assistant/core/services/app_cache_service.dart';
-import 'package:personal_ai_assistant/core/theme/app_colors.dart';
-import 'package:personal_ai_assistant/core/utils/app_logger.dart' as logger;
+import 'package:sonde/core/constants/app_durations.dart';
+import 'package:sonde/core/services/app_cache_service.dart';
+import 'package:sonde/core/theme/app_colors.dart';
+import 'package:sonde/core/utils/app_logger.dart' as logger;
 
 /// Podcast image widget with retry/fallback handling.
 class PodcastImageWidget extends StatefulWidget {

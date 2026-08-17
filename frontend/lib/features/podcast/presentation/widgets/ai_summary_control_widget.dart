@@ -1,14 +1,14 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:personal_ai_assistant/core/constants/app_radius.dart';
-import 'package:personal_ai_assistant/core/constants/app_spacing.dart';
-import 'package:personal_ai_assistant/core/constants/app_text_styles.dart';
-import 'package:personal_ai_assistant/core/localization/app_localizations_extension.dart';
-import 'package:personal_ai_assistant/core/theme/app_colors.dart';
-import 'package:personal_ai_assistant/core/widgets/adaptive/adaptive.dart';
-import 'package:personal_ai_assistant/core/widgets/top_floating_notice.dart';
-import 'package:personal_ai_assistant/features/podcast/data/models/podcast_playback_model.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/providers/conversation_providers.dart';
+import 'package:sonde/core/constants/app_radius.dart';
+import 'package:sonde/core/constants/app_spacing.dart';
+import 'package:sonde/core/constants/app_text_styles.dart';
+import 'package:sonde/core/localization/app_localizations_extension.dart';
+import 'package:sonde/core/theme/app_colors.dart';
+import 'package:sonde/core/widgets/adaptive/adaptive.dart';
+import 'package:sonde/core/widgets/top_floating_notice.dart';
+import 'package:sonde/features/podcast/data/models/podcast_playback_model.dart';
+import 'package:sonde/features/podcast/presentation/providers/conversation_providers.dart';
 
 /// AI summary controls for generating and regenerating summaries.
 class AISummaryControlWidget extends ConsumerStatefulWidget {

@@ -2,13 +2,13 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:personal_ai_assistant/core/network/exceptions/network_exceptions.dart';
-import 'package:personal_ai_assistant/core/utils/app_logger.dart' as logger;
-import 'package:personal_ai_assistant/core/utils/request_dedup.dart';
-import 'package:personal_ai_assistant/features/auth/presentation/providers/auth_provider.dart';
-import 'package:personal_ai_assistant/features/podcast/data/models/podcast_state_models.dart';
-import 'package:personal_ai_assistant/features/podcast/data/repositories/podcast_repository.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_providers.dart';
+import 'package:sonde/core/network/exceptions/network_exceptions.dart';
+import 'package:sonde/core/utils/app_logger.dart' as logger;
+import 'package:sonde/core/utils/request_dedup.dart';
+import 'package:sonde/features/auth/presentation/providers/auth_provider.dart';
+import 'package:sonde/features/podcast/data/models/podcast_state_models.dart';
+import 'package:sonde/features/podcast/data/repositories/podcast_repository.dart';
+import 'package:sonde/features/podcast/presentation/providers/podcast_providers.dart';
 
 final podcastFeedProvider =
     NotifierProvider<PodcastFeedNotifier, PodcastFeedState>(

@@ -1,7 +1,7 @@
 import 'package:audio_service/audio_service.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/providers/audio_handler_logic.dart';
+import 'package:sonde/features/podcast/presentation/providers/audio_handler_logic.dart';
 
 void main() {
   group('validateArtUri', () {

@@ -1,13 +1,13 @@
 import 'package:material_ui/material_ui.dart';
-import 'package:personal_ai_assistant/core/constants/app_spacing.dart';
-import 'package:personal_ai_assistant/core/constants/app_text_styles.dart';
-import 'package:personal_ai_assistant/core/localization/app_localizations_extension.dart';
-import 'package:personal_ai_assistant/core/theme/app_colors.dart';
-import 'package:personal_ai_assistant/core/utils/time_formatter.dart';
-import 'package:personal_ai_assistant/features/podcast/data/models/podcast_transcription_model.dart';
-import 'package:personal_ai_assistant/features/podcast/data/models/podcast_transcription_model_extensions.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/widgets/transcription/transcription_step_indicators.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/widgets/transcription/transcription_step_mapper.dart';
+import 'package:sonde/core/constants/app_spacing.dart';
+import 'package:sonde/core/constants/app_text_styles.dart';
+import 'package:sonde/core/localization/app_localizations_extension.dart';
+import 'package:sonde/core/theme/app_colors.dart';
+import 'package:sonde/core/utils/time_formatter.dart';
+import 'package:sonde/features/podcast/data/models/podcast_transcription_model.dart';
+import 'package:sonde/features/podcast/data/models/podcast_transcription_model_extensions.dart';
+import 'package:sonde/features/podcast/presentation/widgets/transcription/transcription_step_indicators.dart';
+import 'package:sonde/features/podcast/presentation/widgets/transcription/transcription_step_mapper.dart';
 
 /// Widget displaying the pending/waiting state for transcription.
 class PendingStateWidget extends StatelessWidget {

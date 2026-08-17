@@ -1,17 +1,17 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:personal_ai_assistant/core/constants/app_radius.dart';
-import 'package:personal_ai_assistant/core/constants/app_spacing.dart';
-import 'package:personal_ai_assistant/core/constants/breakpoints.dart';
-import 'package:personal_ai_assistant/core/localization/app_localizations_extension.dart';
-import 'package:personal_ai_assistant/core/theme/app_colors.dart';
-import 'package:personal_ai_assistant/core/utils/app_logger.dart' as logger;
-import 'package:personal_ai_assistant/core/widgets/adaptive/adaptive.dart';
-import 'package:personal_ai_assistant/core/widgets/app_shells.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/navigation/podcast_navigation.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_providers.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/widgets/shared/episode_card_utils.dart';
+import 'package:sonde/core/constants/app_radius.dart';
+import 'package:sonde/core/constants/app_spacing.dart';
+import 'package:sonde/core/constants/breakpoints.dart';
+import 'package:sonde/core/localization/app_localizations_extension.dart';
+import 'package:sonde/core/theme/app_colors.dart';
+import 'package:sonde/core/utils/app_logger.dart' as logger;
+import 'package:sonde/core/widgets/adaptive/adaptive.dart';
+import 'package:sonde/core/widgets/app_shells.dart';
+import 'package:sonde/features/podcast/presentation/navigation/podcast_navigation.dart';
+import 'package:sonde/features/podcast/presentation/providers/podcast_providers.dart';
+import 'package:sonde/features/podcast/presentation/widgets/shared/episode_card_utils.dart';
 
 class ProfileActivityCards extends ConsumerWidget {
   const ProfileActivityCards({super.key});

@@ -1,16 +1,16 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:personal_ai_assistant/core/constants/app_radius.dart';
-import 'package:personal_ai_assistant/core/constants/app_spacing.dart';
-import 'package:personal_ai_assistant/core/localization/app_localizations.dart';
-import 'package:personal_ai_assistant/core/theme/app_colors.dart';
-import 'package:personal_ai_assistant/core/widgets/adaptive/adaptive.dart';
-import 'package:personal_ai_assistant/core/widgets/app_shells.dart';
-import 'package:personal_ai_assistant/core/widgets/top_floating_notice.dart';
-import 'package:personal_ai_assistant/features/auth/presentation/providers/auth_provider.dart';
-import 'package:personal_ai_assistant/shared/widgets/custom_text_field.dart';
-import 'package:personal_ai_assistant/shared/widgets/loading_widget.dart';
+import 'package:sonde/core/constants/app_radius.dart';
+import 'package:sonde/core/constants/app_spacing.dart';
+import 'package:sonde/core/localization/app_localizations.dart';
+import 'package:sonde/core/theme/app_colors.dart';
+import 'package:sonde/core/widgets/adaptive/adaptive.dart';
+import 'package:sonde/core/widgets/app_shells.dart';
+import 'package:sonde/core/widgets/top_floating_notice.dart';
+import 'package:sonde/features/auth/presentation/providers/auth_provider.dart';
+import 'package:sonde/shared/widgets/custom_text_field.dart';
+import 'package:sonde/shared/widgets/loading_widget.dart';
 
 class ForgotPasswordPage extends ConsumerStatefulWidget {
   const ForgotPasswordPage({super.key});

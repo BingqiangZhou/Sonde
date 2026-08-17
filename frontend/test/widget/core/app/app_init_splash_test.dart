@@ -1,11 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:personal_ai_assistant/core/app/app.dart';
-import 'package:personal_ai_assistant/core/storage/local_storage_service.dart';
-import 'package:personal_ai_assistant/core/widgets/app_shells.dart';
-import 'package:personal_ai_assistant/features/auth/presentation/providers/auth_provider.dart';
-import 'package:personal_ai_assistant/features/settings/presentation/providers/app_update_provider.dart';
+import 'package:sonde/core/app/app.dart';
+import 'package:sonde/core/storage/local_storage_service.dart';
+import 'package:sonde/core/widgets/app_shells.dart';
+import 'package:sonde/features/auth/presentation/providers/auth_provider.dart';
+import 'package:sonde/features/settings/presentation/providers/app_update_provider.dart';
 
 class _TestAuthNotifier extends AuthNotifier {
   @override
@@ -82,7 +82,7 @@ void main() {
       ),
     );
 
-    expect(find.text('Stella'), findsOneWidget);
+    expect(find.text('Sonde'), findsOneWidget);
     expect(
       find.text('Your personal assistant for everything you follow.'),
       findsOneWidget,

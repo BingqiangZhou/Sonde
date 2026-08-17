@@ -37,7 +37,7 @@ class AdminSubscriptionsOpmlService:
 
     async def export_subscriptions_opml(self, *, request, user_id) -> tuple[str, str]:
         opml_content = await self._generate_opml_content()
-        return opml_content, "stella.opml"
+        return opml_content, "sonde.opml"
 
     async def _generate_opml_content(self) -> str:
         """Generate OPML XML content from all active subscriptions."""
@@ -59,7 +59,7 @@ class AdminSubscriptionsOpmlService:
             '<?xml version="1.0" encoding="UTF-8"?>',
             '<opml version="1.0">',
             "  <head>",
-            "    <title>Stella Subscriptions</title>",
+            "    <title>Sonde Subscriptions</title>",
             "  </head>",
             "  <body>",
         ]

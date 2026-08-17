@@ -1,7 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'package:json_annotation/json_annotation.dart';
 
-import 'package:personal_ai_assistant/features/podcast/data/models/category_model.dart';
+import 'package:sonde/features/podcast/data/models/category_model.dart';
 
 part 'podcast_subscription_model.g.dart';
 

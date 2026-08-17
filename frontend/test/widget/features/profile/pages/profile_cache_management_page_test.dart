@@ -6,12 +6,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:personal_ai_assistant/core/localization/app_localizations.dart';
-import 'package:personal_ai_assistant/core/localization/l10n_delegates.dart';
-import 'package:personal_ai_assistant/core/network/dio_client.dart';
-import 'package:personal_ai_assistant/core/providers/core_providers.dart';
-import 'package:personal_ai_assistant/core/services/app_cache_service.dart';
-import 'package:personal_ai_assistant/features/profile/presentation/pages/profile_cache_management_page.dart';
+import 'package:sonde/core/localization/app_localizations.dart';
+import 'package:sonde/core/localization/l10n_delegates.dart';
+import 'package:sonde/core/network/dio_client.dart';
+import 'package:sonde/core/providers/core_providers.dart';
+import 'package:sonde/core/services/app_cache_service.dart';
+import 'package:sonde/features/profile/presentation/pages/profile_cache_management_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class _MockDioClient extends Mock implements DioClient {}

@@ -1,10 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:personal_ai_assistant/core/localization/app_localizations.dart';
-import 'package:personal_ai_assistant/core/localization/l10n_delegates.dart';
-import 'package:personal_ai_assistant/core/storage/local_storage_service.dart';
-import 'package:personal_ai_assistant/core/widgets/custom_adaptive_navigation.dart';
+import 'package:sonde/core/localization/app_localizations.dart';
+import 'package:sonde/core/localization/l10n_delegates.dart';
+import 'package:sonde/core/storage/local_storage_service.dart';
+import 'package:sonde/core/widgets/custom_adaptive_navigation.dart';
 
 import '../../../helpers/mock_local_storage_service.dart';
 

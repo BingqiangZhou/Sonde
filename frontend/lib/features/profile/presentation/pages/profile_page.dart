@@ -1,25 +1,25 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:personal_ai_assistant/core/constants/app_spacing.dart';
-import 'package:personal_ai_assistant/core/constants/breakpoints.dart';
-import 'package:personal_ai_assistant/core/localization/app_localizations.dart';
-import 'package:personal_ai_assistant/core/localization/app_localizations_extension.dart';
-import 'package:personal_ai_assistant/core/localization/locale_provider.dart';
-import 'package:personal_ai_assistant/core/platform/adaptive_haptic.dart';
-import 'package:personal_ai_assistant/core/theme/theme_provider.dart';
-import 'package:personal_ai_assistant/core/widgets/adaptive/adaptive.dart';
-import 'package:personal_ai_assistant/core/widgets/app_dialog_helper.dart';
-import 'package:personal_ai_assistant/core/widgets/app_shells.dart';
-import 'package:personal_ai_assistant/features/auth/domain/models/user.dart';
-import 'package:personal_ai_assistant/features/auth/presentation/providers/auth_provider.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_providers.dart';
-import 'package:personal_ai_assistant/features/profile/presentation/providers/profile_ui_providers.dart';
-import 'package:personal_ai_assistant/features/profile/presentation/widgets/profile_activity_cards.dart';
-import 'package:personal_ai_assistant/features/profile/presentation/widgets/profile_dialogs.dart';
-import 'package:personal_ai_assistant/features/settings/presentation/widgets/update_dialog.dart';
-import 'package:personal_ai_assistant/shared/widgets/server_config_dialog.dart';
-import 'package:personal_ai_assistant/shared/widgets/settings_section_card.dart';
+import 'package:sonde/core/constants/app_spacing.dart';
+import 'package:sonde/core/constants/breakpoints.dart';
+import 'package:sonde/core/localization/app_localizations.dart';
+import 'package:sonde/core/localization/app_localizations_extension.dart';
+import 'package:sonde/core/localization/locale_provider.dart';
+import 'package:sonde/core/platform/adaptive_haptic.dart';
+import 'package:sonde/core/theme/theme_provider.dart';
+import 'package:sonde/core/widgets/adaptive/adaptive.dart';
+import 'package:sonde/core/widgets/app_dialog_helper.dart';
+import 'package:sonde/core/widgets/app_shells.dart';
+import 'package:sonde/features/auth/domain/models/user.dart';
+import 'package:sonde/features/auth/presentation/providers/auth_provider.dart';
+import 'package:sonde/features/podcast/presentation/providers/podcast_providers.dart';
+import 'package:sonde/features/profile/presentation/providers/profile_ui_providers.dart';
+import 'package:sonde/features/profile/presentation/widgets/profile_activity_cards.dart';
+import 'package:sonde/features/profile/presentation/widgets/profile_dialogs.dart';
+import 'package:sonde/features/settings/presentation/widgets/update_dialog.dart';
+import 'package:sonde/shared/widgets/server_config_dialog.dart';
+import 'package:sonde/shared/widgets/settings_section_card.dart';
 
 /// Material Design 3 adaptive profile page
 class ProfilePage extends ConsumerStatefulWidget {

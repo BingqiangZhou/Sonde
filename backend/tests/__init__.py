@@ -1,5 +1,5 @@
 """
-Test suite for Personal AI Assistant Backend
+Test suite for Sonde Backend
 
 Organized test structure:
 - tests/podcast/: Podcast domain tests (RSS, AI summary, playback)

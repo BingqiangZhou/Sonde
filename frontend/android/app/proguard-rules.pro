@@ -1,5 +1,5 @@
-# ProGuard rules for Personal AI Assistant
-# Personal AI Assistant 的混淆规则
+# ProGuard rules for Sonde
+# Sonde 的混淆规则
 
 # Flutter wrapper
 -keep class io.flutter.app.** { *; }

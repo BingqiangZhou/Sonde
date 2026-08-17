@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'package:dio/dio.dart';
 
-import 'package:personal_ai_assistant/core/utils/app_logger.dart' as logger;
-import 'package:personal_ai_assistant/core/utils/url_normalizer.dart';
+import 'package:sonde/core/utils/app_logger.dart' as logger;
+import 'package:sonde/core/utils/url_normalizer.dart';
 
 /// Connection status enum for server health check
 enum ConnectionStatus {

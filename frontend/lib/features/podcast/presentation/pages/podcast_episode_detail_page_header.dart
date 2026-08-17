@@ -677,7 +677,7 @@ extension _PodcastEpisodeDetailPageHeader on _PodcastEpisodeDetailPageState {
     final l10n = AppLocalizations.of(context) ?? AppLocalizationsEn();
 
     final podcastName = _resolvePodcastTitle(episode, l10n);
-    // stella:// deep link opens the episode directly for app users; the
+    // sonde:// deep link opens the episode directly for app users; the
     // episode title/description travel with the share for everyone else.
     final shareUrl = DeepLinks.episodeDeepLink(episode.id);
 

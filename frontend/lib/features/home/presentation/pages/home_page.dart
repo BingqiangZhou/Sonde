@@ -3,18 +3,18 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:personal_ai_assistant/core/localization/app_localizations_extension.dart';
-import 'package:personal_ai_assistant/core/platform/platform_helper.dart';
-import 'package:personal_ai_assistant/core/providers/route_provider.dart';
-import 'package:personal_ai_assistant/core/router/app_router.dart';
-import 'package:personal_ai_assistant/core/widgets/custom_adaptive_navigation.dart';
-import 'package:personal_ai_assistant/core/widgets/keyboard_shortcuts.dart';
-import 'package:personal_ai_assistant/features/auth/presentation/providers/auth_provider.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/constants/podcast_ui_constants.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_feed_providers.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_playback_providers.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_providers.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/widgets/podcast_bottom_player_widget.dart';
+import 'package:sonde/core/localization/app_localizations_extension.dart';
+import 'package:sonde/core/platform/platform_helper.dart';
+import 'package:sonde/core/providers/route_provider.dart';
+import 'package:sonde/core/router/app_router.dart';
+import 'package:sonde/core/widgets/custom_adaptive_navigation.dart';
+import 'package:sonde/core/widgets/keyboard_shortcuts.dart';
+import 'package:sonde/features/auth/presentation/providers/auth_provider.dart';
+import 'package:sonde/features/podcast/presentation/constants/podcast_ui_constants.dart';
+import 'package:sonde/features/podcast/presentation/providers/podcast_feed_providers.dart';
+import 'package:sonde/features/podcast/presentation/providers/podcast_playback_providers.dart';
+import 'package:sonde/features/podcast/presentation/providers/podcast_providers.dart';
+import 'package:sonde/features/podcast/presentation/widgets/podcast_bottom_player_widget.dart';
 
 /// Shell widget for the main tab navigation using StatefulShellRoute.
 ///

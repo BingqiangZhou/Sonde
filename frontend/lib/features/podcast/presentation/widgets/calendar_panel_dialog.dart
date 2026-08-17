@@ -2,14 +2,14 @@ import 'dart:async';
 
 import 'package:flutter/material.dart' as legacy_material;
 import 'package:material_ui/material_ui.dart';
-import 'package:personal_ai_assistant/core/constants/app_durations.dart';
-import 'package:personal_ai_assistant/core/constants/app_spacing.dart';
-import 'package:personal_ai_assistant/core/constants/app_text_styles.dart';
-import 'package:personal_ai_assistant/core/constants/breakpoints.dart';
-import 'package:personal_ai_assistant/core/localization/app_localizations_extension.dart';
-import 'package:personal_ai_assistant/core/widgets/app_shells.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/widgets/calendar_panel_helper.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/widgets/shared/episode_card_utils.dart';
+import 'package:sonde/core/constants/app_durations.dart';
+import 'package:sonde/core/constants/app_spacing.dart';
+import 'package:sonde/core/constants/app_text_styles.dart';
+import 'package:sonde/core/constants/breakpoints.dart';
+import 'package:sonde/core/localization/app_localizations_extension.dart';
+import 'package:sonde/core/widgets/app_shells.dart';
+import 'package:sonde/features/podcast/presentation/widgets/calendar_panel_helper.dart';
+import 'package:sonde/features/podcast/presentation/widgets/shared/episode_card_utils.dart';
 import 'package:table_calendar/table_calendar.dart';
 
 /// Shows a calendar panel dialog anchored to the top-right of the screen.

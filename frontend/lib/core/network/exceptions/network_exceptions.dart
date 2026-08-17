@@ -1,5 +1,5 @@
 import 'package:dio/dio.dart';
-import 'package:personal_ai_assistant/core/network/exceptions/exception_parser.dart';
+import 'package:sonde/core/network/exceptions/exception_parser.dart';
 
 abstract class AppException implements Exception {
   const AppException(this.message, {this.statusCode});

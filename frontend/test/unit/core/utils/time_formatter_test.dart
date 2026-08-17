@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:personal_ai_assistant/core/utils/time_formatter.dart';
+import 'package:sonde/core/utils/time_formatter.dart';
 
 void main() {
   group('TimeFormatter - UTC to Local Conversion Tests', () {

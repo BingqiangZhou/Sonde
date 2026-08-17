@@ -1,6 +1,6 @@
 import 'package:material_ui/material_ui.dart';
 
-import 'package:personal_ai_assistant/shared/widgets/custom_text_field.dart';
+import 'package:sonde/shared/widgets/custom_text_field.dart';
 
 class PasswordTextField extends StatelessWidget {
   const PasswordTextField({

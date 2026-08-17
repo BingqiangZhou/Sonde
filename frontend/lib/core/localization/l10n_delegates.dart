@@ -4,7 +4,7 @@ import 'package:flutter_localizations/flutter_localizations.dart'
     show GlobalWidgetsLocalizations;
 import 'package:material_ui/material_ui.dart' as material_ui;
 
-import 'package:personal_ai_assistant/core/localization/app_localizations.dart';
+import 'package:sonde/core/localization/app_localizations.dart';
 
 /// 应用侧 l10n delegates 列表。
 ///

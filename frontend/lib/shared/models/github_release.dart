@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:personal_ai_assistant/core/constants/app_constants.dart';
+import 'package:sonde/core/constants/app_constants.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// GitHub Release Model / GitHub 发布模型

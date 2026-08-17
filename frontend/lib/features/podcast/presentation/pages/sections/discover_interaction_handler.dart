@@ -1,18 +1,18 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:personal_ai_assistant/core/localization/app_localizations_extension.dart';
-import 'package:personal_ai_assistant/core/utils/app_logger.dart' as logger;
-import 'package:personal_ai_assistant/core/widgets/adaptive_sheet_helper.dart';
-import 'package:personal_ai_assistant/core/widgets/top_floating_notice.dart';
-import 'package:personal_ai_assistant/features/podcast/data/models/itunes_episode_lookup_model.dart';
-import 'package:personal_ai_assistant/features/podcast/data/models/podcast_discover_chart_model.dart';
-import 'package:personal_ai_assistant/features/podcast/data/models/podcast_episode_model.dart';
-import 'package:personal_ai_assistant/features/podcast/data/models/podcast_search_model.dart' show PodcastSearchResult;
-import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_playback_providers.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_providers.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_search_provider.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/widgets/discover_episode_detail_sheet.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/widgets/discover_show_episodes_sheet.dart';
+import 'package:sonde/core/localization/app_localizations_extension.dart';
+import 'package:sonde/core/utils/app_logger.dart' as logger;
+import 'package:sonde/core/widgets/adaptive_sheet_helper.dart';
+import 'package:sonde/core/widgets/top_floating_notice.dart';
+import 'package:sonde/features/podcast/data/models/itunes_episode_lookup_model.dart';
+import 'package:sonde/features/podcast/data/models/podcast_discover_chart_model.dart';
+import 'package:sonde/features/podcast/data/models/podcast_episode_model.dart';
+import 'package:sonde/features/podcast/data/models/podcast_search_model.dart' show PodcastSearchResult;
+import 'package:sonde/features/podcast/presentation/providers/podcast_playback_providers.dart';
+import 'package:sonde/features/podcast/presentation/providers/podcast_providers.dart';
+import 'package:sonde/features/podcast/presentation/providers/podcast_search_provider.dart';
+import 'package:sonde/features/podcast/presentation/widgets/discover_episode_detail_sheet.dart';
+import 'package:sonde/features/podcast/presentation/widgets/discover_show_episodes_sheet.dart';
 
 /// Static helper methods for discover-page interactions.
 ///

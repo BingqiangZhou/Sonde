@@ -6,9 +6,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:personal_ai_assistant/core/constants/app_spacing.dart';
-import 'package:personal_ai_assistant/core/utils/app_logger.dart' as logger;
-import 'package:personal_ai_assistant/features/auth/presentation/providers/auth_provider.dart';
+import 'package:sonde/core/constants/app_spacing.dart';
+import 'package:sonde/core/utils/app_logger.dart' as logger;
+import 'package:sonde/features/auth/presentation/providers/auth_provider.dart';
 
 /// Minimal splash page that immediately redirects
 /// The native splash screen (with app icon) is shown during Flutter initialization

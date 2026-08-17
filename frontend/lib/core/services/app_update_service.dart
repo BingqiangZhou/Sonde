@@ -4,9 +4,9 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:personal_ai_assistant/core/constants/app_constants.dart';
-import 'package:personal_ai_assistant/core/utils/app_logger.dart' as logger;
-import 'package:personal_ai_assistant/shared/models/github_release.dart';
+import 'package:sonde/core/constants/app_constants.dart';
+import 'package:sonde/core/utils/app_logger.dart' as logger;
+import 'package:sonde/shared/models/github_release.dart';
 
 /// App Update Service
 /// Checks for app updates from GitHub releases.
@@ -20,7 +20,7 @@ class AppUpdateService {
   }
 
   static const MethodChannel _channel = MethodChannel(
-    'com.opc.stella/app_update',
+    'com.opc.sonde/app_update',
   );
 
   /// Get current app version

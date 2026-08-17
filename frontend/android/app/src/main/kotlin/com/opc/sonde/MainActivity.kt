@@ -1,4 +1,4 @@
-package com.opc.stella
+package com.opc.sonde
 
 import android.content.Intent
 import android.os.Build
@@ -12,7 +12,7 @@ import io.flutter.plugins.GeneratedPluginRegistrant
 class MainActivity : AudioServiceActivity() {
     companion object {
         private const val TAG = "MainActivity"
-        private const val CHANNEL = "com.opc.stella/app_update"
+        private const val CHANNEL = "com.opc.sonde/app_update"
     }
 
     private var methodChannel: MethodChannel? = null

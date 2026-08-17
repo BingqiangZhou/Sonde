@@ -1,10 +1,10 @@
 import 'package:material_ui/material_ui.dart';
-import 'package:personal_ai_assistant/core/constants/app_spacing.dart';
+import 'package:sonde/core/constants/app_spacing.dart';
 
-import 'package:personal_ai_assistant/core/localization/app_localizations_extension.dart';
-import 'package:personal_ai_assistant/core/router/app_router.dart';
-import 'package:personal_ai_assistant/core/widgets/adaptive/adaptive.dart';
-import 'package:personal_ai_assistant/core/widgets/adaptive_sheet_helper.dart';
+import 'package:sonde/core/localization/app_localizations_extension.dart';
+import 'package:sonde/core/router/app_router.dart';
+import 'package:sonde/core/widgets/adaptive/adaptive.dart';
+import 'package:sonde/core/widgets/adaptive_sheet_helper.dart';
 
 /// Represents the user's sleep timer selection.
 class SleepTimerSelection {

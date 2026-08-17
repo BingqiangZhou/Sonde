@@ -2,7 +2,7 @@ import WidgetKit
 import SwiftUI
 
 @main
-struct StellaWidgetBundle: WidgetBundle {
+struct SondeWidgetBundle: WidgetBundle {
     var body: some Widget {
         NowPlayingWidget()
         RecentUpdatesWidget()

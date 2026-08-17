@@ -1,11 +1,11 @@
 import 'package:material_ui/material_ui.dart';
-import 'package:personal_ai_assistant/core/constants/app_radius.dart';
-import 'package:personal_ai_assistant/core/constants/app_spacing.dart';
-import 'package:personal_ai_assistant/core/theme/app_colors.dart';
-import 'package:personal_ai_assistant/core/widgets/adaptive/adaptive.dart';
-import 'package:personal_ai_assistant/core/widgets/app_shells.dart';
-import 'package:personal_ai_assistant/core/widgets/custom_adaptive_navigation.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/constants/podcast_ui_constants.dart';
+import 'package:sonde/core/constants/app_radius.dart';
+import 'package:sonde/core/constants/app_spacing.dart';
+import 'package:sonde/core/theme/app_colors.dart';
+import 'package:sonde/core/widgets/adaptive/adaptive.dart';
+import 'package:sonde/core/widgets/app_shells.dart';
+import 'package:sonde/core/widgets/custom_adaptive_navigation.dart';
+import 'package:sonde/features/podcast/presentation/constants/podcast_ui_constants.dart';
 
 /// Shared page skeleton for panel-style list pages (history,
 /// subscriptions, highlights, downloads, daily report).

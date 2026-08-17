@@ -1,6 +1,6 @@
 import 'package:material_ui/material_ui.dart';
-import 'package:personal_ai_assistant/core/constants/app_radius.dart';
-import 'package:personal_ai_assistant/core/constants/app_spacing.dart';
+import 'package:sonde/core/constants/app_radius.dart';
+import 'package:sonde/core/constants/app_spacing.dart';
 
 class SettingsSectionCard extends StatelessWidget {
   const SettingsSectionCard({

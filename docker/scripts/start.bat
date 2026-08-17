@@ -1,6 +1,6 @@
 @echo off
 echo ======================================================
-echo     Personal AI Assistant - Docker Startup Script
+echo     Sonde - Docker Startup Script
 echo ======================================================
 echo.
 

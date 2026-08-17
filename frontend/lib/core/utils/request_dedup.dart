@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:clock/clock.dart';
-import 'package:personal_ai_assistant/core/constants/cache_constants.dart';
+import 'package:sonde/core/constants/cache_constants.dart';
 
 /// Coalesces concurrent calls behind a single in-flight future so rapid
 /// triggers share one request instead of starting duplicates.

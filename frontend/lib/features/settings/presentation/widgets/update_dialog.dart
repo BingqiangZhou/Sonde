@@ -1,18 +1,18 @@
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:personal_ai_assistant/core/constants/app_radius.dart';
-import 'package:personal_ai_assistant/core/constants/app_spacing.dart';
-import 'package:personal_ai_assistant/core/constants/app_text_styles.dart';
-import 'package:personal_ai_assistant/core/constants/breakpoints.dart';
-import 'package:personal_ai_assistant/core/localization/app_localizations_extension.dart';
-import 'package:personal_ai_assistant/core/platform/platform_helper.dart';
-import 'package:personal_ai_assistant/core/services/app_update_service.dart';
-import 'package:personal_ai_assistant/core/utils/app_logger.dart' as logger;
-import 'package:personal_ai_assistant/core/widgets/app_dialog_helper.dart';
-import 'package:personal_ai_assistant/core/widgets/top_floating_notice.dart';
-import 'package:personal_ai_assistant/features/settings/presentation/providers/app_update_provider.dart';
-import 'package:personal_ai_assistant/shared/models/github_release.dart';
+import 'package:sonde/core/constants/app_radius.dart';
+import 'package:sonde/core/constants/app_spacing.dart';
+import 'package:sonde/core/constants/app_text_styles.dart';
+import 'package:sonde/core/constants/breakpoints.dart';
+import 'package:sonde/core/localization/app_localizations_extension.dart';
+import 'package:sonde/core/platform/platform_helper.dart';
+import 'package:sonde/core/services/app_update_service.dart';
+import 'package:sonde/core/utils/app_logger.dart' as logger;
+import 'package:sonde/core/widgets/app_dialog_helper.dart';
+import 'package:sonde/core/widgets/top_floating_notice.dart';
+import 'package:sonde/features/settings/presentation/providers/app_update_provider.dart';
+import 'package:sonde/shared/models/github_release.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class _UpdateDialogPalette {

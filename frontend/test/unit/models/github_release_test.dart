@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:personal_ai_assistant/shared/models/github_release.dart';
+import 'package:sonde/shared/models/github_release.dart';
 
 void main() {
   GitHubRelease buildReleaseWithAssets(List<GitHubAsset> assets) {
@@ -30,8 +30,8 @@ void main() {
   group('GitHubRelease.getAssetForPlatform', () {
     test('Windows release with both Windows ZIP and Android APK returns only ZIP for windows', () {
       final release = buildReleaseWithAssets([
-        buildAsset('personal-ai-assistant-android-arm64-1.0.0.apk'),
-        buildAsset('personal-ai-assistant-windows-1.0.0.zip'),
+        buildAsset('sonde-android-arm64-1.0.0.apk'),
+        buildAsset('sonde-windows-1.0.0.zip'),
       ]);
 
       final asset = release.getAssetForPlatform('windows');
@@ -42,8 +42,8 @@ void main() {
 
     test('Android returns only APK', () {
       final release = buildReleaseWithAssets([
-        buildAsset('personal-ai-assistant-android-arm64-1.0.0.apk'),
-        buildAsset('personal-ai-assistant-windows-1.0.0.zip'),
+        buildAsset('sonde-android-arm64-1.0.0.apk'),
+        buildAsset('sonde-windows-1.0.0.zip'),
       ]);
 
       final asset = release.getAssetForPlatform('android');
@@ -54,7 +54,7 @@ void main() {
 
     test('returns null when no asset matches the platform', () {
       final release = buildReleaseWithAssets([
-        buildAsset('personal-ai-assistant-android-arm64-1.0.0.apk'),
+        buildAsset('sonde-android-arm64-1.0.0.apk'),
       ]);
 
       final asset = release.getAssetForPlatform('windows');
@@ -63,8 +63,8 @@ void main() {
 
     test('never falls back to first asset on mismatch', () {
       final release = buildReleaseWithAssets([
-        buildAsset('personal-ai-assistant-android-arm64-1.0.0.apk'),
-        buildAsset('personal-ai-assistant-linux-1.0.0.tar.gz'),
+        buildAsset('sonde-android-arm64-1.0.0.apk'),
+        buildAsset('sonde-linux-1.0.0.tar.gz'),
       ]);
 
       final asset = release.getAssetForPlatform('windows');
@@ -73,7 +73,7 @@ void main() {
 
     test('matches Linux .tar.gz correctly', () {
       final release = buildReleaseWithAssets([
-        buildAsset('personal-ai-assistant-linux-1.0.0.tar.gz'),
+        buildAsset('sonde-linux-1.0.0.tar.gz'),
       ]);
 
       final asset = release.getAssetForPlatform('linux');
@@ -84,7 +84,7 @@ void main() {
 
     test('matches macOS .dmg correctly', () {
       final release = buildReleaseWithAssets([
-        buildAsset('personal-ai-assistant-macos-1.0.0.dmg'),
+        buildAsset('sonde-macos-1.0.0.dmg'),
       ]);
 
       final asset = release.getAssetForPlatform('macos');
@@ -95,7 +95,7 @@ void main() {
 
     test('matches iOS .ipa correctly', () {
       final release = buildReleaseWithAssets([
-        buildAsset('personal-ai-assistant-ios-1.0.0.ipa'),
+        buildAsset('sonde-ios-1.0.0.ipa'),
       ]);
 
       final asset = release.getAssetForPlatform('ios');
@@ -106,7 +106,7 @@ void main() {
 
     test('returns null for unknown platform', () {
       final release = buildReleaseWithAssets([
-        buildAsset('personal-ai-assistant-windows-1.0.0.zip'),
+        buildAsset('sonde-windows-1.0.0.zip'),
       ]);
 
       final asset = release.getAssetForPlatform('web');
@@ -123,7 +123,7 @@ void main() {
     test('requires BOTH platform keyword AND correct extension', () {
       // A .zip file that contains "android" in its name should NOT match android
       final release = buildReleaseWithAssets([
-        buildAsset('personal-ai-assistant-android-debug.zip'),
+        buildAsset('sonde-android-debug.zip'),
       ]);
 
       final asset = release.getAssetForPlatform('android');
@@ -134,7 +134,7 @@ void main() {
   group('GitHubRelease.getDownloadUrlForPlatform', () {
     test('returns URL when platform matches', () {
       final release = buildReleaseWithAssets([
-        buildAsset('personal-ai-assistant-windows-1.0.0.zip'),
+        buildAsset('sonde-windows-1.0.0.zip'),
       ]);
 
       final url = release.getDownloadUrlForPlatform('windows');
@@ -144,7 +144,7 @@ void main() {
 
     test('returns null when no match (no fallback)', () {
       final release = buildReleaseWithAssets([
-        buildAsset('personal-ai-assistant-android-arm64-1.0.0.apk'),
+        buildAsset('sonde-android-arm64-1.0.0.apk'),
       ]);
 
       final url = release.getDownloadUrlForPlatform('windows');

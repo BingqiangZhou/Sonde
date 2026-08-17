@@ -8,27 +8,27 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:personal_ai_assistant/core/localization/app_localizations.dart';
-import 'package:personal_ai_assistant/core/localization/l10n_delegates.dart';
-import 'package:personal_ai_assistant/core/network/dio_client.dart';
-import 'package:personal_ai_assistant/core/providers/core_providers.dart';
-import 'package:personal_ai_assistant/core/services/app_cache_service.dart';
-import 'package:personal_ai_assistant/core/storage/local_storage_service.dart';
-import 'package:personal_ai_assistant/core/widgets/app_shells.dart';
-import 'package:personal_ai_assistant/features/auth/domain/models/user.dart';
-import 'package:personal_ai_assistant/features/auth/presentation/providers/auth_provider.dart';
-import 'package:personal_ai_assistant/features/podcast/data/models/podcast_daily_report_model.dart';
-import 'package:personal_ai_assistant/features/podcast/data/models/podcast_state_models.dart';
-import 'package:personal_ai_assistant/features/podcast/data/models/profile_stats_model.dart';
-import 'package:personal_ai_assistant/features/podcast/data/repositories/podcast_repository.dart';
-import 'package:personal_ai_assistant/features/podcast/data/services/apple_podcast_rss_service.dart';
-import 'package:personal_ai_assistant/features/podcast/data/services/itunes_search_service.dart';
-import 'package:personal_ai_assistant/features/podcast/data/services/podcast_api_service.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_daily_report_providers.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_providers.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_search_provider.dart';
-import 'package:personal_ai_assistant/features/profile/presentation/pages/profile_cache_management_page.dart';
-import 'package:personal_ai_assistant/features/profile/presentation/pages/profile_page.dart';
+import 'package:sonde/core/localization/app_localizations.dart';
+import 'package:sonde/core/localization/l10n_delegates.dart';
+import 'package:sonde/core/network/dio_client.dart';
+import 'package:sonde/core/providers/core_providers.dart';
+import 'package:sonde/core/services/app_cache_service.dart';
+import 'package:sonde/core/storage/local_storage_service.dart';
+import 'package:sonde/core/widgets/app_shells.dart';
+import 'package:sonde/features/auth/domain/models/user.dart';
+import 'package:sonde/features/auth/presentation/providers/auth_provider.dart';
+import 'package:sonde/features/podcast/data/models/podcast_daily_report_model.dart';
+import 'package:sonde/features/podcast/data/models/podcast_state_models.dart';
+import 'package:sonde/features/podcast/data/models/profile_stats_model.dart';
+import 'package:sonde/features/podcast/data/repositories/podcast_repository.dart';
+import 'package:sonde/features/podcast/data/services/apple_podcast_rss_service.dart';
+import 'package:sonde/features/podcast/data/services/itunes_search_service.dart';
+import 'package:sonde/features/podcast/data/services/podcast_api_service.dart';
+import 'package:sonde/features/podcast/presentation/providers/podcast_daily_report_providers.dart';
+import 'package:sonde/features/podcast/presentation/providers/podcast_providers.dart';
+import 'package:sonde/features/podcast/presentation/providers/podcast_search_provider.dart';
+import 'package:sonde/features/profile/presentation/pages/profile_cache_management_page.dart';
+import 'package:sonde/features/profile/presentation/pages/profile_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../helpers/podcast_list_page_helper.dart';
@@ -180,8 +180,8 @@ void main() {
         .setMockMethodCallHandler(_packageInfoChannel, (methodCall) async {
           if (methodCall.method == 'getAll') {
             return <String, dynamic>{
-              'appName': 'Personal AI Assistant',
-              'packageName': 'com.opc.stella',
+              'appName': 'Sonde',
+              'packageName': 'com.opc.sonde',
               'version': '1.2.3',
               'buildNumber': '123',
               'buildSignature': '',

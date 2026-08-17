@@ -1,12 +1,12 @@
 import 'package:material_ui/material_ui.dart';
-import 'package:personal_ai_assistant/core/constants/app_spacing.dart';
+import 'package:sonde/core/constants/app_spacing.dart';
 
-import 'package:personal_ai_assistant/core/localization/app_localizations_extension.dart';
-import 'package:personal_ai_assistant/core/theme/app_colors.dart';
-import 'package:personal_ai_assistant/core/utils/time_formatter.dart';
-import 'package:personal_ai_assistant/features/podcast/data/models/itunes_episode_lookup_model.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/widgets/podcast_image_widget.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/widgets/shared/episode_card_utils.dart';
+import 'package:sonde/core/localization/app_localizations_extension.dart';
+import 'package:sonde/core/theme/app_colors.dart';
+import 'package:sonde/core/utils/time_formatter.dart';
+import 'package:sonde/features/podcast/data/models/itunes_episode_lookup_model.dart';
+import 'package:sonde/features/podcast/presentation/widgets/podcast_image_widget.dart';
+import 'package:sonde/features/podcast/presentation/widgets/shared/episode_card_utils.dart';
 
 class DiscoverEpisodeDetailSheet extends StatelessWidget {
   const DiscoverEpisodeDetailSheet({

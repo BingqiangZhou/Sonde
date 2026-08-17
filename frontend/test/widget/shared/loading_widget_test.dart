@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:personal_ai_assistant/core/widgets/app_shells.dart';
-import 'package:personal_ai_assistant/shared/widgets/loading_widget.dart';
+import 'package:sonde/core/widgets/app_shells.dart';
+import 'package:sonde/shared/widgets/loading_widget.dart';
 
 void main() {
   testWidgets('LoadingOverlay shows bare loading content without GlassPanel', (

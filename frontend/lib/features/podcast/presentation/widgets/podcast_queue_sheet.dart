@@ -1,12 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:personal_ai_assistant/core/localization/app_localizations_extension.dart';
-import 'package:personal_ai_assistant/core/widgets/adaptive/adaptive.dart';
-import 'package:personal_ai_assistant/core/widgets/adaptive_sheet_helper.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_playback_providers.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/widgets/queue/queue_controls_widget.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/widgets/queue/queue_empty_state_widget.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/widgets/queue/queue_list_widget.dart';
+import 'package:sonde/core/localization/app_localizations_extension.dart';
+import 'package:sonde/core/widgets/adaptive/adaptive.dart';
+import 'package:sonde/core/widgets/adaptive_sheet_helper.dart';
+import 'package:sonde/features/podcast/presentation/providers/podcast_playback_providers.dart';
+import 'package:sonde/features/podcast/presentation/widgets/queue/queue_controls_widget.dart';
+import 'package:sonde/features/podcast/presentation/widgets/queue/queue_empty_state_widget.dart';
+import 'package:sonde/features/podcast/presentation/widgets/queue/queue_list_widget.dart';
 
 class PodcastQueueSheet extends ConsumerWidget {
   const PodcastQueueSheet({super.key});

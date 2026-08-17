@@ -1,7 +1,7 @@
 import 'package:equatable/equatable.dart';
-import 'package:personal_ai_assistant/core/utils/time_formatter.dart';
-import 'package:personal_ai_assistant/features/podcast/data/models/podcast_episode_model.dart';
-import 'package:personal_ai_assistant/features/podcast/data/models/podcast_queue_model.dart';
+import 'package:sonde/core/utils/time_formatter.dart';
+import 'package:sonde/features/podcast/data/models/podcast_episode_model.dart';
+import 'package:sonde/features/podcast/data/models/podcast_queue_model.dart';
 
 enum ProcessingState { idle, loading, buffering, ready, completed }
 

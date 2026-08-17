@@ -3,24 +3,24 @@ import 'dart:collection';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:personal_ai_assistant/core/network/exceptions/network_exceptions.dart';
-import 'package:personal_ai_assistant/core/providers/cached_async_notifier.dart';
-import 'package:personal_ai_assistant/core/providers/core_providers.dart';
-import 'package:personal_ai_assistant/core/utils/app_logger.dart' as logger;
-import 'package:personal_ai_assistant/core/utils/request_dedup.dart';
-import 'package:personal_ai_assistant/features/podcast/data/models/playback_history_lite_model.dart';
-import 'package:personal_ai_assistant/features/podcast/data/models/podcast_episode_model.dart';
-import 'package:personal_ai_assistant/features/podcast/data/models/podcast_playback_model.dart';
-import 'package:personal_ai_assistant/features/podcast/data/models/podcast_state_models.dart';
-import 'package:personal_ai_assistant/features/podcast/data/models/podcast_subscription_model.dart';
-import 'package:personal_ai_assistant/features/podcast/data/models/profile_stats_model.dart';
-import 'package:personal_ai_assistant/features/podcast/data/repositories/podcast_repository.dart';
-import 'package:personal_ai_assistant/features/podcast/data/services/podcast_api_service.dart';
-import 'package:personal_ai_assistant/features/podcast/data/utils/podcast_url_utils.dart';
+import 'package:sonde/core/network/exceptions/network_exceptions.dart';
+import 'package:sonde/core/providers/cached_async_notifier.dart';
+import 'package:sonde/core/providers/core_providers.dart';
+import 'package:sonde/core/utils/app_logger.dart' as logger;
+import 'package:sonde/core/utils/request_dedup.dart';
+import 'package:sonde/features/podcast/data/models/playback_history_lite_model.dart';
+import 'package:sonde/features/podcast/data/models/podcast_episode_model.dart';
+import 'package:sonde/features/podcast/data/models/podcast_playback_model.dart';
+import 'package:sonde/features/podcast/data/models/podcast_state_models.dart';
+import 'package:sonde/features/podcast/data/models/podcast_subscription_model.dart';
+import 'package:sonde/features/podcast/data/models/profile_stats_model.dart';
+import 'package:sonde/features/podcast/data/repositories/podcast_repository.dart';
+import 'package:sonde/features/podcast/data/services/podcast_api_service.dart';
+import 'package:sonde/features/podcast/data/utils/podcast_url_utils.dart';
 // PodcastAudioHandler lives in the podcast_playback_providers library
 // (audio_handler.dart is a part of it), so this import is structural and
 // intentionally cyclic with podcast_playback_providers.dart.
-import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_playback_providers.dart';
+import 'package:sonde/features/podcast/presentation/providers/podcast_playback_providers.dart';
 
 // =============================================================================
 // Core Providers (from podcast_core_providers.dart)

@@ -1,7 +1,7 @@
 import 'package:audio_service/audio_service.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart';
-import 'package:personal_ai_assistant/core/utils/app_logger.dart' as logger;
+import 'package:sonde/core/utils/app_logger.dart' as logger;
 
 // Pure decision logic extracted from PodcastAudioHandler so it can be
 // unit tested without an audio player, platform channels, or the handler

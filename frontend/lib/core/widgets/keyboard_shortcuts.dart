@@ -1,6 +1,6 @@
 import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:personal_ai_assistant/core/platform/platform_helper.dart';
+import 'package:sonde/core/platform/platform_helper.dart';
 
 /// Provides keyboard shortcuts for media playback on desktop platforms.
 ///

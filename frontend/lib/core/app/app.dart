@@ -5,23 +5,23 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:personal_ai_assistant/core/constants/app_spacing.dart';
-import 'package:personal_ai_assistant/core/localization/app_localizations.dart';
-import 'package:personal_ai_assistant/core/localization/l10n_delegates.dart';
-import 'package:personal_ai_assistant/core/localization/locale_provider.dart';
-import 'package:personal_ai_assistant/core/providers/route_provider.dart';
-import 'package:personal_ai_assistant/core/router/app_router.dart';
-import 'package:personal_ai_assistant/core/router/deep_links.dart';
-import 'package:personal_ai_assistant/core/theme/app_theme.dart';
-import 'package:personal_ai_assistant/core/theme/theme_provider.dart';
-import 'package:personal_ai_assistant/core/utils/app_logger.dart' as logger;
-import 'package:personal_ai_assistant/features/auth/data/events/auth_event.dart';
-import 'package:personal_ai_assistant/features/auth/presentation/providers/auth_provider.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_playback_providers.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_providers.dart';
-import 'package:personal_ai_assistant/features/settings/presentation/providers/app_update_provider.dart';
-import 'package:personal_ai_assistant/features/settings/presentation/widgets/update_dialog.dart';
-import 'package:personal_ai_assistant/shared/widgets/loading_widget.dart';
+import 'package:sonde/core/constants/app_spacing.dart';
+import 'package:sonde/core/localization/app_localizations.dart';
+import 'package:sonde/core/localization/l10n_delegates.dart';
+import 'package:sonde/core/localization/locale_provider.dart';
+import 'package:sonde/core/providers/route_provider.dart';
+import 'package:sonde/core/router/app_router.dart';
+import 'package:sonde/core/router/deep_links.dart';
+import 'package:sonde/core/theme/app_theme.dart';
+import 'package:sonde/core/theme/theme_provider.dart';
+import 'package:sonde/core/utils/app_logger.dart' as logger;
+import 'package:sonde/features/auth/data/events/auth_event.dart';
+import 'package:sonde/features/auth/presentation/providers/auth_provider.dart';
+import 'package:sonde/features/podcast/presentation/providers/podcast_playback_providers.dart';
+import 'package:sonde/features/podcast/presentation/providers/podcast_providers.dart';
+import 'package:sonde/features/settings/presentation/providers/app_update_provider.dart';
+import 'package:sonde/features/settings/presentation/widgets/update_dialog.dart';
+import 'package:sonde/shared/widgets/loading_widget.dart';
 
 /// Splash screen widget that matches the Mindriver brand style
 class _SplashScreenWidget extends StatelessWidget {
@@ -53,7 +53,7 @@ class _SplashScreenWidget extends StatelessWidget {
                   ),
                   const SizedBox(height: AppSpacing.lg),
                   Text(
-                    l10n?.appTitle ?? 'Stella',
+                    l10n?.appTitle ?? 'Sonde',
                     style: Theme.of(context).textTheme.headlineLarge,
                   ),
                   const SizedBox(height: AppSpacing.smLg),
@@ -398,7 +398,7 @@ class _PersonalAIAssistantAppState
     if (!_isInitialized) {
       return MaterialApp(
         key: const ValueKey('app_splash_shell'),
-        title: 'Stella',
+        title: 'Sonde',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.lightTheme,
         darkTheme: AppTheme.darkTheme,
@@ -422,7 +422,7 @@ class _PersonalAIAssistantAppState
     // Show main app after initialization
     return MaterialApp.router(
       key: const ValueKey('app_router_shell'),
-      title: 'Stella',
+      title: 'Sonde',
       debugShowCheckedModeBanner: false,
 
       // Theme configuration

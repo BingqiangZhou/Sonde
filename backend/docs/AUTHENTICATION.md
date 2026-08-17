@@ -1,6 +1,6 @@
 # Authentication System Documentation
 
-This document describes the authentication system implemented for the Personal AI Assistant backend.
+This document describes the authentication system implemented for the Sonde backend.
 
 ## Overview
 

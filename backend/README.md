@@ -1,4 +1,4 @@
-# Personal AI Assistant - 后端
+# Sonde - 后端
 
 FastAPI 后端服务，提供播客订阅、AI 转录、管理面板等功能。
 

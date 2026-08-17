@@ -1,4 +1,4 @@
-# Personal AI Assistant - Multi-Platform Release Workflow
+# Sonde - Multi-Platform Release Workflow
 # 多平台自动构建并发布到 GitHub Release
 # Triggered by pushing tags matching pattern v*.*.* (e.g., v1.0.0)
 
@@ -175,7 +175,7 @@ jobs:
 
           # 重命名 APK 包含应用名和版本号
           mv build/app/outputs/flutter-apk/app-release.apk \
-             build/app/outputs/flutter-apk/personal-ai-assistant-android-arm64-${{ needs.prepare-release.outputs.version }}.apk
+             build/app/outputs/flutter-apk/sonde-android-arm64-${{ needs.prepare-release.outputs.version }}.apk
 
           echo "✅ APK build completed"
 
@@ -239,7 +239,7 @@ jobs:
         run: |
           $version = "${{ needs.prepare-release.outputs.version }}"
           $sourcePath = "build\windows\x64\runner\Release"
-          $destPath = "dist\windows\personal-ai-assistant-windows-$version.zip"
+          $destPath = "dist\windows\sonde-windows-$version.zip"
           Compress-Archive -Path "$sourcePath\*" -DestinationPath $destPath -Force
 
       - name: Upload artifacts
@@ -312,7 +312,7 @@ jobs:
       - name: Archive Linux release
         working-directory: frontend
         run: |
-          tar czf dist/linux/personal-ai-assistant-linux-${{ needs.prepare-release.outputs.version }}.tar.gz \
+          tar czf dist/linux/sonde-linux-${{ needs.prepare-release.outputs.version }}.tar.gz \
             -C build/linux/x64/release/bundle .
 
       - name: Upload artifacts
@@ -371,7 +371,7 @@ jobs:
       - name: Create DMG
         working-directory: frontend
         run: |
-          DMG_PATH="dist/macos/personal-ai-assistant-macos-${{ needs.prepare-release.outputs.version }}.dmg"
+          DMG_PATH="dist/macos/sonde-macos-${{ needs.prepare-release.outputs.version }}.dmg"
           TEMP_DIR="dist/macos/dmg-temp"
           RELEASE_DIR="build/macos/Build/Products/Release"
 
@@ -385,7 +385,7 @@ jobs:
           ln -s /Applications "$TEMP_DIR/Applications"
 
           # Create DMG using hdiutil
-          hdiutil create -volname "Personal AI Assistant" \
+          hdiutil create -volname "Sonde" \
             -srcfolder "$TEMP_DIR" \
             -ov \
             -format UDZO \
@@ -454,7 +454,7 @@ jobs:
           VERSION="${{ needs.prepare-release.outputs.version }}"
           # Device builds use iphoneos
           APP_PATH="build/ios/iphoneos/Runner.app"
-          IPA_NAME="personal-ai-assistant-ios-${VERSION}.ipa"
+          IPA_NAME="sonde-ios-${VERSION}.ipa"
           PAYLOAD_DIR="dist/ios/Payload"
           OUTPUT_DIR="dist/ios"
 
@@ -530,7 +530,7 @@ jobs:
         uses: softprops/action-gh-release@v3
         with:
           tag_name: v${{ needs.prepare-release.outputs.version }}
-          name: Personal AI Assistant v${{ needs.prepare-release.outputs.version }}
+          name: Sonde v${{ needs.prepare-release.outputs.version }}
           body_path: changelog.md
           draft: false
           prerelease: ${{ needs.prepare-release.outputs.is_prerelease }}

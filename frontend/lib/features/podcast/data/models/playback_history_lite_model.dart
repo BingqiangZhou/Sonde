@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import 'package:personal_ai_assistant/core/utils/time_formatter.dart';
+import 'package:sonde/core/utils/time_formatter.dart';
 
 class PlaybackHistoryLiteItem extends Equatable {
 

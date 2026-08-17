@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
 
-import 'package:personal_ai_assistant/core/constants/cache_constants.dart';
+import 'package:sonde/core/constants/cache_constants.dart';
 
 /// Generic paginated list UI state.
 ///

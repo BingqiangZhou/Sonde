@@ -2,7 +2,7 @@
 
 **版本基线：v0.52.0（2026-04-21）**
 
-本文档介绍 Personal AI Assistant 的核心功能。功能变更历史见 [CHANGELOG.md](../CHANGELOG.md)。
+本文档介绍 Sonde 的核心功能。功能变更历史见 [CHANGELOG.md](../CHANGELOG.md)。
 
 ---
 

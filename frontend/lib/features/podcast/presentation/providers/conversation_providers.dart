@@ -7,14 +7,14 @@ import 'package:flutter_riverpod/misc.dart'
     show
         AsyncNotifierProviderFamily,
         NotifierProviderFamily;
-import 'package:personal_ai_assistant/core/network/exceptions/network_exceptions.dart';
+import 'package:sonde/core/network/exceptions/network_exceptions.dart';
 
-import 'package:personal_ai_assistant/core/utils/request_dedup.dart';
-import 'package:personal_ai_assistant/features/podcast/core/utils/html_sanitizer.dart';
-import 'package:personal_ai_assistant/features/podcast/data/models/podcast_conversation_model.dart';
-import 'package:personal_ai_assistant/features/podcast/data/models/podcast_playback_model.dart';
-import 'package:personal_ai_assistant/features/podcast/data/models/podcast_transcription_model.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_providers.dart';
+import 'package:sonde/core/utils/request_dedup.dart';
+import 'package:sonde/features/podcast/core/utils/html_sanitizer.dart';
+import 'package:sonde/features/podcast/data/models/podcast_conversation_model.dart';
+import 'package:sonde/features/podcast/data/models/podcast_playback_model.dart';
+import 'package:sonde/features/podcast/data/models/podcast_transcription_model.dart';
+import 'package:sonde/features/podcast/presentation/providers/podcast_providers.dart';
 
 // === Providers ===
 // All three providers use family.autoDispose for automatic lifecycle management.

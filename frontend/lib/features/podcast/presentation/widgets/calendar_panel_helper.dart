@@ -1,8 +1,8 @@
 import 'package:material_ui/material_ui.dart';
 
-import 'package:personal_ai_assistant/core/constants/app_durations.dart';
-import 'package:personal_ai_assistant/core/theme/app_colors.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/widgets/shared/episode_card_utils.dart';
+import 'package:sonde/core/constants/app_durations.dart';
+import 'package:sonde/core/theme/app_colors.dart';
+import 'package:sonde/features/podcast/presentation/widgets/shared/episode_card_utils.dart';
 
 /// Shared calendar day cell builder for daily report and highlights pages.
 class CalendarPanelHelper {

@@ -1,7 +1,7 @@
 import 'package:drift/drift.dart';
-import 'package:personal_ai_assistant/core/database/dao/download_dao.dart';
-import 'package:personal_ai_assistant/core/database/dao/episode_cache_dao.dart';
-import 'package:personal_ai_assistant/core/database/dao/response_cache_dao.dart';
+import 'package:sonde/core/database/dao/download_dao.dart';
+import 'package:sonde/core/database/dao/episode_cache_dao.dart';
+import 'package:sonde/core/database/dao/response_cache_dao.dart';
 
 part 'app_database.g.dart';
 

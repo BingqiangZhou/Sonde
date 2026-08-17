@@ -1,9 +1,9 @@
 import 'package:material_ui/material_ui.dart';
-import 'package:personal_ai_assistant/core/constants/app_spacing.dart';
+import 'package:sonde/core/constants/app_spacing.dart';
 
-import 'package:personal_ai_assistant/core/localization/app_localizations.dart';
-import 'package:personal_ai_assistant/core/theme/app_colors.dart';
-import 'package:personal_ai_assistant/features/podcast/data/models/podcast_conversation_model.dart';
+import 'package:sonde/core/localization/app_localizations.dart';
+import 'package:sonde/core/theme/app_colors.dart';
+import 'package:sonde/features/podcast/data/models/podcast_conversation_model.dart';
 
 /// A single message bubble in the conversation chat.
 ///

@@ -1,10 +1,10 @@
 import 'package:material_ui/material_ui.dart';
-import 'package:personal_ai_assistant/core/constants/app_durations.dart';
-import 'package:personal_ai_assistant/core/constants/app_spacing.dart';
-import 'package:personal_ai_assistant/core/localization/app_localizations_extension.dart';
-import 'package:personal_ai_assistant/core/widgets/adaptive/adaptive.dart';
-import 'package:personal_ai_assistant/core/widgets/app_shells.dart' show HeaderCapsuleActionButton;
-import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_search_provider.dart'
+import 'package:sonde/core/constants/app_durations.dart';
+import 'package:sonde/core/constants/app_spacing.dart';
+import 'package:sonde/core/localization/app_localizations_extension.dart';
+import 'package:sonde/core/widgets/adaptive/adaptive.dart';
+import 'package:sonde/core/widgets/app_shells.dart' show HeaderCapsuleActionButton;
+import 'package:sonde/features/podcast/presentation/providers/podcast_search_provider.dart'
     as search;
 
 /// Toggle between episodes and podcasts search modes.

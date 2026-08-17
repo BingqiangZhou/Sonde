@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Stella</string>
+	<string>声读</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -15,7 +15,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>Stella</string>
+	<string>Sonde</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -79,18 +79,18 @@
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
 	<key>NSUserNotificationsUsageDescription</key>
-	<string>Stella needs notification permission to alert you about new episodes and download completions.</string>
+	<string>Sonde needs notification permission to alert you about new episodes and download completions.</string>
 	<key>CFBundleURLTypes</key>
 	<array>
-		<!-- Custom-scheme deep links: stella://app/<router-path>.
+		<!-- Custom-scheme deep links: sonde://app/<router-path>.
 		     Universal Links would additionally need an AASA file on the
 		     target domain with the app's team id. -->
 		<dict>
 			<key>CFBundleURLName</key>
-			<string>app.stella.deeplink</string>
+			<string>app.sonde.deeplink</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>stella</string>
+				<string>sonde</string>
 			</array>
 		</dict>
 	</array>

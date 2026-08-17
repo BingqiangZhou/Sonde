@@ -1,7 +1,7 @@
 [project]
-name = "personal-ai-assistant-backend"
+name = "sonde-backend"
 version = "1.0.0"
-description = "Personal AI Assistant Backend API"
+description = "Sonde Backend API"
 authors = [
     { name = "Your Name", email = "your.email@example.com" }
 ]

@@ -2,11 +2,11 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:personal_ai_assistant/core/localization/app_localizations.dart';
-import 'package:personal_ai_assistant/core/localization/l10n_delegates.dart';
-import 'package:personal_ai_assistant/core/theme/app_theme.dart';
-import 'package:personal_ai_assistant/features/settings/presentation/widgets/update_dialog.dart';
-import 'package:personal_ai_assistant/shared/models/github_release.dart';
+import 'package:sonde/core/localization/app_localizations.dart';
+import 'package:sonde/core/localization/l10n_delegates.dart';
+import 'package:sonde/core/theme/app_theme.dart';
+import 'package:sonde/features/settings/presentation/widgets/update_dialog.dart';
+import 'package:sonde/shared/models/github_release.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/widgets/transcription/transcription_step_mapper.dart';
+import 'package:sonde/features/podcast/presentation/widgets/transcription/transcription_step_mapper.dart';
 
 void main() {
   group('transcription step mapper', () {

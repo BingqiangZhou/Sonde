@@ -1,8 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:personal_ai_assistant/core/constants/cache_constants.dart';
-import 'package:personal_ai_assistant/core/utils/request_dedup.dart';
+import 'package:sonde/core/constants/cache_constants.dart';
+import 'package:sonde/core/utils/request_dedup.dart';
 
 /// [AsyncNotifier] skeleton for "fetch once, keep fresh, dedupe in-flight"
 /// providers.

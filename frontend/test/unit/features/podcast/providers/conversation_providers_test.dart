@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:personal_ai_assistant/features/podcast/data/models/podcast_conversation_model.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/providers/conversation_providers.dart';
+import 'package:sonde/features/podcast/data/models/podcast_conversation_model.dart';
+import 'package:sonde/features/podcast/presentation/providers/conversation_providers.dart';
 
 void main() {
   group('ConversationProviders', () {

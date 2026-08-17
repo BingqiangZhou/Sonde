@@ -1,7 +1,7 @@
-import 'package:personal_ai_assistant/core/constants/cache_constants.dart';
-import 'package:personal_ai_assistant/features/podcast/data/models/podcast_episode_model.dart';
-import 'package:personal_ai_assistant/features/podcast/data/models/podcast_subscription_model.dart';
-import 'package:personal_ai_assistant/shared/models/paginated_state.dart';
+import 'package:sonde/core/constants/cache_constants.dart';
+import 'package:sonde/features/podcast/data/models/podcast_episode_model.dart';
+import 'package:sonde/features/podcast/data/models/podcast_subscription_model.dart';
+import 'package:sonde/shared/models/paginated_state.dart';
 
 const Object _stateNoChange = Object();
 

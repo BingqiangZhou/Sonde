@@ -1,7 +1,7 @@
 import 'dart:ui' show lerpDouble;
 
 import 'package:material_ui/material_ui.dart';
-import 'package:personal_ai_assistant/core/constants/app_spacing.dart';
+import 'package:sonde/core/constants/app_spacing.dart';
 
 /// ============================================================
 /// App Design System

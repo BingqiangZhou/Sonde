@@ -1,15 +1,15 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:personal_ai_assistant/core/constants/app_spacing.dart';
-import 'package:personal_ai_assistant/core/localization/app_localizations.dart';
-import 'package:personal_ai_assistant/core/localization/app_localizations_extension.dart';
-import 'package:personal_ai_assistant/core/theme/app_colors.dart';
-import 'package:personal_ai_assistant/core/widgets/adaptive/adaptive.dart';
-import 'package:personal_ai_assistant/core/widgets/top_floating_notice.dart';
-import 'package:personal_ai_assistant/features/podcast/data/models/podcast_transcription_model.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/providers/conversation_providers.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/widgets/transcription/transcript_result_widget.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/widgets/transcription/transcription_progress_widget.dart';
+import 'package:sonde/core/constants/app_spacing.dart';
+import 'package:sonde/core/localization/app_localizations.dart';
+import 'package:sonde/core/localization/app_localizations_extension.dart';
+import 'package:sonde/core/theme/app_colors.dart';
+import 'package:sonde/core/widgets/adaptive/adaptive.dart';
+import 'package:sonde/core/widgets/top_floating_notice.dart';
+import 'package:sonde/features/podcast/data/models/podcast_transcription_model.dart';
+import 'package:sonde/features/podcast/presentation/providers/conversation_providers.dart';
+import 'package:sonde/features/podcast/presentation/widgets/transcription/transcript_result_widget.dart';
+import 'package:sonde/features/podcast/presentation/widgets/transcription/transcription_progress_widget.dart';
 
 class TranscriptionStatusWidget extends ConsumerWidget {
 

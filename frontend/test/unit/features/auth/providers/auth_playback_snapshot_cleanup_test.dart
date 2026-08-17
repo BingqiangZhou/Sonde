@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:personal_ai_assistant/features/auth/presentation/providers/auth_provider.dart';
+import 'package:sonde/features/auth/presentation/providers/auth_provider.dart';
 
 void main() {
   group('playbackSnapshotKeysToClearOnLogout', () {

@@ -1,20 +1,20 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:personal_ai_assistant/core/app/config/app_config.dart';
-import 'package:personal_ai_assistant/core/constants/app_spacing.dart';
-import 'package:personal_ai_assistant/core/localization/app_localizations_extension.dart';
-import 'package:personal_ai_assistant/core/platform/adaptive_haptic.dart';
-import 'package:personal_ai_assistant/core/providers/core_providers.dart';
-import 'package:personal_ai_assistant/core/widgets/adaptive/adaptive.dart';
-import 'package:personal_ai_assistant/core/widgets/app_dialog_helper.dart';
-import 'package:personal_ai_assistant/core/widgets/app_shells.dart';
-import 'package:personal_ai_assistant/core/widgets/top_floating_notice.dart';
-import 'package:personal_ai_assistant/features/auth/presentation/providers/auth_provider.dart';
-import 'package:personal_ai_assistant/features/auth/presentation/widgets/password_text_field.dart';
-import 'package:personal_ai_assistant/shared/widgets/custom_text_field.dart';
-import 'package:personal_ai_assistant/shared/widgets/loading_widget.dart';
-import 'package:personal_ai_assistant/shared/widgets/server_config_dialog.dart';
+import 'package:sonde/core/app/config/app_config.dart';
+import 'package:sonde/core/constants/app_spacing.dart';
+import 'package:sonde/core/localization/app_localizations_extension.dart';
+import 'package:sonde/core/platform/adaptive_haptic.dart';
+import 'package:sonde/core/providers/core_providers.dart';
+import 'package:sonde/core/widgets/adaptive/adaptive.dart';
+import 'package:sonde/core/widgets/app_dialog_helper.dart';
+import 'package:sonde/core/widgets/app_shells.dart';
+import 'package:sonde/core/widgets/top_floating_notice.dart';
+import 'package:sonde/features/auth/presentation/providers/auth_provider.dart';
+import 'package:sonde/features/auth/presentation/widgets/password_text_field.dart';
+import 'package:sonde/shared/widgets/custom_text_field.dart';
+import 'package:sonde/shared/widgets/loading_widget.dart';
+import 'package:sonde/shared/widgets/server_config_dialog.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});

@@ -3,12 +3,12 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:personal_ai_assistant/core/localization/app_localizations.dart';
-import 'package:personal_ai_assistant/core/localization/l10n_delegates.dart';
-import 'package:personal_ai_assistant/features/auth/presentation/providers/auth_provider.dart';
-import 'package:personal_ai_assistant/features/podcast/data/models/podcast_highlight_model.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/pages/podcast_highlights_page.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_highlights_providers.dart';
+import 'package:sonde/core/localization/app_localizations.dart';
+import 'package:sonde/core/localization/l10n_delegates.dart';
+import 'package:sonde/features/auth/presentation/providers/auth_provider.dart';
+import 'package:sonde/features/podcast/data/models/podcast_highlight_model.dart';
+import 'package:sonde/features/podcast/presentation/pages/podcast_highlights_page.dart';
+import 'package:sonde/features/podcast/presentation/providers/podcast_highlights_providers.dart';
 
 // ---------------------------------------------------------------------------
 // Fakes & helpers (top-level — Dart does not allow classes inside functions)

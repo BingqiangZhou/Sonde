@@ -1,4 +1,4 @@
-package com.opc.stella
+package com.opc.sonde
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -37,7 +37,7 @@ class DownloadService : Service() {
         const val EXTRA_FILE_NAME = "file_name"
 
         // Actions
-        const val ACTION_CANCEL = "com.opc.stella.DOWNLOAD_CANCEL"
+        const val ACTION_CANCEL = "com.opc.sonde.DOWNLOAD_CANCEL"
 
         // Progress
         private const val UPDATE_INTERVAL = 500L // Update notification every 500ms

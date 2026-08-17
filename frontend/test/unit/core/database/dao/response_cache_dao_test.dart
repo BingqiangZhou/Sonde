@@ -1,8 +1,8 @@
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:personal_ai_assistant/core/database/app_database.dart';
-import 'package:personal_ai_assistant/core/database/dao/response_cache_dao.dart';
+import 'package:sonde/core/database/app_database.dart';
+import 'package:sonde/core/database/dao/response_cache_dao.dart';
 
 void main() {
   late AppDatabase db;

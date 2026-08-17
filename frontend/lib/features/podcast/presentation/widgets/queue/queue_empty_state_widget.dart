@@ -1,7 +1,7 @@
 import 'package:material_ui/material_ui.dart';
-import 'package:personal_ai_assistant/core/constants/app_radius.dart';
-import 'package:personal_ai_assistant/core/constants/app_spacing.dart';
-import 'package:personal_ai_assistant/shared/widgets/loading_widget.dart';
+import 'package:sonde/core/constants/app_radius.dart';
+import 'package:sonde/core/constants/app_spacing.dart';
+import 'package:sonde/shared/widgets/loading_widget.dart';
 
 class QueueLoadingState extends StatelessWidget {
   const QueueLoadingState({

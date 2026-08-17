@@ -1,13 +1,13 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:personal_ai_assistant/features/podcast/data/models/audio_player_state_model.dart';
-import 'package:personal_ai_assistant/features/podcast/data/models/podcast_episode_model.dart';
-import 'package:personal_ai_assistant/features/podcast/data/models/podcast_playback_model.dart';
-import 'package:personal_ai_assistant/features/podcast/data/repositories/podcast_repository.dart';
-import 'package:personal_ai_assistant/features/podcast/data/services/podcast_api_service.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_playback_providers.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_providers.dart';
+import 'package:sonde/features/podcast/data/models/audio_player_state_model.dart';
+import 'package:sonde/features/podcast/data/models/podcast_episode_model.dart';
+import 'package:sonde/features/podcast/data/models/podcast_playback_model.dart';
+import 'package:sonde/features/podcast/data/repositories/podcast_repository.dart';
+import 'package:sonde/features/podcast/data/services/podcast_api_service.dart';
+import 'package:sonde/features/podcast/presentation/providers/podcast_playback_providers.dart';
+import 'package:sonde/features/podcast/presentation/providers/podcast_providers.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

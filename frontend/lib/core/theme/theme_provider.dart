@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:personal_ai_assistant/core/constants/app_constants.dart';
-import 'package:personal_ai_assistant/core/storage/local_storage_service.dart';
+import 'package:sonde/core/constants/app_constants.dart';
+import 'package:sonde/core/storage/local_storage_service.dart';
 
 /// Theme mode options
 const kThemeModeLight = 'light';

@@ -1,19 +1,19 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:personal_ai_assistant/core/constants/app_radius.dart';
-import 'package:personal_ai_assistant/core/constants/app_spacing.dart';
-import 'package:personal_ai_assistant/core/database/app_database.dart';
-import 'package:personal_ai_assistant/core/localization/app_localizations.dart';
-import 'package:personal_ai_assistant/core/localization/app_localizations_extension.dart';
-import 'package:personal_ai_assistant/core/services/audio_download_service.dart';
-import 'package:personal_ai_assistant/core/services/download_provider.dart';
-import 'package:personal_ai_assistant/core/theme/app_colors.dart';
-import 'package:personal_ai_assistant/core/widgets/adaptive/adaptive.dart';
-import 'package:personal_ai_assistant/core/widgets/app_dialog_helper.dart';
-import 'package:personal_ai_assistant/core/widgets/app_shells.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_episodes_providers.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/widgets/podcast_image_widget.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/widgets/shared/panel_list_views.dart';
+import 'package:sonde/core/constants/app_radius.dart';
+import 'package:sonde/core/constants/app_spacing.dart';
+import 'package:sonde/core/database/app_database.dart';
+import 'package:sonde/core/localization/app_localizations.dart';
+import 'package:sonde/core/localization/app_localizations_extension.dart';
+import 'package:sonde/core/services/audio_download_service.dart';
+import 'package:sonde/core/services/download_provider.dart';
+import 'package:sonde/core/theme/app_colors.dart';
+import 'package:sonde/core/widgets/adaptive/adaptive.dart';
+import 'package:sonde/core/widgets/app_dialog_helper.dart';
+import 'package:sonde/core/widgets/app_shells.dart';
+import 'package:sonde/features/podcast/presentation/providers/podcast_episodes_providers.dart';
+import 'package:sonde/features/podcast/presentation/widgets/podcast_image_widget.dart';
+import 'package:sonde/features/podcast/presentation/widgets/shared/panel_list_views.dart';
 
 /// Page for managing downloaded podcast episodes.
 class PodcastDownloadsPage extends ConsumerStatefulWidget {

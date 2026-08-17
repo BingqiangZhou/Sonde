@@ -1,6 +1,6 @@
 {
-    "name": "personal_ai_assistant",
-    "short_name": "personal_ai_assistant",
+    "name": "声读",
+    "short_name": "声读",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#ffffff",

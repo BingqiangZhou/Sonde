@@ -1,6 +1,6 @@
 import 'package:clock/clock.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:personal_ai_assistant/core/utils/request_dedup.dart';
+import 'package:sonde/core/utils/request_dedup.dart';
 
 void main() {
   group('InFlightSlot', () {

@@ -1,8 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:personal_ai_assistant/core/app/config/app_config.dart';
-import 'package:personal_ai_assistant/core/providers/core_providers.dart';
-import 'package:personal_ai_assistant/core/storage/local_storage_service.dart';
+import 'package:sonde/core/app/config/app_config.dart';
+import 'package:sonde/core/providers/core_providers.dart';
+import 'package:sonde/core/storage/local_storage_service.dart';
 import '../../../helpers/mock_local_storage_service.dart';
 
 void main() {

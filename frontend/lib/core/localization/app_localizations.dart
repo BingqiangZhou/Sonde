@@ -101,7 +101,7 @@ abstract class AppLocalizations {
   /// The title of the application
   ///
   /// In en, this message translates to:
-  /// **'Stella'**
+  /// **'Sonde'**
   String get appTitle;
 
   /// The slogan of the application
@@ -3545,7 +3545,7 @@ abstract class AppLocalizations {
   /// Title of the first onboarding screen
   ///
   /// In en, this message translates to:
-  /// **'Welcome to Stella'**
+  /// **'Welcome to Sonde'**
   String get onboarding_welcome_title;
 
   /// Subtitle of the first onboarding screen
@@ -3623,7 +3623,7 @@ abstract class AppLocalizations {
   /// Terms section: acceptance body
   ///
   /// In en, this message translates to:
-  /// **'By accessing and using Stella (\"the Service\"), you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use the Service.'**
+  /// **'By accessing and using Sonde (\"the Service\"), you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use the Service.'**
   String get terms_section_acceptance_body;
 
   /// Terms section: use heading
@@ -3647,7 +3647,7 @@ abstract class AppLocalizations {
   /// Terms section: intellectual property body
   ///
   /// In en, this message translates to:
-  /// **'All content, features, and functionality of the Service, including but not limited to text, graphics, logos, and software, are the property of Stella and are protected by copyright, trademark, and other intellectual property laws. Podcast content belongs to their respective creators.'**
+  /// **'All content, features, and functionality of the Service, including but not limited to text, graphics, logos, and software, are the property of Sonde and are protected by copyright, trademark, and other intellectual property laws. Podcast content belongs to their respective creators.'**
   String get terms_section_ip_body;
 
   /// Terms section: limitation of liability heading
@@ -3719,7 +3719,7 @@ abstract class AppLocalizations {
   /// Privacy section: introduction body
   ///
   /// In en, this message translates to:
-  /// **'Stella (\"we\", \"our\", \"us\") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, and safeguard your personal information when you use our Service.'**
+  /// **'Sonde (\"we\", \"our\", \"us\") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, and safeguard your personal information when you use our Service.'**
   String get privacy_section_intro_body;
 
   /// Privacy section: collection heading

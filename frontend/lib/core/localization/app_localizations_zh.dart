@@ -9,7 +9,7 @@ class AppLocalizationsZh extends AppLocalizations {
   AppLocalizationsZh([String locale = 'zh']) : super(locale);
 
   @override
-  String get appTitle => 'Stella';
+  String get appTitle => '声读';
 
   @override
   String get appSlogan => '你关注的一切，交给我。';
@@ -1837,7 +1837,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get sleep_timer_after_episode => '当前剧集结束后';
 
   @override
-  String get onboarding_welcome_title => '欢迎使用 Stella';
+  String get onboarding_welcome_title => '欢迎使用 声读';
 
   @override
   String get onboarding_welcome_subtitle => '你的 AI 智能播客助手';
@@ -1879,7 +1879,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get terms_section_acceptance_body =>
-      '访问和使用 Stella（\"本服务\"）即表示您同意受本服务条款的约束。如果您不同意这些条款，请勿使用本服务。';
+      '访问和使用 声读（\"本服务\"）即表示您同意受本服务条款的约束。如果您不同意这些条款，请勿使用本服务。';
 
   @override
   String get terms_section_use => '2. 服务使用';
@@ -1893,7 +1893,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get terms_section_ip_body =>
-      '本服务的所有内容、功能和特性，包括但不限于文本、图形、标识和软件，均为 Stella 的财产，受版权、商标和其他知识产权法的保护。播客内容属于其各自的创作者。';
+      '本服务的所有内容、功能和特性，包括但不限于文本、图形、标识和软件，均为 声读 的财产，受版权、商标和其他知识产权法的保护。播客内容属于其各自的创作者。';
 
   @override
   String get terms_section_liability => '4. 责任限制';
@@ -1933,7 +1933,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get privacy_section_intro_body =>
-      'Stella（\"我们\"）致力于保护您的隐私。本隐私政策说明了我们在您使用本服务时如何收集、使用和保护您的个人信息。';
+      '声读（\"我们\"）致力于保护您的隐私。本隐私政策说明了我们在您使用本服务时如何收集、使用和保护您的个人信息。';
 
   @override
   String get privacy_section_collection => '2. 我们收集的信息';

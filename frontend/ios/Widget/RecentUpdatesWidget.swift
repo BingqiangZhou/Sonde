@@ -198,7 +198,7 @@ struct RecentUpdatesWidget: Widget {
             RecentUpdatesWidgetEntryView(entry: entry)
         }
         .configurationDisplayName("Recent Updates")
-        .description("See recent podcast episodes in Stella.")
+        .description("See recent podcast episodes in Sonde.")
         .supportedFamilies([.systemSmall, .systemMedium])
     }
 }

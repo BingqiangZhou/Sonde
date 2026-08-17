@@ -1,9 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:personal_ai_assistant/core/localization/app_localizations.dart';
-import 'package:personal_ai_assistant/core/widgets/adaptive/adaptive_segmented_control.dart';
-import 'package:personal_ai_assistant/features/podcast/data/models/audio_player_state_model.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/pages/podcast_episode_detail_page.dart';
+import 'package:sonde/core/localization/app_localizations.dart';
+import 'package:sonde/core/widgets/adaptive/adaptive_segmented_control.dart';
+import 'package:sonde/features/podcast/data/models/audio_player_state_model.dart';
+import 'package:sonde/features/podcast/presentation/pages/podcast_episode_detail_page.dart';
 
 import '../../../../helpers/podcast_episode_detail_helper.dart';
 

@@ -2,11 +2,11 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:personal_ai_assistant/core/localization/app_localizations.dart';
-import 'package:personal_ai_assistant/core/localization/l10n_delegates.dart';
-import 'package:personal_ai_assistant/core/theme/app_theme.dart';
-import 'package:personal_ai_assistant/features/settings/presentation/widgets/update_dialog.dart';
-import 'package:personal_ai_assistant/shared/models/github_release.dart';
+import 'package:sonde/core/localization/app_localizations.dart';
+import 'package:sonde/core/localization/l10n_delegates.dart';
+import 'package:sonde/core/theme/app_theme.dart';
+import 'package:sonde/features/settings/presentation/widgets/update_dialog.dart';
+import 'package:sonde/shared/models/github_release.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -41,11 +41,11 @@ void main() {
         // Android APK is first, Windows ZIP is second — file sizes differ.
         final release = _buildReleaseWithAssets([
           _buildAsset(
-            'personal-ai-assistant-android-arm64-1.0.0.apk',
+            'sonde-android-arm64-1.0.0.apk',
             5 * 1024 * 1024, // 5MB
           ),
           _buildAsset(
-            'personal-ai-assistant-windows-1.0.0.zip',
+            'sonde-windows-1.0.0.zip',
             80 * 1024 * 1024, // 80MB
           ),
         ]);
@@ -87,7 +87,7 @@ void main() {
       (tester) async {
         // Only has a Linux AppImage — on macOS, there's no matching asset.
         final release = _buildReleaseWithAssets([
-          _buildAsset('personal-ai-assistant-linux-1.0.0.tar.gz', 100 * 1024 * 1024),
+          _buildAsset('sonde-linux-1.0.0.tar.gz', 100 * 1024 * 1024),
         ]);
 
         await tester.pumpWidget(_buildTestApp(release));
@@ -108,7 +108,7 @@ void main() {
       'shows "no installer" text when no platform asset is available',
       (tester) async {
         final release = _buildReleaseWithAssets([
-          _buildAsset('personal-ai-assistant-linux-1.0.0.tar.gz', 100 * 1024 * 1024),
+          _buildAsset('sonde-linux-1.0.0.tar.gz', 100 * 1024 * 1024),
         ]);
 
         await tester.pumpWidget(_buildTestApp(release));
@@ -128,7 +128,7 @@ void main() {
       'hides file size row when no platform asset',
       (tester) async {
         final release = _buildReleaseWithAssets([
-          _buildAsset('personal-ai-assistant-linux-1.0.0.tar.gz', 100 * 1024 * 1024),
+          _buildAsset('sonde-linux-1.0.0.tar.gz', 100 * 1024 * 1024),
         ]);
 
         await tester.pumpWidget(_buildTestApp(release));

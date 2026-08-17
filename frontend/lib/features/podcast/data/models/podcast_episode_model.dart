@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:json_annotation/json_annotation.dart';
-import 'package:personal_ai_assistant/core/utils/time_formatter.dart';
+import 'package:sonde/core/utils/time_formatter.dart';
 
 part 'podcast_episode_model.g.dart';
 
