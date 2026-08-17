@@ -1,8 +1,6 @@
 ---
-name: /release
-description: 发布新版本 - 生成CHANGELOG、更新版本号、创建tag并推送
-usage: /release <version>
-example: /release 1.0.0
+name: release
+description: 发布新版本 - 生成CHANGELOG、更新版本号、创建tag并推送。用法：/release <version>（如 /release 1.0.0）
 ---
 
 # Release Workflow Command

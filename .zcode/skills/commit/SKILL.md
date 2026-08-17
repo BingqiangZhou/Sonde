@@ -1,8 +1,6 @@
 ---
-name: /commit
-description: Smart commit workflow - analyze changes and generate conventional commit messages
-usage: /commit [type]
-example: /commit or /commit feat
+name: commit
+description: Smart commit workflow - analyze changes and generate conventional commit messages. Usage: /commit [type] (e.g. /commit, /commit feat)
 ---
 
 # Smart Commit Workflow Command

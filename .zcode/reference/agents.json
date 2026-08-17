@@ -12,40 +12,40 @@
   },
   "workflows": {
     "product-driven-development": {
-      "path": ".claude/agents/workflows/product-driven-development.md",
+      "path": ".zcode/reference/agents/workflows/product-driven-development.md",
       "description": "Product-driven 4-stage workflow with PM as core driver",
       "default_workflow": true
     },
     "feature-development": {
-      "path": ".claude/agents/workflows/feature-development.md",
+      "path": ".zcode/reference/agents/workflows/feature-development.md",
       "description": "End-to-end feature development workflow"
     },
     "bug-fix": {
-      "path": ".claude/agents/workflows/bug-fix.md",
+      "path": ".zcode/reference/agents/workflows/bug-fix.md",
       "description": "Bug triage and resolution workflow"
     },
     "architecture-review": {
-      "path": ".claude/agents/workflows/architecture-review.md",
+      "path": ".zcode/reference/agents/workflows/architecture-review.md",
       "description": "Architecture design and review workflow"
     }
   },
   "prompts": {
     "base-prompt": {
-      "path": ".claude/agents/prompts/base-prompt.md",
+      "path": ".zcode/reference/agents/prompts/base-prompt.md",
       "description": "Shared knowledge base and project context"
     },
     "domain-context": {
-      "path": ".claude/agents/prompts/domain-context.md",
+      "path": ".zcode/reference/agents/prompts/domain-context.md",
       "description": "Domain-specific context for all agents"
     }
   },
   "coordination": {
     "task-board": {
-      "path": ".claude/agents/coordination/task-board.md",
+      "path": ".zcode/reference/agents/coordination/task-board.md",
       "description": "Task tracking and assignment system"
     },
     "communication": {
-      "path": ".claude/agents/coordination/communication.md",
+      "path": ".zcode/reference/agents/coordination/communication.md",
       "description": "Inter-agent communication protocols"
     }
   },

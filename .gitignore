@@ -120,6 +120,9 @@ backend/data/.secret_key
 credentials.txt
 SECURITY_DEPLOYMENT.md
 QUICKSTART.md
+*.pem
+*.sql
+.vscode/settings.json
 
 # Backup files (all variations)
 *.backup
