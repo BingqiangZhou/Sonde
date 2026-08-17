@@ -1,13 +1,12 @@
 import 'dart:async';
 import 'dart:collection';
 
-import 'package:clock/clock.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:personal_ai_assistant/core/constants/cache_constants.dart';
 import 'package:personal_ai_assistant/core/network/exceptions/network_exceptions.dart';
 import 'package:personal_ai_assistant/core/providers/core_providers.dart';
 import 'package:personal_ai_assistant/core/utils/app_logger.dart' as logger;
+import 'package:personal_ai_assistant/core/utils/request_dedup.dart';
 import 'package:personal_ai_assistant/features/podcast/data/models/playback_history_lite_model.dart';
 import 'package:personal_ai_assistant/features/podcast/data/models/podcast_episode_model.dart';
 import 'package:personal_ai_assistant/features/podcast/data/models/podcast_playback_model.dart';
@@ -308,9 +307,9 @@ class PodcastStatsNotifier extends AsyncNotifier<PodcastStatsResponse?> {
   PodcastRepository get _repository => ref.read(podcastRepositoryProvider);
 
   // Cache and deduplication state
-  final Duration _cacheDuration = CacheConstants.defaultListCacheDuration;
-  DateTime? _lastFetchTime;
-  Future<PodcastStatsResponse?>? _inFlightRequest;
+  final InFlightSlot<PodcastStatsResponse?> _loadSlot =
+      InFlightSlot<PodcastStatsResponse?>();
+  final FreshnessTracker _freshness = FreshnessTracker();
   bool _isDisposed = false;
   bool _onDisposeWired = false;
 
@@ -320,11 +319,7 @@ class PodcastStatsNotifier extends AsyncNotifier<PodcastStatsResponse?> {
   }
 
   /// Whether the currently held data is still within the cache window.
-  bool get isFresh {
-    final fetchTime = _lastFetchTime;
-    if (fetchTime == null) return false;
-    return clock.now().difference(fetchTime) < _cacheDuration;
-  }
+  bool get isFresh => _freshness.isFresh;
 
   /// Executes [fetcher] with cache-aware deduplication.
   Future<PodcastStatsResponse?> runWithCache({
@@ -342,7 +337,7 @@ class PodcastStatsNotifier extends AsyncNotifier<PodcastStatsResponse?> {
       return previousData;
     }
 
-    final inFlight = _inFlightRequest;
+    final inFlight = _loadSlot.inFlight;
     if (inFlight != null) {
       return inFlight;
     }
@@ -351,10 +346,10 @@ class PodcastStatsNotifier extends AsyncNotifier<PodcastStatsResponse?> {
       state = const AsyncValue.loading();
     }
 
-    final request = () async {
+    return _loadSlot(() async {
       try {
         final data = await fetcher();
-        _lastFetchTime = clock.now();
+        _freshness.markSuccess();
         if (!_isDisposed) {
           state = AsyncValue.data(data);
         }
@@ -363,34 +358,25 @@ class PodcastStatsNotifier extends AsyncNotifier<PodcastStatsResponse?> {
         if (onError != null) {
           onError(error, stackTrace);
         }
-        if (previousData == null) {
-          if (!_isDisposed) {
-            state = AsyncValue.error(error, stackTrace);
+        if (!_isDisposed) {
+          state = AsyncValue.error(error, stackTrace);
+          if (previousData != null) {
+            Future.microtask(() {
+              if (!_isDisposed) {
+                state = AsyncValue.data(previousData);
+              }
+            });
           }
-        } else {
-          if (!_isDisposed) {
-            state = AsyncValue.error(error, stackTrace);
-          }
-          Future.microtask(() {
-            if (!_isDisposed) {
-              state = AsyncValue.data(previousData);
-            }
-          });
         }
         return previousData;
-      } finally {
-        _inFlightRequest = null;
       }
-    }();
-
-    _inFlightRequest = request;
-    return request;
+    });
   }
 
   /// Resets the cache state.
   void resetCache() {
-    _lastFetchTime = null;
-    _inFlightRequest = null;
+    _freshness.reset();
+    _loadSlot.reset();
   }
 
   /// Mark the notifier as disposed to prevent state updates after disposal.
@@ -427,9 +413,8 @@ class ProfileStatsNotifier extends AsyncNotifier<ProfileStatsModel?> {
   PodcastRepository get _repository => ref.read(podcastRepositoryProvider);
 
   // Cache and deduplication state
-  final Duration _cacheDuration = CacheConstants.defaultListCacheDuration;
-  DateTime? _lastFetchTime;
-  Future<ProfileStatsModel?>? _inFlightRequest;
+  final InFlightSlot<ProfileStatsModel?> _loadSlot = InFlightSlot<ProfileStatsModel?>();
+  final FreshnessTracker _freshness = FreshnessTracker();
   bool _isDisposed = false;
   bool _onDisposeWired = false;
 
@@ -439,11 +424,7 @@ class ProfileStatsNotifier extends AsyncNotifier<ProfileStatsModel?> {
   }
 
   /// Whether the currently held data is still within the cache window.
-  bool get isFresh {
-    final fetchTime = _lastFetchTime;
-    if (fetchTime == null) return false;
-    return clock.now().difference(fetchTime) < _cacheDuration;
-  }
+  bool get isFresh => _freshness.isFresh;
 
   /// Executes [fetcher] with cache-aware deduplication.
   Future<ProfileStatsModel?> runWithCache({
@@ -461,7 +442,7 @@ class ProfileStatsNotifier extends AsyncNotifier<ProfileStatsModel?> {
       return previousData;
     }
 
-    final inFlight = _inFlightRequest;
+    final inFlight = _loadSlot.inFlight;
     if (inFlight != null) {
       return inFlight;
     }
@@ -470,10 +451,10 @@ class ProfileStatsNotifier extends AsyncNotifier<ProfileStatsModel?> {
       state = const AsyncValue.loading();
     }
 
-    final request = () async {
+    return _loadSlot(() async {
       try {
         final data = await fetcher();
-        _lastFetchTime = clock.now();
+        _freshness.markSuccess();
         if (!_isDisposed) {
           state = AsyncValue.data(data);
         }
@@ -497,19 +478,14 @@ class ProfileStatsNotifier extends AsyncNotifier<ProfileStatsModel?> {
           });
         }
         return previousData;
-      } finally {
-        _inFlightRequest = null;
       }
-    }();
-
-    _inFlightRequest = request;
-    return request;
+    });
   }
 
   /// Resets the cache state.
   void resetCache() {
-    _lastFetchTime = null;
-    _inFlightRequest = null;
+    _freshness.reset();
+    _loadSlot.reset();
   }
 
   /// Mark the notifier as disposed to prevent state updates after disposal.
@@ -550,9 +526,8 @@ class PlaybackHistoryNotifier
   PodcastRepository get _repository => ref.read(podcastRepositoryProvider);
 
   // Cache and deduplication state
-  final Duration _cacheDuration = CacheConstants.defaultListCacheDuration;
-  DateTime? _lastFetchTime;
-  Future<PodcastEpisodeListResponse?>? _inFlightRequest;
+  final InFlightSlot<PodcastEpisodeListResponse?> _loadSlot = InFlightSlot<PodcastEpisodeListResponse?>();
+  final FreshnessTracker _freshness = FreshnessTracker();
   bool _isDisposed = false;
   bool _onDisposeWired = false;
 
@@ -562,11 +537,7 @@ class PlaybackHistoryNotifier
   }
 
   /// Whether the currently held data is still within the cache window.
-  bool get isFresh {
-    final fetchTime = _lastFetchTime;
-    if (fetchTime == null) return false;
-    return clock.now().difference(fetchTime) < _cacheDuration;
-  }
+  bool get isFresh => _freshness.isFresh;
 
   /// Executes [fetcher] with cache-aware deduplication.
   Future<PodcastEpisodeListResponse?> runWithCache({
@@ -584,7 +555,7 @@ class PlaybackHistoryNotifier
       return previousData;
     }
 
-    final inFlight = _inFlightRequest;
+    final inFlight = _loadSlot.inFlight;
     if (inFlight != null) {
       return inFlight;
     }
@@ -593,10 +564,10 @@ class PlaybackHistoryNotifier
       state = const AsyncValue.loading();
     }
 
-    final request = () async {
+    return _loadSlot(() async {
       try {
         final data = await fetcher();
-        _lastFetchTime = clock.now();
+        _freshness.markSuccess();
         if (!_isDisposed) {
           state = AsyncValue.data(data);
         }
@@ -620,19 +591,14 @@ class PlaybackHistoryNotifier
           });
         }
         return previousData;
-      } finally {
-        _inFlightRequest = null;
       }
-    }();
-
-    _inFlightRequest = request;
-    return request;
+    });
   }
 
   /// Resets the cache state.
   void resetCache() {
-    _lastFetchTime = null;
-    _inFlightRequest = null;
+    _freshness.reset();
+    _loadSlot.reset();
   }
 
   /// Mark the notifier as disposed to prevent state updates after disposal.
@@ -671,9 +637,8 @@ class PlaybackHistoryLiteNotifier
   PodcastRepository get _repository => ref.read(podcastRepositoryProvider);
 
   // Cache and deduplication state
-  final Duration _cacheDuration = CacheConstants.defaultListCacheDuration;
-  DateTime? _lastFetchTime;
-  Future<PlaybackHistoryLiteResponse?>? _inFlightRequest;
+  final InFlightSlot<PlaybackHistoryLiteResponse?> _loadSlot = InFlightSlot<PlaybackHistoryLiteResponse?>();
+  final FreshnessTracker _freshness = FreshnessTracker();
   bool _isDisposed = false;
   bool _onDisposeWired = false;
 
@@ -683,11 +648,7 @@ class PlaybackHistoryLiteNotifier
   }
 
   /// Whether the currently held data is still within the cache window.
-  bool get isFresh {
-    final fetchTime = _lastFetchTime;
-    if (fetchTime == null) return false;
-    return clock.now().difference(fetchTime) < _cacheDuration;
-  }
+  bool get isFresh => _freshness.isFresh;
 
   /// Executes [fetcher] with cache-aware deduplication.
   Future<PlaybackHistoryLiteResponse?> runWithCache({
@@ -705,7 +666,7 @@ class PlaybackHistoryLiteNotifier
       return previousData;
     }
 
-    final inFlight = _inFlightRequest;
+    final inFlight = _loadSlot.inFlight;
     if (inFlight != null) {
       return inFlight;
     }
@@ -714,10 +675,10 @@ class PlaybackHistoryLiteNotifier
       state = const AsyncValue.loading();
     }
 
-    final request = () async {
+    return _loadSlot(() async {
       try {
         final data = await fetcher();
-        _lastFetchTime = clock.now();
+        _freshness.markSuccess();
         if (!_isDisposed) {
           state = AsyncValue.data(data);
         }
@@ -741,19 +702,14 @@ class PlaybackHistoryLiteNotifier
           });
         }
         return previousData;
-      } finally {
-        _inFlightRequest = null;
       }
-    }();
-
-    _inFlightRequest = request;
-    return request;
+    });
   }
 
   /// Resets the cache state.
   void resetCache() {
-    _lastFetchTime = null;
-    _inFlightRequest = null;
+    _freshness.reset();
+    _loadSlot.reset();
   }
 
   /// Mark the notifier as disposed to prevent state updates after disposal.

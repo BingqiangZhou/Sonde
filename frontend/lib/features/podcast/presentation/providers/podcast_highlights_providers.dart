@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/misc.dart' show FutureProviderFamily;
 import 'package:personal_ai_assistant/core/constants/cache_constants.dart';
 import 'package:personal_ai_assistant/core/network/exceptions/network_exceptions.dart';
 import 'package:personal_ai_assistant/core/utils/app_logger.dart' as logger;
+import 'package:personal_ai_assistant/core/utils/request_dedup.dart';
 import 'package:personal_ai_assistant/core/utils/time_formatter.dart';
 import 'package:personal_ai_assistant/features/auth/presentation/providers/auth_provider.dart';
 import 'package:personal_ai_assistant/features/podcast/data/models/podcast_highlight_model.dart';
@@ -77,21 +78,16 @@ class SelectedHighlightDateNotifier extends Notifier<DateTime?> {
 /// 高光列表 Notifier
 class HighlightsNotifier extends AsyncNotifier<HighlightsListResponse?> {
   PodcastRepository get _repository => ref.read(podcastRepositoryProvider);
-  DateTime? _lastLoadedAt;
   DateTime? _lastDate;
-  Future<HighlightsListResponse?>? _inFlightRequest;
+  final InFlightSlot<HighlightsListResponse?> _loadSlot =
+      InFlightSlot<HighlightsListResponse?>();
+  final FreshnessTracker _freshness = FreshnessTracker();
 
   static const int _defaultPageSize = 20;
 
   @override
   FutureOr<HighlightsListResponse?> build() {
     return null;
-  }
-
-  bool _isFresh() {
-    final lastLoaded = _lastLoadedAt;
-    if (lastLoaded == null) return false;
-    return DateTime.now().difference(lastLoaded) < CacheConstants.defaultListCacheDuration;
   }
 
   Future<HighlightsListResponse?> load({
@@ -104,12 +100,12 @@ class HighlightsNotifier extends AsyncNotifier<HighlightsListResponse?> {
     if (!forceRefresh &&
         previousData != null &&
         TimeFormatter.sameDate(_lastDate, date) &&
-        _isFresh() &&
+        _freshness.isFresh &&
         page == 1) {
       return previousData;
     }
 
-    final inFlight = _inFlightRequest;
+    final inFlight = _loadSlot.inFlight;
     if (inFlight != null && TimeFormatter.sameDate(_lastDate, date) && page == 1) {
       return inFlight;
     }
@@ -118,14 +114,14 @@ class HighlightsNotifier extends AsyncNotifier<HighlightsListResponse?> {
       state = const AsyncValue.loading();
     }
 
-    final request = () async {
+    return _loadSlot(() async {
       try {
         final data = await _repository.getHighlights(
           date: date,
           page: page,
           perPage: perPage ?? _defaultPageSize,
         );
-        _lastLoadedAt = DateTime.now();
+        _freshness.markSuccess();
         _lastDate = date;
         state = AsyncValue.data(data);
         return data;
@@ -140,13 +136,8 @@ class HighlightsNotifier extends AsyncNotifier<HighlightsListResponse?> {
           state = AsyncValue.data(previousData);
         }
         return previousData;
-      } finally {
-        _inFlightRequest = null;
       }
-    }();
-
-    _inFlightRequest = request;
-    return request;
+    });
   }
 
   Future<void> toggleFavorite(int highlightId) async {

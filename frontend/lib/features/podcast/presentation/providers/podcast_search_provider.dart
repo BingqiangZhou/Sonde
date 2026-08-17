@@ -7,6 +7,7 @@ import 'package:personal_ai_assistant/core/constants/cache_constants.dart';
 import 'package:personal_ai_assistant/core/network/exceptions/network_exceptions.dart';
 import 'package:personal_ai_assistant/core/storage/local_storage_service.dart';
 import 'package:personal_ai_assistant/core/utils/debounce.dart' as utils;
+import 'package:personal_ai_assistant/core/utils/request_dedup.dart';
 import 'package:personal_ai_assistant/features/podcast/data/models/itunes_episode_lookup_model.dart';
 import 'package:personal_ai_assistant/features/podcast/data/models/podcast_discover_chart_model.dart';
 import 'package:personal_ai_assistant/features/podcast/data/models/podcast_search_model.dart';
@@ -87,7 +88,7 @@ final podcastSearchProvider =
 class PodcastSearchNotifier extends Notifier<PodcastSearchState> {
   utils.DebounceTimer? _debounce;
   Duration get _debounceDuration => ref.read(podcastSearchDebounceDurationProvider);
-  int _activeSearchRequestId = 0;
+  final RequestToken _searchToken = RequestToken();
 
   @override
   PodcastSearchState build() {
@@ -138,7 +139,7 @@ class PodcastSearchNotifier extends Notifier<PodcastSearchState> {
     final normalizedQuery = query.trim();
 
     if (normalizedQuery.isEmpty) {
-      _activeSearchRequestId += 1;
+      _searchToken.cancel();
       state = PodcastSearchState(searchMode: mode);
       return;
     }
@@ -150,7 +151,7 @@ class PodcastSearchNotifier extends Notifier<PodcastSearchState> {
       searchMode: mode,
     );
 
-    final requestId = ++_activeSearchRequestId;
+    final requestId = _searchToken.begin();
     final delay = bypassDebounce ? Duration.zero : _debounceDuration;
     _debounce = utils.DebounceTimer(delay, () async {
       await _performSearch(normalizedQuery, mode, requestId: requestId);
@@ -218,14 +219,14 @@ class PodcastSearchNotifier extends Notifier<PodcastSearchState> {
     String query,
     PodcastSearchMode mode,
   ) {
-    return requestId == _activeSearchRequestId &&
+    return _searchToken.isCurrent(requestId) &&
         state.currentQuery == query &&
         state.searchMode == mode;
   }
 
   void clearSearch() {
     _debounce?.cancel();
-    _activeSearchRequestId += 1;
+    _searchToken.cancel();
     state = PodcastSearchState(searchMode: state.searchMode);
   }
 
@@ -235,7 +236,7 @@ class PodcastSearchNotifier extends Notifier<PodcastSearchState> {
     }
 
     state = state.copyWith(isLoading: true);
-    final requestId = ++_activeSearchRequestId;
+    final requestId = _searchToken.begin();
     await _performSearch(
       state.currentQuery,
       state.searchMode,
@@ -489,19 +490,19 @@ final podcastDiscoverProvider =
 
 class PodcastDiscoverNotifier extends Notifier<PodcastDiscoverState> {
   ApplePodcastRssService get _rssService => ref.read(applePodcastRssServiceProvider);
-  Future<void>? _inFlightLoad;
-  PodcastCountry? _inFlightLoadCountry;
-  Future<void>? _inFlightShowsLoadMore;
-  Future<void>? _inFlightEpisodesLoadMore;
-  int _activeRequestId = 0;
+  final InFlightSlot<void> _loadSlot = InFlightSlot<void>();
+  PodcastCountry? _loadSlotCountry;
+  final InFlightSlot<void> _showsLoadMoreSlot = InFlightSlot<void>();
+  final InFlightSlot<void> _episodesLoadMoreSlot = InFlightSlot<void>();
+  final RequestToken _requestToken = RequestToken();
 
   @override
   PodcastDiscoverState build() {
     // Reset in-flight tracking on rebuild to avoid stale futures
-    _inFlightLoad = null;
-    _inFlightLoadCountry = null;
-    _inFlightShowsLoadMore = null;
-    _inFlightEpisodesLoadMore = null;
+    _loadSlot.reset();
+    _loadSlotCountry = null;
+    _showsLoadMoreSlot.reset();
+    _episodesLoadMoreSlot.reset();
 
     final selectedCountry = ref.read(countrySelectorProvider).selectedCountry;
 
@@ -575,11 +576,11 @@ class PodcastDiscoverNotifier extends Notifier<PodcastDiscoverState> {
     final rssService = ref.read(applePodcastRssServiceProvider);
     final selectedCountry = ref.read(countrySelectorProvider).selectedCountry;
     rssService.clearCache();
-    _activeRequestId += 1;
-    _inFlightLoad = null;
-    _inFlightLoadCountry = null;
-    _inFlightShowsLoadMore = null;
-    _inFlightEpisodesLoadMore = null;
+    _requestToken.cancel();
+    _loadSlot.reset();
+    _loadSlotCountry = null;
+    _showsLoadMoreSlot.reset();
+    _episodesLoadMoreSlot.reset();
     state = PodcastDiscoverState(country: selectedCountry);
   }
 
@@ -595,17 +596,20 @@ class PodcastDiscoverNotifier extends Notifier<PodcastDiscoverState> {
       return;
     }
 
-    final existingLoad = _inFlightLoad;
+    final existingLoad = _loadSlot.inFlight;
     if (existingLoad != null &&
         !forceRefresh &&
-        _inFlightLoadCountry == country) {
+        _loadSlotCountry == country) {
       return existingLoad;
     }
 
-    final requestId = ++_activeRequestId;
-    _inFlightShowsLoadMore = null;
-    _inFlightEpisodesLoadMore = null;
-    _inFlightLoadCountry = country;
+    final requestId = _requestToken.begin();
+    // Replacing any earlier chart load: the stale request keeps running but
+    // its results are discarded via the request token above.
+    _loadSlot.reset();
+    _showsLoadMoreSlot.reset();
+    _episodesLoadMoreSlot.reset();
+    _loadSlotCountry = country;
 
     state = state.copyWith(
       country: country,
@@ -615,7 +619,7 @@ class PodcastDiscoverNotifier extends Notifier<PodcastDiscoverState> {
       clearError: true,
     );
 
-    final loadFuture = () async {
+    await _loadSlot(() async {
       try {
         final showsFuture = _rssService.fetchTopShows(
           country: country,
@@ -671,23 +675,17 @@ class PodcastDiscoverNotifier extends Notifier<PodcastDiscoverState> {
           error: mapErrorMessage(error),
         );
       }
-    }();
-
-    _inFlightLoad = loadFuture;
-    try {
-      await loadFuture;
-    } finally {
-      if (identical(_inFlightLoad, loadFuture)) {
-        _inFlightLoad = null;
-        _inFlightLoadCountry = null;
-      }
+    });
+    if (_loadSlot.inFlight == null) {
+      _loadSlotCountry = null;
     }
   }
 
   Future<void> _loadMoreTab(PodcastDiscoverTab tab) async {
-    final inFlight = tab == PodcastDiscoverTab.podcasts
-        ? _inFlightShowsLoadMore
-        : _inFlightEpisodesLoadMore;
+    final loadMoreSlot = tab == PodcastDiscoverTab.podcasts
+        ? _showsLoadMoreSlot
+        : _episodesLoadMoreSlot;
+    final inFlight = loadMoreSlot.inFlight;
     if (inFlight != null) {
       return inFlight;
     }
@@ -705,7 +703,7 @@ class PodcastDiscoverNotifier extends Notifier<PodcastDiscoverState> {
     }
 
     final previousPagination = pagination;
-    final requestId = _activeRequestId;
+    final requestId = _requestToken.current;
     final country = state.country;
 
     state = _copyWithTabPagination(
@@ -715,7 +713,7 @@ class PodcastDiscoverNotifier extends Notifier<PodcastDiscoverState> {
       clearError: true,
     );
 
-    final loadMoreFuture = () async {
+    await loadMoreSlot(() async {
       try {
         if (tab == PodcastDiscoverTab.podcasts) {
           final response = await _rssService.fetchTopShows(
@@ -777,32 +775,14 @@ class PodcastDiscoverNotifier extends Notifier<PodcastDiscoverState> {
           error: mapErrorMessage(error),
         );
       }
-    }();
-
-    if (tab == PodcastDiscoverTab.podcasts) {
-      _inFlightShowsLoadMore = loadMoreFuture;
-    } else {
-      _inFlightEpisodesLoadMore = loadMoreFuture;
-    }
-
-    try {
-      await loadMoreFuture;
-    } finally {
-      if (tab == PodcastDiscoverTab.podcasts) {
-        if (identical(_inFlightShowsLoadMore, loadMoreFuture)) {
-          _inFlightShowsLoadMore = null;
-        }
-      } else if (identical(_inFlightEpisodesLoadMore, loadMoreFuture)) {
-        _inFlightEpisodesLoadMore = null;
-      }
-    }
+    });
   }
 
   bool get _hasAnyData =>
       state.topShows.isNotEmpty || state.topEpisodes.isNotEmpty;
 
   bool _isRequestActive(int requestId) =>
-      ref.mounted && requestId == _activeRequestId;
+      ref.mounted && _requestToken.isCurrent(requestId);
 
   PodcastDiscoverState _copyWithTabPagination(
     PodcastDiscoverState currentState,

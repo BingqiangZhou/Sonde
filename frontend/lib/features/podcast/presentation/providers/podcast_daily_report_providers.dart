@@ -1,9 +1,9 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:personal_ai_assistant/core/constants/cache_constants.dart';
 import 'package:personal_ai_assistant/core/network/exceptions/network_exceptions.dart';
 import 'package:personal_ai_assistant/core/utils/app_logger.dart' as logger;
+import 'package:personal_ai_assistant/core/utils/request_dedup.dart';
 import 'package:personal_ai_assistant/core/utils/time_formatter.dart';
 import 'package:personal_ai_assistant/features/auth/presentation/providers/auth_provider.dart';
 import 'package:personal_ai_assistant/features/podcast/data/models/podcast_daily_report_model.dart';
@@ -36,23 +36,16 @@ class SelectedDailyReportDateNotifier extends Notifier<DateTime?> {
 
 class DailyReportNotifier extends AsyncNotifier<PodcastDailyReportResponse?> {
   PodcastRepository get _repository => ref.read(podcastRepositoryProvider);
-  DateTime? _lastLoadedAt;
   DateTime? _lastDate;
-  Future<PodcastDailyReportResponse?>? _inFlightRequest;
-  Future<PodcastDailyReportResponse?>? _inFlightGenerateRequest;
+  final InFlightSlot<PodcastDailyReportResponse?> _loadSlot =
+      InFlightSlot<PodcastDailyReportResponse?>();
+  final InFlightSlot<PodcastDailyReportResponse?> _generateSlot =
+      InFlightSlot<PodcastDailyReportResponse?>();
+  final FreshnessTracker _freshness = FreshnessTracker();
 
   @override
   FutureOr<PodcastDailyReportResponse?> build() {
     return null;
-  }
-
-  bool _isFresh() {
-    final loadedAt = _lastLoadedAt;
-    if (loadedAt == null) {
-      return false;
-    }
-    const cacheDuration = CacheConstants.defaultListCacheDuration;
-    return DateTime.now().difference(loadedAt) < cacheDuration;
   }
 
   Future<PodcastDailyReportResponse?> load({
@@ -63,11 +56,11 @@ class DailyReportNotifier extends AsyncNotifier<PodcastDailyReportResponse?> {
     if (!forceRefresh &&
         previousData != null &&
         TimeFormatter.sameDate(_lastDate, date) &&
-        _isFresh()) {
+        _freshness.isFresh) {
       return previousData;
     }
 
-    final inFlight = _inFlightRequest;
+    final inFlight = _loadSlot.inFlight;
     if (inFlight != null && TimeFormatter.sameDate(_lastDate, date)) {
       return inFlight;
     }
@@ -76,10 +69,10 @@ class DailyReportNotifier extends AsyncNotifier<PodcastDailyReportResponse?> {
       state = const AsyncValue.loading();
     }
 
-    final request = () async {
+    return _loadSlot(() async {
       try {
         final data = await _repository.getDailyReport(date: date);
-        _lastLoadedAt = DateTime.now();
+        _freshness.markSuccess();
         _lastDate = date;
         state = AsyncValue.data(data);
         return data;
@@ -91,13 +84,8 @@ class DailyReportNotifier extends AsyncNotifier<PodcastDailyReportResponse?> {
           state = AsyncValue.data(previousData);
         }
         return previousData;
-      } finally {
-        _inFlightRequest = null;
       }
-    }();
-
-    _inFlightRequest = request;
-    return request;
+    });
   }
 
   Future<PodcastDailyReportResponse?> generate({
@@ -105,18 +93,18 @@ class DailyReportNotifier extends AsyncNotifier<PodcastDailyReportResponse?> {
     bool rebuild = false,
   }) async {
     final previousData = state.value;
-    final inFlight = _inFlightGenerateRequest;
+    final inFlight = _generateSlot.inFlight;
     if (inFlight != null && TimeFormatter.sameDate(_lastDate, date)) {
       return inFlight;
     }
 
-    final request = () async {
+    return _generateSlot(() async {
       try {
         final data = await _repository.generateDailyReport(
           date: date,
           rebuild: rebuild,
         );
-        _lastLoadedAt = DateTime.now();
+        _freshness.markSuccess();
         _lastDate = date;
         state = AsyncValue.data(data);
         await ref
@@ -134,43 +122,31 @@ class DailyReportNotifier extends AsyncNotifier<PodcastDailyReportResponse?> {
           state = AsyncValue.data(previousData);
         }
         rethrow;
-      } finally {
-        _inFlightGenerateRequest = null;
       }
-    }();
-
-    _inFlightGenerateRequest = request;
-    return request;
+    });
   }
 }
 
 class DailyReportDatesNotifier
     extends AsyncNotifier<PodcastDailyReportDatesResponse?> {
   PodcastRepository get _repository => ref.read(podcastRepositoryProvider);
-  DateTime? _lastLoadedAt;
   int _lastSize = _defaultPageSize;
   int _nextPage = 1;
   int _totalPages = 0;
   int _total = 0;
   final Map<String, PodcastDailyReportDateItem> _datesByKey =
       <String, PodcastDailyReportDateItem>{};
-  Future<PodcastDailyReportDatesResponse?>? _inFlightRequest;
-  Future<PodcastDailyReportDatesResponse?>? _inFlightCoverageRequest;
+  final InFlightSlot<PodcastDailyReportDatesResponse?> _loadSlot =
+      InFlightSlot<PodcastDailyReportDatesResponse?>();
+  final InFlightSlot<PodcastDailyReportDatesResponse?> _coverageSlot =
+      InFlightSlot<PodcastDailyReportDatesResponse?>();
+  final FreshnessTracker _freshness = FreshnessTracker();
 
   static const int _defaultPageSize = 100;
 
   @override
   FutureOr<PodcastDailyReportDatesResponse?> build() {
     return null;
-  }
-
-  bool _isFresh() {
-    final loadedAt = _lastLoadedAt;
-    if (loadedAt == null) {
-      return false;
-    }
-    const cacheDuration = CacheConstants.defaultListCacheDuration;
-    return DateTime.now().difference(loadedAt) < cacheDuration;
   }
 
   DateTime _toDateOnly(DateTime value) {
@@ -250,7 +226,7 @@ class DailyReportDatesNotifier
     _totalPages = payload.pages;
     _nextPage = page + 1;
     _lastSize = size;
-    _lastLoadedAt = DateTime.now();
+    _freshness.markSuccess();
 
     final merged = _buildAggregatedResponse();
     state = AsyncValue.data(merged);
@@ -267,11 +243,11 @@ class DailyReportDatesNotifier
     if (!forceRefresh &&
         previousData != null &&
         isFirstPageQuery &&
-        _isFresh()) {
+        _freshness.isFresh) {
       return previousData;
     }
 
-    final inFlight = _inFlightRequest;
+    final inFlight = _loadSlot.inFlight;
     if (inFlight != null && isFirstPageQuery) {
       return inFlight;
     }
@@ -280,7 +256,7 @@ class DailyReportDatesNotifier
       state = const AsyncValue.loading();
     }
 
-    final request = () async {
+    return _loadSlot(() async {
       try {
         if (forceRefresh || isFirstPageQuery) {
           _resetAggregation();
@@ -294,13 +270,8 @@ class DailyReportDatesNotifier
           state = AsyncValue.data(previousData);
         }
         return previousData;
-      } finally {
-        _inFlightRequest = null;
       }
-    }();
-
-    _inFlightRequest = request;
-    return request;
+    });
   }
 
   Future<PodcastDailyReportDatesResponse?> ensureMonthCoverage(
@@ -314,12 +285,12 @@ class DailyReportDatesNotifier
       return state.value;
     }
 
-    final inFlightCoverage = _inFlightCoverageRequest;
+    final inFlightCoverage = _coverageSlot.inFlight;
     if (inFlightCoverage != null) {
       return inFlightCoverage;
     }
 
-    final request = () async {
+    return _coverageSlot(() async {
       try {
         while (!_isMonthCovered(normalizedMonth) && _canLoadNextPage()) {
           await _fetchAndMerge(page: _nextPage, size: _lastSize);
@@ -328,13 +299,8 @@ class DailyReportDatesNotifier
         logger.AppLogger.debug(
           'Failed to ensure daily report date coverage for month=$normalizedMonth error=$error',
         );
-      } finally {
-        _inFlightCoverageRequest = null;
       }
       return state.value;
-    }();
-
-    _inFlightCoverageRequest = request;
-    return request;
+    });
   }
 }

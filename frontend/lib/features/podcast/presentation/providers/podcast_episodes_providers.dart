@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/misc.dart' show FutureProviderFamily;
 import 'package:personal_ai_assistant/core/network/exceptions/network_exceptions.dart';
 import 'package:personal_ai_assistant/core/storage/local_storage_service.dart';
 import 'package:personal_ai_assistant/core/utils/app_logger.dart' as logger;
+import 'package:personal_ai_assistant/core/utils/request_dedup.dart';
 import 'package:personal_ai_assistant/features/podcast/data/models/podcast_episode_model.dart';
 import 'package:personal_ai_assistant/features/podcast/data/models/podcast_state_models.dart';
 import 'package:personal_ai_assistant/features/podcast/data/repositories/podcast_repository.dart';
@@ -30,8 +31,8 @@ final podcastEpisodesProvider =
 class PodcastEpisodesNotifier extends Notifier<PodcastEpisodesState> {
   PodcastRepository get _repository => ref.read(podcastRepositoryProvider);
   static const Duration _episodesCacheExpiration = Duration(hours: 6);
-  int _loadRequestId = 0;
-  int _loadMoreRequestId = 0;
+  final RequestToken _loadToken = RequestToken();
+  final RequestToken _loadMoreToken = RequestToken();
 
   @override
   PodcastEpisodesState build() {
@@ -104,7 +105,7 @@ class PodcastEpisodesNotifier extends Notifier<PodcastEpisodesState> {
     );
 
     // Assign a unique ID to this request so stale responses are discarded
-    final currentRequestId = ++_loadRequestId;
+    final currentRequestId = _loadToken.begin();
 
     if (page == 1) {
       final cacheKey = _episodesCacheKey(
@@ -170,7 +171,7 @@ class PodcastEpisodesNotifier extends Notifier<PodcastEpisodesState> {
       );
 
       // Discard if a newer request was made while this one was in-flight
-      if (currentRequestId != _loadRequestId) return;
+      if (!_loadToken.isCurrent(currentRequestId)) return;
 
       logger.AppLogger.debug(
         '[Playback] Loaded ${response.episodes.length} episodes for subscription $subscriptionId',
@@ -226,7 +227,7 @@ class PodcastEpisodesNotifier extends Notifier<PodcastEpisodesState> {
     if (currentState.isLoadingMore || !currentState.hasMore) return;
 
     // Assign a unique ID to this request so stale responses are discarded
-    final currentRequestId = ++_loadMoreRequestId;
+    final currentRequestId = _loadMoreToken.begin();
 
     final normalizedStatus = status?.trim().isEmpty ?? true ? null : status;
     final effectiveStatus = normalizedStatus ?? currentState.cachedStatus;
@@ -247,7 +248,7 @@ class PodcastEpisodesNotifier extends Notifier<PodcastEpisodesState> {
       );
 
       // Discard if a newer load-more request was made while this one was in-flight
-      if (currentRequestId != _loadMoreRequestId) return;
+      if (!_loadMoreToken.isCurrent(currentRequestId)) return;
 
       state = state.copyWith(
         episodes: [...state.episodes, ...response.episodes],
