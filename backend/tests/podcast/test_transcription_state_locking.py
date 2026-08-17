@@ -4,7 +4,7 @@ import fnmatch
 
 import pytest
 
-from app.domains.podcast.transcription_state import TranscriptionStateManager
+from app.domains.podcast.transcription.state import TranscriptionStateManager
 
 
 class _FakeRedisClient:

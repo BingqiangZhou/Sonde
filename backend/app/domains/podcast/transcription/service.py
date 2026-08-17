@@ -23,7 +23,7 @@ from app.domains.podcast.models import (
     TranscriptionStep,
     TranscriptionTask,
 )
-from app.domains.podcast.transcription_state import _progress_throttle
+from app.domains.podcast.transcription.state import _progress_throttle
 
 from .converter import AudioConverter
 from .downloader import AudioDownloader

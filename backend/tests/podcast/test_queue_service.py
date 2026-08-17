@@ -17,7 +17,7 @@ def mock_db():
 @pytest.fixture
 def mock_repo():
     with patch(
-        "app.domains.podcast.services.playback_service.PodcastQueueRepository"
+        "app.domains.podcast.services.playback_service.PodcastRepository"
     ) as mock:
         repo_instance = AsyncMock()
         mock.return_value = repo_instance

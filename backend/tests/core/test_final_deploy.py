@@ -37,16 +37,12 @@ def test_api_routes_shape() -> None:
 
 
 def test_repository_contract() -> None:
-    from app.domains.podcast.repositories import (
-        PodcastEpisodeRepository,
-        PodcastPlaybackRepository,
-        PodcastSubscriptionRepository,
-    )
+    from app.domains.podcast.repositories import PodcastRepository
 
-    assert hasattr(PodcastSubscriptionRepository, "create_or_update_subscription")
-    assert hasattr(PodcastSubscriptionRepository, "create_or_update_episode")
-    assert hasattr(PodcastEpisodeRepository, "update_ai_summary")
-    assert hasattr(PodcastPlaybackRepository, "update_playback_progress")
+    assert hasattr(PodcastRepository, "create_or_update_subscription")
+    assert hasattr(PodcastRepository, "create_or_update_episode")
+    assert hasattr(PodcastRepository, "update_ai_summary")
+    assert hasattr(PodcastRepository, "update_playback_progress")
 
 
 def test_specialized_service_contracts() -> None:

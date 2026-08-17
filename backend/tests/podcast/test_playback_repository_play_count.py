@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, MagicMock, Mock
 
 import pytest
 
-from app.domains.podcast.repositories import PodcastPlaybackRepository
+from app.domains.podcast.repositories import PodcastRepository
 
 
 def _mock_db() -> SimpleNamespace:
@@ -41,7 +41,7 @@ async def test_play_count_increments_only_on_false_to_true_transition() -> None:
     db = _mock_db()
     state = _state(is_playing=False, play_count=3)
     db.execute = _mock_execute_returning(state)
-    repo = PodcastPlaybackRepository(db=db, redis=AsyncMock())
+    repo = PodcastRepository(db=db, redis=AsyncMock())
 
     await repo.update_playback_progress(
         user_id=1,
@@ -59,7 +59,7 @@ async def test_play_count_does_not_increment_on_true_to_true_heartbeat() -> None
     db = _mock_db()
     state = _state(is_playing=True, play_count=7, position=120)
     db.execute = _mock_execute_returning(state)
-    repo = PodcastPlaybackRepository(db=db, redis=AsyncMock())
+    repo = PodcastRepository(db=db, redis=AsyncMock())
 
     await repo.update_playback_progress(
         user_id=1,
@@ -77,7 +77,7 @@ async def test_play_count_does_not_increment_on_true_to_false_transition() -> No
     db = _mock_db()
     state = _state(is_playing=True, play_count=5, position=200)
     db.execute = _mock_execute_returning(state)
-    repo = PodcastPlaybackRepository(db=db, redis=AsyncMock())
+    repo = PodcastRepository(db=db, redis=AsyncMock())
 
     await repo.update_playback_progress(
         user_id=1,
@@ -95,7 +95,7 @@ async def test_play_count_increments_again_after_pause_then_resume() -> None:
     db = _mock_db()
     state = _state(is_playing=True, play_count=2, position=50)
     db.execute = _mock_execute_returning(state)
-    repo = PodcastPlaybackRepository(db=db, redis=AsyncMock())
+    repo = PodcastRepository(db=db, redis=AsyncMock())
 
     await repo.update_playback_progress(
         user_id=1,
@@ -120,7 +120,7 @@ async def test_continuous_heartbeats_do_not_inflate_play_count() -> None:
     db = _mock_db()
     state = _state(is_playing=True, play_count=11, position=0)
     db.execute = _mock_execute_returning(state)
-    repo = PodcastPlaybackRepository(db=db, redis=AsyncMock())
+    repo = PodcastRepository(db=db, redis=AsyncMock())
 
     for pos in range(1, 11):
         await repo.update_playback_progress(

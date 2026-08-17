@@ -30,7 +30,7 @@ from app.domains.podcast.transcription import (
     PodcastTranscriptionService,
     SiliconFlowTranscriber,
 )
-from app.domains.podcast.transcription_state import (
+from app.domains.podcast.transcription.state import (
     claim_task_dispatch,
     clear_task_dispatch,
     get_transcription_state_manager,

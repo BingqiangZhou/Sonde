@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from app.domains.podcast.repositories import PodcastEpisodeRepository
+from app.domains.podcast.repositories import PodcastRepository
 
 
 class _RowsResult:
@@ -42,7 +42,7 @@ async def test_subscription_episodes_batch_uses_topn_window_query():
     episode_c = MagicMock(subscription_id=2)
     db.execute.return_value = _ScalarRowsResult([episode_a, episode_b, episode_c])
 
-    repo = PodcastEpisodeRepository(db=db, redis=redis)
+    repo = PodcastRepository(db=db, redis=redis)
     result = await repo.get_subscription_episodes_batch(
         [1, 2], limit_per_subscription=2
     )
@@ -65,7 +65,7 @@ async def test_user_subscriptions_paginated_returns_counts_without_fallback():
     sub2.id = 202
     db.execute.return_value = _RowsResult([(sub1, 7, 2), (sub2, 3, 2)])
 
-    repo = PodcastEpisodeRepository(db=db, redis=redis)
+    repo = PodcastRepository(db=db, redis=redis)
     items, total, counts = await repo.get_user_subscriptions_paginated(
         user_id=1, page=1, size=20
     )
@@ -83,7 +83,7 @@ async def test_user_subscriptions_paginated_uses_fallback_on_empty_page():
     db.execute.return_value = _RowsResult([])
     db.scalar.return_value = 5
 
-    repo = PodcastEpisodeRepository(db=db, redis=redis)
+    repo = PodcastRepository(db=db, redis=redis)
     items, total, counts = await repo.get_user_subscriptions_paginated(
         user_id=1, page=3, size=20
     )
@@ -100,7 +100,7 @@ async def test_feed_cursor_paginated_reuses_feed_total_cache_path():
     redis = AsyncMock()
     db.execute.return_value = _ScalarRowsResult([])
 
-    repo = PodcastEpisodeRepository(db=db, redis=redis)
+    repo = PodcastRepository(db=db, redis=redis)
     repo._get_feed_total_count = AsyncMock(return_value=9)
 
     episodes, total, has_more, next_cursor = await repo.get_feed_cursor_paginated(
@@ -126,7 +126,7 @@ async def test_playback_history_cursor_paginated_uses_window_total():
     now = datetime.now(UTC)
     db.execute.return_value = _RowsResult([(episode, now, 4)])
 
-    repo = PodcastEpisodeRepository(db=db, redis=redis)
+    repo = PodcastRepository(db=db, redis=redis)
     (
         items,
         total,
@@ -155,7 +155,7 @@ async def test_playback_history_cursor_paginated_uses_fallback_on_empty_result()
     db.execute.return_value = _RowsResult([])
     db.scalar.return_value = 6
 
-    repo = PodcastEpisodeRepository(db=db, redis=redis)
+    repo = PodcastRepository(db=db, redis=redis)
     (
         items,
         total,

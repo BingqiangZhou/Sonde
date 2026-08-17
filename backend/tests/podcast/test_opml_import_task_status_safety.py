@@ -63,7 +63,7 @@ async def test_opml_background_handler_does_not_mutate_existing_episode_status()
 
     with (
         patch(
-            "app.domains.podcast.tasks.task_orchestration.PodcastSubscriptionRepository",
+            "app.domains.podcast.tasks.task_orchestration.PodcastRepository",
             return_value=mock_repo,
         ),
         patch(

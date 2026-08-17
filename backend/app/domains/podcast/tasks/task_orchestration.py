@@ -43,7 +43,7 @@ from app.domains.podcast.services.content_service import DailyReportService
 from app.domains.podcast.services.transcription_service import (  # noqa: F401
     TranscriptionWorkflowService,
 )
-from app.domains.podcast.transcription_state import (
+from app.domains.podcast.transcription.state import (
     claim_task_dispatch,
     clear_task_dispatch,
     get_transcription_state_manager,

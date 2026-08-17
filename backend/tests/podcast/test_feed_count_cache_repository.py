@@ -2,7 +2,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from app.domains.podcast.repositories import PodcastEpisodeRepository
+from app.domains.podcast.repositories import PodcastRepository
 
 
 class _ScalarResult:
@@ -20,7 +20,7 @@ async def test_feed_total_count_uses_cache_hit_without_db():
     redis.get = AsyncMock(return_value="11")
     redis.set = AsyncMock()
 
-    repo = PodcastEpisodeRepository(db=db, redis=redis)
+    repo = PodcastRepository(db=db, redis=redis)
     total = await repo._get_feed_total_count(user_id=99)
 
     assert total == 11
@@ -36,7 +36,7 @@ async def test_feed_total_count_caches_db_result_on_miss():
     redis.get = AsyncMock(return_value=None)
     redis.set = AsyncMock()
 
-    repo = PodcastEpisodeRepository(db=db, redis=redis)
+    repo = PodcastRepository(db=db, redis=redis)
     total = await repo._get_feed_total_count(user_id=2)
 
     assert total == 5

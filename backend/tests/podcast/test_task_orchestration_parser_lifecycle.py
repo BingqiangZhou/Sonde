@@ -103,7 +103,7 @@ async def test_refresh_all_podcast_feeds_closes_parser_after_success() -> None:
 
     with (
         patch(
-            "app.domains.podcast.tasks.task_orchestration.PodcastSubscriptionRepository",
+            "app.domains.podcast.tasks.task_orchestration.PodcastRepository",
             return_value=repo,
         ),
         patch(
@@ -149,7 +149,7 @@ async def test_refresh_all_podcast_feeds_closes_parser_after_exception() -> None
 
     with (
         patch(
-            "app.domains.podcast.tasks.task_orchestration.PodcastSubscriptionRepository",
+            "app.domains.podcast.tasks.task_orchestration.PodcastRepository",
             return_value=repo,
         ),
         patch(
@@ -178,7 +178,7 @@ async def test_process_opml_subscription_episodes_closes_parser_on_failure() -> 
 
     with (
         patch(
-            "app.domains.podcast.tasks.task_orchestration.PodcastSubscriptionRepository",
+            "app.domains.podcast.tasks.task_orchestration.PodcastRepository",
             return_value=repo,
         ),
         patch(
@@ -206,7 +206,7 @@ async def test_process_opml_subscription_episodes_closes_parser_on_exception() -
 
     with (
         patch(
-            "app.domains.podcast.tasks.task_orchestration.PodcastSubscriptionRepository",
+            "app.domains.podcast.tasks.task_orchestration.PodcastRepository",
             return_value=repo,
         ),
         patch(

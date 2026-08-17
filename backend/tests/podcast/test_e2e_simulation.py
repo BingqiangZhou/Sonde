@@ -25,7 +25,7 @@ async def test_subscription_service_mocked_add_subscription() -> None:
 
     with (
         patch(
-            "app.domains.podcast.services.episode_service.PodcastSubscriptionRepository"
+            "app.domains.podcast.services.episode_service.PodcastRepository"
         ) as mock_repo_cls,
         patch(
             "app.domains.podcast.services.episode_service.SecureRSSParser"
