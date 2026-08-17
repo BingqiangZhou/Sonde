@@ -205,7 +205,7 @@ class _RecordingDioClient extends DioClient {
   dynamic lastData;
 
   @override
-  Future<Response> post(
+  Future<Response<dynamic>> post(
     String path, {
     dynamic data,
     bool invalidateCache = false,

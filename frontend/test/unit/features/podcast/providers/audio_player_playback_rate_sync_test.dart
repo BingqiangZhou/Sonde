@@ -295,7 +295,7 @@ class _TrackingPodcastRepository extends PodcastRepository {
   }) : super(PodcastApiService(Dio()));
 
   final PlaybackRateEffectiveResponse effectiveResponse;
-  final Object? effectivePlaybackRateError;
+  final Exception? effectivePlaybackRateError;
   final List<int?> effectivePlaybackRateRequests = <int?>[];
   int updatePlaybackProgressCalls = 0;
   int applyPlaybackRateCalls = 0;
@@ -306,7 +306,7 @@ class _TrackingPodcastRepository extends PodcastRepository {
   }) async {
     effectivePlaybackRateRequests.add(subscriptionId);
     if (effectivePlaybackRateError != null) {
-      throw effectivePlaybackRateError!;
+      throw effectivePlaybackRateError as Exception;
     }
     return effectiveResponse;
   }

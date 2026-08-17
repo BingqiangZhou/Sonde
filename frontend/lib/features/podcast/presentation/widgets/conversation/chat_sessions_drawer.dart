@@ -130,7 +130,6 @@ class _SessionListTile extends ConsumerWidget {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final extension = appThemeOf(context);
 
     return Container(
       decoration: BoxDecoration(

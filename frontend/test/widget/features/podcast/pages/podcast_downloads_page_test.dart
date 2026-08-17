@@ -179,9 +179,7 @@ void main() {
     testWidgets('shows download items when data is available', (tester) async {
       final tasks = [
         createTestDownloadTask(
-          id: 1,
           episodeId: 101,
-          status: DownloadStatus.completed,
         ),
         createTestDownloadTask(
           id: 2,

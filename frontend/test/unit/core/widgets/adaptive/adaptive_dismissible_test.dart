@@ -5,7 +5,7 @@ import 'package:personal_ai_assistant/core/widgets/adaptive/adaptive_dismissible
 
 void main() {
   group('AdaptiveDismissible', () {
-    Widget _buildTestWidget({
+    Widget buildTestWidget({
       TargetPlatform platform = TargetPlatform.android,
       VoidCallback? onDelete,
     }) {
@@ -19,23 +19,23 @@ void main() {
         },
         home: Scaffold(
           body: AdaptiveDismissible(
-            key: Key('test'),
+            key: const Key('test'),
             onDelete: onDelete ?? () {},
-            child: ListTile(title: Text('Swipe me')),
+            child: const ListTile(title: Text('Swipe me')),
           ),
         ),
       );
     }
 
     testWidgets('renders Dismissible on both platforms', (tester) async {
-      await tester.pumpWidget(_buildTestWidget());
+      await tester.pumpWidget(buildTestWidget());
       expect(find.byType(Dismissible), findsOneWidget);
       expect(find.text('Swipe me'), findsOneWidget);
     });
 
     testWidgets('renders child content correctly', (tester) async {
       await tester.pumpWidget(
-        _buildTestWidget(platform: TargetPlatform.iOS),
+        buildTestWidget(platform: TargetPlatform.iOS),
       );
       expect(find.text('Swipe me'), findsOneWidget);
     });

@@ -8,10 +8,10 @@ import 'package:personal_ai_assistant/core/localization/app_localizations_extens
 import 'package:personal_ai_assistant/core/services/audio_download_service.dart';
 import 'package:personal_ai_assistant/core/services/download_provider.dart';
 import 'package:personal_ai_assistant/core/theme/app_colors.dart';
-import 'package:personal_ai_assistant/core/widgets/app_shells.dart';
-import 'package:personal_ai_assistant/core/widgets/app_dialog_helper.dart';
-import 'package:personal_ai_assistant/core/widgets/custom_adaptive_navigation.dart';
 import 'package:personal_ai_assistant/core/widgets/adaptive/adaptive.dart';
+import 'package:personal_ai_assistant/core/widgets/app_dialog_helper.dart';
+import 'package:personal_ai_assistant/core/widgets/app_shells.dart';
+import 'package:personal_ai_assistant/core/widgets/custom_adaptive_navigation.dart';
 import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_episodes_providers.dart';
 import 'package:personal_ai_assistant/features/podcast/presentation/widgets/podcast_image_widget.dart';
 
@@ -72,10 +72,10 @@ class _PodcastDownloadsPageState extends ConsumerState<PodcastDownloadsPage> {
                 child: CustomScrollView(
                   controller: _scrollController,
                   slivers: [
-                    if (refreshSliver != null) refreshSliver,
+                    ?refreshSliver,
                     AdaptiveSliverAppBar(
                       title: l10n.downloads_page_title,
-                      actions: [if (deleteButton != null) deleteButton],
+                      actions: [?deleteButton],
                     ),
                     SliverToBoxAdapter(child: SizedBox(height: context.spacing.smMd)),
                     ...asyncDownloads.when(
@@ -276,7 +276,7 @@ class _PodcastDownloadsPageState extends ConsumerState<PodcastDownloadsPage> {
         ),
       ),
       // Bottom buffer for player
-      SliverPadding(
+      const SliverPadding(
         padding: EdgeInsets.only(bottom: _bottomBufferForPlayer),
       ),
     ];
@@ -415,7 +415,6 @@ class _DownloadTaskCard extends ConsumerWidget {
         color: Colors.transparent,
         child: AdaptiveInkWell(
           borderRadius: AppRadius.xxlCardRadius,
-          onTap: null,
           child: Container(
             decoration: BoxDecoration(
               color: theme.colorScheme.surfaceContainerLow,

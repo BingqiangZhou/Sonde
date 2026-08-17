@@ -48,8 +48,8 @@ class AdaptiveSliverAppBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (PlatformHelper.isApple(context)) {
-      Widget? iosLeading = leading;
-      bool iosAutoImply = automaticallyImplyLeading;
+      var iosLeading = leading;
+      var iosAutoImply = automaticallyImplyLeading;
 
       if (iosLeading == null && automaticallyImplyLeading) {
         final route = ModalRoute.of(context);

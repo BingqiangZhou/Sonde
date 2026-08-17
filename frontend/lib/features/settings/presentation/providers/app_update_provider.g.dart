@@ -52,7 +52,7 @@ abstract class _$AppUpdate extends $Notifier<AppUpdateState> {
   AppUpdateState build();
   @$mustCallSuper
   @override
-  void runBuild() {
+  WhenComplete runBuild() {
     final ref = this.ref as $Ref<AppUpdateState, AppUpdateState>;
     final element =
         ref.element
@@ -62,7 +62,7 @@ abstract class _$AppUpdate extends $Notifier<AppUpdateState> {
               Object?,
               Object?
             >;
-    element.handleCreate(ref, build);
+    return element.handleCreate(ref, build);
   }
 }
 
@@ -257,7 +257,7 @@ abstract class _$ManualUpdateCheck extends $Notifier<AppUpdateState> {
   AppUpdateState build();
   @$mustCallSuper
   @override
-  void runBuild() {
+  WhenComplete runBuild() {
     final ref = this.ref as $Ref<AppUpdateState, AppUpdateState>;
     final element =
         ref.element
@@ -267,6 +267,6 @@ abstract class _$ManualUpdateCheck extends $Notifier<AppUpdateState> {
               Object?,
               Object?
             >;
-    element.handleCreate(ref, build);
+    return element.handleCreate(ref, build);
   }
 }

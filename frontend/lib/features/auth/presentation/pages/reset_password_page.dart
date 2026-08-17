@@ -7,8 +7,8 @@ import 'package:personal_ai_assistant/core/localization/app_localizations.dart';
 import 'package:personal_ai_assistant/core/localization/app_localizations_extension.dart';
 import 'package:personal_ai_assistant/core/theme/app_colors.dart';
 import 'package:personal_ai_assistant/core/widgets/adaptive/adaptive.dart';
-import 'package:personal_ai_assistant/core/widgets/app_shells.dart';
 import 'package:personal_ai_assistant/core/widgets/app_dialog_helper.dart';
+import 'package:personal_ai_assistant/core/widgets/app_shells.dart';
 import 'package:personal_ai_assistant/core/widgets/top_floating_notice.dart';
 import 'package:personal_ai_assistant/features/auth/presentation/providers/auth_provider.dart';
 import 'package:personal_ai_assistant/features/auth/presentation/widgets/password_requirement_item.dart';
@@ -56,7 +56,7 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
 
   void _showErrorDialog(String message, BuildContext context) {
     final l10n = context.l10n;
-    showAppDialog(
+    showAppDialog<void>(
       context: context,
       builder: (context) => AlertDialog.adaptive(
         backgroundColor: Colors.transparent,

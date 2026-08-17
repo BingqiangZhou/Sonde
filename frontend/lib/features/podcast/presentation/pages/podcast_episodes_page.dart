@@ -10,7 +10,6 @@ import 'package:personal_ai_assistant/core/localization/app_localizations_extens
 import 'package:personal_ai_assistant/core/platform/adaptive_haptic.dart';
 import 'package:personal_ai_assistant/core/platform/platform_helper.dart';
 import 'package:personal_ai_assistant/core/theme/app_colors.dart';
-import 'package:personal_ai_assistant/core/theme/app_theme.dart';
 import 'package:personal_ai_assistant/core/utils/app_logger.dart' as logger;
 import 'package:personal_ai_assistant/core/widgets/adaptive/adaptive.dart';
 import 'package:personal_ai_assistant/core/widgets/app_dialog_helper.dart';
@@ -157,7 +156,7 @@ class _PodcastEpisodesPageState extends ConsumerState<PodcastEpisodesPage> {
                 child: CustomScrollView(
                   controller: _scrollController,
                   slivers: [
-                    if (refreshSliver != null) refreshSliver,
+                    ?refreshSliver,
                     AdaptiveSliverAppBar(
                       title: widget.podcastTitle ?? l10n.podcast_episodes,
                       leading: Padding(

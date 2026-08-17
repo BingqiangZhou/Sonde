@@ -18,7 +18,7 @@ void main() {
     await db.close();
   });
 
-  EpisodesCacheCompanion _makeEpisode({
+  EpisodesCacheCompanion makeEpisode({
     required int id,
     required int subscriptionId,
     String title = 'Test Episode',
@@ -39,14 +39,14 @@ void main() {
       audioDuration: audioDuration != null ? Value(audioDuration) : const Value.absent(),
       subscriptionTitle: subscriptionTitle != null ? Value(subscriptionTitle) : const Value.absent(),
       subscriptionImageUrl: subscriptionImageUrl != null ? Value(subscriptionImageUrl) : const Value.absent(),
-      publishedAt: publishedAt ?? DateTime(2025, 1, 1),
-      updatedAt: updatedAt ?? DateTime(2025, 1, 1),
+      publishedAt: publishedAt ?? DateTime(2025),
+      updatedAt: updatedAt ?? DateTime(2025),
     );
   }
 
   group('upsertEpisode & getById', () {
     test('inserts and retrieves an episode', () async {
-      await dao.upsertEpisode(_makeEpisode(id: 1, subscriptionId: 10));
+      await dao.upsertEpisode(makeEpisode(id: 1, subscriptionId: 10));
 
       final ep = await dao.getById(1);
 
@@ -63,13 +63,13 @@ void main() {
     });
 
     test('upserts (replaces) existing episode on conflict', () async {
-      await dao.upsertEpisode(_makeEpisode(
+      await dao.upsertEpisode(makeEpisode(
         id: 1,
         subscriptionId: 10,
         title: 'Original Title',
       ));
 
-      await dao.upsertEpisode(_makeEpisode(
+      await dao.upsertEpisode(makeEpisode(
         id: 1,
         subscriptionId: 10,
         title: 'Updated Title',
@@ -83,9 +83,9 @@ void main() {
   group('upsertAll', () {
     test('bulk inserts multiple episodes', () async {
       await dao.upsertAll([
-        _makeEpisode(id: 1, subscriptionId: 10),
-        _makeEpisode(id: 2, subscriptionId: 10),
-        _makeEpisode(id: 3, subscriptionId: 20),
+        makeEpisode(id: 1, subscriptionId: 10),
+        makeEpisode(id: 2, subscriptionId: 10),
+        makeEpisode(id: 3, subscriptionId: 20),
       ]);
 
       expect(await dao.getById(1), isNotNull);
@@ -94,10 +94,10 @@ void main() {
     });
 
     test('bulk upserts update existing entries', () async {
-      await dao.upsertEpisode(_makeEpisode(id: 1, subscriptionId: 10, title: 'Old'));
+      await dao.upsertEpisode(makeEpisode(id: 1, subscriptionId: 10, title: 'Old'));
 
       await dao.upsertAll([
-        _makeEpisode(id: 1, subscriptionId: 10, title: 'New'),
+        makeEpisode(id: 1, subscriptionId: 10, title: 'New'),
       ]);
 
       final ep = await dao.getById(1);
@@ -108,9 +108,9 @@ void main() {
   group('getBySubscriptionId', () {
     test('returns episodes for a specific subscription', () async {
       await dao.upsertAll([
-        _makeEpisode(id: 1, subscriptionId: 10),
-        _makeEpisode(id: 2, subscriptionId: 10),
-        _makeEpisode(id: 3, subscriptionId: 20),
+        makeEpisode(id: 1, subscriptionId: 10),
+        makeEpisode(id: 2, subscriptionId: 10),
+        makeEpisode(id: 3, subscriptionId: 20),
       ]);
 
       final eps = await dao.getBySubscriptionId(10);
@@ -121,9 +121,9 @@ void main() {
 
     test('orders by publishedAt descending', () async {
       await dao.upsertAll([
-        _makeEpisode(id: 1, subscriptionId: 10, publishedAt: DateTime(2025, 1, 1)),
-        _makeEpisode(id: 2, subscriptionId: 10, publishedAt: DateTime(2025, 3, 1)),
-        _makeEpisode(id: 3, subscriptionId: 10, publishedAt: DateTime(2025, 2, 1)),
+        makeEpisode(id: 1, subscriptionId: 10, publishedAt: DateTime(2025)),
+        makeEpisode(id: 2, subscriptionId: 10, publishedAt: DateTime(2025, 3)),
+        makeEpisode(id: 3, subscriptionId: 10, publishedAt: DateTime(2025, 2)),
       ]);
 
       final eps = await dao.getBySubscriptionId(10);
@@ -134,7 +134,7 @@ void main() {
     });
 
     test('returns empty list for subscription with no episodes', () async {
-      await dao.upsertEpisode(_makeEpisode(id: 1, subscriptionId: 10));
+      await dao.upsertEpisode(makeEpisode(id: 1, subscriptionId: 10));
 
       final eps = await dao.getBySubscriptionId(999);
       expect(eps, isEmpty);
@@ -144,8 +144,8 @@ void main() {
   group('watchAll', () {
     test('emits all episodes ordered by publishedAt descending', () async {
       await dao.upsertAll([
-        _makeEpisode(id: 1, subscriptionId: 10, publishedAt: DateTime(2025, 1, 1)),
-        _makeEpisode(id: 2, subscriptionId: 10, publishedAt: DateTime(2025, 3, 1)),
+        makeEpisode(id: 1, subscriptionId: 10, publishedAt: DateTime(2025)),
+        makeEpisode(id: 2, subscriptionId: 10, publishedAt: DateTime(2025, 3)),
       ]);
 
       final emitted = <List<EpisodesCacheData>>[];
@@ -175,8 +175,8 @@ void main() {
 
   group('deleteById', () {
     test('deletes a cached episode by id', () async {
-      await dao.upsertEpisode(_makeEpisode(id: 1, subscriptionId: 10));
-      await dao.upsertEpisode(_makeEpisode(id: 2, subscriptionId: 10));
+      await dao.upsertEpisode(makeEpisode(id: 1, subscriptionId: 10));
+      await dao.upsertEpisode(makeEpisode(id: 2, subscriptionId: 10));
 
       await dao.deleteById(1);
 
@@ -192,9 +192,9 @@ void main() {
   group('deleteBySubscriptionId', () {
     test('deletes all episodes for a subscription', () async {
       await dao.upsertAll([
-        _makeEpisode(id: 1, subscriptionId: 10),
-        _makeEpisode(id: 2, subscriptionId: 10),
-        _makeEpisode(id: 3, subscriptionId: 20),
+        makeEpisode(id: 1, subscriptionId: 10),
+        makeEpisode(id: 2, subscriptionId: 10),
+        makeEpisode(id: 3, subscriptionId: 20),
       ]);
 
       await dao.deleteBySubscriptionId(10);
@@ -216,12 +216,12 @@ void main() {
       final recentDate = now.subtract(const Duration(days: 1));
 
       await dao.upsertAll([
-        _makeEpisode(id: 1, subscriptionId: 10, updatedAt: oldDate),
-        _makeEpisode(id: 2, subscriptionId: 10, updatedAt: oldDate),
-        _makeEpisode(id: 3, subscriptionId: 10, updatedAt: recentDate),
+        makeEpisode(id: 1, subscriptionId: 10, updatedAt: oldDate),
+        makeEpisode(id: 2, subscriptionId: 10, updatedAt: oldDate),
+        makeEpisode(id: 3, subscriptionId: 10, updatedAt: recentDate),
       ]);
 
-      final deleted = await dao.evictStaleEntries(maxAge: const Duration(days: 7));
+      final deleted = await dao.evictStaleEntries();
 
       expect(deleted, 2);
       expect(await dao.getById(1), isNull);
@@ -234,9 +234,9 @@ void main() {
       // Entry updated exactly 7 days ago -- isSmallerThanValue uses strict <
       final boundaryDate = now.subtract(const Duration(days: 7));
 
-      await dao.upsertEpisode(_makeEpisode(id: 1, subscriptionId: 10, updatedAt: boundaryDate));
+      await dao.upsertEpisode(makeEpisode(id: 1, subscriptionId: 10, updatedAt: boundaryDate));
 
-      final deleted = await dao.evictStaleEntries(maxAge: const Duration(days: 7));
+      final deleted = await dao.evictStaleEntries();
 
       expect(deleted, 0);
       expect(await dao.getById(1), isNotNull);
@@ -246,8 +246,8 @@ void main() {
       final now = DateTime.now();
 
       await dao.upsertAll([
-        _makeEpisode(id: 1, subscriptionId: 10, updatedAt: now),
-        _makeEpisode(id: 2, subscriptionId: 10, updatedAt: now.subtract(const Duration(hours: 1))),
+        makeEpisode(id: 1, subscriptionId: 10, updatedAt: now),
+        makeEpisode(id: 2, subscriptionId: 10, updatedAt: now.subtract(const Duration(hours: 1))),
       ]);
 
       final deleted = await dao.evictStaleEntries();
@@ -261,8 +261,8 @@ void main() {
       final now = DateTime.now();
 
       await dao.upsertAll([
-        _makeEpisode(id: 1, subscriptionId: 10, updatedAt: now.subtract(const Duration(days: 2))),
-        _makeEpisode(id: 2, subscriptionId: 10, updatedAt: now.subtract(const Duration(hours: 12))),
+        makeEpisode(id: 1, subscriptionId: 10, updatedAt: now.subtract(const Duration(days: 2))),
+        makeEpisode(id: 2, subscriptionId: 10, updatedAt: now.subtract(const Duration(hours: 12))),
       ]);
 
       final deleted = await dao.evictStaleEntries(maxAge: const Duration(days: 1));
@@ -281,8 +281,8 @@ void main() {
   group('watchFiltered', () {
     test('watches all episodes when no filters applied', () async {
       await dao.upsertAll([
-        _makeEpisode(id: 1, subscriptionId: 10),
-        _makeEpisode(id: 2, subscriptionId: 20),
+        makeEpisode(id: 1, subscriptionId: 10),
+        makeEpisode(id: 2, subscriptionId: 20),
       ]);
 
       final emitted = <List<EpisodesCacheData>>[];
@@ -298,9 +298,9 @@ void main() {
 
     test('filters by subscriptionId', () async {
       await dao.upsertAll([
-        _makeEpisode(id: 1, subscriptionId: 10),
-        _makeEpisode(id: 2, subscriptionId: 10),
-        _makeEpisode(id: 3, subscriptionId: 20),
+        makeEpisode(id: 1, subscriptionId: 10),
+        makeEpisode(id: 2, subscriptionId: 10),
+        makeEpisode(id: 3, subscriptionId: 20),
       ]);
 
       final emitted = <List<EpisodesCacheData>>[];
@@ -317,9 +317,9 @@ void main() {
 
     test('limits results', () async {
       await dao.upsertAll([
-        _makeEpisode(id: 1, subscriptionId: 10, publishedAt: DateTime(2025, 1, 1)),
-        _makeEpisode(id: 2, subscriptionId: 10, publishedAt: DateTime(2025, 2, 1)),
-        _makeEpisode(id: 3, subscriptionId: 10, publishedAt: DateTime(2025, 3, 1)),
+        makeEpisode(id: 1, subscriptionId: 10, publishedAt: DateTime(2025)),
+        makeEpisode(id: 2, subscriptionId: 10, publishedAt: DateTime(2025, 2)),
+        makeEpisode(id: 3, subscriptionId: 10, publishedAt: DateTime(2025, 3)),
       ]);
 
       final emitted = <List<EpisodesCacheData>>[];
@@ -337,10 +337,10 @@ void main() {
 
     test('combines subscriptionId and limit filters', () async {
       await dao.upsertAll([
-        _makeEpisode(id: 1, subscriptionId: 10, publishedAt: DateTime(2025, 1, 1)),
-        _makeEpisode(id: 2, subscriptionId: 10, publishedAt: DateTime(2025, 2, 1)),
-        _makeEpisode(id: 3, subscriptionId: 10, publishedAt: DateTime(2025, 3, 1)),
-        _makeEpisode(id: 4, subscriptionId: 20, publishedAt: DateTime(2025, 4, 1)),
+        makeEpisode(id: 1, subscriptionId: 10, publishedAt: DateTime(2025)),
+        makeEpisode(id: 2, subscriptionId: 10, publishedAt: DateTime(2025, 2)),
+        makeEpisode(id: 3, subscriptionId: 10, publishedAt: DateTime(2025, 3)),
+        makeEpisode(id: 4, subscriptionId: 20, publishedAt: DateTime(2025, 4)),
       ]);
 
       final emitted = <List<EpisodesCacheData>>[];
@@ -369,8 +369,8 @@ void main() {
         audioDuration: const Value(3600),
         subscriptionTitle: const Value('My Podcast'),
         subscriptionImageUrl: const Value('https://img.example.com/pod.jpg'),
-        publishedAt: DateTime(2025, 1, 1),
-        updatedAt: DateTime(2025, 1, 1),
+        publishedAt: DateTime(2025),
+        updatedAt: DateTime(2025),
       ));
 
       final ep = await dao.getById(1);
@@ -381,7 +381,7 @@ void main() {
     });
 
     test('nullable fields default to null when absent', () async {
-      await dao.upsertEpisode(_makeEpisode(id: 1, subscriptionId: 10));
+      await dao.upsertEpisode(makeEpisode(id: 1, subscriptionId: 10));
 
       final ep = await dao.getById(1);
       expect(ep!.imageUrl, isNull);

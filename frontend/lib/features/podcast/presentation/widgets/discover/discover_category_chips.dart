@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:personal_ai_assistant/core/constants/app_durations.dart';
-import 'package:personal_ai_assistant/core/constants/app_spacing.dart';
-
 import 'package:personal_ai_assistant/core/constants/app_radius.dart';
-
+import 'package:personal_ai_assistant/core/constants/app_spacing.dart';
 import 'package:personal_ai_assistant/core/localization/app_localizations_extension.dart';
 import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_search_provider.dart';
 

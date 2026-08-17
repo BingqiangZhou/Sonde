@@ -9,7 +9,6 @@ import 'package:personal_ai_assistant/features/podcast/data/models/audio_player_
 import 'package:personal_ai_assistant/features/podcast/data/models/podcast_episode_model.dart';
 import 'package:personal_ai_assistant/features/podcast/presentation/constants/podcast_ui_constants.dart';
 import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_playback_providers.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_providers.dart';
 import 'package:personal_ai_assistant/features/podcast/presentation/widgets/global_podcast_player_host.dart';
 import '../../helpers/podcast_episode_detail_helper.dart';
 

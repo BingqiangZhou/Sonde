@@ -99,7 +99,7 @@ class ApplePodcastRssService {
     );
 
     try {
-      final response = await _dio.get(url);
+      final response = await _dio.get<dynamic>(url);
       if (response.statusCode != 200) {
         throw Exception('Apple RSS API returned status ${response.statusCode}');
       }

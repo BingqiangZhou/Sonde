@@ -2,28 +2,27 @@ import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:personal_ai_assistant/core/constants/app_text_styles.dart';
-
+import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:personal_ai_assistant/core/constants/app_durations.dart';
-import 'package:personal_ai_assistant/core/constants/app_spacing.dart';
-import 'package:personal_ai_assistant/core/platform/platform_helper.dart';
 import 'package:personal_ai_assistant/core/constants/app_radius.dart';
+import 'package:personal_ai_assistant/core/constants/app_spacing.dart';
+import 'package:personal_ai_assistant/core/constants/app_text_styles.dart';
 import 'package:personal_ai_assistant/core/localization/app_localizations_extension.dart';
+import 'package:personal_ai_assistant/core/platform/platform_helper.dart';
 import 'package:personal_ai_assistant/core/services/adaptive_share.dart';
 import 'package:personal_ai_assistant/core/theme/app_colors.dart';
-import 'package:personal_ai_assistant/core/theme/app_theme.dart';
-import 'package:personal_ai_assistant/core/widgets/adaptive/adaptive.dart';
 import 'package:personal_ai_assistant/core/utils/debounce.dart';
 import 'package:personal_ai_assistant/core/utils/text_processing_cache.dart';
+import 'package:personal_ai_assistant/core/widgets/adaptive/adaptive.dart';
+import 'package:personal_ai_assistant/core/widgets/app_shells.dart';
 import 'package:personal_ai_assistant/core/widgets/top_floating_notice.dart';
 import 'package:personal_ai_assistant/features/podcast/data/models/podcast_highlight_model.dart';
 import 'package:personal_ai_assistant/features/podcast/data/models/podcast_transcription_model.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_highlights_providers.dart';
 import 'package:personal_ai_assistant/features/podcast/presentation/providers/conversation_providers.dart';
+import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_highlights_providers.dart';
 import 'package:personal_ai_assistant/features/podcast/presentation/widgets/highlight_card.dart';
 import 'package:personal_ai_assistant/features/podcast/presentation/widgets/highlight_detail_sheet.dart';
-import 'package:personal_ai_assistant/core/widgets/app_shells.dart';
 
 /// View mode for transcript display
 enum TranscriptViewMode { highlights, fullTranscript }
@@ -363,7 +362,7 @@ class TranscriptDisplayWidgetState
                     suffix: _isSearching
                         ? CupertinoButton(
                             padding: EdgeInsets.zero,
-                            minimumSize: Size(44, 44),
+                            minimumSize: const Size(44, 44),
                             onPressed: _clearSearch,
                             child: Icon(CupertinoIcons.clear_thick_circled,
                                 size: 16, color: scheme.onSurfaceVariant),
@@ -475,10 +474,9 @@ class TranscriptDisplayWidgetState
     final sortedHighlights = _cachedSortedHighlights!;
 
     return ListView.builder(
-      controller: _highlightsScrollController,
+      scrollCacheExtent: ScrollCacheExtent.pixels(500), controller: _highlightsScrollController,
       padding: EdgeInsets.all(context.spacing.md),
       itemCount: sortedHighlights.length,
-      cacheExtent: 500,
       itemBuilder: (context, index) {
         return Padding(
           padding: EdgeInsets.only(bottom: context.spacing.smMd),
@@ -550,9 +548,8 @@ class TranscriptDisplayWidgetState
               : Container(
                   padding: EdgeInsets.zero,
                   child: ListView.separated(
-                    controller: _fullTranscriptScrollController,
+                    scrollCacheExtent: ScrollCacheExtent.pixels(500), controller: _fullTranscriptScrollController,
                     itemCount: segments.length,
-                    cacheExtent: 500,
                     separatorBuilder: (context, index) => SizedBox(height: context.spacing.smMd),
                     itemBuilder: (context, index) {
                       return RepaintBoundary(
@@ -673,9 +670,8 @@ class TranscriptDisplayWidgetState
     return Container(
       padding: EdgeInsets.all(context.spacing.md),
       child: ListView.builder(
-        controller: _fullTranscriptScrollController,
+        scrollCacheExtent: ScrollCacheExtent.pixels(500), controller: _fullTranscriptScrollController,
         itemCount: _searchResults.length,
-        cacheExtent: 500,
         itemBuilder: (context, index) {
           final result = _searchResults[index];
           return RepaintBoundary(
@@ -879,8 +875,7 @@ class _FormattedTranscriptWidgetState
     return Container(
       padding: EdgeInsets.all(context.spacing.md),
       child: ListView.builder(
-        itemCount: segments.length,
-        cacheExtent: 500,
+        scrollCacheExtent: ScrollCacheExtent.pixels(500), itemCount: segments.length,
         itemBuilder: (context, index) {
           final segment = segments[index];
           return RepaintBoundary(

@@ -5,7 +5,7 @@ import 'package:personal_ai_assistant/core/widgets/adaptive/adaptive_button.dart
 
 void main() {
   group('AdaptiveButton', () {
-    Widget _buildTestWidget(
+    Widget buildTestWidget(
       AdaptiveButtonStyle style, {
       TargetPlatform platform = TargetPlatform.android,
       bool isLoading = false,
@@ -24,7 +24,7 @@ void main() {
             style: style,
             isLoading: isLoading,
             onPressed: onPressed ?? () {},
-            child: Text('Test'),
+            child: const Text('Test'),
           ),
         ),
       );
@@ -32,9 +32,8 @@ void main() {
 
     testWidgets('renders filled button on Android', (tester) async {
       await tester.pumpWidget(
-        _buildTestWidget(
+        buildTestWidget(
           AdaptiveButtonStyle.filled,
-          platform: TargetPlatform.android,
         ),
       );
       expect(find.byType(ElevatedButton), findsOneWidget);
@@ -43,9 +42,8 @@ void main() {
 
     testWidgets('renders text button on Android', (tester) async {
       await tester.pumpWidget(
-        _buildTestWidget(
+        buildTestWidget(
           AdaptiveButtonStyle.text,
-          platform: TargetPlatform.android,
         ),
       );
       expect(find.byType(TextButton), findsOneWidget);
@@ -53,9 +51,8 @@ void main() {
 
     testWidgets('renders outlined button on Android', (tester) async {
       await tester.pumpWidget(
-        _buildTestWidget(
+        buildTestWidget(
           AdaptiveButtonStyle.outlined,
-          platform: TargetPlatform.android,
         ),
       );
       expect(find.byType(OutlinedButton), findsOneWidget);
@@ -63,7 +60,7 @@ void main() {
 
     testWidgets('renders CupertinoButton on iOS', (tester) async {
       await tester.pumpWidget(
-        _buildTestWidget(
+        buildTestWidget(
           AdaptiveButtonStyle.filled,
           platform: TargetPlatform.iOS,
         ),
@@ -74,7 +71,7 @@ void main() {
 
     testWidgets('shows loading indicator when isLoading is true on iOS', (tester) async {
       await tester.pumpWidget(
-        _buildTestWidget(
+        buildTestWidget(
           AdaptiveButtonStyle.filled,
           platform: TargetPlatform.iOS,
           isLoading: true,
@@ -86,9 +83,8 @@ void main() {
 
     testWidgets('shows loading indicator when isLoading is true on Android', (tester) async {
       await tester.pumpWidget(
-        _buildTestWidget(
+        buildTestWidget(
           AdaptiveButtonStyle.filled,
-          platform: TargetPlatform.android,
           isLoading: true,
         ),
       );

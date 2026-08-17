@@ -88,7 +88,7 @@ class ServerHealthService {
     final stopwatch = Stopwatch()..start();
 
     try {
-      final response = await _dio.get(
+      final response = await _dio.get<dynamic>(
         healthCheckUrl,
         cancelToken: _cancelToken,
         options: Options(

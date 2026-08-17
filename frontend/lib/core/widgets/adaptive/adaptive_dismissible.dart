@@ -10,18 +10,12 @@ import 'package:personal_ai_assistant/core/platform/platform_helper.dart';
 /// iOS: Swipe actions with colored backgrounds (red delete, blue more).
 /// Android: Material [Dismissible] with background.
 class AdaptiveDismissible extends StatelessWidget {
-  const AdaptiveDismissible({
-    required this.key,
-    required this.child,
-    required this.onDelete,
+  const AdaptiveDismissible({required this.child, required this.onDelete, super.key,
     this.onSecondaryAction,
     this.secondaryActionLabel,
     this.secondaryActionColor,
     this.confirmDismiss,
   });
-
-  @override
-  final Key key;
 
   final Widget child;
   final VoidCallback onDelete;
@@ -34,7 +28,7 @@ class AdaptiveDismissible extends StatelessWidget {
   Widget build(BuildContext context) {
     if (PlatformHelper.isApple(context)) {
       return Dismissible(
-        key: key,
+        key: key!,
         confirmDismiss: confirmDismiss ??
             (direction) async {
               if (direction == DismissDirection.endToStart) {
@@ -56,7 +50,7 @@ class AdaptiveDismissible extends StatelessWidget {
     }
 
     return Dismissible(
-      key: key,
+      key: key!,
       confirmDismiss: confirmDismiss,
       onDismissed: (_) => onDelete(),
       background: Container(

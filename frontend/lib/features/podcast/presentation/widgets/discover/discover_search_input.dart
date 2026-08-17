@@ -3,11 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:personal_ai_assistant/core/constants/app_durations.dart';
 import 'package:personal_ai_assistant/core/constants/app_spacing.dart';
-
 import 'package:personal_ai_assistant/core/localization/app_localizations_extension.dart';
 import 'package:personal_ai_assistant/core/platform/platform_helper.dart';
-import 'package:personal_ai_assistant/core/widgets/adaptive/adaptive.dart';
 import 'package:personal_ai_assistant/core/theme/app_colors.dart';
+import 'package:personal_ai_assistant/core/widgets/adaptive/adaptive.dart';
 import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_search_provider.dart';
 
 /// Search input widget for discover page with country selector.
@@ -111,14 +110,12 @@ class _DiscoverSearchInputState extends ConsumerState<DiscoverSearchInput> {
                   BoxShadow(
                     color: scheme.primary.withValues(alpha: 0.08),
                     blurRadius: 8,
-                    spreadRadius: 0,
                   ),
                 ]
               : [
                   BoxShadow(
                     color: scheme.shadow.withValues(alpha: 0.04),
                     blurRadius: 2,
-                    spreadRadius: 0,
                     offset: const Offset(0, 1),
                   ),
                 ],

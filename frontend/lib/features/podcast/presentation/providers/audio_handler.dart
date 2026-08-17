@@ -40,12 +40,6 @@ part of 'podcast_playback_providers.dart';
 /// - **Desktop**: Basic playback controls (no lock screen)
 class PodcastAudioHandler extends BaseAudioHandler with SeekHandler {
 
-  /// Default strings used when no media is loaded or metadata is unavailable.
-  /// These are system-level notification labels that don't have l10n access.
-  static const String _defaultMediaTitle = 'No media';
-  static const String _defaultArtist = 'Unknown';
-  static const String _legacyPlaybackTitle = 'Audio Playback';
-
   PodcastAudioHandler() : _player = AudioPlayer() {
     // Setup player event listeners
     _listenPlayerEvents();
@@ -84,6 +78,12 @@ class PodcastAudioHandler extends BaseAudioHandler with SeekHandler {
   @visibleForTesting
   PodcastAudioHandler.testOnly() : _player = null;
 
+  /// Default strings used when no media is loaded or metadata is unavailable.
+  /// These are system-level notification labels that don't have l10n access.
+  static const String _defaultMediaTitle = 'No media';
+  static const String _defaultArtist = 'Unknown';
+  static const String _legacyPlaybackTitle = 'Audio Playback';
+
   final AudioPlayer? _player;
   Duration _currentPosition = Duration.zero;
   Duration? _currentDuration;
@@ -95,7 +95,7 @@ class PodcastAudioHandler extends BaseAudioHandler with SeekHandler {
   bool _isDisposed = false;
 
   // All stream subscriptions to be cancelled on disposal
-  final List<StreamSubscription> _subs = [];
+  final List<StreamSubscription<dynamic>> _subs = [];
 
   /// Validate and sanitize artUri for Vivo/OriginOS lock screen compatibility
   /// Only returns http/https URLs, returns null for invalid protocols
@@ -198,8 +198,8 @@ class PodcastAudioHandler extends BaseAudioHandler with SeekHandler {
     if (_isDisposed) return;
     if (_player == null) return;
 
-    final playing = _player!.state == PlayerState.playing;
-    final processingState = _mapProcessingState(_player!.state);
+    final playing = _player.state == PlayerState.playing;
+    final processingState = _mapProcessingState(_player.state);
     final updateTime = DateTime.now();
 
     // Build controls list based on current state
@@ -228,7 +228,7 @@ class PodcastAudioHandler extends BaseAudioHandler with SeekHandler {
       logger.AppLogger.debug('  processingState: $processingState');
       logger.AppLogger.debug('  position: ${_currentPosition.inMilliseconds}ms');
       logger.AppLogger.debug('  duration: ${_currentDuration?.inMilliseconds ?? 0}ms');
-      logger.AppLogger.debug('  speed: ${_player!.playbackRate}x');
+      logger.AppLogger.debug('  speed: ${_player.playbackRate}x');
       logger.AppLogger.debug('  updateTime: $updateTime');
       logger.AppLogger.debug(
         '🎵 [BROADCAST STATE] ========================================',
@@ -243,7 +243,7 @@ class PodcastAudioHandler extends BaseAudioHandler with SeekHandler {
         processingState: processingState,
         updatePosition: _currentPosition,
         bufferedPosition: _currentPosition,
-        speed: _player?.playbackRate ?? 1.0,
+        speed: _player.playbackRate,
         updateTime: updateTime,
         systemActions: const {
           MediaAction.play,
@@ -274,7 +274,7 @@ class PodcastAudioHandler extends BaseAudioHandler with SeekHandler {
   Future<void> _setAudioSourceWithCache(String url) async {
     if (_player == null) return;
     if (!url.startsWith('http://') && !url.startsWith('https://')) {
-      await _player!.setSourceUrl(url);
+      await _player.setSourceUrl(url);
       return;
     }
 
@@ -282,7 +282,7 @@ class PodcastAudioHandler extends BaseAudioHandler with SeekHandler {
       final cached = await AppMediaCacheManager.instance.getFileFromCache(url);
       final file = cached?.file;
       if (file != null && await file.exists()) {
-        await _player!.setSource(DeviceFileSource(file.path));
+        await _player.setSource(DeviceFileSource(file.path));
         return;
       }
     } catch (e) {
@@ -304,7 +304,7 @@ class PodcastAudioHandler extends BaseAudioHandler with SeekHandler {
       }
     });
 
-    await _player!.setSourceUrl(url);
+    await _player.setSourceUrl(url);
   }
 
   /// Set episode with full metadata support

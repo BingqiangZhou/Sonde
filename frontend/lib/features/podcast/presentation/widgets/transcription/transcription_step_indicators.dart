@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:personal_ai_assistant/core/constants/app_text_styles.dart';
 import 'package:personal_ai_assistant/core/constants/app_spacing.dart';
-
+import 'package:personal_ai_assistant/core/constants/app_text_styles.dart';
 import 'package:personal_ai_assistant/core/theme/app_colors.dart';
-import 'package:personal_ai_assistant/core/theme/app_theme.dart';
 import 'package:personal_ai_assistant/features/podcast/presentation/widgets/transcription/transcription_step_mapper.dart';
 
 class TranscriptionStepDescriptor {

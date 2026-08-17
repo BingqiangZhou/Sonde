@@ -18,7 +18,7 @@ void main() {
     await db.close();
   });
 
-  PlaybackStatesCompanion _makeState({
+  PlaybackStatesCompanion makeState({
     required int episodeId,
     int positionSeconds = 0,
     double playbackRate = 1.0,
@@ -32,19 +32,18 @@ void main() {
       playbackRate: Value(playbackRate),
       playCount: Value(playCount),
       isCompleted: Value(isCompleted),
-      lastUpdatedAt: Value(lastUpdatedAt ?? DateTime(2025, 1, 1)),
+      lastUpdatedAt: Value(lastUpdatedAt ?? DateTime(2025)),
     );
   }
 
   group('upsertPlaybackState & getByEpisodeId', () {
     test('inserts and retrieves a playback state', () async {
       final now = DateTime(2025, 6, 15);
-      await dao.upsertPlaybackState(_makeState(
+      await dao.upsertPlaybackState(makeState(
         episodeId: 1,
         positionSeconds: 120,
         playbackRate: 1.5,
         playCount: 3,
-        isCompleted: false,
         lastUpdatedAt: now,
       ));
 
@@ -64,15 +63,15 @@ void main() {
     });
 
     test('upserts (updates) existing state on conflict', () async {
-      await dao.upsertPlaybackState(_makeState(
+      await dao.upsertPlaybackState(makeState(
         episodeId: 1,
         positionSeconds: 100,
       ));
 
-      await dao.upsertPlaybackState(_makeState(
+      await dao.upsertPlaybackState(makeState(
         episodeId: 1,
         positionSeconds: 200,
-        playbackRate: 2.0,
+        playbackRate: 2,
       ));
 
       final state = await dao.getByEpisodeId(1);
@@ -83,7 +82,7 @@ void main() {
 
   group('updatePosition', () {
     test('updates position for an existing episode', () async {
-      await dao.upsertPlaybackState(_makeState(
+      await dao.upsertPlaybackState(makeState(
         episodeId: 1,
         positionSeconds: 50,
       ));
@@ -93,7 +92,7 @@ void main() {
       final state = await dao.getByEpisodeId(1);
       expect(state!.positionSeconds, 150);
       // lastUpdatedAt should be updated (later than original)
-      expect(state.lastUpdatedAt.isAfter(DateTime(2025, 1, 1)), isTrue);
+      expect(state.lastUpdatedAt.isAfter(DateTime(2025)), isTrue);
     });
 
     test('does nothing when no matching episode exists', () async {
@@ -108,13 +107,13 @@ void main() {
 
   group('watchAll', () {
     test('emits playback states ordered by lastUpdatedAt descending', () async {
-      await dao.upsertPlaybackState(_makeState(
+      await dao.upsertPlaybackState(makeState(
         episodeId: 1,
-        lastUpdatedAt: DateTime(2025, 1, 1),
+        lastUpdatedAt: DateTime(2025),
       ));
-      await dao.upsertPlaybackState(_makeState(
+      await dao.upsertPlaybackState(makeState(
         episodeId: 2,
-        lastUpdatedAt: DateTime(2025, 6, 1),
+        lastUpdatedAt: DateTime(2025, 6),
       ));
 
       final emitted = <List<PlaybackState>>[];
@@ -145,8 +144,8 @@ void main() {
 
   group('deleteByEpisodeId', () {
     test('deletes playback state by episode ID', () async {
-      await dao.upsertPlaybackState(_makeState(episodeId: 1));
-      await dao.upsertPlaybackState(_makeState(episodeId: 2));
+      await dao.upsertPlaybackState(makeState(episodeId: 1));
+      await dao.upsertPlaybackState(makeState(episodeId: 2));
 
       await dao.deleteByEpisodeId(1);
 
@@ -164,7 +163,7 @@ void main() {
     test('positionSeconds defaults to 0 when absent', () async {
       await dao.upsertPlaybackState(PlaybackStatesCompanion.insert(
         episodeId: const Value(10),
-        lastUpdatedAt: DateTime(2025, 1, 1),
+        lastUpdatedAt: DateTime(2025),
       ));
 
       final state = await dao.getByEpisodeId(10);
@@ -174,7 +173,7 @@ void main() {
     test('playbackRate defaults to 1.0 when absent', () async {
       await dao.upsertPlaybackState(PlaybackStatesCompanion.insert(
         episodeId: const Value(10),
-        lastUpdatedAt: DateTime(2025, 1, 1),
+        lastUpdatedAt: DateTime(2025),
       ));
 
       final state = await dao.getByEpisodeId(10);
@@ -184,7 +183,7 @@ void main() {
     test('playCount defaults to 0 when absent', () async {
       await dao.upsertPlaybackState(PlaybackStatesCompanion.insert(
         episodeId: const Value(10),
-        lastUpdatedAt: DateTime(2025, 1, 1),
+        lastUpdatedAt: DateTime(2025),
       ));
 
       final state = await dao.getByEpisodeId(10);
@@ -194,7 +193,7 @@ void main() {
     test('isCompleted defaults to false when absent', () async {
       await dao.upsertPlaybackState(PlaybackStatesCompanion.insert(
         episodeId: const Value(10),
-        lastUpdatedAt: DateTime(2025, 1, 1),
+        lastUpdatedAt: DateTime(2025),
       ));
 
       final state = await dao.getByEpisodeId(10);
@@ -205,11 +204,8 @@ void main() {
   group('playback state lifecycle', () {
     test('full lifecycle: insert, update position, complete, delete', () async {
       // Insert
-      await dao.upsertPlaybackState(_makeState(
+      await dao.upsertPlaybackState(makeState(
         episodeId: 42,
-        positionSeconds: 0,
-        playCount: 0,
-        isCompleted: false,
       ));
 
       var state = await dao.getByEpisodeId(42);
@@ -222,7 +218,7 @@ void main() {
       expect(state!.positionSeconds, 300);
 
       // Mark completed via upsert
-      await dao.upsertPlaybackState(_makeState(
+      await dao.upsertPlaybackState(makeState(
         episodeId: 42,
         positionSeconds: 600,
         isCompleted: true,

@@ -1,15 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:personal_ai_assistant/core/constants/app_spacing.dart';
-
 import 'package:personal_ai_assistant/core/constants/app_radius.dart';
-
+import 'package:personal_ai_assistant/core/constants/app_spacing.dart';
 import 'package:personal_ai_assistant/shared/widgets/loading_widget.dart';
 
 class QueueLoadingState extends StatelessWidget {
   const QueueLoadingState({
-    super.key,
-    required this.title,
-    required this.subtitle,
+    required this.title, required this.subtitle, super.key,
   });
 
   final String title;
@@ -37,10 +33,7 @@ class QueueLoadingState extends StatelessWidget {
 
 class QueueEmptyStateList extends StatelessWidget {
   const QueueEmptyStateList({
-    super.key,
-    required this.icon,
-    required this.title,
-    required this.subtitle,
+    required this.icon, required this.title, required this.subtitle, super.key,
     this.action,
   });
 

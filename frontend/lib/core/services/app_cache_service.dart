@@ -87,38 +87,31 @@ class AppCacheService {
     imageCache.clearLiveImages();
   }
 
-  @override
   CacheManager get mediaCacheManager => AppMediaCacheManager.instance;
 
-  @override
   Future<void> clearMediaCache() async {
     await mediaCacheManager.emptyCache();
   }
 
-  @override
   Future<void> clearMemoryImageCache() async {
     final cache = PaintingBinding.instance.imageCache;
     cache.clear();
     cache.clearLiveImages();
   }
 
-  @override
   Future<void> clearAll() async {
     await clearMediaCache();
     await clearMemoryImageCache();
   }
 
-  @override
   Future<FileInfo?> getCachedFileInfo(String url) async {
     return mediaCacheManager.getFileFromCache(url);
   }
 
-  @override
   Future<void> warmUp(String url) async {
     await mediaCacheManager.downloadFile(url);
   }
 
-  @override
   Future<Map<String, dynamic>> getCacheStats() async {
     final imageCache = PaintingBinding.instance.imageCache;
     final mediaStats = await AppMediaCacheManager.instance.getStats();

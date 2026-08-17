@@ -279,8 +279,7 @@ final subscribedNormalizedFeedUrlsProvider = Provider<Set<String>>((ref) {
   );
   return UnmodifiableSetView(
     subscriptions
-        .where((sub) => sub.sourceUrl != null)
-        .map((sub) => PodcastUrlUtils.normalizeFeedUrl(sub.sourceUrl!))
+        .map((sub) => PodcastUrlUtils.normalizeFeedUrl(sub.sourceUrl))
         .toSet(),
   );
 });

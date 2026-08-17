@@ -43,6 +43,8 @@ class AdaptiveScaffold extends StatelessWidget {
       final body = child ?? const SizedBox.shrink();
       return CupertinoPageScaffold(
         navigationBar: cupertinoNav,
+        backgroundColor: backgroundColor,
+        resizeToAvoidBottomInset: resizeToAvoidBottomInset ?? true,
         child: needsStack
             ? Stack(
                 children: [
@@ -63,8 +65,6 @@ class AdaptiveScaffold extends StatelessWidget {
                 ],
               )
             : body,
-        backgroundColor: backgroundColor,
-        resizeToAvoidBottomInset: resizeToAvoidBottomInset ?? true,
       );
     }
 

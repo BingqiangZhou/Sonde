@@ -10,6 +10,13 @@ include: package:very_good_analysis/analysis_options.yaml
 analyzer:
   exclude:
     - "**/*.g.dart"
+    - build/**
+    - android/**
+    - ios/**
+    - web/**
+    - windows/**
+    - macos/**
+    - linux/**
   errors:
     # Treat missing required parameters as errors
     missing_required_param: error
@@ -26,3 +33,11 @@ linter:
     prefer_single_quotes: false
     lines_longer_than_80_chars: false
     one_member_abstracts: false
+    # 服务/UI 层大量使用刻意宽泛的 catch 做容错（记录日志后降级），
+    # 加 on 子句会改变错误传播语义
+    avoid_catches_without_on_clauses: false
+    # 音频/UI 层的 fire-and-forget 调用是有意为之，逐个包 unawaited() 只产生噪音
+    discarded_futures: false
+    unawaited_futures: false
+    # 纯风格规则，修复需要大范围改动已验证的代码，收益不成比例
+    cascade_invocations: false

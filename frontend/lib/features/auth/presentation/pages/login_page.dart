@@ -2,14 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:personal_ai_assistant/core/app/config/app_config.dart';
-import 'package:personal_ai_assistant/core/constants/app_radius.dart';
 import 'package:personal_ai_assistant/core/constants/app_spacing.dart';
 import 'package:personal_ai_assistant/core/localization/app_localizations_extension.dart';
 import 'package:personal_ai_assistant/core/platform/adaptive_haptic.dart';
 import 'package:personal_ai_assistant/core/providers/core_providers.dart';
 import 'package:personal_ai_assistant/core/widgets/adaptive/adaptive.dart';
-import 'package:personal_ai_assistant/core/widgets/app_shells.dart';
 import 'package:personal_ai_assistant/core/widgets/app_dialog_helper.dart';
+import 'package:personal_ai_assistant/core/widgets/app_shells.dart';
 import 'package:personal_ai_assistant/core/widgets/top_floating_notice.dart';
 import 'package:personal_ai_assistant/features/auth/presentation/providers/auth_provider.dart';
 import 'package:personal_ai_assistant/features/auth/presentation/widgets/password_text_field.dart';
@@ -92,7 +91,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   /// Show server configuration dialog (using shared dialog)
   void _showServerConfigDialog() {
     final serverConfig = ref.read(serverConfigProvider);
-    showAppDialog(
+    showAppDialog<void>(
       context: context,
       barrierDismissible: false,
       builder: (context) => ServerConfigDialog(
@@ -140,7 +139,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           backgroundColor: Colors.transparent,
           showBorder: false,
           titleWidget: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               GestureDetector(
                 onLongPress: _showServerConfigDialog,
@@ -245,7 +243,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 SizedBox(height: context.spacing.lg),
                 AdaptiveButton(
                   key: const Key('login_button'),
-                  style: AdaptiveButtonStyle.filled,
                   onPressed: isLoading ? null : _login,
                   isLoading: isLoading,
                   child: Text(l10n.auth_login),

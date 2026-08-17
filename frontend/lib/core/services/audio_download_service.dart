@@ -25,11 +25,7 @@ class AudioDownloadService {
   /// Aborted flags keyed by episode ID.
   final Map<int, bool> _aborted = {};
 
-  /// Maximum concurrent downloads.
-  static const int _maxConcurrent = 2;
 
-  /// Current download count.
-  int get _activeCount => _activeSinks.length;
 
   DownloadDao get _dao => _db.downloadDao;
 

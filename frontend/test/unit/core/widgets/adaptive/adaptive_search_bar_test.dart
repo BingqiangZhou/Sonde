@@ -5,7 +5,7 @@ import 'package:personal_ai_assistant/core/widgets/adaptive/adaptive_search_bar.
 
 void main() {
   group('AdaptiveSearchBar', () {
-    Widget _buildTestWidget({
+    Widget buildTestWidget({
       TargetPlatform platform = TargetPlatform.android,
     }) {
       return MaterialApp(
@@ -27,14 +27,14 @@ void main() {
 
     testWidgets('renders Material SearchBar on Android', (tester) async {
       await tester.pumpWidget(
-        _buildTestWidget(platform: TargetPlatform.android),
+        buildTestWidget(),
       );
       expect(find.byType(TextField), findsOneWidget);
     });
 
     testWidgets('renders CupertinoSearchTextField on iOS', (tester) async {
       await tester.pumpWidget(
-        _buildTestWidget(platform: TargetPlatform.iOS),
+        buildTestWidget(platform: TargetPlatform.iOS),
       );
       expect(find.byType(CupertinoSearchTextField), findsOneWidget);
     });

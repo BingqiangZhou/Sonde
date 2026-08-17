@@ -4,7 +4,6 @@ import 'package:personal_ai_assistant/features/podcast/data/models/audio_player_
 import 'package:personal_ai_assistant/features/podcast/data/models/podcast_episode_model.dart';
 import 'package:personal_ai_assistant/features/podcast/data/models/podcast_queue_model.dart';
 import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_playback_providers.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_providers.dart';
 
 void main() {
   group('AudioPlayerNotifier.playManagedEpisode', () {

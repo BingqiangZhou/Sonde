@@ -1,15 +1,13 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
 import 'package:personal_ai_assistant/core/app/config/app_config.dart';
 import 'package:personal_ai_assistant/core/constants/app_radius.dart';
 import 'package:personal_ai_assistant/core/constants/app_spacing.dart';
 import 'package:personal_ai_assistant/core/constants/app_text_styles.dart';
 import 'package:personal_ai_assistant/core/localization/app_localizations_extension.dart';
-import 'package:personal_ai_assistant/core/widgets/adaptive/adaptive.dart';
 import 'package:personal_ai_assistant/core/theme/app_colors.dart';
-import 'package:personal_ai_assistant/core/theme/app_theme.dart';
+import 'package:personal_ai_assistant/core/widgets/adaptive/adaptive.dart';
 import 'package:personal_ai_assistant/core/widgets/app_shells.dart';
 
 // ---------------------------------------------------------------------------
@@ -59,11 +57,11 @@ class AuthVerifyNotifier extends Notifier<_VerifyStatus> {
 
     try {
       final response = await _dio
-          .get('$_baseUrl/health')
+          .get<dynamic>('$_baseUrl/health')
           .timeout(const Duration(seconds: 5));
 
       if (response.statusCode == 200) {
-        state = _VerifyStatus(
+        state = const _VerifyStatus(
           message: 'Backend is reachable and healthy!',
           color: AppColors.accentWarm,
         );
@@ -95,7 +93,7 @@ class AuthVerifyNotifier extends Notifier<_VerifyStatus> {
     );
 
     try {
-      final response = await _dio.post(
+      final response = await _dio.post<dynamic>(
         '$_baseUrl/register',
         data: {
           'email': 'flutter_verify@example.com',
@@ -151,7 +149,7 @@ class AuthVerifyNotifier extends Notifier<_VerifyStatus> {
     );
 
     try {
-      final response = await _dio.post(
+      final response = await _dio.post<dynamic>(
         '$_baseUrl/login',
         data: {
           'email_or_username': 'flutter_verify@example.com',
@@ -196,7 +194,7 @@ class AuthVerifyNotifier extends Notifier<_VerifyStatus> {
     );
 
     try {
-      final loginResp = await _dio.post(
+      final loginResp = await _dio.post<dynamic>(
         '$_baseUrl/login',
         data: {
           'email_or_username': 'flutter_verify@example.com',
@@ -216,7 +214,7 @@ class AuthVerifyNotifier extends Notifier<_VerifyStatus> {
       final loginData = loginResp.data;
       final accessToken = loginData['access_token'];
 
-      final userResp = await _dio.get(
+      final userResp = await _dio.get<dynamic>(
         '$_baseUrl/me',
         options: Options(headers: {'Authorization': 'Bearer $accessToken'}),
       );

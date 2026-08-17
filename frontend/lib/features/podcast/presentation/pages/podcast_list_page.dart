@@ -14,12 +14,12 @@ import 'package:personal_ai_assistant/core/widgets/app_shells.dart';
 import 'package:personal_ai_assistant/core/widgets/linear_section_header.dart';
 import 'package:personal_ai_assistant/core/widgets/top_floating_notice.dart';
 import 'package:personal_ai_assistant/features/podcast/data/models/podcast_discover_chart_model.dart';
+import 'package:personal_ai_assistant/features/podcast/presentation/pages/sections/discover_interaction_handler.dart';
+import 'package:personal_ai_assistant/features/podcast/presentation/pages/sections/search_mode_toggle.dart';
 import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_providers.dart';
 import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_search_provider.dart';
 import 'package:personal_ai_assistant/features/podcast/presentation/widgets/country_selector_dropdown.dart';
 import 'package:personal_ai_assistant/features/podcast/presentation/widgets/discover/discover_charts_list.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/pages/sections/discover_interaction_handler.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/pages/sections/search_mode_toggle.dart';
 import 'package:personal_ai_assistant/features/podcast/presentation/widgets/discover/discover_search_input.dart';
 import 'package:personal_ai_assistant/features/podcast/presentation/widgets/discover/discover_top_charts_section.dart';
 import 'package:personal_ai_assistant/features/podcast/presentation/widgets/search/podcast_search_results_list.dart';
@@ -264,7 +264,7 @@ class _PodcastListPageState extends ConsumerState<PodcastListPage> {
           final screenWidth = constraints.maxWidth;
           final isMobile = screenWidth < Breakpoints.medium;
           if (isMobile) {
-            return const DiscoverChartSkeletonList(itemCount: 6, compact: true);
+            return const DiscoverChartSkeletonList();
           }
           final crossAxisCount = screenWidth < 900
               ? 2

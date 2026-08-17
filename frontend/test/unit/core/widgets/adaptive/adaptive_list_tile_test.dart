@@ -5,7 +5,7 @@ import 'package:personal_ai_assistant/core/widgets/adaptive/adaptive_list_tile.d
 
 void main() {
   group('AdaptiveListTile', () {
-    Widget _buildTestWidget({
+    Widget buildTestWidget({
       TargetPlatform platform = TargetPlatform.android,
       Widget? leading,
       Widget? trailing,
@@ -20,8 +20,8 @@ void main() {
         },
         home: Scaffold(
           body: AdaptiveListTile(
-            title: Text('Title'),
-            subtitle: Text('Subtitle'),
+            title: const Text('Title'),
+            subtitle: const Text('Subtitle'),
             leading: leading,
             trailing: trailing,
           ),
@@ -31,7 +31,7 @@ void main() {
 
     testWidgets('renders Material ListTile on Android', (tester) async {
       await tester.pumpWidget(
-        _buildTestWidget(platform: TargetPlatform.android),
+        buildTestWidget(),
       );
       expect(find.byType(ListTile), findsOneWidget);
       expect(find.text('Title'), findsOneWidget);
@@ -40,7 +40,7 @@ void main() {
 
     testWidgets('renders CupertinoListTile on iOS', (tester) async {
       await tester.pumpWidget(
-        _buildTestWidget(platform: TargetPlatform.iOS),
+        buildTestWidget(platform: TargetPlatform.iOS),
       );
       expect(find.byType(CupertinoListTile), findsOneWidget);
       expect(find.text('Title'), findsOneWidget);
@@ -48,9 +48,9 @@ void main() {
 
     testWidgets('renders leading and trailing widgets', (tester) async {
       await tester.pumpWidget(
-        _buildTestWidget(
-          leading: Icon(Icons.star),
-          trailing: Icon(Icons.chevron_right),
+        buildTestWidget(
+          leading: const Icon(Icons.star),
+          trailing: const Icon(Icons.chevron_right),
         ),
       );
       expect(find.byIcon(Icons.star), findsOneWidget);

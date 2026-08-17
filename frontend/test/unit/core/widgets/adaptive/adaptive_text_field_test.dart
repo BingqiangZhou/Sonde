@@ -5,7 +5,7 @@ import 'package:personal_ai_assistant/core/widgets/adaptive/adaptive_text_field.
 
 void main() {
   group('AdaptiveTextField', () {
-    Widget _buildTestWidget({
+    Widget buildTestWidget({
       TargetPlatform platform = TargetPlatform.android,
       String? placeholder,
     }) {
@@ -28,21 +28,21 @@ void main() {
 
     testWidgets('renders Material TextField on Android', (tester) async {
       await tester.pumpWidget(
-        _buildTestWidget(platform: TargetPlatform.android),
+        buildTestWidget(),
       );
       expect(find.byType(TextField), findsOneWidget);
     });
 
     testWidgets('renders CupertinoTextField on iOS', (tester) async {
       await tester.pumpWidget(
-        _buildTestWidget(platform: TargetPlatform.iOS),
+        buildTestWidget(platform: TargetPlatform.iOS),
       );
       expect(find.byType(CupertinoTextField), findsOneWidget);
     });
 
     testWidgets('shows placeholder text', (tester) async {
       await tester.pumpWidget(
-        _buildTestWidget(placeholder: 'Search...'),
+        buildTestWidget(placeholder: 'Search...'),
       );
       expect(find.text('Search...'), findsOneWidget);
     });

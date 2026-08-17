@@ -47,7 +47,7 @@ class SecureStorageServiceImpl implements SecureStorageService {
 
   Future<String?> _safeRead({required String key}) async {
     try {
-      return _secureStorage.read(key: key);
+      return await _secureStorage.read(key: key);
     } on PlatformException catch (e) {
       logger.AppLogger.warning('[SecureStorage] read($key) failed: ${e.message}');
       return null;

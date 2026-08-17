@@ -212,7 +212,7 @@ class _FakeAppUpdateService extends AppUpdateService {
   _FakeAppUpdateService({this.release, this.error, this.delay = Duration.zero});
 
   final GitHubRelease? release;
-  final Object? error;
+  final Exception? error;
   final Duration delay;
 
   @override

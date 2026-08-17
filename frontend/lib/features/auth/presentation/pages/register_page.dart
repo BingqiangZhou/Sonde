@@ -384,7 +384,6 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                 // Register button
                 AdaptiveButton(
                   key: const Key('register_button'),
-                  style: AdaptiveButtonStyle.filled,
                   onPressed: isLoading ? null : _register,
                   isLoading: isLoading,
                   child: Text(l10n.auth_create_account),

@@ -121,17 +121,6 @@ extension _PodcastEpisodeDetailPageContent on _PodcastEpisodeDetailPageState {
     );
   }
 
-  void _showShareErrorNotice(String message) {
-    if (!mounted) {
-      return;
-    }
-    showTopFloatingNotice(
-      context,
-      message: message,
-      isError: true,
-      extraTopOffset: 72,
-    );
-  }
 
   Future<void> _shareSelectedSummaryAsImage(
     String episodeTitle,

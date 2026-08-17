@@ -52,7 +52,7 @@ class ITunesSearchService {
 
     try {
       const url = 'https://itunes.apple.com/search';
-      final response = await _dio.get(
+      final response = await _dio.get<dynamic>(
         url,
         queryParameters: {
           'term': term,
@@ -118,7 +118,7 @@ class ITunesSearchService {
 
     try {
       const url = 'https://itunes.apple.com/search';
-      final response = await _dio.get(
+      final response = await _dio.get<dynamic>(
         url,
         queryParameters: {
           'term': term,
@@ -180,7 +180,7 @@ class ITunesSearchService {
     }
 
     try {
-      final response = await _dio.get(
+      final response = await _dio.get<dynamic>(
         'https://itunes.apple.com/lookup',
         queryParameters: {'id': itunesId, 'country': country.code},
       );
@@ -217,7 +217,7 @@ class ITunesSearchService {
     }
 
     try {
-      final response = await _dio.get(
+      final response = await _dio.get<dynamic>(
         'https://itunes.apple.com/lookup',
         queryParameters: {
           'id': showId,

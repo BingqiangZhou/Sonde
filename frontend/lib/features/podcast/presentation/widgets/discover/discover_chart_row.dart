@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:personal_ai_assistant/core/constants/app_spacing.dart';
 import 'package:personal_ai_assistant/core/localization/app_localizations_extension.dart';
-import 'package:personal_ai_assistant/core/widgets/adaptive/adaptive.dart';
-
 import 'package:personal_ai_assistant/core/theme/app_colors.dart';
+import 'package:personal_ai_assistant/core/widgets/adaptive/adaptive.dart';
 import 'package:personal_ai_assistant/features/podcast/data/models/podcast_discover_chart_model.dart';
 import 'package:personal_ai_assistant/features/podcast/presentation/widgets/podcast_image_widget.dart';
+import 'package:personal_ai_assistant/features/podcast/presentation/widgets/shared/base_episode_card.dart' show BaseEpisodeCard;
 
 /// Chart row widget for displaying a single discover item with rank and actions.
 ///
@@ -56,6 +56,7 @@ class DiscoverChartRow extends StatelessWidget {
             ?.copyWith(color: theme.colorScheme.onSurfaceVariant);
 
     final isTop3 = rank <= 3;
+    // 显式 List<Color>：switch 含 `const []` 分支时推断会退化为 List<dynamic>。
     final List<Color> identityColors = switch (rank) {
       1 => AppColors.goldColors,
       2 => AppColors.coralColors,
@@ -159,7 +160,7 @@ class DiscoverChartRow extends StatelessWidget {
                         child: isSubscribing
                             ? Padding(
                                 padding: EdgeInsets.all(context.spacing.sm),
-                                child: CircularProgressIndicator.adaptive(
+                                child: const CircularProgressIndicator.adaptive(
                                   strokeWidth: 2,
                                 ),
                               )

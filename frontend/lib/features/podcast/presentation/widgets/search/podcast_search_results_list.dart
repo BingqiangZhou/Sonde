@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:personal_ai_assistant/core/constants/app_spacing.dart';
 import 'package:personal_ai_assistant/core/localization/app_localizations.dart';
@@ -7,8 +7,8 @@ import 'package:personal_ai_assistant/core/localization/app_localizations_extens
 import 'package:personal_ai_assistant/features/podcast/data/models/itunes_episode_lookup_model.dart';
 import 'package:personal_ai_assistant/features/podcast/data/models/podcast_search_model.dart';
 import 'package:personal_ai_assistant/features/podcast/data/utils/podcast_url_utils.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_search_provider.dart' as search;
 import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_providers.dart';
+import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_search_provider.dart' as search;
 import 'package:personal_ai_assistant/features/podcast/presentation/widgets/podcast_episode_search_result_card.dart';
 import 'package:personal_ai_assistant/features/podcast/presentation/widgets/podcast_search_result_card.dart';
 
@@ -77,8 +77,7 @@ class PodcastSearchResultsList extends ConsumerWidget {
 
   Widget _buildEpisodeResults(BuildContext context, AppLocalizations l10n) {
     return ListView.builder(
-      key: const Key('podcast_discover_search_results'),
-      cacheExtent: 200,
+      scrollCacheExtent: ScrollCacheExtent.pixels(200), key: const Key('podcast_discover_search_results'),
       itemCount: searchState.episodeResults.length,
       itemBuilder: (context, index) {
         final episode = searchState.episodeResults[index];
@@ -104,8 +103,7 @@ class PodcastSearchResultsList extends ConsumerWidget {
     );
 
     return ListView.builder(
-      key: const Key('podcast_discover_search_results'),
-      cacheExtent: 200,
+      scrollCacheExtent: ScrollCacheExtent.pixels(200), key: const Key('podcast_discover_search_results'),
       itemCount: searchState.podcastResults.length,
       itemBuilder: (context, index) {
         final result = searchState.podcastResults[index];

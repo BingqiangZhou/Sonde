@@ -1,8 +1,6 @@
-import 'dart:async';
 
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:personal_ai_assistant/core/network/dio_client.dart';
 
 void main() {
   // Note: ApiResponseNormalizer tests removed — the class was deleted
@@ -47,11 +45,11 @@ void main() {
 
   group('DioClient request deduplication', () {
     test('concurrent identical requests share a single Future', () async {
-      final inFlight = <String, Future<Response>>{};
+      final inFlight = <String, Future<Response<dynamic>>>{};
       const key = 'GET:/items:null';
       var actualFetchCount = 0;
 
-      Future<Response> deduplicatedGet(String path) async {
+      Future<Response<dynamic>> deduplicatedGet(String path) async {
         return inFlight.putIfAbsent(key, () async {
           actualFetchCount++;
           // Simulate network delay
@@ -81,10 +79,10 @@ void main() {
     });
 
     test('different paths create separate Futures', () async {
-      final inFlight = <String, Future<Response>>{};
+      final inFlight = <String, Future<Response<dynamic>>>{};
       var actualFetchCount = 0;
 
-      Future<Response> deduplicatedGet(String path, {Map<String, dynamic>? qp}) async {
+      Future<Response<dynamic>> deduplicatedGet(String path, {Map<String, dynamic>? qp}) async {
         final key = 'GET:$path:$qp';
         return inFlight.putIfAbsent(key, () async {
           actualFetchCount++;
@@ -106,10 +104,10 @@ void main() {
     });
 
     test('different query parameters create separate Futures', () async {
-      final inFlight = <String, Future<Response>>{};
+      final inFlight = <String, Future<Response<dynamic>>>{};
       var actualFetchCount = 0;
 
-      Future<Response> deduplicatedGet(String path, {Map<String, dynamic>? qp}) async {
+      Future<Response<dynamic>> deduplicatedGet(String path, {Map<String, dynamic>? qp}) async {
         final key = 'GET:$path:$qp';
         return inFlight.putIfAbsent(key, () async {
           actualFetchCount++;
@@ -131,11 +129,11 @@ void main() {
     });
 
     test('error propagates to all waiting callers', () async {
-      final inFlight = <String, Future<Response>>{};
+      final inFlight = <String, Future<Response<dynamic>>>{};
       const key = 'GET:/items:null';
       var actualFetchCount = 0;
 
-      Future<Response> deduplicatedGet(String path) async {
+      Future<Response<dynamic>> deduplicatedGet(String path) async {
         return inFlight.putIfAbsent(key, () async {
           actualFetchCount++;
           await Future<void>.delayed(const Duration(milliseconds: 10));
@@ -151,14 +149,14 @@ void main() {
         [
           deduplicatedGet('/items').catchError((Object e) {
             errorCount++;
-            throw e;
+            throw StateError(e.toString());
           }),
           deduplicatedGet('/items').catchError((Object e) {
             errorCount++;
-            throw e;
+            throw StateError(e.toString());
           }),
         ].map((f) => f.catchError((Object e) {
-            return Response(
+            return Response<dynamic>(
               requestOptions: RequestOptions(path: '/items'),
               statusCode: 500,
             );
@@ -170,11 +168,11 @@ void main() {
     });
 
     test('sequential requests each create their own Future', () async {
-      final inFlight = <String, Future<Response>>{};
+      final inFlight = <String, Future<Response<dynamic>>>{};
       const key = 'GET:/items:null';
       var actualFetchCount = 0;
 
-      Future<Response> deduplicatedGet(String path) async {
+      Future<Response<dynamic>> deduplicatedGet(String path) async {
         return inFlight.putIfAbsent(key, () async {
           actualFetchCount++;
           return Response(

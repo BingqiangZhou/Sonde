@@ -77,7 +77,7 @@ class TokenRefreshService {
         return result;
       }
 
-      final response = await _dio.post(
+      final response = await _dio.post<dynamic>(
         '/auth/refresh',
         data: {'refresh_token': refreshToken},
         options: Options(headers: {'Content-Type': 'application/json'}),
@@ -153,7 +153,7 @@ class TokenRefreshService {
   /// Handles a 401 error by attempting token refresh and retrying.
   ///
   /// Returns the retried [Response] on success, or throws a [DioException].
-  Future<Response> handle401(
+  Future<Response<dynamic>> handle401(
     RequestOptions failedOptions, {
     required void Function(String? newToken) onTokenUpdated,
   }) async {
@@ -189,7 +189,7 @@ class TokenRefreshService {
       ..removeWhere((k, _) => k.toLowerCase() == 'authorization')
       ..['Authorization'] = 'Bearer $newToken';
 
-    final retryResponse = await _dio.fetch(
+    final retryResponse = await _dio.fetch<dynamic>(
       failedOptions.copyWith(headers: headers),
     );
 
@@ -277,7 +277,7 @@ class TokenRefreshService {
 
   Future<String?> _safeRead(String key) async {
     try {
-      return _secureStorage.read(key: key);
+      return await _secureStorage.read(key: key);
     } on PlatformException catch (e) {
       logger.AppLogger.warning('[TokenRefresh] read($key) failed: ${e.message}');
       return null;

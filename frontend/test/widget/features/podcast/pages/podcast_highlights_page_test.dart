@@ -34,11 +34,11 @@ class FakeHighlightsNotifier extends HighlightsNotifier {
 
   @override
   Future<HighlightsListResponse?> build() {
-    if (_completer != null) return _completer!.future;
+    if (_completer != null) return _completer.future;
     return _value.when(
-      data: (d) => Future.value(d),
-      loading: () => Future.value(null),
-      error: (e, st) => Future.error(e, st),
+      data: Future.value,
+      loading: Future.value,
+      error: Future.error,
     );
   }
 
@@ -64,9 +64,9 @@ class FakeHighlightDatesNotifier extends HighlightDatesNotifier {
 
   @override
   Future<HighlightDatesResponse?> build() => _value.when(
-        data: (d) => Future.value(d),
-        loading: () => Future.value(null),
-        error: (e, st) => Future.error(e, st),
+        data: Future.value,
+        loading: Future.value,
+        error: Future.error,
       );
 
   @override
@@ -135,7 +135,7 @@ void main() {
           ),
           highlightDatesProvider.overrideWith(
             () => FakeHighlightDatesNotifier(
-              AsyncValue<HighlightDatesResponse?>.data(
+              const AsyncValue<HighlightDatesResponse?>.data(
                 HighlightDatesResponse(dates: []),
               ),
             ),
@@ -180,7 +180,7 @@ void main() {
           ),
           highlightDatesProvider.overrideWith(
             () => FakeHighlightDatesNotifier(
-              AsyncValue<HighlightDatesResponse?>.data(
+              const AsyncValue<HighlightDatesResponse?>.data(
                 HighlightDatesResponse(dates: []),
               ),
             ),
@@ -225,7 +225,7 @@ void main() {
           ),
           highlightDatesProvider.overrideWith(
             () => FakeHighlightDatesNotifier(
-              AsyncValue<HighlightDatesResponse?>.data(
+              const AsyncValue<HighlightDatesResponse?>.data(
                 HighlightDatesResponse(dates: []),
               ),
             ),
@@ -253,7 +253,7 @@ void main() {
     testWidgets('shows highlight items when data is available',
         (tester) async {
       final highlights = [
-        createTestHighlight(id: 1, episodeTitle: 'Episode A'),
+        createTestHighlight(episodeTitle: 'Episode A'),
         createTestHighlight(id: 2, episodeTitle: 'Episode B'),
       ];
       final response = createTestHighlightsResponse(
@@ -273,7 +273,7 @@ void main() {
           ),
           highlightDatesProvider.overrideWith(
             () => FakeHighlightDatesNotifier(
-              AsyncValue<HighlightDatesResponse?>.data(
+              const AsyncValue<HighlightDatesResponse?>.data(
                 HighlightDatesResponse(dates: []),
               ),
             ),
@@ -315,7 +315,7 @@ void main() {
           ),
           highlightDatesProvider.overrideWith(
             () => FakeHighlightDatesNotifier(
-              AsyncValue<HighlightDatesResponse?>.data(
+              const AsyncValue<HighlightDatesResponse?>.data(
                 HighlightDatesResponse(dates: []),
               ),
             ),

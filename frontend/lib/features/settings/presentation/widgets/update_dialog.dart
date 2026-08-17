@@ -1,15 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:personal_ai_assistant/core/constants/app_text_styles.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
 import 'package:personal_ai_assistant/core/constants/app_radius.dart';
 import 'package:personal_ai_assistant/core/constants/app_spacing.dart';
+import 'package:personal_ai_assistant/core/constants/app_text_styles.dart';
 import 'package:personal_ai_assistant/core/constants/breakpoints.dart';
 import 'package:personal_ai_assistant/core/localization/app_localizations_extension.dart';
 import 'package:personal_ai_assistant/core/platform/platform_helper.dart';
 import 'package:personal_ai_assistant/core/services/app_update_service.dart';
-import 'package:personal_ai_assistant/core/theme/app_theme.dart';
 import 'package:personal_ai_assistant/core/utils/app_logger.dart' as logger;
 import 'package:personal_ai_assistant/core/widgets/app_dialog_helper.dart';
 import 'package:personal_ai_assistant/core/widgets/top_floating_notice.dart';
@@ -201,7 +199,7 @@ class _AppUpdateDialogState extends ConsumerState<AppUpdateDialog> {
                   ? SizedBox(
                       width: spacing.lg,
                       height: spacing.lg,
-                      child: CircularProgressIndicator.adaptive(
+                      child: const CircularProgressIndicator.adaptive(
                         strokeWidth: 2,
                       ),
                     )
@@ -243,7 +241,7 @@ class _AppUpdateDialogState extends ConsumerState<AppUpdateDialog> {
                   ? SizedBox(
                       width: spacing.lg,
                       height: spacing.lg,
-                      child: CircularProgressIndicator.adaptive(
+                      child: const CircularProgressIndicator.adaptive(
                         strokeWidth: 2,
                       ),
                     )
@@ -759,7 +757,7 @@ class _ManualUpdateCheckDialogState
       return Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          SizedBox(
+          const SizedBox(
             width: 52,
             height: 52,
             child: CircularProgressIndicator.adaptive(

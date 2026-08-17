@@ -4,32 +4,32 @@ import 'package:personal_ai_assistant/core/platform/adaptive_haptic.dart';
 
 void main() {
   group('AdaptiveHaptic', () {
-    Widget _buildTestWidget() {
+    Widget buildTestWidget() {
       return MaterialApp(
         home: Scaffold(
           body: Builder(
             builder: (context) {
-              return Column(
+              return const Column(
                 children: [
                   ElevatedButton(
-                    onPressed: () => AdaptiveHaptic.lightImpact(),
-                    child: const Text('light'),
+                    onPressed: AdaptiveHaptic.lightImpact,
+                    child: Text('light'),
                   ),
                   ElevatedButton(
-                    onPressed: () => AdaptiveHaptic.mediumImpact(),
-                    child: const Text('medium'),
+                    onPressed: AdaptiveHaptic.mediumImpact,
+                    child: Text('medium'),
                   ),
                   ElevatedButton(
-                    onPressed: () => AdaptiveHaptic.heavyImpact(),
-                    child: const Text('heavy'),
+                    onPressed: AdaptiveHaptic.heavyImpact,
+                    child: Text('heavy'),
                   ),
                   ElevatedButton(
-                    onPressed: () => AdaptiveHaptic.selectionClick(),
-                    child: const Text('selection'),
+                    onPressed: AdaptiveHaptic.selectionClick,
+                    child: Text('selection'),
                   ),
                   ElevatedButton(
-                    onPressed: () => AdaptiveHaptic.notificationSuccess(),
-                    child: const Text('success'),
+                    onPressed: AdaptiveHaptic.notificationSuccess,
+                    child: Text('success'),
                   ),
                 ],
               );
@@ -40,7 +40,7 @@ void main() {
     }
 
     testWidgets('all haptic methods can be called without error', (tester) async {
-      await tester.pumpWidget(_buildTestWidget());
+      await tester.pumpWidget(buildTestWidget());
 
       // Each button should be tappable without throwing
       await tester.tap(find.text('light'));
@@ -54,7 +54,7 @@ void main() {
     });
 
     testWidgets('lightImpact is callable in widget context', (tester) async {
-      await tester.pumpWidget(_buildTestWidget());
+      await tester.pumpWidget(buildTestWidget());
       await tester.tap(find.text('light'));
       await tester.pump();
       expect(find.text('light'), findsOneWidget);

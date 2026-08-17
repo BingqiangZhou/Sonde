@@ -9,11 +9,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:personal_ai_assistant/core/localization/app_localizations.dart';
-import 'package:personal_ai_assistant/core/widgets/app_shells.dart';
 import 'package:personal_ai_assistant/core/network/dio_client.dart';
 import 'package:personal_ai_assistant/core/providers/core_providers.dart';
 import 'package:personal_ai_assistant/core/services/app_cache_service.dart';
 import 'package:personal_ai_assistant/core/storage/local_storage_service.dart';
+import 'package:personal_ai_assistant/core/widgets/app_shells.dart';
 import 'package:personal_ai_assistant/features/auth/domain/models/user.dart';
 import 'package:personal_ai_assistant/features/auth/presentation/providers/auth_provider.dart';
 import 'package:personal_ai_assistant/features/podcast/data/models/podcast_daily_report_model.dart';
@@ -29,6 +29,7 @@ import 'package:personal_ai_assistant/features/podcast/presentation/providers/po
 import 'package:personal_ai_assistant/features/profile/presentation/pages/profile_cache_management_page.dart';
 import 'package:personal_ai_assistant/features/profile/presentation/pages/profile_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import '../../../../helpers/podcast_list_page_helper.dart';
 
 class _TestAuthNotifier extends AuthNotifier {
@@ -636,15 +637,15 @@ void main() {
     final discoverService = _TrackingApplePodcastRssService();
     final prefs = await SharedPreferences.getInstance();
 
-    when(() => dioClient.clearCache()).thenAnswer((_) async {});
-    when(() => dioClient.clearETagCache()).thenReturn(null);
-    when(() => cacheService.clearAll()).thenAnswer((_) async {});
-    when(() => cacheService.clearMediaCache()).thenAnswer((_) async {});
-    when(() => cacheService.clearMemoryImageCache()).thenAnswer((_) async {});
+    when(dioClient.clearCache).thenAnswer((_) async {});
+    when(dioClient.clearETagCache).thenReturn(null);
+    when(cacheService.clearAll).thenAnswer((_) async {});
+    when(cacheService.clearMediaCache).thenAnswer((_) async {});
+    when(cacheService.clearMemoryImageCache).thenAnswer((_) async {});
     when(() => cacheService.warmUp(any())).thenAnswer((_) async {});
-    when(() => cacheService.getCacheStats()).thenAnswer((_) async => {});
+    when(cacheService.getCacheStats).thenAnswer((_) async => {});
     when(() => cacheService.getCachedFileInfo(any())).thenAnswer((_) async => null);
-    when(() => searchService.clearCache()).thenReturn(null);
+    when(searchService.clearCache).thenReturn(null);
 
     final router = GoRouter(
       routes: [
@@ -722,10 +723,10 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
-    verify(() => dioClient.clearCache()).called(1);
-    verify(() => dioClient.clearETagCache()).called(1);
-    verify(() => cacheService.clearAll()).called(1);
-    verify(() => searchService.clearCache()).called(1);
+    verify(dioClient.clearCache).called(1);
+    verify(dioClient.clearETagCache).called(1);
+    verify(cacheService.clearAll).called(1);
+    verify(searchService.clearCache).called(1);
     expect(discoverService.clearCacheCalls, 1);
 
     await tester.pump(const Duration(seconds: 4));

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:personal_ai_assistant/core/constants/app_radius.dart';
 import 'package:personal_ai_assistant/core/constants/app_spacing.dart';
 import 'package:personal_ai_assistant/core/theme/app_colors.dart';
+import 'package:personal_ai_assistant/features/podcast/presentation/widgets/discover/discover_chart_row.dart' show DiscoverChartRow;
 import 'package:personal_ai_assistant/features/podcast/presentation/widgets/shared/base_episode_card.dart' show BaseEpisodeCard;
 
 import 'package:personal_ai_assistant/shared/widgets/loading_widget.dart';
@@ -122,9 +123,9 @@ class EpisodeCardSkeleton extends StatelessWidget {
               // Meta row
               Row(
                 children: [
-                  const SkeletonBox(height: 10, width: 60, borderRadius: AppRadius.xs),
+                  const SkeletonBox(height: 10, width: 60),
                   SizedBox(width: context.spacing.sm),
-                  const SkeletonBox(height: 10, width: 40, borderRadius: AppRadius.xs),
+                  const SkeletonBox(height: 10, width: 40),
                   const Spacer(),
                   const SkeletonCircle(size: 20),
                 ],
@@ -226,14 +227,14 @@ class DiscoverChartRowSkeleton extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const SkeletonBox(height: 14, width: double.infinity),
+                    const SkeletonBox(width: double.infinity),
                     SizedBox(height: context.spacing.xs),
                     SkeletonBox(height: 12, width: compact ? 100 : 140),
                   ],
                 ),
               ),
               const SizedBox(width: AppSpacing.sm),
-              const SkeletonCircle(size: 24),
+              const SkeletonCircle(),
             ],
           ),
         ),

@@ -10,10 +10,9 @@ import 'package:personal_ai_assistant/core/constants/app_text_styles.dart';
 import 'package:personal_ai_assistant/core/constants/breakpoints.dart';
 import 'package:personal_ai_assistant/core/localization/app_localizations_extension.dart';
 import 'package:personal_ai_assistant/core/platform/adaptive_haptic.dart';
-import 'package:personal_ai_assistant/core/widgets/adaptive/adaptive.dart';
 import 'package:personal_ai_assistant/core/platform/platform_helper.dart';
 import 'package:personal_ai_assistant/core/theme/app_colors.dart';
-import 'package:personal_ai_assistant/core/theme/app_theme.dart';
+import 'package:personal_ai_assistant/core/widgets/adaptive/adaptive.dart';
 import 'package:personal_ai_assistant/features/podcast/presentation/constants/podcast_ui_constants.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -500,7 +499,7 @@ class _CustomAdaptiveNavigationState extends ConsumerState<CustomAdaptiveNavigat
     final selectedBgColor = isDark
         ? AppColors.primary.withValues(alpha: 0.18)
         : AppColors.primary.withValues(alpha: 0.12);
-    final selectedIconColor = AppColors.primary;
+    const selectedIconColor = AppColors.primary;
     final selectedTextColor = theme.colorScheme.onSurface;
     final unselectedIconColor = theme.colorScheme.onSurfaceVariant;
     final unselectedTextColor = theme.colorScheme.onSurfaceVariant;

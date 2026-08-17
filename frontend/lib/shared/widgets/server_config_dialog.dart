@@ -30,7 +30,7 @@ class _ServerConfigDialogState extends ConsumerState<ServerConfigDialog> {
   String? _connectionMessage;
   late final ServerHealthService _healthService;
   Timer? _debounceTimer;
-  StreamSubscription? _healthCheckSubscription;
+  StreamSubscription<dynamic>? _healthCheckSubscription;
   bool _isDisposed = false;
 
   static const List<String> _protocols = ['https://', 'http://'];
@@ -140,7 +140,7 @@ class _ServerConfigDialogState extends ConsumerState<ServerConfigDialog> {
                         ? _connectionMessage ?? l10n.connection_error_hint
                         : null,
                     prefixIcon: _buildProtocolToggle(scheme),
-                    prefixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
+                    prefixIconConstraints: const BoxConstraints(),
                     suffixIcon: ValueListenableBuilder<TextEditingValue>(
                       valueListenable: _serverUrlController,
                       builder: (context, value, child) {
@@ -370,7 +370,7 @@ class _ServerConfigDialogState extends ConsumerState<ServerConfigDialog> {
               }
             });
           },
-          onError: (e) {
+          onError: (Object e) {
             if (_isDisposed || !mounted) return;
             setState(() {
               _connectionStatus = ConnectionStatus.failed;
@@ -411,6 +411,7 @@ class _ServerConfigDialogState extends ConsumerState<ServerConfigDialog> {
     );
 
     if (confirmed != true) return;
+    if (!dialogContext.mounted) return;
 
     showAppDialog<void>(
       context: dialogContext,
@@ -427,7 +428,7 @@ class _ServerConfigDialogState extends ConsumerState<ServerConfigDialog> {
                 SizedBox(
                   width: ctx.spacing.md,
                   height: ctx.spacing.md,
-                  child: CircularProgressIndicator.adaptive(strokeWidth: 2),
+                  child: const CircularProgressIndicator.adaptive(strokeWidth: 2),
                 ),
                 SizedBox(height: ctx.spacing.lg),
                 Text(l10n.profile_server_switch_clearing),

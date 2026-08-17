@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -17,7 +18,6 @@ import 'package:personal_ai_assistant/features/podcast/data/models/podcast_state
 import 'package:personal_ai_assistant/features/podcast/presentation/navigation/podcast_navigation.dart';
 import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_feed_providers.dart';
 import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_playback_providers.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_providers.dart';
 import 'package:personal_ai_assistant/features/podcast/presentation/widgets/podcast_feed_episode_card.dart';
 import 'package:personal_ai_assistant/shared/widgets/skeleton_widgets.dart';
 
@@ -384,9 +384,8 @@ class _FeedContent extends ConsumerWidget {
       return Scrollbar(
         controller: scrollController,
         child: ListView.builder(
-          controller: scrollController,
+          scrollCacheExtent: ScrollCacheExtent.pixels(ScrollConstants.largeListCacheExtent), controller: scrollController,
           padding: EdgeInsets.symmetric(vertical: context.spacing.sm),
-          cacheExtent: ScrollConstants.largeListCacheExtent,
           itemCount: itemCount,
           itemBuilder: (context, index) =>
               _buildListItem(context, ref, feedState, index, compact: true),

@@ -7,12 +7,8 @@ import 'package:personal_ai_assistant/features/auth/presentation/pages/auth_veri
 /// A mock notifier that avoids creating a real Dio instance.
 /// Extends [AuthVerifyNotifier] so Riverpod can use it as an override.
 class MockAuthVerifyNotifier extends AuthVerifyNotifier {
-  @override
-  // The private _VerifyStatus is not accessible from this library, but
-  // super.build() returns the initial state without performing network I/O
-  // because the Dio instance is only used in the action methods.
-  // ignore: unnecessary_override
-  build() => super.build();
+  // 无需覆写 build：基类 build() 只返回初始状态、不做网络 I/O
+  // （Dio 仅在 action 方法中使用），继承即可。
 }
 
 void main() {

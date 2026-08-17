@@ -10,7 +10,6 @@ import 'package:personal_ai_assistant/features/podcast/data/models/podcast_playb
 import 'package:personal_ai_assistant/features/podcast/data/models/podcast_transcription_model.dart';
 import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_providers.dart';
 import 'package:riverpod/src/providers/async_notifier.dart';
-import 'package:riverpod/src/providers/future_provider.dart';
 import 'package:riverpod/src/providers/notifier.dart';
 
 // === Providers ===

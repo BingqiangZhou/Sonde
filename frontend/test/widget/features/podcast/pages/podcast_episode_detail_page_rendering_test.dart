@@ -248,7 +248,7 @@ void main() {
       addTearDown(() async => tester.binding.setSurfaceSize(null));
       await tester.binding.setSurfaceSize(const Size(390, 844));
 
-      await tester.pumpWidget(createEpisodeDetailWidget(episode: null));
+      await tester.pumpWidget(createEpisodeDetailWidget());
       await tester.pumpAndSettle();
 
       final context = tester.element(find.byType(PodcastEpisodeDetailPage));

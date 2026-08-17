@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:personal_ai_assistant/core/constants/app_radius.dart';
 import 'package:personal_ai_assistant/core/constants/app_spacing.dart';
 import 'package:personal_ai_assistant/core/localization/app_localizations.dart';
 import 'package:personal_ai_assistant/core/localization/app_localizations_extension.dart';
@@ -99,7 +98,7 @@ class _ProfileSubscriptionsPageState
               return CustomScrollView(
                 controller: _scrollController,
                 slivers: [
-                  if (refreshSliver != null) refreshSliver,
+                  ?refreshSliver,
                   AdaptiveSliverAppBar(
                     title: l10n.profile_subscriptions,
                     actions: [
@@ -107,7 +106,7 @@ class _ProfileSubscriptionsPageState
                         key: const Key('profile_subscriptions_action_add'),
                         tooltip: l10n.podcast_add_podcast,
                         onPressed: () {
-                          showAppDialog(
+                          showAppDialog<void>(
                             context: context,
                             builder: (context) => const AddPodcastDialog(),
                           );

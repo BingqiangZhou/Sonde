@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:personal_ai_assistant/core/constants/app_spacing.dart';
 
@@ -52,12 +53,11 @@ class DiscoverChartsList extends ConsumerWidget {
 
         if (isMobile) {
           return ListView.builder(
-            key: const Key('podcast_discover_list'),
+            scrollCacheExtent: ScrollCacheExtent.pixels(ScrollConstants.largeListCacheExtent), key: const Key('podcast_discover_list'),
             controller: scrollController,
             physics: const AlwaysScrollableScrollPhysics(),
             padding:
                 EdgeInsets.only(bottom: context.spacing.md),
-            cacheExtent: ScrollConstants.largeListCacheExtent,
             itemCount: itemCount,
             itemBuilder: (context, index) =>
                 _buildItem(context, visibleItems, index),
@@ -75,12 +75,11 @@ class DiscoverChartsList extends ConsumerWidget {
         final childAspectRatio = cardWidth / cardHeight;
 
         return GridView.builder(
-          key: const Key('podcast_discover_grid'),
+          scrollCacheExtent: ScrollCacheExtent.pixels(ScrollConstants.largeListCacheExtent), key: const Key('podcast_discover_grid'),
           controller: scrollController,
           physics: const AlwaysScrollableScrollPhysics(),
           padding:
               EdgeInsets.only(bottom: context.spacing.md),
-          cacheExtent: ScrollConstants.largeListCacheExtent,
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: crossAxisCount,
             crossAxisSpacing: spacing,
@@ -111,7 +110,7 @@ class DiscoverChartsList extends ConsumerWidget {
     }
 
     if (index >= visibleItems.length) {
-      return Padding(
+      return const Padding(
         padding: EdgeInsets.symmetric(vertical: AppSpacing.md),
         child: Center(
           child: SizedBox(

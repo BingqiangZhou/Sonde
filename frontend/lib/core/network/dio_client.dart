@@ -27,7 +27,6 @@ class DioClientInitOptions {
 }
 
 class DioClient {
-  static const int _maxRetries = 3;
 
   DioClient({DioClientInitOptions initOptions = const DioClientInitOptions()})
     : _initOptions = initOptions {
@@ -53,6 +52,7 @@ class DioClient {
       unawaited(initializeFromStorage());
     }
   }
+  static const int _maxRetries = 3;
 
   final DioClientInitOptions _initOptions;
   late final Dio _dio;
@@ -60,7 +60,7 @@ class DioClient {
   late final CacheOptions _cacheOptions;
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
   final Map<String, CancelToken> _cancelTokens = {};
-  final Map<String, Future<Response>> _inFlightRequests = {};
+  final Map<String, Future<Response<dynamic>>> _inFlightRequests = {};
   String? _cachedAccessToken;
   static const String _serverBaseUrlKey = 'server_base_url';
 
@@ -91,10 +91,10 @@ class DioClient {
   }
 
   // HTTP methods
-  Future<Response> get(String path, {Map<String, dynamic>? queryParameters}) =>
-      _dio.get(path, queryParameters: queryParameters);
+  Future<Response<dynamic>> get(String path, {Map<String, dynamic>? queryParameters}) =>
+      _dio.get<dynamic>(path, queryParameters: queryParameters);
 
-  Future<Response> getDeduplicated(
+  Future<Response<dynamic>> getDeduplicated(
     String path, {
     Map<String, dynamic>? queryParameters,
     Options? options,
@@ -103,18 +103,18 @@ class DioClient {
     return _inFlightRequests.putIfAbsent(
       key,
       () => _dio
-          .get(path, queryParameters: queryParameters, options: options)
+          .get<dynamic>(path, queryParameters: queryParameters, options: options)
           .whenComplete(() => _inFlightRequests.remove(key)),
     );
   }
 
-  Future<Response> post(String path, {dynamic data, bool invalidateCache = false}) =>
+  Future<Response<dynamic>> post(String path, {dynamic data, bool invalidateCache = false}) =>
       _dio.post(path, data: data, options: _cacheOpts(invalidateCache));
 
-  Future<Response> put(String path, {dynamic data, bool invalidateCache = true}) =>
+  Future<Response<dynamic>> put(String path, {dynamic data, bool invalidateCache = true}) =>
       _dio.put(path, data: data, options: _cacheOpts(invalidateCache));
 
-  Future<Response> delete(String path, {bool invalidateCache = true}) =>
+  Future<Response<dynamic>> delete(String path, {bool invalidateCache = true}) =>
       _dio.delete(path, options: _cacheOpts(invalidateCache));
 
   // Cache & token management
@@ -195,8 +195,8 @@ class DioClient {
         final count = (err.requestOptions.extra['_retryCount'] as int? ?? 0) + 1;
         if (count <= _maxRetries) {
           try {
-            await Future.delayed(Duration(seconds: count));
-            final response = await _dio.fetch(err.requestOptions.copyWith(
+            await Future<void>.delayed(Duration(seconds: count));
+            final response = await _dio.fetch<dynamic>(err.requestOptions.copyWith(
               extra: {...err.requestOptions.extra, '_retryCount': count},
             ));
             handler.resolve(response);

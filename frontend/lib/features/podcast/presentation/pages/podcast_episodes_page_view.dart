@@ -330,7 +330,7 @@ extension _PodcastEpisodesPageView on _PodcastEpisodesPageState {
     final previousFilter = _selectedFilter;
     final previousShowOnlySummary = _showOnlyWithSummary;
     final l10n = context.l10n;
-    showAppDialog(
+    showAppDialog<void>(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog.adaptive(
@@ -360,7 +360,6 @@ extension _PodcastEpisodesPageView on _PodcastEpisodesPageState {
                 AdaptiveListTile(
                   leading: const AdaptiveSwitch(
                     value: false,
-                    onChanged: null,
                   ),
                   title: Text(l10n.podcast_only_with_summary),
                   trailing: AdaptiveSwitch(

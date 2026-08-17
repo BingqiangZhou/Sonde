@@ -22,17 +22,17 @@ enum PodcastCountry {
   spain('es', 'podcast_country_spain', '🇪🇸'),
   italy('it', 'podcast_country_italy', '🇮🇹');
 
-  final String code;
-  final String localizationKey;
-  final String flag;
-  final bool isPopular;
-
   const PodcastCountry(
     this.code,
     this.localizationKey,
     this.flag, {
     this.isPopular = false,
   });
+
+  final String code;
+  final String localizationKey;
+  final String flag;
+  final bool isPopular;
 
   /// 获取常用地区列表
   static List<PodcastCountry> get popularRegions =>

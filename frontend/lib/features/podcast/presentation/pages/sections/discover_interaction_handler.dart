@@ -32,7 +32,7 @@ class DiscoverInteractionHandler {
     final feedUrl = result.feedUrl;
     final collectionName = result.collectionName;
     if (feedUrl == null || collectionName == null) {
-      showErrorNotice(context, l10n.podcast_subscribe_failed('Invalid podcast data'));
+      if (context.mounted) { showErrorNotice(context, l10n.podcast_subscribe_failed('Invalid podcast data'));       }
       return;
     }
 
@@ -42,7 +42,7 @@ class DiscoverInteractionHandler {
       showSuccessNotice(context, l10n.podcast_subscribe_success(collectionName));
     } catch (error) {
       if (!context.mounted) return;
-      showErrorNotice(context, l10n.podcast_subscribe_failed(error.toString()));
+      if (context.mounted) { showErrorNotice(context, l10n.podcast_subscribe_failed(error.toString()));       }
     }
   }
 
@@ -92,14 +92,14 @@ class DiscoverInteractionHandler {
     PodcastDiscoverItem item,
   ) async {
     final selection = await resolveDiscoverEpisodeSelection(ref, context, item);
-    if (selection != null) {
-      await playDiscoverEpisode(
-        ref,
-        context,
-        episode: selection.episode,
-        showId: selection.showId,
-      );
-    }
+    if (selection == null) return;
+    if (!context.mounted) return;
+    await playDiscoverEpisode(
+      ref,
+      context,
+      episode: selection.episode,
+      showId: selection.showId,
+    );
   }
 
   // --- Sheets ---
@@ -114,7 +114,7 @@ class DiscoverInteractionHandler {
     final searchService = ref.read(iTunesSearchServiceProvider);
     final showId = item.itunesId ?? searchService.extractShowIdFromApplePodcastUrl(item.url);
     if (showId == null) {
-      showErrorNotice(context, l10n.podcast_failed_load_episodes);
+      if (context.mounted) { showErrorNotice(context, l10n.podcast_failed_load_episodes);       }
       return;
     }
 
@@ -153,7 +153,7 @@ class DiscoverInteractionHandler {
       );
     } catch (e) {
       logger.AppLogger.debug('[Discover] Failed to show podcast episodes: $e');
-      showErrorNotice(context, l10n.podcast_failed_load_episodes);
+      if (context.mounted) { showErrorNotice(context, l10n.podcast_failed_load_episodes);       }
     }
   }
 
@@ -228,7 +228,7 @@ class DiscoverInteractionHandler {
         searchService.extractEpisodeIdFromApplePodcastUrl(item.url) ?? item.itunesId;
 
     if (showId == null || episodeTrackId == null) {
-      showErrorNotice(context, l10n.podcast_failed_load_episodes);
+      if (context.mounted) { showErrorNotice(context, l10n.podcast_failed_load_episodes);       }
       return null;
     }
 
@@ -239,13 +239,13 @@ class DiscoverInteractionHandler {
         country: country,
       );
       if (episode == null) {
-        showErrorNotice(context, l10n.podcast_failed_load_episodes);
+        if (context.mounted) { showErrorNotice(context, l10n.podcast_failed_load_episodes);         }
         return null;
       }
       return DiscoverEpisodeSelection(showId: showId, episode: episode);
     } catch (e) {
       logger.AppLogger.debug('[Discover] Failed to resolve episode selection: $e');
-      showErrorNotice(context, l10n.podcast_failed_load_episodes);
+      if (context.mounted) { showErrorNotice(context, l10n.podcast_failed_load_episodes);       }
       return null;
     }
   }
@@ -279,7 +279,7 @@ class DiscoverInteractionHandler {
   }) async {
     final audioUrl = episode.resolvedAudioUrl;
     if (audioUrl == null || audioUrl.isEmpty) {
-      showErrorNotice(context, context.l10n.podcast_player_no_audio);
+      if (context.mounted) { showErrorNotice(context, context.l10n.podcast_player_no_audio);       }
       return;
     }
 
@@ -311,7 +311,7 @@ class DiscoverInteractionHandler {
       await ref.read(audioPlayerProvider.notifier).playEpisode(discoverEpisode);
     } catch (e) {
       logger.AppLogger.debug('[Discover] Failed to play episode: $e');
-      showErrorNotice(context, context.l10n.podcast_player_no_audio);
+      if (context.mounted) { showErrorNotice(context, context.l10n.podcast_player_no_audio);       }
     }
   }
 

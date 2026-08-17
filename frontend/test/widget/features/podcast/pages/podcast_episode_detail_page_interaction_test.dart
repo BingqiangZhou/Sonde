@@ -142,7 +142,6 @@ void main() {
       await tester.pumpWidget(
         createEpisodeDetailWidget(
           episode: createTestEpisode(description: 'Description'),
-          hasSummary: true,
         ),
       );
       await tester.pumpAndSettle();

@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:personal_ai_assistant/core/constants/app_spacing.dart';
-
 import 'package:personal_ai_assistant/core/constants/app_radius.dart';
+import 'package:personal_ai_assistant/core/constants/app_spacing.dart';
 import 'package:personal_ai_assistant/core/constants/app_text_styles.dart';
-
 import 'package:personal_ai_assistant/core/localization/app_localizations.dart';
 import 'package:personal_ai_assistant/core/localization/app_localizations_extension.dart';
 import 'package:personal_ai_assistant/core/theme/app_colors.dart';
@@ -41,7 +39,6 @@ class ChatHeader extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
     final availableModelsAsync = ref.watch(availableModelsProvider);
-    final extension = appThemeOf(context);
     return Container(
       padding: EdgeInsets.symmetric(horizontal: context.spacing.md, vertical: context.spacing.md),
       decoration: BoxDecoration(

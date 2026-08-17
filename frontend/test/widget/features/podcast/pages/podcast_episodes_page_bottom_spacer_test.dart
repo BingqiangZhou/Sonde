@@ -8,7 +8,6 @@ import 'package:personal_ai_assistant/features/podcast/data/models/podcast_state
 import 'package:personal_ai_assistant/features/podcast/presentation/pages/podcast_episodes_page.dart';
 import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_episodes_providers.dart';
 import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_playback_providers.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_providers.dart';
 import 'package:personal_ai_assistant/features/podcast/presentation/widgets/podcast_bottom_player_widget.dart';
 
 void main() {

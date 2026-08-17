@@ -26,7 +26,7 @@ class AdaptiveShare {
     final buffer = StringBuffer();
 
     if (podcastName != null) {
-      buffer.writeln('$podcastName');
+      buffer.writeln(podcastName);
     }
 
     buffer.writeln(title);

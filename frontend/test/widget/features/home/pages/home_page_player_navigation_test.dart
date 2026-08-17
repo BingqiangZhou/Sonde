@@ -9,8 +9,6 @@ import 'package:personal_ai_assistant/core/providers/route_provider.dart';
 import 'package:personal_ai_assistant/core/router/app_router.dart';
 import 'package:personal_ai_assistant/core/storage/local_storage_service.dart';
 import 'package:personal_ai_assistant/features/auth/domain/models/user.dart';
-import '../../../../helpers/mock_local_storage_service.dart';
-import '../../../../helpers/podcast_episode_detail_helper.dart';
 import 'package:personal_ai_assistant/features/auth/presentation/providers/auth_provider.dart';
 import 'package:personal_ai_assistant/features/home/presentation/pages/home_page.dart';
 import 'package:personal_ai_assistant/features/podcast/data/models/audio_player_state_model.dart';
@@ -25,9 +23,12 @@ import 'package:personal_ai_assistant/features/podcast/presentation/pages/podcas
 import 'package:personal_ai_assistant/features/podcast/presentation/pages/podcast_list_page.dart';
 import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_feed_providers.dart';
 import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_playback_providers.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_search_provider.dart';
 import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_providers.dart';
+import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_search_provider.dart';
 import 'package:personal_ai_assistant/features/profile/presentation/pages/profile_page.dart';
+
+import '../../../../helpers/mock_local_storage_service.dart';
+import '../../../../helpers/podcast_episode_detail_helper.dart';
 
 void main() {
   group('HomePage player navigation behavior', () {

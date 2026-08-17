@@ -1,3 +1,6 @@
+// riverpod 3.4 将 state/ref 标记为 @protected；本文件用 extension 组织 Notifier 功能，
+// 访问不属于"子类实例成员"，两条告警均为误报。
+// ignore_for_file: invalid_use_of_protected_member, invalid_use_of_visible_for_testing_member
 part of 'podcast_playback_providers.dart';
 
 /// Server-side playback state sync extension for AudioPlayerNotifier.

@@ -45,12 +45,12 @@ class _ErrorPlaybackHistoryLiteNotifier
 
   @override
   FutureOr<PlaybackHistoryLiteResponse?> build() async {
-    throw 'Failed to load';
+    throw Exception('Failed to load');
   }
 
   @override
   Future<PlaybackHistoryLiteResponse?> load({bool forceRefresh = false}) async {
-    throw 'Failed to load';
+    throw Exception('Failed to load');
   }
 }
 
@@ -108,8 +108,8 @@ void main() {
     });
 
     testWidgets('shows empty state when no history', (tester) async {
-      final emptyResponse = PlaybackHistoryLiteResponse(
-        episodes: const [],
+      const emptyResponse = PlaybackHistoryLiteResponse(
+        episodes: [],
         total: 0,
         page: 1,
         size: 20,
@@ -193,7 +193,7 @@ void main() {
         ProviderScope(
           overrides: [
             playbackHistoryLiteProvider.overrideWith(
-              () => _ErrorPlaybackHistoryLiteNotifier(),
+              _ErrorPlaybackHistoryLiteNotifier.new,
             ),
           ],
           child: const MaterialApp(

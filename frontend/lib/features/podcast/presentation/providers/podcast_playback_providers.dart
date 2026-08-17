@@ -3,12 +3,17 @@ import 'dart:convert';
 
 import 'package:audio_service/audio_service.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:personal_ai_assistant/core/constants/breakpoints.dart';
 import 'package:personal_ai_assistant/core/constants/cache_constants.dart';
+import 'package:personal_ai_assistant/core/providers/route_provider.dart';
 import 'package:personal_ai_assistant/core/services/app_cache_service.dart';
 import 'package:personal_ai_assistant/core/services/download_provider.dart';
 import 'package:personal_ai_assistant/core/storage/local_storage_service.dart';
+import 'package:personal_ai_assistant/core/theme/app_colors.dart';
 import 'package:personal_ai_assistant/core/utils/app_logger.dart' as logger;
 import 'package:personal_ai_assistant/core/utils/time_formatter.dart';
 import 'package:personal_ai_assistant/features/auth/presentation/providers/auth_provider.dart';
@@ -17,27 +22,22 @@ import 'package:personal_ai_assistant/features/podcast/data/models/podcast_episo
 import 'package:personal_ai_assistant/features/podcast/data/models/podcast_playback_model.dart';
 import 'package:personal_ai_assistant/features/podcast/data/models/podcast_queue_model.dart';
 import 'package:personal_ai_assistant/features/podcast/data/repositories/podcast_repository.dart';
+import 'package:personal_ai_assistant/features/podcast/presentation/constants/podcast_ui_constants.dart';
 import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_providers.dart';
 import 'package:personal_ai_assistant/shared/constants/storage_keys.dart';
 import 'package:riverpod/riverpod.dart';
 import 'package:riverpod/src/providers/provider.dart';
-import 'package:equatable/equatable.dart';
-import 'package:flutter/material.dart';
-import 'package:personal_ai_assistant/core/constants/breakpoints.dart';
-import 'package:personal_ai_assistant/core/providers/route_provider.dart';
-import 'package:personal_ai_assistant/core/theme/app_colors.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/constants/podcast_ui_constants.dart';
 
 part 'audio_handler.dart';
-part 'audio_playback_selectors.dart';
 part 'audio_persistence_notifier.dart';
 part 'audio_playback_rate_notifier.dart';
+part 'audio_playback_selectors.dart';
 part 'audio_server_sync_notifier.dart';
 part 'audio_sleep_timer_notifier.dart';
 part 'podcast_playback_helpers.dart';
 part 'podcast_playback_queue_controller.dart';
-part 'podcast_player_ui_state.dart';
 part 'podcast_player_host_layout_provider.dart';
+part 'podcast_player_ui_state.dart';
 
 final audioPlayerProvider =
     NotifierProvider<AudioPlayerNotifier, AudioPlayerState>(
@@ -112,9 +112,9 @@ class AudioPlayerNotifier extends Notifier<AudioPlayerState> {
   bool _isDisposed = false;
   bool _isPlayingEpisode = false;
   bool _isRestoringLastPlayed = false;
-  StreamSubscription? _playerStateSubscription;
-  StreamSubscription? _positionSubscription;
-  StreamSubscription? _durationSubscription;
+  StreamSubscription<dynamic>? _playerStateSubscription;
+  StreamSubscription<dynamic>? _positionSubscription;
+  StreamSubscription<dynamic>? _durationSubscription;
   bool? _lastPlayingState; // Track last playing state to reduce log spam
   ProcessingState? _lastProcessingState;
   bool _isHandlingQueueCompletion = false;
@@ -215,9 +215,9 @@ class AudioPlayerNotifier extends Notifier<AudioPlayerState> {
 
   @visibleForTesting
   void debugReplaceManagedResources({
-    StreamSubscription? playerStateSubscription,
-    StreamSubscription? positionSubscription,
-    StreamSubscription? durationSubscription,
+    StreamSubscription<dynamic>? playerStateSubscription,
+    StreamSubscription<dynamic>? positionSubscription,
+    StreamSubscription<dynamic>? durationSubscription,
     Timer? syncThrottleTimer,
     Timer? sleepTimerTickTimer,
     Timer? snapshotPersistTimer,
@@ -478,7 +478,7 @@ class AudioPlayerNotifier extends Notifier<AudioPlayerState> {
         source: PlaySource.queue,
         queueEpisodeId: next.episodeId,
       );
-    } catch (error) {
+    } on Object catch (error) {
       logger.AppLogger.debug(
         '[Error] Failed to advance queue on completion: $error',
       );
@@ -640,7 +640,7 @@ class AudioPlayerNotifier extends Notifier<AudioPlayerState> {
           await seekAudio(Duration(milliseconds: resumePositionMs));
         }
         await setAudioSpeed(resolvedPlaybackRate);
-      } catch (error) {
+      } on Object catch (error) {
         logger.AppLogger.debug(
           '[PlaybackRestore] Failed to preload restored episode: $error',
         );
@@ -673,7 +673,7 @@ class AudioPlayerNotifier extends Notifier<AudioPlayerState> {
         '[PlaybackRestore] Restored episode ${latest.id} to ${state.formattedPosition}',
       );
       _schedulePersistLastPlaybackSnapshot(immediate: true);
-    } catch (error) {
+    } on Object catch (error) {
       logger.AppLogger.debug(
         '[PlaybackRestore] Failed to restore last played episode: $error',
       );
@@ -740,7 +740,7 @@ class AudioPlayerNotifier extends Notifier<AudioPlayerState> {
       );
       try {
         await setAudioSpeed(resolvedPlaybackRate);
-      } catch (error) {
+      } on Object catch (error) {
         logger.AppLogger.debug(
           '[PlaybackRestore] Failed to apply updated server playback rate: $error',
         );
@@ -1023,14 +1023,14 @@ class AudioPlayerNotifier extends Notifier<AudioPlayerState> {
 
       // Update playback state on server (non-blocking)
       if (ref.mounted && !_isDisposed) {
-        _updatePlaybackStateOnServer().catchError((error) {
+        _updatePlaybackStateOnServer().catchError((Object error) {
           logger.AppLogger.debug('[Error] Server update failed: $error');
         });
       }
 
       // Release the lock
       _isPlayingEpisode = false;
-    } catch (error) {
+    } on Object catch (error) {
       logger.AppLogger.debug('[Error] ===== Failed to play episode =====');
       logger.AppLogger.debug('[Playback] Episode ID: ${episodeForPlayback.id}');
       logger.AppLogger.debug(
@@ -1060,7 +1060,7 @@ class AudioPlayerNotifier extends Notifier<AudioPlayerState> {
     try {
       final queueController = ref.read(podcastQueueControllerProvider.notifier);
       return await queueController.activateEpisode(episodeId);
-    } catch (error) {
+    } on Object catch (error) {
       logger.AppLogger.debug('Failed to prepare manual play queue: $error');
       return null;
     }
@@ -1101,7 +1101,7 @@ class AudioPlayerNotifier extends Notifier<AudioPlayerState> {
           );
         }
       }
-    } catch (error) {
+    } on Object catch (error) {
       logger.AppLogger.debug('[Error] pause() error: $error');
       if (ref.mounted && !_isDisposed) {
         state = state.copyWith(error: error.toString());
@@ -1148,7 +1148,7 @@ class AudioPlayerNotifier extends Notifier<AudioPlayerState> {
 
       if (ref.mounted && !_isDisposed) {
         unawaited(
-          _updatePlaybackStateOnServer().catchError((error) {
+          _updatePlaybackStateOnServer().catchError((Object error) {
             logger.AppLogger.debug(
               '[Error] Server update failed after resume: $error',
             );
@@ -1162,7 +1162,7 @@ class AudioPlayerNotifier extends Notifier<AudioPlayerState> {
             !isDiscoverPreviewEpisode(currentEpisode) &&
             !_isCurrentEpisodeAtQueueHead(currentEpisode.id)) {
           unawaited(
-            _prepareManualPlayQueue(currentEpisode.id).catchError((error) {
+            _prepareManualPlayQueue(currentEpisode.id).catchError((Object error) {
               logger.AppLogger.debug(
                 '[Error] Queue activation failed after resume: $error',
               );
@@ -1171,7 +1171,7 @@ class AudioPlayerNotifier extends Notifier<AudioPlayerState> {
           );
         }
       }
-    } catch (error) {
+    } on Object catch (error) {
       logger.AppLogger.debug('[Error] resume() error: $error');
       if (ref.mounted && !_isDisposed) {
         state = state.copyWith(isPlaying: false, error: error.toString());
@@ -1195,7 +1195,7 @@ class AudioPlayerNotifier extends Notifier<AudioPlayerState> {
           );
         }
       }
-    } catch (error) {
+    } on Object catch (error) {
       if (ref.mounted && !_isDisposed) {
         state = state.copyWith(error: error.toString());
       }
@@ -1227,7 +1227,7 @@ class AudioPlayerNotifier extends Notifier<AudioPlayerState> {
           clearCurrentQueueEpisodeId: true,
         );
       }
-    } catch (error) {
+    } on Object catch (error) {
       if (ref.mounted && !_isDisposed) {
         state = state.copyWith(error: error.toString());
       }

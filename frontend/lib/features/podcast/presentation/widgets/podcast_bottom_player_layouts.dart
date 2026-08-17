@@ -123,7 +123,6 @@ class _MiniDockBody extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
     final theme = Theme.of(context);
-    final extension = appThemeOf(context);
 
     return Container(
       decoration: BoxDecoration(

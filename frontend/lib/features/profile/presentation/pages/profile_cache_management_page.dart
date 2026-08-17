@@ -9,7 +9,6 @@ import 'package:personal_ai_assistant/core/localization/app_localizations_extens
 import 'package:personal_ai_assistant/core/providers/core_providers.dart';
 import 'package:personal_ai_assistant/core/theme/app_colors.dart';
 import 'package:personal_ai_assistant/core/utils/app_logger.dart' as logger;
-import 'package:personal_ai_assistant/core/widgets/adaptive/adaptive_sliver_app_bar.dart';
 import 'package:personal_ai_assistant/core/widgets/adaptive/adaptive.dart';
 import 'package:personal_ai_assistant/core/widgets/app_dialog_helper.dart';
 import 'package:personal_ai_assistant/core/widgets/app_shells.dart';
@@ -836,7 +835,7 @@ class _ProfileCacheManagementPageState
             builder: (context, refreshSliver) {
               return CustomScrollView(
                 slivers: [
-                  if (refreshSliver != null) refreshSliver,
+                  ?refreshSliver,
                   AdaptiveSliverAppBar(
                     title: context.l10n.profile_cache_manage_title,
                     actions: [

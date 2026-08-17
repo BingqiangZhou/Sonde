@@ -1,6 +1,5 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:personal_ai_assistant/core/constants/app_radius.dart';
 import 'package:personal_ai_assistant/core/constants/app_spacing.dart';
 import 'package:personal_ai_assistant/core/platform/platform_helper.dart';
 import 'package:personal_ai_assistant/core/theme/app_colors.dart';
@@ -44,7 +43,7 @@ class AdaptiveButton extends StatelessWidget {
 
   Widget _buildCupertino(BuildContext context) {
     final theme = Theme.of(context);
-    Widget effectiveChild = child;
+    var effectiveChild = child;
 
     if (isLoading) {
       effectiveChild = CupertinoActivityIndicator(
@@ -101,10 +100,10 @@ class AdaptiveButton extends StatelessWidget {
   }
 
   Widget _buildMaterial(BuildContext context) {
-    Widget effectiveChild = child;
+    var effectiveChild = child;
 
     if (isLoading) {
-      effectiveChild = SizedBox(
+      effectiveChild = const SizedBox(
         height: 20,
         width: 20,
         child: CircularProgressIndicator.adaptive(

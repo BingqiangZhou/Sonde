@@ -5,7 +5,7 @@ import 'package:personal_ai_assistant/core/widgets/adaptive/adaptive_segmented_c
 
 void main() {
   group('AdaptiveSegmentedControl', () {
-    Widget _buildTestWidget({
+    Widget buildTestWidget({
       TargetPlatform platform = TargetPlatform.android,
     }) {
       return MaterialApp(
@@ -18,7 +18,7 @@ void main() {
         },
         home: Scaffold(
           body: AdaptiveSegmentedControl<int>(
-            segments: {
+            segments: const {
               0: Text('All'),
               1: Text('Active'),
               2: Text('Done'),
@@ -32,7 +32,7 @@ void main() {
 
     testWidgets('renders SegmentedButton on Android', (tester) async {
       await tester.pumpWidget(
-        _buildTestWidget(platform: TargetPlatform.android),
+        buildTestWidget(),
       );
       expect(find.byType(SegmentedButton<int>), findsOneWidget);
       expect(find.text('All'), findsOneWidget);
@@ -40,7 +40,7 @@ void main() {
 
     testWidgets('renders CupertinoSlidingSegmentedControl on iOS', (tester) async {
       await tester.pumpWidget(
-        _buildTestWidget(platform: TargetPlatform.iOS),
+        buildTestWidget(platform: TargetPlatform.iOS),
       );
       expect(
         find.byType(CupertinoSlidingSegmentedControl<int>),
@@ -55,7 +55,7 @@ void main() {
           theme: ThemeData(useMaterial3: true),
           home: Scaffold(
             body: AdaptiveSegmentedControl<int>(
-              segments: {0: Text('A'), 1: Text('B')},
+              segments: const {0: Text('A'), 1: Text('B')},
               selected: 0,
               onChanged: (v) => selected = v,
             ),

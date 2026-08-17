@@ -81,7 +81,7 @@ class CountrySelectorDropdown extends ConsumerWidget {
             child: ListView.separated(
               itemCount: PodcastCountry.values.length,
               padding: EdgeInsets.fromLTRB(context.spacing.smMd, context.spacing.sm, context.spacing.smMd, context.spacing.mdLg),
-              separatorBuilder: (_, __) => SizedBox(height: context.spacing.sm),
+              separatorBuilder: (_, _) => SizedBox(height: context.spacing.sm),
               itemBuilder: (context, index) {
                 final country = PodcastCountry.values[index];
                 final isSelected = country == selectedCountry;

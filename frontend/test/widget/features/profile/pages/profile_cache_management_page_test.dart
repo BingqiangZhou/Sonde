@@ -44,7 +44,7 @@ void main() {
   });
 
   group('ProfileCacheManagementPage Widget Tests', () {
-    void _stubCacheService(_MockAppCacheService cacheService) {
+    void stubCacheService(_MockAppCacheService cacheService) {
       when(() => cacheService.clearAll()).thenAnswer((_) async {});
       when(() => cacheService.clearMediaCache()).thenAnswer((_) async {});
       when(() => cacheService.clearMemoryImageCache()).thenAnswer((_) async {});
@@ -55,7 +55,7 @@ void main() {
 
     testWidgets('renders without crashing', (tester) async {
       final cacheService = _MockAppCacheService();
-      _stubCacheService(cacheService);
+      stubCacheService(cacheService);
 
       await tester.pumpWidget(
         ProviderScope(
@@ -80,7 +80,7 @@ void main() {
     testWidgets('shows overview section with total usage after loading',
         (tester) async {
       final cacheService = _MockAppCacheService();
-      _stubCacheService(cacheService);
+      stubCacheService(cacheService);
 
       await tester.pumpWidget(
         ProviderScope(
@@ -111,7 +111,7 @@ void main() {
     testWidgets('shows cache detail rows for images, audio, and other',
         (tester) async {
       final cacheService = _MockAppCacheService();
-      _stubCacheService(cacheService);
+      stubCacheService(cacheService);
 
       await tester.pumpWidget(
         ProviderScope(
@@ -149,7 +149,7 @@ void main() {
     testWidgets('shows deep clean all button and refresh action',
         (tester) async {
       final cacheService = _MockAppCacheService();
-      _stubCacheService(cacheService);
+      stubCacheService(cacheService);
 
       await tester.pumpWidget(
         ProviderScope(
@@ -180,7 +180,7 @@ void main() {
 
     testWidgets('shows info notice box', (tester) async {
       final cacheService = _MockAppCacheService();
-      _stubCacheService(cacheService);
+      stubCacheService(cacheService);
 
       await tester.pumpWidget(
         ProviderScope(

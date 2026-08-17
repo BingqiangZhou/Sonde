@@ -18,7 +18,7 @@ void main() {
     await db.close();
   });
 
-  DownloadTasksCompanion _makeTask({
+  DownloadTasksCompanion makeTask({
     required int episodeId,
     String audioUrl = 'https://example.com/ep.mp3',
     DownloadStatus status = DownloadStatus.pending,
@@ -38,7 +38,7 @@ void main() {
 
   group('insertTask & getByEpisodeId', () {
     test('inserts a task and retrieves it by episode ID', () async {
-      await dao.insertTask(_makeTask(episodeId: 1));
+      await dao.insertTask(makeTask(episodeId: 1));
 
       final task = await dao.getByEpisodeId(1);
 
@@ -55,8 +55,8 @@ void main() {
     });
 
     test('auto-increments id', () async {
-      final id1 = await dao.insertTask(_makeTask(episodeId: 10));
-      final id2 = await dao.insertTask(_makeTask(episodeId: 20));
+      final id1 = await dao.insertTask(makeTask(episodeId: 10));
+      final id2 = await dao.insertTask(makeTask(episodeId: 20));
 
       expect(id2, greaterThan(id1));
     });
@@ -98,8 +98,8 @@ void main() {
 
   group('watchByEpisodeId', () {
     test('watches a specific episode task', () async {
-      await dao.insertTask(_makeTask(episodeId: 5));
-      await dao.insertTask(_makeTask(episodeId: 6));
+      await dao.insertTask(makeTask(episodeId: 5));
+      await dao.insertTask(makeTask(episodeId: 6));
 
       final emitted = <DownloadTask?>[];
       final sub = dao.watchByEpisodeId(5).listen(emitted.add);
@@ -127,13 +127,13 @@ void main() {
 
   group('getAllCompleted', () {
     test('returns only completed tasks', () async {
-      await dao.insertTask(_makeTask(
+      await dao.insertTask(makeTask(
         episodeId: 1,
         status: DownloadStatus.completed,
         localPath: '/path/1.mp3',
       ));
-      await dao.insertTask(_makeTask(episodeId: 2, status: DownloadStatus.pending));
-      await dao.insertTask(_makeTask(
+      await dao.insertTask(makeTask(episodeId: 2));
+      await dao.insertTask(makeTask(
         episodeId: 3,
         status: DownloadStatus.completed,
         localPath: '/path/3.mp3',
@@ -146,7 +146,7 @@ void main() {
     });
 
     test('returns empty list when no tasks are completed', () async {
-      await dao.insertTask(_makeTask(episodeId: 1, status: DownloadStatus.downloading));
+      await dao.insertTask(makeTask(episodeId: 1, status: DownloadStatus.downloading));
 
       final completed = await dao.getAllCompleted();
       expect(completed, isEmpty);
@@ -155,7 +155,7 @@ void main() {
 
   group('updateProgress', () {
     test('updates progress for a given task id', () async {
-      final id = await dao.insertTask(_makeTask(episodeId: 1));
+      final id = await dao.insertTask(makeTask(episodeId: 1));
 
       await dao.updateProgress(id, 0.5);
 
@@ -166,7 +166,7 @@ void main() {
 
   group('markCompleted', () {
     test('marks task as completed with local path', () async {
-      final id = await dao.insertTask(_makeTask(episodeId: 1));
+      final id = await dao.insertTask(makeTask(episodeId: 1));
 
       await dao.markCompleted(id, '/downloads/ep1.mp3');
 
@@ -180,7 +180,7 @@ void main() {
 
   group('markFailed', () {
     test('marks task as failed', () async {
-      final id = await dao.insertTask(_makeTask(episodeId: 1));
+      final id = await dao.insertTask(makeTask(episodeId: 1));
 
       await dao.markFailed(id);
 
@@ -191,7 +191,7 @@ void main() {
 
   group('markPending', () {
     test('resets task to pending with zero progress', () async {
-      final id = await dao.insertTask(_makeTask(
+      final id = await dao.insertTask(makeTask(
         episodeId: 1,
         status: DownloadStatus.failed,
         progress: 0.7,
@@ -207,8 +207,8 @@ void main() {
 
   group('deleteByEpisodeId', () {
     test('deletes task by episode ID', () async {
-      await dao.insertTask(_makeTask(episodeId: 1));
-      await dao.insertTask(_makeTask(episodeId: 2));
+      await dao.insertTask(makeTask(episodeId: 1));
+      await dao.insertTask(makeTask(episodeId: 2));
 
       await dao.deleteByEpisodeId(1);
 
@@ -219,7 +219,7 @@ void main() {
 
   group('deleteById', () {
     test('deletes task by primary key', () async {
-      final id = await dao.insertTask(_makeTask(episodeId: 1));
+      final id = await dao.insertTask(makeTask(episodeId: 1));
 
       await dao.deleteById(id);
 
@@ -229,7 +229,7 @@ void main() {
 
   group('getLocalPathByEpisodeId', () {
     test('returns local path when task is completed', () async {
-      final id = await dao.insertTask(_makeTask(episodeId: 1));
+      final id = await dao.insertTask(makeTask(episodeId: 1));
       await dao.markCompleted(id, '/local/ep1.mp3');
 
       final path = await dao.getLocalPathByEpisodeId(1);
@@ -237,7 +237,7 @@ void main() {
     });
 
     test('returns null when task exists but is not completed', () async {
-      await dao.insertTask(_makeTask(episodeId: 1));
+      await dao.insertTask(makeTask(episodeId: 1));
 
       final path = await dao.getLocalPathByEpisodeId(1);
       expect(path, isNull);
@@ -261,9 +261,9 @@ void main() {
     });
 
     test('all enum statuses round-trip correctly', () async {
-      final statuses = DownloadStatus.values;
+      const statuses = DownloadStatus.values;
       for (var i = 0; i < statuses.length; i++) {
-        final id = await dao.insertTask(_makeTask(
+        await dao.insertTask(makeTask(
           episodeId: 100 + i,
           status: statuses[i],
         ));

@@ -68,7 +68,7 @@ void main() {
     });
 
     testWidgets('shows error dialog when token is null', (tester) async {
-      await tester.pumpWidget(createTestWidget(token: null));
+      await tester.pumpWidget(createTestWidget());
       await tester.pumpAndSettle();
 
       // Should show an error dialog since token is null

@@ -14,11 +14,10 @@ import 'package:personal_ai_assistant/core/router/app_router.dart';
 import 'package:personal_ai_assistant/core/theme/app_theme.dart';
 import 'package:personal_ai_assistant/core/theme/theme_provider.dart';
 import 'package:personal_ai_assistant/core/utils/app_logger.dart' as logger;
-
 import 'package:personal_ai_assistant/features/auth/data/events/auth_event.dart';
 import 'package:personal_ai_assistant/features/auth/presentation/providers/auth_provider.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_providers.dart';
 import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_playback_providers.dart';
+import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_providers.dart';
 import 'package:personal_ai_assistant/features/settings/presentation/providers/app_update_provider.dart';
 import 'package:personal_ai_assistant/features/settings/presentation/widgets/update_dialog.dart';
 import 'package:personal_ai_assistant/shared/widgets/loading_widget.dart';
@@ -232,9 +231,9 @@ class _PersonalAIAssistantAppState
       ref.read(authProvider.notifier).resetLoadingState();
 
       // Retry auth check in background after 2 seconds
-      Future.delayed(const Duration(seconds: 2), () {
+      Future<void>.delayed(const Duration(seconds: 2), () {
         if (mounted) {
-          ref.read(authProvider.notifier).checkAuthStatus().catchError((e) {
+          ref.read(authProvider.notifier).checkAuthStatus().catchError((Object e) {
             logger.AppLogger.debug(
               '[AppInit] Background auth retry failed: $e',
             );
@@ -257,7 +256,7 @@ class _PersonalAIAssistantAppState
     const minSplash = Duration(milliseconds: 120);
     final elapsed = DateTime.now().difference(startedAt);
     if (elapsed < minSplash) {
-      await Future.delayed(minSplash - elapsed);
+      await Future<void>.delayed(minSplash - elapsed);
     }
 
     if (mounted) {
@@ -276,7 +275,7 @@ class _PersonalAIAssistantAppState
   /// Shows notification if update is available
   Future<void> _autoCheckForUpdates() async {
     // Wait a bit longer to ensure app is fully loaded
-    await Future.delayed(const Duration(seconds: 2));
+    await Future<void>.delayed(const Duration(seconds: 2));
 
     if (!mounted) return;
 

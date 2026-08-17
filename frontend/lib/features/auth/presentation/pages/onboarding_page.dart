@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -40,11 +39,11 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   }
 
   void _goToPage(int page) {
-    unawaited(_pageController.animateToPage(
+    _pageController.animateToPage(
       page,
       duration: AppDurations.scrollAnimation,
       curve: Curves.easeInOut,
-    ));
+    );
   }
 
   @override
@@ -155,7 +154,6 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
 
                     // Action button
                     AdaptiveButton(
-                      style: AdaptiveButtonStyle.filled,
                       onPressed: isLastPage
                           ? _completeOnboarding
                           : () => _goToPage(_currentPage + 1),

@@ -57,7 +57,7 @@ class DownloadDao extends DatabaseAccessor<AppDatabase>
           ..where((t) => t.id.equals(id)))
         .write(
       DownloadTasksCompanion(
-        status: Value(DownloadStatus.completed),
+        status: const Value(DownloadStatus.completed),
         localPath: Value(localPath),
         progress: const Value(1),
         completedAt: Value(DateTime.now()),
@@ -69,7 +69,7 @@ class DownloadDao extends DatabaseAccessor<AppDatabase>
   Future<void> markFailed(int id) {
     return (update(downloadTasks)
           ..where((t) => t.id.equals(id)))
-        .write(DownloadTasksCompanion(status: Value(DownloadStatus.failed)));
+        .write(const DownloadTasksCompanion(status: Value(DownloadStatus.failed)));
   }
 
   /// Mark a download as pending (for retry).

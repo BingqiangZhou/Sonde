@@ -138,7 +138,7 @@ class AppUpdateService {
         ),
       );
 
-      final response = await dio.get(
+      final response = await dio.get<dynamic>(
         AppUpdateConstants.githubLatestReleaseUrl,
         options: Options(headers: {'Accept': 'application/vnd.github.v3+json'}),
       );
