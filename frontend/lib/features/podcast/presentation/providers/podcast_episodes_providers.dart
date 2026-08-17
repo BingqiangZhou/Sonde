@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart' show FutureProviderFamily;
 
+import 'package:personal_ai_assistant/core/network/exceptions/network_exceptions.dart';
 import 'package:personal_ai_assistant/core/storage/local_storage_service.dart';
 import 'package:personal_ai_assistant/core/utils/app_logger.dart' as logger;
 import 'package:personal_ai_assistant/features/podcast/data/models/podcast_episode_model.dart';
@@ -211,7 +212,7 @@ class PodcastEpisodesNotifier extends Notifier<PodcastEpisodesState> {
       }
     } catch (error) {
       logger.AppLogger.debug('[Error] Failed to load episodes: $error');
-      state = state.copyWith(isLoading: false, error: error.toString());
+      state = state.copyWith(isLoading: false, error: mapErrorMessage(error));
     }
   }
 
@@ -258,7 +259,7 @@ class PodcastEpisodesNotifier extends Notifier<PodcastEpisodesState> {
         clearError: true,
       );
     } catch (error) {
-      state = state.copyWith(isLoadingMore: false, error: error.toString());
+      state = state.copyWith(isLoadingMore: false, error: mapErrorMessage(error));
     }
   }
 

@@ -86,3 +86,17 @@ class ServerException extends AppException {
 class UnknownException extends AppException {
   const UnknownException(super.message);
 }
+
+/// Maps any error thrown by the data layer to a human-readable message that
+/// is safe to surface in UI state (never raw [DioException] internals).
+String mapErrorMessage(Object error) {
+  switch (error) {
+    case final AppException appException:
+      return appException.userMessage;
+    case final DioException dioError:
+      return NetworkException.fromDioError(dioError).userMessage;
+    default:
+      final message = error.toString().trim();
+      return message.isNotEmpty ? message : 'Network error occurred';
+  }
+}

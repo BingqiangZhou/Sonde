@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:personal_ai_assistant/core/constants/breakpoints.dart';
 import 'package:personal_ai_assistant/core/constants/cache_constants.dart';
+import 'package:personal_ai_assistant/core/network/exceptions/network_exceptions.dart';
 import 'package:personal_ai_assistant/core/providers/route_provider.dart';
 import 'package:personal_ai_assistant/core/services/app_cache_service.dart';
 import 'package:personal_ai_assistant/core/services/download_provider.dart';
@@ -1104,7 +1105,7 @@ class AudioPlayerNotifier extends Notifier<AudioPlayerState> {
     } on Object catch (error) {
       logger.AppLogger.debug('[Error] pause() error: $error');
       if (ref.mounted && !_isDisposed) {
-        state = state.copyWith(error: error.toString());
+        state = state.copyWith(error: mapErrorMessage(error));
       }
     }
   }
@@ -1174,7 +1175,7 @@ class AudioPlayerNotifier extends Notifier<AudioPlayerState> {
     } on Object catch (error) {
       logger.AppLogger.debug('[Error] resume() error: $error');
       if (ref.mounted && !_isDisposed) {
-        state = state.copyWith(isPlaying: false, error: error.toString());
+        state = state.copyWith(isPlaying: false, error: mapErrorMessage(error));
       }
     }
   }
@@ -1197,7 +1198,7 @@ class AudioPlayerNotifier extends Notifier<AudioPlayerState> {
       }
     } on Object catch (error) {
       if (ref.mounted && !_isDisposed) {
-        state = state.copyWith(error: error.toString());
+        state = state.copyWith(error: mapErrorMessage(error));
       }
     }
   }
@@ -1229,7 +1230,7 @@ class AudioPlayerNotifier extends Notifier<AudioPlayerState> {
       }
     } on Object catch (error) {
       if (ref.mounted && !_isDisposed) {
-        state = state.copyWith(error: error.toString());
+        state = state.copyWith(error: mapErrorMessage(error));
       }
     }
   }

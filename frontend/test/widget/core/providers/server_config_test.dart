@@ -11,8 +11,6 @@ void main() {
 
     setUp(() {
       mockStorage = MockLocalStorageService();
-      // Reset AppConfig
-      AppConfig.setServerBaseUrl('');
     });
 
     test('should initialize with default server URL', () {
@@ -84,30 +82,40 @@ void main() {
     });
   });
 
-  group('AppConfig Tests', () {
-    setUp(() {
-      AppConfig.setServerBaseUrl('');
-    });
-
-    test('serverBaseUrl should return default URL when not set', () {
-      final url = AppConfig.serverBaseUrl;
+  group('AppConfig default URL Tests', () {
+    test('defaultServerBaseUrl should return a non-empty URL', () {
+      final url = AppConfig.defaultServerBaseUrl;
       expect(url, isNotEmpty);
-      expect(url.contains('localhost'), isTrue);
+      expect(url, startsWith('http'));
+    });
+  });
+
+  group('bootstrapServerUrlProvider Tests', () {
+    test('defaults to environment URL when not overridden', () {
+      final container = ProviderContainer();
+
+      expect(container.read(bootstrapServerUrlProvider),
+          AppConfig.defaultServerBaseUrl);
+
+      container.dispose();
     });
 
-    test('setServerBaseUrl should update the URL', () {
-      AppConfig.setServerBaseUrl('http://example.com');
-      expect(AppConfig.serverBaseUrl, 'http://example.com');
-    });
+    test('main() override seeds ServerConfigNotifier state', () {
+      final container = ProviderContainer(
+        overrides: [
+          bootstrapServerUrlProvider.overrideWithValue('http://10.0.2.2:8000'),
+          localStorageServiceProvider.overrideWithValue(
+            MockLocalStorageService(),
+          ),
+        ],
+      );
 
-    test('apiBaseUrl should return same as serverBaseUrl', () {
-      AppConfig.setServerBaseUrl('http://test.com');
-      expect(AppConfig.apiBaseUrl, 'http://test.com');
-    });
+      expect(
+        container.read(serverConfigProvider).serverUrl,
+        'http://10.0.2.2:8000',
+      );
 
-    test('setApiBaseUrl should work for backward compatibility', () {
-      AppConfig.setApiBaseUrl('http://compat.com');
-      expect(AppConfig.serverBaseUrl, 'http://compat.com');
+      container.dispose();
     });
   });
 }

@@ -55,7 +55,7 @@ extension AudioPlaybackRateNotifier on AudioPlayerNotifier {
       }
     } catch (error) {
       if (ref.mounted && !_isDisposed) {
-        state = state.copyWith(error: error.toString());
+        state = state.copyWith(error: mapErrorMessage(error));
       }
     }
   }

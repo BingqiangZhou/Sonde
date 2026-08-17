@@ -10,14 +10,11 @@ class AppConfig {
   );
 
   // API Configuration
-  // Server Base URL (backend server address without /api/v1 suffix)
-  static String _serverBaseUrl = '';
-
-  static String get serverBaseUrl {
-    if (_serverBaseUrl.isNotEmpty) {
-      return _serverBaseUrl;
-    }
-
+  /// Default server URL (backend address without /api/v1 suffix) derived
+  /// purely from build environment and platform. The runtime URL lives in
+  /// ServerConfigNotifier (Riverpod state); main() seeds it from storage
+  /// via bootstrapServerUrlProvider.
+  static String get defaultServerBaseUrl {
     switch (environment) {
       case 'production':
         return 'https://api.personalai.app';
@@ -30,18 +27,6 @@ class AppConfig {
         }
         return 'http://localhost:8000';
     }
-  }
-
-  // API Base URL (for backward compatibility, uses serverBaseUrl)
-  static String get apiBaseUrl => serverBaseUrl;
-
-  static void setServerBaseUrl(String url) {
-    _serverBaseUrl = url;
-  }
-
-  // For backward compatibility
-  static void setApiBaseUrl(String url) {
-    setServerBaseUrl(url);
   }
 
   // App Configuration

@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/misc.dart'
     show
         AsyncNotifierProviderFamily,
         NotifierProviderFamily;
+import 'package:personal_ai_assistant/core/network/exceptions/network_exceptions.dart';
 
 import 'package:personal_ai_assistant/features/podcast/core/utils/html_sanitizer.dart';
 import 'package:personal_ai_assistant/features/podcast/data/models/podcast_conversation_model.dart';
@@ -250,7 +251,7 @@ class ConversationNotifier extends Notifier<ConversationState> {
       _loadCompleter?.complete();
     } catch (e) {
       state = ConversationState(
-        errorMessage: e.toString(),
+        errorMessage: mapErrorMessage(e),
         sessionId: sessionId,
       );
       _loadCompleter?.completeError(e);
@@ -325,7 +326,7 @@ class ConversationNotifier extends Notifier<ConversationState> {
 
       state = ConversationState(
         messages: updatedMessages,
-        errorMessage: e.toString(),
+        errorMessage: mapErrorMessage(e),
         sessionId: sessionId,
       );
     }
@@ -349,7 +350,7 @@ class ConversationNotifier extends Notifier<ConversationState> {
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
-        errorMessage: e.toString(),
+        errorMessage: mapErrorMessage(e),
       );
     }
   }
@@ -752,7 +753,7 @@ class SummaryNotifier extends Notifier<SummaryState> {
       _pollEpisodeDetailUntilSummarySync();
       return response;
     } catch (e) {
-      state = state.copyWith(isLoading: false, errorMessage: e.toString());
+      state = state.copyWith(isLoading: false, errorMessage: mapErrorMessage(e));
       _stopPolling();
       return null;
     }

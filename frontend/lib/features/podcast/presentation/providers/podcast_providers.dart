@@ -5,6 +5,7 @@ import 'package:clock/clock.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:personal_ai_assistant/core/constants/cache_constants.dart';
+import 'package:personal_ai_assistant/core/network/exceptions/network_exceptions.dart';
 import 'package:personal_ai_assistant/core/providers/core_providers.dart';
 import 'package:personal_ai_assistant/core/utils/app_logger.dart' as logger;
 import 'package:personal_ai_assistant/features/podcast/data/models/playback_history_lite_model.dart';
@@ -104,7 +105,7 @@ class PodcastSubscriptionNotifier extends Notifier<PodcastSubscriptionState> {
         '[OK] Subscription data loaded at ${DateTime.now()} (total=${response.total}, count=${response.subscriptions.length})',
       );
     } catch (error) {
-      state = state.copyWith(isLoading: false, error: error.toString());
+      state = state.copyWith(isLoading: false, error: mapErrorMessage(error));
     } finally {
       _isLoadingSubscriptions = false;
     }
@@ -139,7 +140,7 @@ class PodcastSubscriptionNotifier extends Notifier<PodcastSubscriptionState> {
         clearError: true,
       );
     } catch (error) {
-      state = state.copyWith(isLoadingMore: false, error: error.toString());
+      state = state.copyWith(isLoadingMore: false, error: mapErrorMessage(error));
     } finally {
       _isLoadingMoreSubscriptions = false;
     }
@@ -204,7 +205,7 @@ class PodcastSubscriptionNotifier extends Notifier<PodcastSubscriptionState> {
       );
     } catch (error) {
       // Revert: reload from server on failure (fire-and-forget to avoid nested throw)
-      state = state.copyWith(error: error.toString());
+      state = state.copyWith(error: mapErrorMessage(error));
       unawaited(refreshSubscriptions());
     }
   }
@@ -242,7 +243,7 @@ class PodcastSubscriptionNotifier extends Notifier<PodcastSubscriptionState> {
     } catch (error) {
       logger.AppLogger.debug('[Error] Bulk delete failed: $error');
       // Revert: reload from server on failure (fire-and-forget to avoid nested throw)
-      state = state.copyWith(error: error.toString());
+      state = state.copyWith(error: mapErrorMessage(error));
       unawaited(refreshSubscriptions());
       rethrow;
     }

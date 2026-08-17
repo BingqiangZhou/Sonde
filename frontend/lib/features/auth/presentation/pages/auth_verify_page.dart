@@ -1,10 +1,10 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:personal_ai_assistant/core/app/config/app_config.dart';
 import 'package:personal_ai_assistant/core/constants/app_radius.dart';
 import 'package:personal_ai_assistant/core/constants/app_spacing.dart';
 import 'package:personal_ai_assistant/core/constants/app_text_styles.dart';
+import 'package:personal_ai_assistant/core/providers/core_providers.dart';
 import 'package:personal_ai_assistant/core/localization/app_localizations_extension.dart';
 import 'package:personal_ai_assistant/core/theme/app_colors.dart';
 import 'package:personal_ai_assistant/core/widgets/adaptive/adaptive.dart';
@@ -36,7 +36,8 @@ class _VerifyStatus {
 class AuthVerifyNotifier extends Notifier<_VerifyStatus> {
   late final Dio _dio;
 
-  String get _baseUrl => '${AppConfig.serverBaseUrl}/api/v1/auth';
+  String get _baseUrl =>
+      '${ref.read(serverConfigProvider).serverUrl}/api/v1/auth';
 
   @override
   _VerifyStatus build() {

@@ -260,11 +260,11 @@ class DioClient {
   // --- Private helpers ----------------------------------------------------
 
   void _initializeBaseUrl({String? initialServerBaseUrl}) {
-    final raw = initialServerBaseUrl ?? config.AppConfig.serverBaseUrl;
+    final raw = initialServerBaseUrl ?? config.AppConfig.defaultServerBaseUrl;
     final normalized = raw.isNotEmpty ? UrlNormalizer.normalize(raw) : '';
     final base = normalized.isNotEmpty
         ? '$normalized/api/v1'
-        : '${config.AppConfig.serverBaseUrl}/api/v1';
+        : '${config.AppConfig.defaultServerBaseUrl}/api/v1';
     _dio.options.baseUrl = base;
     _log('Initialized with baseUrl: $base');
   }

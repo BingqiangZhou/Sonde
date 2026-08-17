@@ -9,6 +9,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:personal_ai_assistant/core/app/app.dart';
 import 'package:personal_ai_assistant/core/app/config/app_config.dart';
+import 'package:personal_ai_assistant/core/providers/core_providers.dart';
 import 'package:personal_ai_assistant/core/storage/local_storage_service.dart';
 import 'package:personal_ai_assistant/core/theme/theme_provider.dart';
 import 'package:personal_ai_assistant/core/utils/app_logger.dart' as logger;
@@ -121,19 +122,20 @@ void main() {
           ) ??
           kThemeModeSystem;
 
-      final customServerUrl = await storageService.getServerBaseUrl();
-      if (customServerUrl != null && customServerUrl.isNotEmpty) {
-        AppConfig.setServerBaseUrl(customServerUrl);
-        logger.AppLogger.info('[AppInit] Loaded server URL: $customServerUrl');
+      var initialServerUrl = await storageService.getServerBaseUrl() ?? '';
+      if (initialServerUrl.isEmpty) {
+        // Legacy migration: old API base URL key -> server URL key
+        final legacyApiBaseUrl = await storageService.getApiBaseUrl();
+        if (legacyApiBaseUrl != null && legacyApiBaseUrl.isNotEmpty) {
+          await storageService.saveServerBaseUrl(legacyApiBaseUrl);
+          initialServerUrl = legacyApiBaseUrl;
+          logger.AppLogger.info(
+            '[AppInit] Migrated old API URL to server URL: $legacyApiBaseUrl',
+          );
+        }
       }
-
-      final oldApiBaseUrl = await storageService.getApiBaseUrl();
-      if (oldApiBaseUrl != null && oldApiBaseUrl.isNotEmpty) {
-        await storageService.saveServerBaseUrl(oldApiBaseUrl);
-        AppConfig.setServerBaseUrl(oldApiBaseUrl);
-        logger.AppLogger.info(
-          '[AppInit] Migrated old API URL to server URL: $oldApiBaseUrl',
-        );
+      if (initialServerUrl.isNotEmpty) {
+        logger.AppLogger.info('[AppInit] Loaded server URL: $initialServerUrl');
       }
 
       final hasCompletedOnboarding =
@@ -153,6 +155,8 @@ void main() {
             initialOnboardingCompletedProvider.overrideWithValue(
               hasCompletedOnboarding,
             ),
+            if (initialServerUrl.isNotEmpty)
+              bootstrapServerUrlProvider.overrideWithValue(initialServerUrl),
           ],
           child: const _AppWithSplashScreen(),
         ),

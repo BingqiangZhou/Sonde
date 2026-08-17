@@ -49,14 +49,6 @@ class PodcastFeedNotifier extends Notifier<PodcastFeedState> {
     _inFlightRequest = null;
   }
 
-  String _extractReadableErrorMessage(Object error) {
-    if (error is AppException) {
-      return error.userMessage;
-    }
-    final message = error.toString().trim();
-    return message.isNotEmpty ? message : 'Network error occurred';
-  }
-
   Future<void> loadInitialFeed({
     bool forceRefresh = false,
     bool background = false,
@@ -102,7 +94,7 @@ class PodcastFeedNotifier extends Notifier<PodcastFeedState> {
 
         state = state.copyWith(
           isLoading: false,
-          error: _extractReadableErrorMessage(error),
+          error: mapErrorMessage(error),
         );
       }
     });
@@ -142,7 +134,7 @@ class PodcastFeedNotifier extends Notifier<PodcastFeedState> {
 
       state = state.copyWith(
         isLoadingMore: false,
-        error: _extractReadableErrorMessage(error),
+        error: mapErrorMessage(error),
       );
     }
   }

@@ -14,9 +14,19 @@ import 'package:personal_ai_assistant/features/podcast/presentation/providers/po
 import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_providers.dart';
 import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_search_provider.dart';
 
+/// Server URL resolved during bootstrap (stored custom URL or environment
+/// default); main() overrides it via ProviderScope before runApp.
+final bootstrapServerUrlProvider = Provider<String>(
+  (ref) => AppConfig.defaultServerBaseUrl,
+);
+
 // Dio Client Provider
 final dioClientProvider = Provider<DioClient>((ref) {
-  final client = DioClient();
+  final client = DioClient(
+    initOptions: DioClientInitOptions(
+      initialServerBaseUrl: ref.read(bootstrapServerUrlProvider),
+    ),
+  );
   ref.onDispose(client.dispose);
   return client;
 });
@@ -65,8 +75,8 @@ class ServerConfigNotifier extends Notifier<ServerConfigState> {
 
   @override
   ServerConfigState build() {
-    // Get initial server URL from AppConfig
-    final initialUrl = AppConfig.serverBaseUrl;
+    // Get initial server URL from the bootstrap-resolved value
+    final initialUrl = ref.watch(bootstrapServerUrlProvider);
     return ServerConfigState(serverUrl: initialUrl);
   }
 
@@ -123,9 +133,6 @@ class ServerConfigNotifier extends Notifier<ServerConfigState> {
 
       // Save to storage
       await _storageService.saveServerBaseUrl(normalizedUrl);
-
-      // Update AppConfig
-      AppConfig.setServerBaseUrl(normalizedUrl);
 
       // Update DioClient
       final dioClient = ref.read(dioClientProvider);
