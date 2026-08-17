@@ -9,7 +9,6 @@ import 'package:personal_ai_assistant/features/podcast/data/models/podcast_queue
 import 'package:personal_ai_assistant/features/podcast/data/models/podcast_subscription_model.dart';
 import 'package:personal_ai_assistant/features/podcast/data/models/podcast_transcription_model.dart';
 import 'package:personal_ai_assistant/features/podcast/data/models/profile_stats_model.dart';
-import 'package:personal_ai_assistant/features/podcast/data/models/schedule_config_model.dart';
 import 'package:retrofit/retrofit.dart';
 
 part 'podcast_api_service.g.dart';
@@ -33,11 +32,6 @@ abstract class PodcastApiService {
     @Query('status') String? status,
   );
 
-  @GET('/podcasts/subscriptions/{subscriptionId}')
-  Future<PodcastSubscriptionModel> getSubscription(
-    @Path('subscriptionId') int subscriptionId,
-  );
-
   @DELETE('/podcasts/subscriptions/{subscriptionId}')
   Future<void> deleteSubscription(@Path('subscriptionId') int subscriptionId);
 
@@ -53,17 +47,6 @@ abstract class PodcastApiService {
   Future<ReparseResponse> reparseSubscription(
     @Path('subscriptionId') int subscriptionId,
     @Query('force_all') bool forceAll,
-  );
-
-  @GET('/podcasts/subscriptions/{subscriptionId}/schedule')
-  Future<ScheduleConfigResponse> getSubscriptionSchedule(
-    @Path('subscriptionId') int subscriptionId,
-  );
-
-  @PATCH('/podcasts/subscriptions/{subscriptionId}/schedule')
-  Future<ScheduleConfigResponse> updateSubscriptionSchedule(
-    @Path('subscriptionId') int subscriptionId,
-    @Body() ScheduleConfigUpdateRequest request,
   );
 
   // === Episode Management ===
@@ -127,11 +110,6 @@ abstract class PodcastApiService {
     @Body() PodcastPlaybackUpdateRequest request,
   );
 
-  @GET('/podcasts/episodes/{episodeId}/playback')
-  Future<PodcastPlaybackStateResponse> getPlaybackState(
-    @Path('episodeId') int episodeId,
-  );
-
   @GET('/podcasts/playback/rate/effective')
   Future<PlaybackRateEffectiveResponse> getEffectivePlaybackRate(
     @Query('subscription_id') int? subscriptionId,
@@ -185,19 +163,6 @@ abstract class PodcastApiService {
 
   @GET('/podcasts/summaries/models')
   Future<SummaryModelsResponse> getSummaryModels();
-
-  @GET('/podcasts/summaries/pending')
-  Future<SimpleResponse> getPendingSummaries();
-
-  // === Search ===
-
-  @GET('/podcasts/search')
-  Future<PodcastEpisodeListResponse> searchPodcasts(
-    @Query('q') String query,
-    @Query('search_in') String? searchIn,
-    @Query('page') int page,
-    @Query('size') int size,
-  );
 
   // === Statistics ===
 
@@ -259,14 +224,6 @@ abstract class PodcastApiService {
   Future<PodcastConversationClearResponse> clearConversationHistory(
     @Path('episodeId') int episodeId,
     @Query('session_id') int? sessionId,
-  );
-
-  @GET('/podcasts/subscriptions/schedule/all')
-  Future<List<ScheduleConfigResponse>> getAllSubscriptionSchedules();
-
-  @POST('/podcasts/subscriptions/schedule/batch-update')
-  Future<List<ScheduleConfigResponse>> batchUpdateSubscriptionSchedules(
-    @Body() Map<String, dynamic> requestData,
   );
 
   // === Highlights Management ===

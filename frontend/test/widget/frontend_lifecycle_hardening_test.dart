@@ -187,38 +187,18 @@ class _FakeLocalStorageService implements LocalStorageService {
   final Map<String, Object?> _values = <String, Object?>{};
 
   @override
-  Future<void> cacheData(String key, data, {Duration? expiration}) async {
-    _values[key] = data;
-  }
-
-  @override
   Future<void> clear() async {
     _values.clear();
   }
 
   @override
-  Future<void> clearExpiredCache() async {}
-
-  @override
   Future<bool> containsKey(String key) async => _values.containsKey(key);
-
-  @override
-  Future<T?> get<T>(String key) async => _values[key] as T?;
 
   @override
   Future<String?> getApiBaseUrl() async => _values['api_base_url'] as String?;
 
   @override
   Future<bool?> getBool(String key) async => _values[key] as bool?;
-
-  @override
-  Future<T?> getCachedData<T>(String key) async => _values[key] as T?;
-
-  @override
-  Future<double?> getDouble(String key) async => _values[key] as double?;
-
-  @override
-  Future<int?> getInt(String key) async => _values[key] as int?;
 
   @override
   Future<String?> getServerBaseUrl() async =>
@@ -228,17 +208,8 @@ class _FakeLocalStorageService implements LocalStorageService {
   Future<String?> getString(String key) async => _values[key] as String?;
 
   @override
-  Future<List<String>?> getStringList(String key) async =>
-      _values[key] as List<String>?;
-
-  @override
   Future<void> remove(String key) async {
     _values.remove(key);
-  }
-
-  @override
-  Future<void> save<T>(String key, T value) async {
-    _values[key] = value;
   }
 
   @override
@@ -252,27 +223,12 @@ class _FakeLocalStorageService implements LocalStorageService {
   }
 
   @override
-  Future<void> saveDouble(String key, double value) async {
-    _values[key] = value;
-  }
-
-  @override
-  Future<void> saveInt(String key, int value) async {
-    _values[key] = value;
-  }
-
-  @override
   Future<void> saveServerBaseUrl(String url) async {
     _values['server_base_url'] = url;
   }
 
   @override
   Future<void> saveString(String key, String value) async {
-    _values[key] = value;
-  }
-
-  @override
-  Future<void> saveStringList(String key, List<String> value) async {
     _values[key] = value;
   }
 }

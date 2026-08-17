@@ -15,19 +15,7 @@ class ScrollConstants {
   /// Used for lists with many items or complex layouts.
   static const double largeListCacheExtent = 1000;
 
-  /// Small list cache area size.
-  /// Used for short lists or views with simple items.
-  static const double smallListCacheExtent = 250;
-
   // ==================== Item Extent ====================
-
-  /// Default item height estimate.
-  /// Standard height for most list items (e.g., episode cards).
-  static const double defaultItemExtent = 88;
-
-  /// Compact item height estimate.
-  /// Used for dense layouts or smaller list items.
-  static const double compactItemExtent = 72;
 
   /// Queue item height estimate.
   /// Height for podcast queue items with cover and metadata.

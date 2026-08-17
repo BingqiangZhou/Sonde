@@ -90,18 +90,4 @@ class DownloadDao extends DatabaseAccessor<AppDatabase>
           ..where((t) => t.episodeId.equals(episodeId)))
         .go();
   }
-
-  /// Delete a download task by ID.
-  Future<void> deleteById(int id) {
-    return (delete(downloadTasks)..where((t) => t.id.equals(id))).go();
-  }
-
-  /// Get the local file path for a completed download by episode ID.
-  Future<String?> getLocalPathByEpisodeId(int episodeId) async {
-    final task = await getByEpisodeId(episodeId);
-    if (task != null && task.status == DownloadStatus.completed) {
-      return task.localPath;
-    }
-    return null;
-  }
 }

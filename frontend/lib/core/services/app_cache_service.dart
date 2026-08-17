@@ -1,8 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 
-import 'package:personal_ai_assistant/core/utils/app_logger.dart' as logger;
-
 /// Cache configuration constants.
 ///
 /// These values are tuned for a podcast/feed reader app with:
@@ -41,22 +39,6 @@ class AppMediaCacheManager extends CacheManager {
         );
   static const String key = 'app_media_cache';
   static final AppMediaCacheManager instance = AppMediaCacheManager._();
-
-  /// Gets current cache statistics
-  Future<Map<String, dynamic>> getStats() async {
-    try {
-      // The CacheManager doesn't expose direct stats, but we can
-      // provide basic configuration info
-      return {
-        'maxCacheObjects': _AppCacheConfig.maxNrOfCacheObjects,
-        'stalePeriodDays': _AppCacheConfig.stalePeriod.inDays,
-        'cacheKey': key,
-      };
-    } catch (e) {
-      logger.AppLogger.debug('[AppCache] Failed to get cache stats for key $key: $e');
-      return {};
-    }
-  }
 }
 
 class AppCacheService {
@@ -102,45 +84,5 @@ class AppCacheService {
   Future<void> clearAll() async {
     await clearMediaCache();
     await clearMemoryImageCache();
-  }
-
-  Future<FileInfo?> getCachedFileInfo(String url) async {
-    return mediaCacheManager.getFileFromCache(url);
-  }
-
-  Future<void> warmUp(String url) async {
-    await mediaCacheManager.downloadFile(url);
-  }
-
-  Future<Map<String, dynamic>> getCacheStats() async {
-    final imageCache = PaintingBinding.instance.imageCache;
-    final mediaStats = await AppMediaCacheManager.instance.getStats();
-
-    return {
-      'imageCache': {
-        'currentSize': imageCache.currentSize,
-        'currentSizeBytes': imageCache.currentSizeBytes,
-        'maximumSize': imageCache.maximumSize,
-        'maximumSizeBytes': imageCache.maximumSizeBytes,
-        'liveImageCount': imageCache.liveImageCount,
-      },
-      'mediaCache': mediaStats,
-    };
-  }
-
-  /// Performs memory-aware cache cleanup.
-  ///
-  /// Reduces memory cache size when memory pressure is detected.
-  /// Call this when receiving low memory warnings from the OS.
-  Future<void> performMemoryCleanup() async {
-    final imageCache = PaintingBinding.instance.imageCache;
-
-    // Clear live images (those currently in use) to free memory
-    imageCache.clearLiveImages();
-
-    // If still using significant memory, clear more aggressively
-    if (imageCache.currentSizeBytes > (_AppCacheConfig.maxMemoryCacheSize ~/ 2)) {
-      imageCache.clear();
-    }
   }
 }

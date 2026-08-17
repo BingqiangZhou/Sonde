@@ -3,10 +3,16 @@ import 'dart:async';
 import 'package:personal_ai_assistant/core/utils/app_logger.dart';
 
 Future<void> testExecutable(FutureOr<void> Function() testMain) async {
-  AppLogger.configure(const AppLoggerConfig.silent());
+  const silentConfig = AppLoggerConfig(
+    debugEnabled: false,
+    infoEnabled: false,
+    warningEnabled: false,
+    errorEnabled: false,
+  );
+  AppLogger.configure(silentConfig);
   try {
     await testMain();
   } finally {
-    AppLogger.resetToDefault();
+    AppLogger.configure(const AppLoggerConfig.production());
   }
 }

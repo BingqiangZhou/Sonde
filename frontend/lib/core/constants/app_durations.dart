@@ -24,10 +24,6 @@ class AppDurations {
   // Loading shimmer / pulse
   static const Duration shimmerPulse = Duration(milliseconds: 800);
 
-  // Fade
-  static const Duration fadeFast = Duration(milliseconds: 150);
-  static const Duration fadeNormal = Duration(milliseconds: 300);
-
   // Scale
   static const Duration scaleFast = Duration(milliseconds: 200);
 

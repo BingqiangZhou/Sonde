@@ -131,53 +131,6 @@ class PlaybackRateApplyRequest extends Equatable {
 }
 
 @JsonSerializable()
-class PodcastSummaryResponse extends Equatable {
-
-  const PodcastSummaryResponse({
-    required this.episodeId,
-    required this.summary,
-    required this.version,
-    required this.transcriptUsed, required this.generatedAt, required this.wordCount, this.confidenceScore,
-    this.modelUsed,
-    this.processingTime,
-  });
-
-  factory PodcastSummaryResponse.fromJson(Map<String, dynamic> json) =>
-      _$PodcastSummaryResponseFromJson(json);
-  @JsonKey(name: 'episode_id')
-  final int episodeId;
-  final String summary;
-  final String version;
-  @JsonKey(name: 'confidence_score')
-  final double? confidenceScore;
-  @JsonKey(name: 'transcript_used', defaultValue: false)
-  final bool transcriptUsed;
-  @JsonKey(name: 'generated_at')
-  final DateTime generatedAt;
-  @JsonKey(name: 'word_count')
-  final int wordCount;
-  @JsonKey(name: 'model_used')
-  final String? modelUsed;
-  @JsonKey(name: 'processing_time')
-  final double? processingTime;
-
-  Map<String, dynamic> toJson() => _$PodcastSummaryResponseToJson(this);
-
-  @override
-  List<Object?> get props => [
-    episodeId,
-    summary,
-    version,
-    confidenceScore,
-    transcriptUsed,
-    generatedAt,
-    wordCount,
-    modelUsed,
-    processingTime,
-  ];
-}
-
-@JsonSerializable()
 class PodcastSummaryStartResponse extends Equatable {
 
   const PodcastSummaryStartResponse({
@@ -287,57 +240,6 @@ class PodcastStatsResponse extends Equatable {
     recentlyPlayed,
     topCategories,
     listeningStreak,
-  ];
-}
-
-@JsonSerializable()
-class PodcastSearchFilter extends Equatable {
-
-  const PodcastSearchFilter({
-    this.query,
-    this.categoryId,
-    this.status,
-    this.hasSummary,
-    this.dateFrom,
-    this.dateTo,
-    this.subscriptionId,
-    this.isPlayed,
-    this.durationMin,
-    this.durationMax,
-  });
-  final String? query;
-  @JsonKey(name: 'category_id')
-  final int? categoryId;
-  final String? status;
-  @JsonKey(name: 'has_summary')
-  final bool? hasSummary;
-  @JsonKey(name: 'date_from')
-  final DateTime? dateFrom;
-  @JsonKey(name: 'date_to')
-  final DateTime? dateTo;
-  @JsonKey(name: 'subscription_id')
-  final int? subscriptionId;
-  @JsonKey(name: 'is_played')
-  final bool? isPlayed;
-  @JsonKey(name: 'duration_min')
-  final int? durationMin;
-  @JsonKey(name: 'duration_max')
-  final int? durationMax;
-
-  Map<String, dynamic> toJson() => _$PodcastSearchFilterToJson(this);
-
-  @override
-  List<Object?> get props => [
-    query,
-    categoryId,
-    status,
-    hasSummary,
-    dateFrom,
-    dateTo,
-    subscriptionId,
-    isPlayed,
-    durationMin,
-    durationMax,
   ];
 }
 

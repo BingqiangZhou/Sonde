@@ -27,6 +27,7 @@ final dioClientProvider = Provider<DioClient>((ref) {
     initOptions: DioClientInitOptions(
       initialServerBaseUrl: ref.read(bootstrapServerUrlProvider),
     ),
+    secureStorage: ref.read(secureStorageProvider),
   );
   ref.onDispose(client.dispose);
   return client;
@@ -85,14 +86,10 @@ class ServerConfigNotifier extends Notifier<ServerConfigState> {
   Future<void> _clearAllServerData() async {
     final dioClient = ref.read(dioClientProvider);
 
-    // 1. Cancel any in-flight requests
-    dioClient.cancelAllRequests();
-
-    // 2. Clear network cache
+    // 1. Clear network cache
     await dioClient.clearCache();
-    dioClient.clearETagCache();
 
-    // 2b. Clear cached list responses (Drift response_cache). Best effort;
+    // 2. Clear cached list responses (Drift response_cache). Best effort;
     // stale rows would expire via TTL anyway.
     await ref.read(appDatabaseProvider).responseCacheDao.clearAll();
 

@@ -1,7 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:personal_ai_assistant/core/constants/app_radius.dart';
 import 'package:personal_ai_assistant/core/constants/app_spacing.dart';
 import 'package:personal_ai_assistant/core/constants/breakpoints.dart';
 import 'package:personal_ai_assistant/core/localization/app_localizations.dart';
@@ -56,15 +55,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       context.isMobile
       ? EdgeInsets.symmetric(horizontal: context.spacing.xs)
       : EdgeInsets.zero;
-
-  ShapeBorder? _profileCardShape(BuildContext context) {
-    if (!context.isMobile) {
-      return null;
-    }
-    return RoundedRectangleBorder(
-      borderRadius: AppRadius.mdLgRadius,
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -176,7 +166,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     final preferencesSection = SettingsSectionCard(
       title: l10n.preferences,
       cardMargin: _profileCardMargin(context),
-      cardShape: _profileCardShape(context),
       children: [
         _buildLanguageSettingsItem(context),
         _buildAppearanceSettingsItem(context),
@@ -240,7 +229,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     return SettingsSectionCard(
       title: title,
       cardMargin: _profileCardMargin(context),
-      cardShape: _profileCardShape(context),
       children: items
           .map((item) => _buildSettingsItemFromConfig(context, item))
           .toList(),

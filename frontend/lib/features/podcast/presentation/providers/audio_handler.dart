@@ -82,7 +82,6 @@ class PodcastAudioHandler extends BaseAudioHandler with SeekHandler {
   /// These are system-level notification labels that don't have l10n access.
   static const String _defaultMediaTitle = 'No media';
   static const String _defaultArtist = 'Unknown';
-  static const String _legacyPlaybackTitle = 'Audio Playback';
 
   final AudioPlayer? _player;
   Duration _currentPosition = Duration.zero;
@@ -338,35 +337,6 @@ class PodcastAudioHandler extends BaseAudioHandler with SeekHandler {
     }
   }
 
-  /// Legacy method for backward compatibility
-  @Deprecated(
-    'Use setEpisode() with full metadata for proper lock screen display',
-  )
-  Future<void> setAudioSource(String url) async {
-    mediaItem.add(
-      MediaItem(
-        id: url,
-        title: _legacyPlaybackTitle,
-        artist: _defaultArtist,
-        extras: <String, dynamic>{'url': url},
-      ),
-    );
-
-    try {
-      await _setAudioSourceWithCache(url);
-      _broadcastState();
-
-      if (kDebugMode) {
-        logger.AppLogger.debug('✅ Audio source set: $url');
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        logger.AppLogger.debug('❌ Failed to set audio source: $e');
-      }
-      rethrow;
-    }
-  }
-
   @override
   Future<void> play() async {
     if (_isDisposed) {
@@ -555,17 +525,9 @@ class PodcastAudioHandler extends BaseAudioHandler with SeekHandler {
   /// Get playing state
   bool get playing => _player?.state == PlayerState.playing;
 
-  /// Get player state stream
-  Stream<PlayerState> get playerStateStream =>
-      _player?.onPlayerStateChanged ?? const Stream.empty();
-
   /// Get position stream
   Stream<Duration> get positionStream =>
       _player?.onPositionChanged ?? const Stream.empty();
-
-  /// Get duration stream
-  Stream<Duration?> get durationStream =>
-      _player?.onDurationChanged ?? const Stream.empty();
 
   @override
   Future<void> onTaskRemoved() async {

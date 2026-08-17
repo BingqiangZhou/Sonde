@@ -217,38 +217,6 @@ void main() {
     });
   });
 
-  group('deleteById', () {
-    test('deletes task by primary key', () async {
-      final id = await dao.insertTask(makeTask(episodeId: 1));
-
-      await dao.deleteById(id);
-
-      expect(await dao.getByEpisodeId(1), isNull);
-    });
-  });
-
-  group('getLocalPathByEpisodeId', () {
-    test('returns local path when task is completed', () async {
-      final id = await dao.insertTask(makeTask(episodeId: 1));
-      await dao.markCompleted(id, '/local/ep1.mp3');
-
-      final path = await dao.getLocalPathByEpisodeId(1);
-      expect(path, '/local/ep1.mp3');
-    });
-
-    test('returns null when task exists but is not completed', () async {
-      await dao.insertTask(makeTask(episodeId: 1));
-
-      final path = await dao.getLocalPathByEpisodeId(1);
-      expect(path, isNull);
-    });
-
-    test('returns null when no task exists', () async {
-      final path = await dao.getLocalPathByEpisodeId(999);
-      expect(path, isNull);
-    });
-  });
-
   group('DownloadStatus enum values', () {
     test('pending defaults on insert', () async {
       await dao.insertTask(DownloadTasksCompanion.insert(

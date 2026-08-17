@@ -222,23 +222,6 @@ class ReparseResponse extends Equatable {
 }
 
 @JsonSerializable()
-class SimpleResponse extends Equatable {
-
-  const SimpleResponse({
-    required this.data,
-  });
-
-  factory SimpleResponse.fromJson(Map<String, dynamic> json) =>
-      _$SimpleResponseFromJson(json);
-  final Map<String, dynamic> data;
-
-  Map<String, dynamic> toJson() => _$SimpleResponseToJson(this);
-
-  @override
-  List<Object?> get props => [data];
-}
-
-@JsonSerializable()
 class PodcastSubscriptionBulkDeleteRequest extends Equatable {
 
   const PodcastSubscriptionBulkDeleteRequest({

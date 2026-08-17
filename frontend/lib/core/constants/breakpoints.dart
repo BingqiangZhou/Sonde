@@ -12,13 +12,9 @@ class Breakpoints {
   static const double large = 1200;
 
   static bool isMobile(double width) => width < medium;
-  static bool isMini(double width) => width < mini;
 }
 
 extension BreakpointsExtension on BuildContext {
   double get screenWidth => MediaQuery.of(this).size.width;
-  double get screenHeight => MediaQuery.of(this).size.height;
   bool get isMobile => Breakpoints.isMobile(screenWidth);
-  bool get isLandscape => MediaQuery.of(this).orientation == Orientation.landscape;
-  bool get isPortrait => MediaQuery.of(this).orientation == Orientation.portrait;
 }

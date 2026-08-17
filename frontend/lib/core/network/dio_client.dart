@@ -1,42 +1,37 @@
-import 'dart:async';
-
 import 'package:dio/dio.dart';
 import 'package:dio_cache_interceptor/dio_cache_interceptor.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:personal_ai_assistant/core/app/config/app_config.dart' as config;
 import 'package:personal_ai_assistant/core/network/exceptions/network_exceptions.dart';
 import 'package:personal_ai_assistant/core/network/token_refresh_service.dart';
+import 'package:personal_ai_assistant/core/storage/secure_storage_service.dart';
 import 'package:personal_ai_assistant/core/utils/app_logger.dart' as logger;
 import 'package:personal_ai_assistant/core/utils/url_normalizer.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-
-typedef SavedServerBaseUrlLoader = Future<String?> Function();
 
 @immutable
 class DioClientInitOptions {
-  const DioClientInitOptions({
-    this.applySavedBaseUrlOnInit = false,
-    this.initialServerBaseUrl,
-    this.savedBaseUrlLoader,
-  });
-  final bool applySavedBaseUrlOnInit;
+  const DioClientInitOptions({this.initialServerBaseUrl});
   final String? initialServerBaseUrl;
-  final SavedServerBaseUrlLoader? savedBaseUrlLoader;
 }
 
 class DioClient {
 
-  DioClient({DioClientInitOptions initOptions = const DioClientInitOptions()})
-    : _initOptions = initOptions {
+  DioClient({
+    DioClientInitOptions initOptions = const DioClientInitOptions(),
+    SecureStorageService? secureStorage,
+  }) : _secureStorage =
+           secureStorage ?? SecureStorageServiceImpl(const FlutterSecureStorage()) {
     _dio = Dio(BaseOptions(
       headers: config.ApiConstants.headers,
       connectTimeout: config.AppConfig.connectionTimeout,
       receiveTimeout: config.AppConfig.receiveTimeout,
       sendTimeout: config.AppConfig.sendTimeout,
     ));
-    _tokenRefreshService = TokenRefreshService(dio: _dio);
+    _tokenRefreshService = TokenRefreshService(
+      dio: _dio,
+      secureStorage: _secureStorage,
+    );
     _cacheOptions = CacheOptions(
       store: MemCacheStore(),
       policy: CachePolicy.refreshForceCache,
@@ -47,66 +42,28 @@ class DioClient {
       DioCacheInterceptor(options: _cacheOptions),
       InterceptorsWrapper(onRequest: _onRequest, onError: _onError),
     ]);
-    _initializeBaseUrl(initialServerBaseUrl: _initOptions.initialServerBaseUrl);
-    if (_initOptions.applySavedBaseUrlOnInit) {
-      unawaited(initializeFromStorage());
-    }
+    _initializeBaseUrl(initialServerBaseUrl: initOptions.initialServerBaseUrl);
   }
   static const int _maxRetries = 3;
 
-  final DioClientInitOptions _initOptions;
   late final Dio _dio;
   late final TokenRefreshService _tokenRefreshService;
   late final CacheOptions _cacheOptions;
-  final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
-  final Map<String, CancelToken> _cancelTokens = {};
-  final Map<String, Future<Response<dynamic>>> _inFlightRequests = {};
+  final SecureStorageService _secureStorage;
   String? _cachedAccessToken;
-  static const String _serverBaseUrlKey = 'server_base_url';
 
   // --- Public API ---------------------------------------------------------
 
   Dio get dio => _dio;
-  String get currentBaseUrl => _dio.options.baseUrl;
 
   void updateBaseUrl(String url) {
     _dio.options.baseUrl = url;
     _log('Base URL updated to: $url');
   }
 
-  Future<void> initializeFromStorage() async {
-    try {
-      final loader = _initOptions.savedBaseUrlLoader;
-      final savedUrl = await (loader != null
-          ? loader()
-          : _loadSavedBaseUrlFromSharedPrefs());
-      if (savedUrl != null && savedUrl.isNotEmpty) {
-        updateBaseUrl('${UrlNormalizer.normalize(savedUrl)}/api/v1');
-      }
-    } catch (e) {
-      if (!e.toString().contains('Binding has not yet been initialized')) {
-        _log('Failed to apply saved baseUrl: $e');
-      }
-    }
-  }
-
   // HTTP methods
   Future<Response<dynamic>> get(String path, {Map<String, dynamic>? queryParameters}) =>
       _dio.get<dynamic>(path, queryParameters: queryParameters);
-
-  Future<Response<dynamic>> getDeduplicated(
-    String path, {
-    Map<String, dynamic>? queryParameters,
-    Options? options,
-  }) {
-    final key = 'GET:$path:$queryParameters';
-    return _inFlightRequests.putIfAbsent(
-      key,
-      () => _dio
-          .get<dynamic>(path, queryParameters: queryParameters, options: options)
-          .whenComplete(() => _inFlightRequests.remove(key)),
-    );
-  }
 
   Future<Response<dynamic>> post(String path, {dynamic data, bool invalidateCache = false}) =>
       _dio.post(path, data: data, options: _cacheOpts(invalidateCache));
@@ -125,41 +82,13 @@ class DioClient {
   void clearETagCache() => clearCache();
   Future<TokenRefreshResult> refreshSessionToken() =>
       _tokenRefreshService.refreshToken();
-  void clearTokenCache() {
-    _cachedAccessToken = null;
-    _log('In-memory token cache cleared');
-  }
   void setToken(String? token) {
     _cachedAccessToken = token;
     _log('Token cache ${token != null ? "updated" : "cleared"}');
   }
 
-  // Request cancellation
-  CancelToken createCancelToken(String tag) {
-    cancelRequest(tag);
-    final token = CancelToken();
-    _cancelTokens[tag] = token;
-    return token;
-  }
-  void cancelRequest(String tag, [String? reason]) {
-    final token = _cancelTokens.remove(tag);
-    if (token != null && !token.isCancelled) {
-      token.cancel(reason ?? 'Request cancelled by client');
-    }
-  }
-  void cancelAllRequests([String? reason]) {
-    for (final t in _cancelTokens.values) {
-      if (!t.isCancelled) t.cancel(reason ?? 'All requests cancelled');
-    }
-    _cancelTokens.clear();
-  }
-  void removeCancelToken(String tag) => _cancelTokens.remove(tag);
-  bool isRequestCancelled(String tag) =>
-      _cancelTokens[tag]?.isCancelled ?? true;
   void dispose() {
-    cancelAllRequests('DioClient disposed');
-    clearTokenCache();
-    _inFlightRequests.clear();
+    _cachedAccessToken = null;
     _dio.close(force: true);
     logger.AppLogger.debug('[DioClient] Disposed');
   }
@@ -174,11 +103,7 @@ class DioClient {
     }
     var token = _cachedAccessToken;
     if (token == null) {
-      try {
-        token = await _secureStorage.read(key: config.AppConstants.accessTokenKey);
-      } on PlatformException catch (e) {
-        logger.AppLogger.warning('[AUTH] read token failed: ${e.message}');
-      }
+      token = await _secureStorage.getAccessToken();
       if (token != null) _cachedAccessToken = token;
     }
     if (token != null) options.headers['Authorization'] = 'Bearer $token';
@@ -267,16 +192,6 @@ class DioClient {
         : '${config.AppConfig.defaultServerBaseUrl}/api/v1';
     _dio.options.baseUrl = base;
     _log('Initialized with baseUrl: $base');
-  }
-
-  Future<String?> _loadSavedBaseUrlFromSharedPrefs() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      return prefs.getString(_serverBaseUrlKey);
-    } catch (e) {
-      if (e.toString().contains('Binding has not yet been initialized')) return null;
-      rethrow;
-    }
   }
 
   Options? _cacheOpts(bool invalidate) {

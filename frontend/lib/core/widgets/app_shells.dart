@@ -96,8 +96,8 @@ class AppSectionHeader extends StatelessWidget {
   }
 }
 
-const double kCompactHeaderContentHeight = 44;
-const double kCompactHeaderItemGap = AppSpacing.md;
+const double _compactHeaderContentHeight = 44;
+const double _compactHeaderItemGap = AppSpacing.md;
 
 enum HeaderCapsuleActionButtonDensity { regular, compact, iconOnly }
 
@@ -411,12 +411,12 @@ class _HeroHeaderState extends State<HeroHeader> {
         ),
         borderRadius: extension.cardRadius,
         child: SizedBox(
-          height: kCompactHeaderContentHeight,
+          height: _compactHeaderContentHeight,
           child: Row(
             children: [
               if (widget.leading != null) ...[
                 widget.leading!,
-                const SizedBox(width: kCompactHeaderItemGap),
+                const SizedBox(width: _compactHeaderItemGap),
               ],
               Expanded(
                 child: Text(
@@ -427,7 +427,7 @@ class _HeroHeaderState extends State<HeroHeader> {
                 ),
               ),
               if (widget.trailing != null) ...[
-                const SizedBox(width: kCompactHeaderItemGap),
+                const SizedBox(width: _compactHeaderItemGap),
                 widget.trailing!,
               ],
             ],

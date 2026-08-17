@@ -115,12 +115,6 @@ ReparseResponse _$ReparseResponseFromJson(Map<String, dynamic> json) =>
 Map<String, dynamic> _$ReparseResponseToJson(ReparseResponse instance) =>
     <String, dynamic>{'success': instance.success, 'result': instance.result};
 
-SimpleResponse _$SimpleResponseFromJson(Map<String, dynamic> json) =>
-    SimpleResponse(data: json['data'] as Map<String, dynamic>);
-
-Map<String, dynamic> _$SimpleResponseToJson(SimpleResponse instance) =>
-    <String, dynamic>{'data': instance.data};
-
 PodcastSubscriptionBulkDeleteRequest
 _$PodcastSubscriptionBulkDeleteRequestFromJson(Map<String, dynamic> json) =>
     PodcastSubscriptionBulkDeleteRequest(

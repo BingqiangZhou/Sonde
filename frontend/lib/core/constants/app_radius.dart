@@ -22,10 +22,6 @@ class AppRadius {
   // CORE RADIUS VALUES — aligned with AppThemeExtension
   // ============================================================
 
-  static const double cardValue = 14;
-  static const double buttonValue = 10;
-  static const double itemValue = 8;
-
   // Incremental scale
   static const double xs = 6;
   static const double sm = 8;
@@ -53,35 +49,14 @@ class AppRadius {
   static BorderRadius get xxlRadius => BorderRadius.circular(xxl);
   static BorderRadius get xxlCardRadius => BorderRadius.circular(xxlCard);
   static BorderRadius get chipRadius => BorderRadius.circular(chip);
-  static BorderRadius get card => BorderRadius.circular(cardValue);
-  static BorderRadius get button => BorderRadius.circular(buttonValue);
-  static BorderRadius get item => BorderRadius.circular(itemValue);
   static BorderRadius get pillRadius => BorderRadius.circular(pill);
 
   // ============================================================
   // ROUNDED RECTANGLE BORDER SHAPES - 预构建形状
   // ============================================================
 
-  static RoundedRectangleBorder get xsShape =>
-      RoundedRectangleBorder(borderRadius: xsRadius);
-  static RoundedRectangleBorder get smShape =>
-      RoundedRectangleBorder(borderRadius: smRadius);
-  static RoundedRectangleBorder get mdShape =>
-      RoundedRectangleBorder(borderRadius: mdRadius);
   static RoundedRectangleBorder get mdLgShape =>
       RoundedRectangleBorder(borderRadius: mdLgRadius);
-  static RoundedRectangleBorder get lgShape =>
-      RoundedRectangleBorder(borderRadius: lgRadius);
-  static RoundedRectangleBorder get lgXlShape =>
-      RoundedRectangleBorder(borderRadius: lgXlRadius);
-  static RoundedRectangleBorder get xlShape =>
-      RoundedRectangleBorder(borderRadius: xlRadius);
-  static RoundedRectangleBorder get xxlShape =>
-      RoundedRectangleBorder(borderRadius: xxlRadius);
-  static RoundedRectangleBorder get cardShape =>
-      RoundedRectangleBorder(borderRadius: card);
-  static RoundedRectangleBorder get buttonShape =>
-      RoundedRectangleBorder(borderRadius: button);
   static RoundedRectangleBorder get pillShape =>
       RoundedRectangleBorder(borderRadius: pillRadius);
 }

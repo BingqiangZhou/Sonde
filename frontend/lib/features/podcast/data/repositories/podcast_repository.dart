@@ -11,7 +11,6 @@ import 'package:personal_ai_assistant/features/podcast/data/models/podcast_queue
 import 'package:personal_ai_assistant/features/podcast/data/models/podcast_subscription_model.dart';
 import 'package:personal_ai_assistant/features/podcast/data/models/podcast_transcription_model.dart';
 import 'package:personal_ai_assistant/features/podcast/data/models/profile_stats_model.dart';
-import 'package:personal_ai_assistant/features/podcast/data/models/schedule_config_model.dart';
 import 'package:personal_ai_assistant/features/podcast/data/services/podcast_api_service.dart';
 
 class PodcastRepository {
@@ -53,9 +52,6 @@ class PodcastRepository {
     String? status,
   }) =>
       _apiCall(() => _apiService.listSubscriptions(page, size, categoryId, status));
-
-  Future<PodcastSubscriptionModel> getSubscription(int subscriptionId) =>
-      _apiCall(() => _apiService.getSubscription(subscriptionId));
 
   Future<void> deleteSubscription(int subscriptionId) =>
       _apiCall(() => _apiService.deleteSubscription(subscriptionId));
@@ -201,9 +197,6 @@ class PodcastRepository {
             ),
           ));
 
-  Future<PodcastPlaybackStateResponse> getPlaybackState(int episodeId) =>
-      _apiCall(() => _apiService.getPlaybackState(episodeId));
-
   Future<PlaybackRateEffectiveResponse> getEffectivePlaybackRate({
     int? subscriptionId,
   }) =>
@@ -274,19 +267,6 @@ class PodcastRepository {
 
   Future<List<SummaryModelInfo>> getSummaryModels() =>
       _apiCall(() async => (await _apiService.getSummaryModels()).models);
-
-  Future<void> getPendingSummaries() =>
-      _apiCall(_apiService.getPendingSummaries);
-
-  // === Search ===
-
-  Future<PodcastEpisodeListResponse> searchPodcasts({
-    required String query,
-    String searchIn = 'all',
-    int page = 1,
-    int size = 20,
-  }) =>
-      _apiCall(() => _apiService.searchPodcasts(query, searchIn, page, size));
 
   // === Statistics ===
 
@@ -367,33 +347,6 @@ class PodcastRepository {
     int? sessionId,
   }) =>
       _apiCall(() => _apiService.clearConversationHistory(episodeId, sessionId));
-
-  // === Schedule Management ===
-
-  Future<ScheduleConfigResponse> getSubscriptionSchedule(
-    int subscriptionId,
-  ) =>
-      _apiCall(() => _apiService.getSubscriptionSchedule(subscriptionId));
-
-  Future<ScheduleConfigResponse> updateSubscriptionSchedule(
-    int subscriptionId,
-    ScheduleConfigUpdateRequest request,
-  ) =>
-      _apiCall(() => _apiService.updateSubscriptionSchedule(subscriptionId, request));
-
-  /// Get all subscription schedules
-  Future<List<ScheduleConfigResponse>> getAllSubscriptionSchedules() =>
-      _apiCall(_apiService.getAllSubscriptionSchedules);
-
-  /// Batch update subscription schedules
-  Future<List<ScheduleConfigResponse>> batchUpdateSubscriptionSchedules(
-    List<int> subscriptionIds,
-    ScheduleConfigUpdateRequest request,
-  ) =>
-      _apiCall(() => _apiService.batchUpdateSubscriptionSchedules({
-            'subscription_ids': subscriptionIds,
-            'schedule_data': request.toJson(),
-          }));
 
   // === Highlights Management ===
 

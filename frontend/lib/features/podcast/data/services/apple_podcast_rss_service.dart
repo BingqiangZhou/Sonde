@@ -52,32 +52,6 @@ class ApplePodcastRssService {
     );
   }
 
-  Future<String> fetchTopShowsRaw({
-    required PodcastCountry country,
-    int limit = 25,
-    ApplePodcastRssFormat format = ApplePodcastRssFormat.rss,
-  }) {
-    return _fetchRawChart(
-      country: country,
-      limit: limit,
-      type: PodcastDiscoverKind.podcasts,
-      format: format,
-    );
-  }
-
-  Future<String> fetchTopEpisodesRaw({
-    required PodcastCountry country,
-    int limit = 25,
-    ApplePodcastRssFormat format = ApplePodcastRssFormat.rss,
-  }) {
-    return _fetchRawChart(
-      country: country,
-      limit: limit,
-      type: PodcastDiscoverKind.podcastEpisodes,
-      format: format,
-    );
-  }
-
   Future<ApplePodcastChartResponse> _fetchChart({
     required PodcastCountry country,
     required int limit,
@@ -115,34 +89,6 @@ class ApplePodcastRssService {
       logger.AppLogger.debug('Apple RSS chart fetch failed: $error');
       rethrow;
     }
-  }
-
-  Future<String> _fetchRawChart({
-    required PodcastCountry country,
-    required int limit,
-    required PodcastDiscoverKind type,
-    required ApplePodcastRssFormat format,
-  }) async {
-    final safeLimit = _normalizeLimit(limit);
-    final url = _buildUrl(
-      country: country,
-      limit: safeLimit,
-      type: type,
-      format: format,
-    );
-
-    final response = await _dio.get<String>(
-      url,
-      options: Options(responseType: ResponseType.plain),
-    );
-
-    if (response.statusCode != 200 || response.data == null) {
-      throw Exception(
-        'Apple RSS raw API returned status ${response.statusCode}',
-      );
-    }
-    // At this point, response.data is guaranteed to be non-null
-    return response.data!;
   }
 
   int _normalizeLimit(int limit) {
@@ -194,11 +140,6 @@ class ApplePodcastRssService {
 
   void clearCache() {
     _cache.clear();
-  }
-
-  void clearExpiredCache() {
-    final now = DateTime.now();
-    _cache.removeWhere((_, item) => now.difference(item.timestamp) > _cacheTtl);
   }
 }
 

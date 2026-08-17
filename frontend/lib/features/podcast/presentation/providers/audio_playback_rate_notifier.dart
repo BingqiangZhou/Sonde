@@ -96,57 +96,6 @@ extension AudioPlaybackRateNotifier on AudioPlayerNotifier {
     return resolvedPlaybackRate;
   }
 
-  PlaybackRateSelectionSnapshot getPlaybackRateSelectionSnapshot() {
-    final currentEpisode = state.currentEpisode;
-    final fallbackRate = _effectiveFallbackPlaybackRate(
-      currentValue: state.playbackRate,
-      episodePlaybackRate: currentEpisode?.playbackRate,
-    );
-    final fallbackSelection = _fallbackPlaybackRateSelection(
-      subscriptionId: currentEpisode?.subscriptionId,
-      fallbackRate: fallbackRate,
-    );
-    final cachedSelection = _playbackRateSelectionCache;
-    if (cachedSelection == null) {
-      return fallbackSelection;
-    }
-    if (!cachedSelection.applyToSubscription) {
-      return (speed: cachedSelection.speed, applyToSubscription: false);
-    }
-    if (currentEpisode != null &&
-        cachedSelection.subscriptionId == currentEpisode.subscriptionId) {
-      return (speed: cachedSelection.speed, applyToSubscription: true);
-    }
-    return fallbackSelection;
-  }
-
-  Future<PlaybackRateSelectionSnapshot>
-  resolvePlaybackRateSelectionForCurrentContext() async {
-    final currentEpisode = state.currentEpisode;
-    final fallbackRate = _effectiveFallbackPlaybackRate(
-      currentValue: state.playbackRate,
-      episodePlaybackRate: currentEpisode?.playbackRate,
-    );
-    final fallbackSelection = _fallbackPlaybackRateSelection(
-      subscriptionId: currentEpisode?.subscriptionId,
-      fallbackRate: fallbackRate,
-    );
-    final effective = await _fetchEffectivePlaybackRatePreference(
-      subscriptionId: currentEpisode?.subscriptionId,
-    );
-    final resolvedSelection = (
-      speed: effective?.effectivePlaybackRate ?? fallbackSelection.speed,
-      applyToSubscription: currentEpisode != null && (effective?.source == 'subscription' ||
-                (effective == null && fallbackSelection.applyToSubscription)),
-    );
-    _cachePlaybackRateSelection(
-      speed: resolvedSelection.speed,
-      applyToSubscription: resolvedSelection.applyToSubscription,
-      subscriptionId: currentEpisode?.subscriptionId,
-    );
-    return resolvedSelection;
-  }
-
   PlaybackRateSelectionSnapshot _fallbackPlaybackRateSelection({
     required int? subscriptionId,
     required double fallbackRate,

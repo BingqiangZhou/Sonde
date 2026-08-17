@@ -2,12 +2,12 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:personal_ai_assistant/core/network/token_refresh_service.dart';
+import 'package:personal_ai_assistant/core/storage/secure_storage_service.dart';
 
-class _MockSecureStorage extends Mock implements FlutterSecureStorage {}
+class _MockSecureStorage extends Mock implements SecureStorageService {}
 
 class _MockAdapter implements HttpClientAdapter {
   ({int statusCode, dynamic body, Map<String, List<String>> headers})
@@ -60,19 +60,15 @@ void main() {
       ..httpClientAdapter = adapter;
 
     // Default stubs: read returns null, write/delete are no-ops
-    when(() => storage.read(key: any(named: 'key')))
-        .thenAnswer((_) async => null);
-    when(() => storage.write(key: any(named: 'key'), value: any(named: 'value')))
-        .thenAnswer((_) async {});
-    when(() => storage.delete(key: any(named: 'key')))
-        .thenAnswer((_) async {});
+    when(() => storage.get(any())).thenAnswer((_) async => null);
+    when(() => storage.save(any(), any())).thenAnswer((_) async {});
+    when(() => storage.remove(any())).thenAnswer((_) async {});
 
     service = TokenRefreshService(dio: dio, secureStorage: storage);
   });
 
   void stubRefreshToken([String value = 'valid_refresh']) {
-    when(() => storage.read(key: 'refresh_token'))
-        .thenAnswer((_) async => value);
+    when(() => storage.get('refresh_token')).thenAnswer((_) async => value);
   }
 
   group('refreshToken', () {
@@ -105,8 +101,8 @@ void main() {
       expect(result.success, isTrue);
       expect(result.accessToken, 'new_access_token_123');
       expect(result.expiresInSeconds, 3600);
-      verify(() => storage.write(key: 'access_token', value: 'new_access_token_123')).called(1);
-      verify(() => storage.write(key: 'refresh_token', value: 'new_refresh_token_456')).called(1);
+      verify(() => storage.save('access_token', 'new_access_token_123')).called(1);
+      verify(() => storage.save('refresh_token', 'new_refresh_token_456')).called(1);
     });
 
     test('returns unknownFailure when response is missing access_token', () async {
@@ -179,16 +175,16 @@ void main() {
   group('clearTokens', () {
     test('deletes all token keys from secure storage', () async {
       await service.clearTokens();
-      verify(() => storage.delete(key: 'access_token')).called(1);
-      verify(() => storage.delete(key: 'refresh_token')).called(1);
-      verify(() => storage.delete(key: 'token_expiry')).called(1);
-      verify(() => storage.delete(key: 'user_profile')).called(1);
+      verify(() => storage.remove('access_token')).called(1);
+      verify(() => storage.remove('refresh_token')).called(1);
+      verify(() => storage.remove('token_expiry')).called(1);
+      verify(() => storage.remove('user_profile')).called(1);
     });
   });
 
   group('getAccessToken', () {
     test('returns stored access token', () async {
-      when(() => storage.read(key: 'access_token')).thenAnswer((_) async => 'my_token');
+      when(() => storage.get('access_token')).thenAnswer((_) async => 'my_token');
       expect(await service.getAccessToken(), 'my_token');
     });
 

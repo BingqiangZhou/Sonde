@@ -22,12 +22,7 @@ class ITunesSearchService {
     );
   }
 
-  factory ITunesSearchService.ref() {
-    return ITunesSearchService();
-  }
-  final Dio _dio;
-
-  static const Duration _cacheExpiration = Duration(hours: 1);
+  final Dio _dio;  static const Duration _cacheExpiration = Duration(hours: 1);
 
   final Map<String, _CachedResponse> _cache = {};
   final Map<String, _CachedEpisodeSearchResponse> _episodeSearchCache = {};
@@ -72,26 +67,7 @@ class ITunesSearchService {
       _setCachedResponse(cacheKey, parsed);
       return parsed;
     } on DioException catch (dioError) {
-      String errorMsg;
-      switch (dioError.type) {
-        case DioExceptionType.connectionTimeout:
-          errorMsg =
-              'Connection timeout. Please check your network or try using a VPN.';
-        case DioExceptionType.sendTimeout:
-          errorMsg = 'Send timeout. Please try again.';
-        case DioExceptionType.receiveTimeout:
-          errorMsg = 'Receive timeout. Server response too slow.';
-        case DioExceptionType.badResponse:
-          errorMsg = 'Server error: ${dioError.response?.statusCode}';
-        case DioExceptionType.cancel:
-          errorMsg = 'Request was cancelled.';
-        case DioExceptionType.connectionError:
-          errorMsg =
-              'Connection failed. iTunes API may be blocked in your region. Try using a VPN.';
-        default:
-          errorMsg = 'Network error: ${dioError.message}';
-      }
-      throw Exception(errorMsg);
+      throw _mapItunesError(dioError);
     } catch (error) {
       logger.AppLogger.debug('iTunes search failed: $error');
       rethrow;
@@ -142,26 +118,7 @@ class ITunesSearchService {
       _setCachedEpisodeSearchResponse(cacheKey, results);
       return results;
     } on DioException catch (dioError) {
-      String errorMsg;
-      switch (dioError.type) {
-        case DioExceptionType.connectionTimeout:
-          errorMsg =
-              'Connection timeout. Please check your network or try using a VPN.';
-        case DioExceptionType.sendTimeout:
-          errorMsg = 'Send timeout. Please try again.';
-        case DioExceptionType.receiveTimeout:
-          errorMsg = 'Receive timeout. Server response too slow.';
-        case DioExceptionType.badResponse:
-          errorMsg = 'Server error: ${dioError.response?.statusCode}';
-        case DioExceptionType.cancel:
-          errorMsg = 'Request was cancelled.';
-        case DioExceptionType.connectionError:
-          errorMsg =
-              'Connection failed. iTunes API may be blocked in your region. Try using a VPN.';
-        default:
-          errorMsg = 'Network error: ${dioError.message}';
-      }
-      throw Exception(errorMsg);
+      throw _mapItunesError(dioError);
     } catch (error) {
       logger.AppLogger.debug('iTunes episode search failed: $error');
       rethrow;
@@ -343,6 +300,31 @@ class ITunesSearchService {
     );
   }
 
+  /// Maps a [DioException] from the iTunes API to an [Exception] with a
+  /// user-friendly message.
+  Exception _mapItunesError(DioException e) {
+    String errorMsg;
+    switch (e.type) {
+      case DioExceptionType.connectionTimeout:
+        errorMsg =
+            'Connection timeout. Please check your network or try using a VPN.';
+      case DioExceptionType.sendTimeout:
+        errorMsg = 'Send timeout. Please try again.';
+      case DioExceptionType.receiveTimeout:
+        errorMsg = 'Receive timeout. Server response too slow.';
+      case DioExceptionType.badResponse:
+        errorMsg = 'Server error: ${e.response?.statusCode}';
+      case DioExceptionType.cancel:
+        errorMsg = 'Request was cancelled.';
+      case DioExceptionType.connectionError:
+        errorMsg =
+            'Connection failed. iTunes API may be blocked in your region. Try using a VPN.';
+      default:
+        errorMsg = 'Network error: ${e.message}';
+    }
+    return Exception(errorMsg);
+  }
+
   Map<String, dynamic> _parseJsonMap(dynamic data) {
     if (data is Map<String, dynamic>) {
       return data;
@@ -378,19 +360,6 @@ class ITunesSearchService {
     _episodeSearchCache.clear();
     _episodeLookupCache.clear();
     logger.AppLogger.debug('iTunes search cache cleared');
-  }
-
-  void clearExpiredCache() {
-    final now = DateTime.now();
-    _cache.removeWhere(
-      (_, cached) => now.difference(cached.timestamp) > _cacheExpiration,
-    );
-    _episodeSearchCache.removeWhere(
-      (_, cached) => now.difference(cached.timestamp) > _cacheExpiration,
-    );
-    _episodeLookupCache.removeWhere(
-      (_, cached) => now.difference(cached.timestamp) > _cacheExpiration,
-    );
   }
 }
 

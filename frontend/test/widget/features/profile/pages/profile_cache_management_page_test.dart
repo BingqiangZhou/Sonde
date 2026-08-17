@@ -49,9 +49,6 @@ void main() {
       when(() => cacheService.clearAll()).thenAnswer((_) async {});
       when(() => cacheService.clearMediaCache()).thenAnswer((_) async {});
       when(() => cacheService.clearMemoryImageCache()).thenAnswer((_) async {});
-      when(() => cacheService.warmUp(any())).thenAnswer((_) async {});
-      when(() => cacheService.getCacheStats()).thenAnswer((_) async => <String, dynamic>{});
-      when(() => cacheService.getCachedFileInfo(any())).thenAnswer((_) async => null);
     }
 
     testWidgets('renders without crashing', (tester) async {

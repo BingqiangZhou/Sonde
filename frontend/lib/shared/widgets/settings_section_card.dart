@@ -6,15 +6,11 @@ class SettingsSectionCard extends StatelessWidget {
   const SettingsSectionCard({
     required this.title, required this.children, super.key,
     this.cardMargin = EdgeInsets.zero,
-    this.cardShape,
   });
 
   final String title;
   final List<Widget> children;
   final EdgeInsetsGeometry cardMargin;
-
-  /// Ignored (retained for API compatibility).
-  final ShapeBorder? cardShape;
 
   @override
   Widget build(BuildContext context) {

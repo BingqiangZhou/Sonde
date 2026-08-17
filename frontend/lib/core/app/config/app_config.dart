@@ -33,10 +33,6 @@ class AppConfig {
   static const Duration connectionTimeout = Duration(seconds: 60);
   static const Duration receiveTimeout = Duration(seconds: 60);
   static const Duration sendTimeout = Duration(seconds: 60);
-
-  // Pagination
-  static const int defaultPageSize = 20;
-  static const int maxPageSize = 100;
 }
 
 class ApiConstants {
@@ -44,23 +40,4 @@ class ApiConstants {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
   };
-
-  // API Endpoints
-  static const String auth = '/auth';
-  static const String login = '/auth/login';
-  static const String register = '/auth/register';
-  static const String refresh = '/auth/refresh';
-  static const String logout = '/auth/logout';
-  static const String profile = '/auth/me';
-
-  static const String assistant = '/assistant';
-  static const String chat = '/assistant/chat';
-  static const String conversations = '/assistant/conversations';
-
-  static const String podcast = '/podcast';
-  static const String feeds = '/podcast/feeds';
-  static const String episodes = '/podcast/episodes';
-
-  static const String subscription = '/subscription';
-  static const String feedsSubscriptions = '/subscription/feeds';
 }

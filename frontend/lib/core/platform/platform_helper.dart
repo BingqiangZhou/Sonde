@@ -2,8 +2,6 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:material_ui/material_ui.dart';
 import 'package:personal_ai_assistant/core/constants/breakpoints.dart' show Breakpoints;
 
-import 'package:personal_ai_assistant/core/widgets/top_floating_notice.dart';
-
 class PlatformHelper {
   PlatformHelper._();
 
@@ -30,15 +28,6 @@ class PlatformHelper {
         platform == TargetPlatform.linux;
   }
 
-  /// Returns true on iOS or Android.
-  ///
-  /// **Note:** Always returns false on web due to the [kIsWeb] guard.
-  /// Windows and Linux receive Material (non-Apple) styling but are
-  /// not considered "mobile" — use [isDesktop] for those platforms.
-  static bool isMobile(BuildContext context) {
-    return isIOS(context) || isAndroid(context);
-  }
-
   static bool isMacOS(BuildContext context) {
     if (kIsWeb) return false;
     return Theme.of(context).platform == TargetPlatform.macOS;
@@ -46,41 +35,5 @@ class PlatformHelper {
 
   static bool isApple(BuildContext context) {
     return isIOS(context) || isMacOS(context);
-  }
-
-  static T platformValue<T>(BuildContext context, {
-    required T material,
-    required T cupertino,
-    T? desktop,
-  }) {
-    if (isDesktop(context) && desktop != null) return desktop;
-    if (isApple(context)) return cupertino;
-    return material;
-  }
-
-  /// Show adaptive feedback message.
-  /// iOS: TopFloatingNotice. Android/desktop: SnackBar.
-  static void showAdaptiveFeedback(
-    BuildContext context, {
-    required String message,
-    bool isError = false,
-    Duration duration = const Duration(seconds: 3),
-  }) {
-    if (isApple(context)) {
-      showTopFloatingNotice(
-        context,
-        message: message,
-        isError: isError,
-        duration: duration,
-      );
-      return;
-    }
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        behavior: SnackBarBehavior.floating,
-        duration: duration,
-      ),
-    );
   }
 }

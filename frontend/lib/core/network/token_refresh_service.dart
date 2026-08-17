@@ -1,9 +1,9 @@
 import 'dart:async';
 
 import 'package:dio/dio.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:personal_ai_assistant/core/app/config/app_config.dart' as config;
+import 'package:personal_ai_assistant/core/storage/secure_storage_service.dart';
 import 'package:personal_ai_assistant/core/utils/app_logger.dart' as logger;
 import 'package:personal_ai_assistant/features/auth/data/events/auth_event.dart';
 
@@ -48,12 +48,13 @@ class TokenRefreshResult {
 class TokenRefreshService {
   TokenRefreshService({
     required Dio dio,
-    FlutterSecureStorage? secureStorage,
+    SecureStorageService? secureStorage,
   }) : _dio = dio,
-       _secureStorage = secureStorage ?? const FlutterSecureStorage();
+       _secureStorage =
+           secureStorage ?? SecureStorageServiceImpl(const FlutterSecureStorage());
 
   final Dio _dio;
-  final FlutterSecureStorage _secureStorage;
+  final SecureStorageService _secureStorage;
   Completer<TokenRefreshResult>? _refreshCompleter;
 
   // --- Token refresh -------------------------------------------------------
@@ -267,30 +268,12 @@ class TokenRefreshService {
 
   // --- Secure storage helpers ----------------------------------------------
 
-  Future<void> _safeWrite(String key, String value) async {
-    try {
-      await _secureStorage.write(key: key, value: value);
-    } on PlatformException catch (e) {
-      logger.AppLogger.warning('[TokenRefresh] write($key) failed: ${e.message}');
-    }
-  }
+  Future<void> _safeWrite(String key, String value) =>
+      _secureStorage.save(key, value);
 
-  Future<String?> _safeRead(String key) async {
-    try {
-      return await _secureStorage.read(key: key);
-    } on PlatformException catch (e) {
-      logger.AppLogger.warning('[TokenRefresh] read($key) failed: ${e.message}');
-      return null;
-    }
-  }
+  Future<String?> _safeRead(String key) => _secureStorage.get(key);
 
-  Future<void> _safeDelete(String key) async {
-    try {
-      await _secureStorage.delete(key: key);
-    } on PlatformException catch (e) {
-      logger.AppLogger.warning('[TokenRefresh] delete($key) failed: ${e.message}');
-    }
-  }
+  Future<void> _safeDelete(String key) => _secureStorage.remove(key);
 }
 
 /// Marker exception types for 401 handling outcomes.

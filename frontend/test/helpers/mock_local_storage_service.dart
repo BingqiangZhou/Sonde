@@ -24,33 +24,6 @@ class MockLocalStorageService implements LocalStorageService {
   Future<bool?> getBool(String key) async => _storage[key] as bool?;
 
   @override
-  Future<void> saveInt(String key, int value) async => _storage[key] = value;
-
-  @override
-  Future<int?> getInt(String key) async => _storage[key] as int?;
-
-  @override
-  Future<void> saveDouble(String key, double value) async =>
-      _storage[key] = value;
-
-  @override
-  Future<double?> getDouble(String key) async => _storage[key] as double?;
-
-  @override
-  Future<void> saveStringList(String key, List<String> value) async =>
-      _storage[key] = value;
-
-  @override
-  Future<List<String>?> getStringList(String key) async =>
-      (_storage[key] as List<dynamic>?)?.cast<String>();
-
-  @override
-  Future<void> save<T>(String key, T value) async => _storage[key] = value;
-
-  @override
-  Future<T?> get<T>(String key) async => _storage[key] as T?;
-
-  @override
   Future<void> remove(String key) async => _storage.remove(key);
 
   @override
@@ -58,21 +31,6 @@ class MockLocalStorageService implements LocalStorageService {
 
   @override
   Future<bool> containsKey(String key) async => _storage.containsKey(key);
-
-  @override
-  Future<void> cacheData(
-    String key,
-    dynamic data, {
-    Duration? expiration,
-  }) async {
-    _storage[key] = data;
-  }
-
-  @override
-  Future<T?> getCachedData<T>(String key) async => _storage[key] as T?;
-
-  @override
-  Future<void> clearExpiredCache() async {}
 
   @override
   Future<void> saveApiBaseUrl(String url) async =>

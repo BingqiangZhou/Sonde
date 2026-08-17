@@ -83,34 +83,6 @@ Map<String, dynamic> _$PlaybackRateApplyRequestToJson(
   'apply_to_subscription': instance.applyToSubscription,
 };
 
-PodcastSummaryResponse _$PodcastSummaryResponseFromJson(
-  Map<String, dynamic> json,
-) => PodcastSummaryResponse(
-  episodeId: (json['episode_id'] as num).toInt(),
-  summary: json['summary'] as String,
-  version: json['version'] as String,
-  transcriptUsed: json['transcript_used'] as bool? ?? false,
-  generatedAt: DateTime.parse(json['generated_at'] as String),
-  wordCount: (json['word_count'] as num).toInt(),
-  confidenceScore: (json['confidence_score'] as num?)?.toDouble(),
-  modelUsed: json['model_used'] as String?,
-  processingTime: (json['processing_time'] as num?)?.toDouble(),
-);
-
-Map<String, dynamic> _$PodcastSummaryResponseToJson(
-  PodcastSummaryResponse instance,
-) => <String, dynamic>{
-  'episode_id': instance.episodeId,
-  'summary': instance.summary,
-  'version': instance.version,
-  'confidence_score': instance.confidenceScore,
-  'transcript_used': instance.transcriptUsed,
-  'generated_at': instance.generatedAt.toIso8601String(),
-  'word_count': instance.wordCount,
-  'model_used': instance.modelUsed,
-  'processing_time': instance.processingTime,
-};
-
 PodcastSummaryStartResponse _$PodcastSummaryStartResponseFromJson(
   Map<String, dynamic> json,
 ) => PodcastSummaryStartResponse(
@@ -177,39 +149,6 @@ Map<String, dynamic> _$PodcastStatsResponseToJson(
   'recently_played': instance.recentlyPlayed,
   'top_categories': instance.topCategories,
   'listening_streak': instance.listeningStreak,
-};
-
-PodcastSearchFilter _$PodcastSearchFilterFromJson(Map<String, dynamic> json) =>
-    PodcastSearchFilter(
-      query: json['query'] as String?,
-      categoryId: (json['category_id'] as num?)?.toInt(),
-      status: json['status'] as String?,
-      hasSummary: json['has_summary'] as bool?,
-      dateFrom: json['date_from'] == null
-          ? null
-          : DateTime.parse(json['date_from'] as String),
-      dateTo: json['date_to'] == null
-          ? null
-          : DateTime.parse(json['date_to'] as String),
-      subscriptionId: (json['subscription_id'] as num?)?.toInt(),
-      isPlayed: json['is_played'] as bool?,
-      durationMin: (json['duration_min'] as num?)?.toInt(),
-      durationMax: (json['duration_max'] as num?)?.toInt(),
-    );
-
-Map<String, dynamic> _$PodcastSearchFilterToJson(
-  PodcastSearchFilter instance,
-) => <String, dynamic>{
-  'query': instance.query,
-  'category_id': instance.categoryId,
-  'status': instance.status,
-  'has_summary': instance.hasSummary,
-  'date_from': instance.dateFrom?.toIso8601String(),
-  'date_to': instance.dateTo?.toIso8601String(),
-  'subscription_id': instance.subscriptionId,
-  'is_played': instance.isPlayed,
-  'duration_min': instance.durationMin,
-  'duration_max': instance.durationMax,
 };
 
 SummaryModelInfo _$SummaryModelInfoFromJson(Map<String, dynamic> json) =>

@@ -643,9 +643,6 @@ void main() {
     when(cacheService.clearAll).thenAnswer((_) async {});
     when(cacheService.clearMediaCache).thenAnswer((_) async {});
     when(cacheService.clearMemoryImageCache).thenAnswer((_) async {});
-    when(() => cacheService.warmUp(any())).thenAnswer((_) async {});
-    when(cacheService.getCacheStats).thenAnswer((_) async => {});
-    when(() => cacheService.getCachedFileInfo(any())).thenAnswer((_) async => null);
     when(searchService.clearCache).thenReturn(null);
 
     final router = GoRouter(

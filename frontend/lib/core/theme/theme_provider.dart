@@ -74,17 +74,4 @@ class ThemeModeNotifier extends Notifier<ThemeMode> {
         return ThemeMode.system;
     }
   }
-
-  /// Get display name for theme mode
-  static String getDisplayName(String code, bool isDark) {
-    switch (code) {
-      case kThemeModeLight:
-        return 'Light';
-      case kThemeModeDark:
-        return 'Dark';
-      case kThemeModeSystem:
-      default:
-        return 'Follow System';
-    }
-  }
 }
