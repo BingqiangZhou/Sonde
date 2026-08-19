@@ -714,6 +714,27 @@ class AppLocalizationsZh extends AppLocalizations {
   String get podcast_discover_top_charts => '热门榜单';
 
   @override
+  String get podcast_discover_top_shows => '热门节目';
+
+  @override
+  String get podcast_discover_top_episodes => '热门单集';
+
+  @override
+  String podcast_discover_category_shelf(String category) {
+    return '热门$category';
+  }
+
+  @override
+  String podcast_discover_spotlight_top_show(int rank) {
+    return '热门节目第 $rank 名';
+  }
+
+  @override
+  String podcast_discover_spotlight_top_episode(int rank) {
+    return '热门单集第 $rank 名';
+  }
+
+  @override
   String get podcast_discover_spotlight => '精选';
 
   @override

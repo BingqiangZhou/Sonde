@@ -19,6 +19,7 @@ import 'package:sonde/features/podcast/data/models/podcast_search_model.dart';
 import 'package:sonde/features/podcast/data/models/podcast_state_models.dart';
 import 'package:sonde/features/podcast/data/models/profile_stats_model.dart';
 import 'package:sonde/features/podcast/data/services/apple_podcast_rss_service.dart';
+import 'package:sonde/features/podcast/data/services/itunes_search_service.dart';
 import 'package:sonde/features/podcast/presentation/constants/podcast_ui_constants.dart';
 import 'package:sonde/features/podcast/presentation/pages/podcast_feed_page.dart';
 import 'package:sonde/features/podcast/presentation/pages/podcast_list_page.dart';
@@ -266,6 +267,9 @@ Future<void> _pumpHomeShellWidget(
         applePodcastRssServiceProvider.overrideWithValue(
           _FakeApplePodcastRssService(),
         ),
+        iTunesSearchServiceProvider.overrideWithValue(
+          _NoopITunesSearchService(),
+        ),
         profileStatsProvider.overrideWith(
           () => _FixedProfileStatsNotifier(
             const ProfileStatsModel(
@@ -373,6 +377,9 @@ Future<GoRouter> _pumpHomePageRouterFlow(
         ),
         applePodcastRssServiceProvider.overrideWithValue(
           _FakeApplePodcastRssService(),
+        ),
+        iTunesSearchServiceProvider.overrideWithValue(
+          _NoopITunesSearchService(),
         ),
         profileStatsProvider.overrideWith(
           () => _FixedProfileStatsNotifier(
@@ -550,7 +557,7 @@ class _FakeApplePodcastRssService extends ApplePodcastRssService {
     int limit = 25,
     ApplePodcastRssFormat format = ApplePodcastRssFormat.json,
   }) async {
-    return _response('podcasts', country.code);
+    return _response('podcasts', country.code, '1001');
   }
 
   @override
@@ -559,20 +566,20 @@ class _FakeApplePodcastRssService extends ApplePodcastRssService {
     int limit = 25,
     ApplePodcastRssFormat format = ApplePodcastRssFormat.json,
   }) async {
-    return _response('podcast-episodes', country.code);
+    return _response('podcast-episodes', country.code, '2001');
   }
 
-  ApplePodcastChartResponse _response(String kind, String country) {
+  ApplePodcastChartResponse _response(String kind, String country, String id) {
     final item = ApplePodcastChartEntry.fromJson({
       'artistName': 'Artist',
-      'id': '1001',
+      'id': id,
       'name': 'Chart Item',
       'kind': kind,
       'artworkUrl100': 'https://example.com/cover.png',
       'genres': [
         {'name': 'Technology'},
       ],
-      'url': 'https://podcasts.apple.com/$country/podcast/id1001',
+      'url': 'https://podcasts.apple.com/$country/podcast/id$id',
     });
     return ApplePodcastChartResponse(
       feed: ApplePodcastChartFeed(
@@ -582,6 +589,18 @@ class _FakeApplePodcastRssService extends ApplePodcastRssService {
         results: <ApplePodcastChartEntry>[item],
       ),
     );
+  }
+}
+
+/// Hydration no-op double: the discover chart load fires a batched
+/// lookup that must not touch the network in tests.
+class _NoopITunesSearchService extends ITunesSearchService {
+  @override
+  Future<ITunesChartHydrationResult> lookupChartEntities({
+    required List<int> ids,
+    PodcastCountry country = PodcastCountry.china,
+  }) async {
+    return const ITunesChartHydrationResult();
   }
 }
 

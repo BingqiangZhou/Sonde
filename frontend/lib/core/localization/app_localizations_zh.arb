@@ -959,6 +959,41 @@
     "@podcast_discover_top_charts":  {
                                          "description":  "播客发现页热门榜单分区标题"
                                      },
+    "podcast_discover_top_shows":  "热门节目",
+    "@podcast_discover_top_shows":  {
+                                        "description":  "播客发现页热门节目货架标题"
+                                    },
+    "podcast_discover_top_episodes":  "热门单集",
+    "@podcast_discover_top_episodes":  {
+                                           "description":  "播客发现页热门单集货架标题"
+                                       },
+    "podcast_discover_category_shelf":  "热门{category}",
+    "@podcast_discover_category_shelf":  {
+                                             "description":  "播客发现页分类榜单货架标题",
+                                             "placeholders":  {
+                                                                  "category":  {
+                                                                                   "type":  "String"
+                                                                               }
+                                                              }
+                                         },
+    "podcast_discover_spotlight_top_show":  "热门节目第 {rank} 名",
+    "@podcast_discover_spotlight_top_show":  {
+                                                 "description":  "精选大卡（榜单节目）的语义化眉题",
+                                                 "placeholders":  {
+                                                                      "rank":  {
+                                                                                   "type":  "int"
+                                                                               }
+                                                                  }
+                                             },
+    "podcast_discover_spotlight_top_episode":  "热门单集第 {rank} 名",
+    "@podcast_discover_spotlight_top_episode":  {
+                                                    "description":  "精选大卡（榜单单集）的语义化眉题",
+                                                    "placeholders":  {
+                                                                         "rank":  {
+                                                                                      "type":  "int"
+                                                                                  }
+                                                                     }
+                                                },
     "podcast_discover_spotlight":  "精选",
     "@podcast_discover_spotlight":  {
                                         "description":  "播客发现页精选分区标题"

@@ -324,33 +324,19 @@ class CountrySelectorNotifier extends Notifier<CountrySelectorState> {
 
 // Discover
 
-enum PodcastDiscoverTab { podcasts, episodes }
+/// A ranked chart shelf for one category, sliced client-side from the
+/// loaded top-shows chart.
+class PodcastDiscoverCategoryShelf extends Equatable {
 
-class PodcastDiscoverPaginationState extends Equatable {
-
-  const PodcastDiscoverPaginationState({
-    this.loadedCount = 0,
-    this.isLoadingMore = false,
-    this.hasMore = false,
+  const PodcastDiscoverCategoryShelf({
+    required this.category,
+    required this.items,
   });
-  final int loadedCount;
-  final bool isLoadingMore;
-  final bool hasMore;
-
-  PodcastDiscoverPaginationState copyWith({
-    int? loadedCount,
-    bool? isLoadingMore,
-    bool? hasMore,
-  }) {
-    return PodcastDiscoverPaginationState(
-      loadedCount: loadedCount ?? this.loadedCount,
-      isLoadingMore: isLoadingMore ?? this.isLoadingMore,
-      hasMore: hasMore ?? this.hasMore,
-    );
-  }
+  final String category;
+  final List<PodcastDiscoverItem> items;
 
   @override
-  List<Object?> get props => [loadedCount, isLoadingMore, hasMore];
+  List<Object?> get props => [category, items];
 }
 
 class PodcastDiscoverState extends Equatable {
@@ -360,24 +346,29 @@ class PodcastDiscoverState extends Equatable {
     this.isLoading = false,
     this.isRefreshing = false,
     this.error,
-    this.selectedTab = PodcastDiscoverTab.episodes,
     this.selectedCategory = allCategoryValue,
     this.topShows = const [],
     this.topEpisodes = const [],
-    this.showsPagination = const PodcastDiscoverPaginationState(),
-    this.episodesPagination = const PodcastDiscoverPaginationState(),
+    this.showFeedUrls = const {},
+    this.episodeMeta = const {},
     this.lastRefreshTime,
   });
   final PodcastCountry country;
   final bool isLoading;
   final bool isRefreshing;
   final String? error;
-  final PodcastDiscoverTab selectedTab;
   final String selectedCategory;
   final List<PodcastDiscoverItem> topShows;
   final List<PodcastDiscoverItem> topEpisodes;
-  final PodcastDiscoverPaginationState showsPagination;
-  final PodcastDiscoverPaginationState episodesPagination;
+
+  /// iTunes show id -> RSS feed url, hydrated via one batched lookup after
+  /// a chart load. Lets chart rows derive their subscribed state from the
+  /// global subscription list instead of a session-local overlay alone.
+  final Map<int, String> showFeedUrls;
+
+  /// Episode track id -> hydrated iTunes metadata (duration, release date)
+  /// for the trending-episodes shelf rows.
+  final Map<int, ITunesPodcastEpisodeResult> episodeMeta;
   final DateTime? lastRefreshTime;
 
   static const String allCategoryValue = '__all__';
@@ -388,12 +379,11 @@ class PodcastDiscoverState extends Equatable {
     bool? isRefreshing,
     String? error,
     bool clearError = false,
-    PodcastDiscoverTab? selectedTab,
     String? selectedCategory,
     List<PodcastDiscoverItem>? topShows,
     List<PodcastDiscoverItem>? topEpisodes,
-    PodcastDiscoverPaginationState? showsPagination,
-    PodcastDiscoverPaginationState? episodesPagination,
+    Map<int, String>? showFeedUrls,
+    Map<int, ITunesPodcastEpisodeResult>? episodeMeta,
     DateTime? lastRefreshTime,
   }) {
     return PodcastDiscoverState(
@@ -401,12 +391,11 @@ class PodcastDiscoverState extends Equatable {
       isLoading: isLoading ?? this.isLoading,
       isRefreshing: isRefreshing ?? this.isRefreshing,
       error: clearError ? null : (error ?? this.error),
-      selectedTab: selectedTab ?? this.selectedTab,
       selectedCategory: selectedCategory ?? this.selectedCategory,
       topShows: topShows ?? this.topShows,
       topEpisodes: topEpisodes ?? this.topEpisodes,
-      showsPagination: showsPagination ?? this.showsPagination,
-      episodesPagination: episodesPagination ?? this.episodesPagination,
+      showFeedUrls: showFeedUrls ?? this.showFeedUrls,
+      episodeMeta: episodeMeta ?? this.episodeMeta,
       lastRefreshTime: lastRefreshTime ?? this.lastRefreshTime,
     );
   }
@@ -419,23 +408,18 @@ class PodcastDiscoverState extends Equatable {
     return DateTime.now().difference(refreshTime) < cacheDuration;
   }
 
-  List<PodcastDiscoverItem> get activeItems =>
-      selectedTab == PodcastDiscoverTab.podcasts ? topShows : topEpisodes;
+  bool get hasData => topShows.isNotEmpty || topEpisodes.isNotEmpty;
 
-  PodcastDiscoverPaginationState get currentPagination =>
-      selectedTab == PodcastDiscoverTab.podcasts
-      ? showsPagination
-      : episodesPagination;
+  /// The first rows shown on the browse page's ranked shelves.
+  List<PodcastDiscoverItem> get topShowsPreview =>
+      topShows.take(CacheConstants.discoverShelfItemCount).toList();
 
-  bool get isCurrentTabLoadingMore => currentPagination.isLoadingMore;
-
-  bool get currentTabHasMore => currentPagination.hasMore;
-
-  int get currentTabLoadedCount => currentPagination.loadedCount;
+  List<PodcastDiscoverItem> get topEpisodesPreview =>
+      topEpisodes.take(CacheConstants.discoverShelfItemCount).toList();
 
   List<String> get categories {
     final counts = <String, int>{};
-    for (final item in activeItems) {
+    for (final item in topShows.followedBy(topEpisodes)) {
       for (final genre in item.genres) {
         final trimmed = genre.trim();
         if (trimmed.isEmpty) continue;
@@ -452,31 +436,61 @@ class PodcastDiscoverState extends Equatable {
     return sorted.map((entry) => entry.key).toList();
   }
 
-  List<PodcastDiscoverItem> get filteredActiveItems {
-    if (selectedCategory == allCategoryValue) {
-      return activeItems;
+  /// The biggest genres in the top-shows chart, each earning a short
+  /// ranked shelf on the browse page — Apple's parallel category charts.
+  List<PodcastDiscoverCategoryShelf> get categoryShelves {
+    final counts = <String, int>{};
+    for (final item in topShows) {
+      for (final genre in item.genres) {
+        final trimmed = genre.trim();
+        if (trimmed.isEmpty) continue;
+        counts[trimmed] = (counts[trimmed] ?? 0) + 1;
+      }
     }
-    return activeItems
-        .where((item) => item.hasGenre(selectedCategory))
+
+    final sorted = counts.entries.toList()
+      ..sort((a, b) {
+        final countCompare = b.value.compareTo(a.value);
+        if (countCompare != 0) return countCompare;
+        return a.key.toLowerCase().compareTo(b.key.toLowerCase());
+      });
+
+    return sorted
+        .where((entry) => entry.value >= CacheConstants.discoverCategoryShelfMinItems)
+        .take(CacheConstants.discoverCategoryShelfCount)
+        .map((entry) => PodcastDiscoverCategoryShelf(
+              category: entry.key,
+              items: topShows
+                  .where((item) => item.hasGenre(entry.key))
+                  .take(CacheConstants.discoverShelfItemCount)
+                  .toList(),
+            ))
+        .where((shelf) => shelf.items.isNotEmpty)
         .toList();
   }
 
-  List<PodcastDiscoverItem> get visibleItems => filteredActiveItems;
+  List<PodcastDiscoverItem> get filteredShows => selectedCategory == allCategoryValue
+      ? topShows
+      : topShows.where((item) => item.hasGenre(selectedCategory)).toList();
+
+  List<PodcastDiscoverItem> get filteredEpisodes =>
+      selectedCategory == allCategoryValue
+          ? topEpisodes
+          : topEpisodes.where((item) => item.hasGenre(selectedCategory)).toList();
 
   @override
   List<Object?> get props => [
-    country,
-    isLoading,
-    isRefreshing,
-    error,
-    selectedTab,
-    selectedCategory,
-    topShows,
-    topEpisodes,
-    showsPagination,
-    episodesPagination,
-    lastRefreshTime,
-  ];
+        country,
+        isLoading,
+        isRefreshing,
+        error,
+        selectedCategory,
+        topShows,
+        topEpisodes,
+        showFeedUrls,
+        episodeMeta,
+        lastRefreshTime,
+      ];
 }
 
 final applePodcastRssServiceProvider = Provider<ApplePodcastRssService>((ref) {
@@ -492,8 +506,6 @@ class PodcastDiscoverNotifier extends Notifier<PodcastDiscoverState> {
   ApplePodcastRssService get _rssService => ref.read(applePodcastRssServiceProvider);
   final InFlightSlot<void> _loadSlot = InFlightSlot<void>();
   PodcastCountry? _loadSlotCountry;
-  final InFlightSlot<void> _showsLoadMoreSlot = InFlightSlot<void>();
-  final InFlightSlot<void> _episodesLoadMoreSlot = InFlightSlot<void>();
   final RequestToken _requestToken = RequestToken();
 
   @override
@@ -501,8 +513,6 @@ class PodcastDiscoverNotifier extends Notifier<PodcastDiscoverState> {
     // Reset in-flight tracking on rebuild to avoid stale futures
     _loadSlot.reset();
     _loadSlotCountry = null;
-    _showsLoadMoreSlot.reset();
-    _episodesLoadMoreSlot.reset();
 
     final selectedCountry = ref.read(countrySelectorProvider).selectedCountry;
 
@@ -517,7 +527,7 @@ class PodcastDiscoverNotifier extends Notifier<PodcastDiscoverState> {
   }
 
   Future<void> loadInitialData() async {
-    if (_hasAnyData && state.isDataFresh()) {
+    if (state.hasData && state.isDataFresh()) {
       return;
     }
     await _loadCharts(country: state.country, isRefresh: false);
@@ -532,7 +542,7 @@ class PodcastDiscoverNotifier extends Notifier<PodcastDiscoverState> {
   }
 
   Future<void> onCountryChanged(PodcastCountry country) async {
-    if (country == state.country && _hasAnyData && state.isDataFresh()) {
+    if (country == state.country && state.hasData && state.isDataFresh()) {
       return;
     }
     state = state.copyWith(
@@ -540,20 +550,11 @@ class PodcastDiscoverNotifier extends Notifier<PodcastDiscoverState> {
       selectedCategory: PodcastDiscoverState.allCategoryValue,
       topShows: const [],
       topEpisodes: const [],
-      showsPagination: const PodcastDiscoverPaginationState(),
-      episodesPagination: const PodcastDiscoverPaginationState(),
+      showFeedUrls: const {},
+      episodeMeta: const {},
       clearError: true,
     );
     await _loadCharts(country: country, isRefresh: false, forceRefresh: true);
-  }
-
-  void setTab(PodcastDiscoverTab tab) {
-    if (tab == state.selectedTab) return;
-    state = state.copyWith(
-      selectedTab: tab,
-      selectedCategory: PodcastDiscoverState.allCategoryValue,
-      clearError: true,
-    );
   }
 
   void selectCategory(String category) {
@@ -564,12 +565,14 @@ class PodcastDiscoverNotifier extends Notifier<PodcastDiscoverState> {
     state = state.copyWith(selectedCategory: normalized);
   }
 
-  Future<void> loadMoreCurrentTab() async {
-    if (state.isLoading || state.isRefreshing || state.activeItems.isEmpty) {
-      return;
-    }
-
-    await _loadMoreTab(state.selectedTab);
+  /// Records a show's feed url learned outside the batched hydration
+  /// (e.g. from a subscribe lookup), keeping the subscribed-state
+  /// derivation complete.
+  void registerShowFeedUrl(int itunesId, String feedUrl) {
+    if (state.showFeedUrls[itunesId] == feedUrl) return;
+    state = state.copyWith(
+      showFeedUrls: {...state.showFeedUrls, itunesId: feedUrl},
+    );
   }
 
   void clearRuntimeCache() {
@@ -579,8 +582,6 @@ class PodcastDiscoverNotifier extends Notifier<PodcastDiscoverState> {
     _requestToken.cancel();
     _loadSlot.reset();
     _loadSlotCountry = null;
-    _showsLoadMoreSlot.reset();
-    _episodesLoadMoreSlot.reset();
     state = PodcastDiscoverState(country: selectedCountry);
   }
 
@@ -591,7 +592,7 @@ class PodcastDiscoverNotifier extends Notifier<PodcastDiscoverState> {
   }) async {
     if (!forceRefresh &&
         country == state.country &&
-        _hasAnyData &&
+        state.hasData &&
         state.isDataFresh()) {
       return;
     }
@@ -607,8 +608,6 @@ class PodcastDiscoverNotifier extends Notifier<PodcastDiscoverState> {
     // Replacing any earlier chart load: the stale request keeps running but
     // its results are discarded via the request token above.
     _loadSlot.reset();
-    _showsLoadMoreSlot.reset();
-    _episodesLoadMoreSlot.reset();
     _loadSlotCountry = country;
 
     state = state.copyWith(
@@ -621,11 +620,16 @@ class PodcastDiscoverNotifier extends Notifier<PodcastDiscoverState> {
 
     await _loadSlot(() async {
       try {
+        // The whole chart is fetched in one request and sliced into
+        // shelves client-side; there is no incremental pagination.
+        final chartLimit = CacheConstants.discoverTopChartMaxLimit;
         final showsFuture = _rssService.fetchTopShows(
           country: country,
+          limit: chartLimit,
         );
         final episodesFuture = _rssService.fetchTopEpisodes(
           country: country,
+          limit: chartLimit,
         );
 
         // Parallel loading for better performance
@@ -653,18 +657,12 @@ class PodcastDiscoverNotifier extends Notifier<PodcastDiscoverState> {
           isRefreshing: false,
           topShows: shows,
           topEpisodes: episodes,
-          showsPagination: _paginationStateFor(
-            requestedLimit: CacheConstants.discoverInitialFetchLimit,
-            loadedCount: shows.length,
-          ),
-          episodesPagination: _paginationStateFor(
-            requestedLimit: CacheConstants.discoverInitialFetchLimit,
-            loadedCount: episodes.length,
-          ),
           selectedCategory: PodcastDiscoverState.allCategoryValue,
           clearError: true,
           lastRefreshTime: DateTime.now(),
         );
+
+        unawaited(_hydrateChartMeta(requestId, shows, episodes));
       } catch (error) {
         if (!_isRequestActive(requestId)) {
           return;
@@ -681,170 +679,44 @@ class PodcastDiscoverNotifier extends Notifier<PodcastDiscoverState> {
     }
   }
 
-  Future<void> _loadMoreTab(PodcastDiscoverTab tab) async {
-    final loadMoreSlot = tab == PodcastDiscoverTab.podcasts
-        ? _showsLoadMoreSlot
-        : _episodesLoadMoreSlot;
-    final inFlight = loadMoreSlot.inFlight;
-    if (inFlight != null) {
-      return inFlight;
+  /// One batched iTunes lookup across the visible chart ids: feed urls for
+  /// the subscribed-state derivation and duration/date metadata for the
+  /// trending-episodes shelf. Best-effort — failures leave the charts
+  /// fully usable, just undecorated.
+  Future<void> _hydrateChartMeta(
+    int requestId,
+    List<PodcastDiscoverItem> shows,
+    List<PodcastDiscoverItem> episodes,
+  ) async {
+    final showIds = shows
+        .map((item) => item.itunesId)
+        .whereType<int>()
+        .take(CacheConstants.discoverTopChartMaxLimit)
+        .toList();
+    final episodeIds = episodes
+        .map((item) => item.itunesId)
+        .whereType<int>()
+        .take(CacheConstants.discoverShelfItemCount)
+        .toList();
+
+    final ids = [...showIds, ...episodeIds];
+    if (ids.isEmpty) return;
+
+    try {
+      final result = await ref.read(iTunesSearchServiceProvider)
+          .lookupChartEntities(ids: ids, country: state.country);
+      if (!_isRequestActive(requestId)) return;
+      state = state.copyWith(
+        showFeedUrls: result.showFeedUrls,
+        episodeMeta: result.episodeMeta,
+      );
+    } catch (_) {
+      // Decoration only; chart data already rendered.
     }
-
-    final pagination = tab == PodcastDiscoverTab.podcasts
-        ? state.showsPagination
-        : state.episodesPagination;
-    if (pagination.isLoadingMore || !pagination.hasMore) {
-      return;
-    }
-
-    final nextLimit = _nextHydrationTarget(pagination.loadedCount);
-    if (nextLimit == null) {
-      return;
-    }
-
-    final previousPagination = pagination;
-    final requestId = _requestToken.current;
-    final country = state.country;
-
-    state = _copyWithTabPagination(
-      state,
-      tab,
-      pagination.copyWith(isLoadingMore: true),
-      clearError: true,
-    );
-
-    await loadMoreSlot(() async {
-      try {
-        if (tab == PodcastDiscoverTab.podcasts) {
-          final response = await _rssService.fetchTopShows(
-            country: country,
-            limit: nextLimit,
-          );
-          if (!_isRequestActive(requestId) || state.country != country) {
-            return;
-          }
-
-          final items = _mapChartItems(
-            response,
-            defaultKind: PodcastDiscoverKind.podcasts,
-          );
-          state = _copyWithTabItems(
-            state,
-            tab,
-            items,
-            _paginationStateFor(
-              requestedLimit: nextLimit,
-              loadedCount: items.length,
-            ),
-            clearError: true,
-          );
-          return;
-        }
-
-        final response = await _rssService.fetchTopEpisodes(
-          country: country,
-          limit: nextLimit,
-        );
-        if (!_isRequestActive(requestId) || state.country != country) {
-          return;
-        }
-
-        final items = _mapChartItems(
-          response,
-          defaultKind: PodcastDiscoverKind.podcastEpisodes,
-        );
-        state = _copyWithTabItems(
-          state,
-          tab,
-          items,
-          _paginationStateFor(
-            requestedLimit: nextLimit,
-            loadedCount: items.length,
-          ),
-          clearError: true,
-        );
-      } catch (error) {
-        if (!_isRequestActive(requestId) || state.country != country) {
-          return;
-        }
-
-        state = _copyWithTabPagination(
-          state,
-          tab,
-          previousPagination.copyWith(isLoadingMore: false),
-          error: mapErrorMessage(error),
-        );
-      }
-    });
   }
-
-  bool get _hasAnyData =>
-      state.topShows.isNotEmpty || state.topEpisodes.isNotEmpty;
 
   bool _isRequestActive(int requestId) =>
       ref.mounted && _requestToken.isCurrent(requestId);
-
-  PodcastDiscoverState _copyWithTabPagination(
-    PodcastDiscoverState currentState,
-    PodcastDiscoverTab tab,
-    PodcastDiscoverPaginationState pagination, {
-    String? error,
-    bool clearError = false,
-  }) {
-    return currentState.copyWith(
-      showsPagination: tab == PodcastDiscoverTab.podcasts ? pagination : null,
-      episodesPagination: tab == PodcastDiscoverTab.episodes
-          ? pagination
-          : null,
-      error: error,
-      clearError: clearError,
-    );
-  }
-
-  PodcastDiscoverState _copyWithTabItems(
-    PodcastDiscoverState currentState,
-    PodcastDiscoverTab tab,
-    List<PodcastDiscoverItem> items,
-    PodcastDiscoverPaginationState pagination, {
-    bool clearError = false,
-  }) {
-    return currentState.copyWith(
-      topShows: tab == PodcastDiscoverTab.podcasts ? items : null,
-      topEpisodes: tab == PodcastDiscoverTab.episodes ? items : null,
-      showsPagination: tab == PodcastDiscoverTab.podcasts ? pagination : null,
-      episodesPagination: tab == PodcastDiscoverTab.episodes
-          ? pagination
-          : null,
-      clearError: clearError,
-    );
-  }
-
-  PodcastDiscoverPaginationState _paginationStateFor({
-    required int requestedLimit,
-    required int loadedCount,
-  }) {
-    final hasMore =
-        requestedLimit < CacheConstants.discoverTopChartMaxLimit &&
-        loadedCount >= requestedLimit;
-    return PodcastDiscoverPaginationState(
-      loadedCount: loadedCount,
-      hasMore: hasMore,
-    );
-  }
-
-  int? _nextHydrationTarget(int currentCount) {
-    if (currentCount >= CacheConstants.discoverTopChartMaxLimit) {
-      return null;
-    }
-
-    final normalized = currentCount < CacheConstants.discoverInitialFetchLimit
-        ? CacheConstants.discoverInitialFetchLimit
-        : currentCount;
-    final nextLimit = normalized + CacheConstants.discoverHydrationStep;
-    return nextLimit > CacheConstants.discoverTopChartMaxLimit
-        ? CacheConstants.discoverTopChartMaxLimit
-        : nextLimit;
-  }
 
   List<PodcastDiscoverItem> _mapChartItems(
     ApplePodcastChartResponse response, {

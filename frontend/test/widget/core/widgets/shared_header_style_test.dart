@@ -158,13 +158,7 @@ class _FixedPodcastDiscoverNotifier extends PodcastDiscoverNotifier {
   Future<void> onCountryChanged(PodcastCountry country) async {}
 
   @override
-  void setTab(PodcastDiscoverTab tab) {}
-
-  @override
   void selectCategory(String category) {}
-
-  @override
-  Future<void> loadMoreCurrentTab() async {}
 }
 
 class _FixedPodcastSearchNotifier extends PodcastSearchNotifier {

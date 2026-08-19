@@ -26,12 +26,20 @@ class CacheConstants {
   /// Page size for subscription lists (smaller for faster initial load).
   static const int subscriptionsPageSize = 10;
 
-  /// Initial fetch limit for discover charts.
-  static const int discoverInitialFetchLimit = 25;
+  /// Initial fetch limit for discover charts. The whole chart is fetched
+  /// in one request and sliced into shelves client-side; there is no
+  /// incremental pagination.
+  static const int discoverInitialFetchLimit = 100;
 
-  /// Maximum number of items to load for discover charts.
+  /// Maximum number of items to load for discover charts (RSS API cap).
   static const int discoverTopChartMaxLimit = 100;
 
-  /// Step size for loading more discover items.
-  static const int discoverHydrationStep = 25;
+  /// Number of ranked rows shown per shelf on the discover browse page.
+  static const int discoverShelfItemCount = 7;
+
+  /// Category shelves sliced from the top-shows chart on the browse page.
+  static const int discoverCategoryShelfCount = 3;
+
+  /// Minimum shows in a category for it to earn its own shelf.
+  static const int discoverCategoryShelfMinItems = 5;
 }

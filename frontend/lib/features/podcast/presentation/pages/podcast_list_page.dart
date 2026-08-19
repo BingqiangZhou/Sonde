@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:sonde/core/constants/app_durations.dart';
 import 'package:sonde/core/constants/app_spacing.dart';
@@ -8,26 +9,28 @@ import 'package:sonde/core/constants/scroll_constants.dart';
 import 'package:sonde/core/localization/app_localizations.dart';
 import 'package:sonde/core/localization/app_localizations_extension.dart';
 import 'package:sonde/core/utils/debounce.dart';
+import 'package:sonde/core/utils/time_formatter.dart';
 import 'package:sonde/core/widgets/adaptive/adaptive.dart';
-import 'package:sonde/core/widgets/adaptive_sheet_helper.dart';
 import 'package:sonde/core/widgets/app_shells.dart';
+import 'package:sonde/core/widgets/linear_section_header.dart';
 import 'package:sonde/core/widgets/top_floating_notice.dart';
 import 'package:sonde/features/podcast/data/models/podcast_discover_chart_model.dart';
+import 'package:sonde/features/podcast/data/utils/podcast_url_utils.dart';
 import 'package:sonde/features/podcast/presentation/pages/sections/discover_interaction_handler.dart';
 import 'package:sonde/features/podcast/presentation/pages/sections/search_mode_toggle.dart';
 import 'package:sonde/features/podcast/presentation/providers/podcast_providers.dart';
 import 'package:sonde/features/podcast/presentation/providers/podcast_search_provider.dart';
-import 'package:sonde/features/podcast/presentation/widgets/country_selector_dropdown.dart';
 import 'package:sonde/features/podcast/presentation/widgets/discover/discover_charts_list.dart';
+import 'package:sonde/features/podcast/presentation/widgets/discover/discover_country_pill.dart';
 import 'package:sonde/features/podcast/presentation/widgets/discover/discover_search_input.dart';
 import 'package:sonde/features/podcast/presentation/widgets/discover/discover_spotlight_section.dart';
-import 'package:sonde/features/podcast/presentation/widgets/discover/discover_top_charts_section.dart';
 import 'package:sonde/features/podcast/presentation/widgets/search/podcast_search_results_list.dart';
 import 'package:sonde/shared/widgets/skeleton_widgets.dart';
 
-/// Discover page: search plus an editorial browse view with a spotlight
-/// carousel of the top-ranked chart items and the numbered charts list,
-/// all scrolling in a single view.
+/// Discover page: search plus an Apple-Podcasts-style magazine browse view —
+/// a spotlight carousel over short ranked shelves (top shows, trending
+/// episodes, and the biggest category charts), with the full charts behind
+/// a "see all" push.
 class PodcastListPage extends ConsumerStatefulWidget {
   const PodcastListPage({super.key});
 
@@ -37,16 +40,12 @@ class PodcastListPage extends ConsumerStatefulWidget {
 
 class _PodcastListPageState extends ConsumerState<PodcastListPage> {
   final TextEditingController _searchController = TextEditingController();
-  final ScrollController _discoverListScrollController = ScrollController();
   final FocusNode _searchFocusNode = FocusNode();
-  final Set<int> _subscribingShowIds = <int>{};
-  final Set<int> _subscribedShowIds = <int>{};
   DebounceTimer? _searchDebounce;
 
   @override
   void initState() {
     super.initState();
-    _discoverListScrollController.addListener(_onDiscoverListScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       unawaited(_loadInitialData());
@@ -56,7 +55,6 @@ class _PodcastListPageState extends ConsumerState<PodcastListPage> {
   @override
   void dispose() {
     _searchDebounce?.dispose();
-    _discoverListScrollController.dispose();
     _searchController.dispose();
     _searchFocusNode.dispose();
     super.dispose();
@@ -77,26 +75,8 @@ class _PodcastListPageState extends ConsumerState<PodcastListPage> {
     }
   }
 
-  void _handleDiscoverTabSelected(PodcastSearchMode mode) {
+  void _handleSearchModeSelected(PodcastSearchMode mode) {
     ref.read(podcastSearchProvider.notifier).setSearchMode(mode);
-    ref.read(podcastDiscoverProvider.notifier).setTab(
-          mode == PodcastSearchMode.podcasts
-              ? PodcastDiscoverTab.podcasts
-              : PodcastDiscoverTab.episodes,
-        );
-    _resetDiscoverListScroll();
-  }
-
-  void _handleDiscoverCategorySelected(String category) {
-    ref.read(podcastDiscoverProvider.notifier).selectCategory(category);
-    _resetDiscoverListScroll();
-  }
-
-  void _resetDiscoverCategoryFilter() {
-    ref
-        .read(podcastDiscoverProvider.notifier)
-        .selectCategory(PodcastDiscoverState.allCategoryValue);
-    _resetDiscoverListScroll();
   }
 
   void _onSearchChanged(String query) {
@@ -124,80 +104,33 @@ class _PodcastListPageState extends ConsumerState<PodcastListPage> {
     _searchFocusNode.requestFocus();
   }
 
-  void _onDiscoverListScroll() {
-    if (!_discoverListScrollController.hasClients) return;
-    final position = _discoverListScrollController.position;
-    if (position.extentAfter > 200) return;
-    ref.read(podcastDiscoverProvider.notifier).loadMoreCurrentTab();
-  }
-
-  void _resetDiscoverListScroll() {
-    if (!_discoverListScrollController.hasClients) return;
-    _discoverListScrollController.jumpTo(0);
-  }
-
-  Future<void> _handleSubscribeFromChart(PodcastDiscoverItem item) async {
-    final l10n = context.l10n;
-    final country = ref.read(countrySelectorProvider).selectedCountry;
-    final itunesId = item.itunesId;
-
-    if (itunesId == null || _subscribingShowIds.contains(itunesId)) return;
-
-    setState(() => _subscribingShowIds.add(itunesId));
-
-    try {
-      final searchService = ref.read(iTunesSearchServiceProvider);
-      final lookup = await searchService.lookupPodcast(
-        itunesId: itunesId,
-        country: country,
-      );
-      final feedUrl = lookup?.feedUrl;
-      if (feedUrl == null) throw Exception('No RSS feed url');
-
-      await ref
-          .read(podcastSubscriptionProvider.notifier)
-          .addSubscription(feedUrl: feedUrl);
-
-      if (!mounted) return;
-      setState(() => _subscribedShowIds.add(itunesId));
-      showTopFloatingNotice(
-        context,
-        message: l10n.podcast_subscribe_success(lookup?.collectionName ?? item.title),
-      );
-    } catch (error) {
-      if (!mounted) return;
-      showTopFloatingNotice(
-        context,
-        message: l10n.podcast_subscribe_failed(error.toString()),
-        isError: true,
-      );
-    } finally {
-      if (mounted) setState(() => _subscribingShowIds.remove(itunesId));
+  /// Chart shows carry no feed url from the RSS API; the discover provider
+  /// hydrates them via one batched lookup, so subscribed state derives
+  /// from the real subscription list instead of a session-only set.
+  Set<int> _resolveSubscribedShowIds(
+    PodcastDiscoverState discoverState,
+    Set<String> subscribedFeedUrls,
+    Set<int> sessionSubscribedShowIds,
+  ) {
+    final result = sessionSubscribedShowIds.toSet();
+    for (final entry in discoverState.showFeedUrls.entries) {
+      if (subscribedFeedUrls
+          .contains(PodcastUrlUtils.normalizeFeedUrl(entry.value))) {
+        result.add(entry.key);
+      }
     }
+    return result;
   }
 
-  Future<void> _openCountrySelector(BuildContext context) async {
-    await showAdaptiveSheet<void>(
-      context: context,
-      desktopMaxWidth: 480,
-      builder: (sheetContext) {
-        return SafeArea(
-          child: Padding(
-            padding: EdgeInsets.all(context.spacing.md),
-            child: CountrySelectorDropdown(
-              onCountryChanged: (country) {
-                _resetDiscoverListScroll();
-                ref.read(podcastDiscoverProvider.notifier).onCountryChanged(country);
-                if (ref.read(podcastSearchProvider).currentQuery.isNotEmpty) {
-                  ref.read(podcastSearchProvider.notifier).retrySearch();
-                }
-                Navigator.of(sheetContext).pop();
-              },
-            ),
-          ),
-        );
-      },
-    );
+  String? _episodeDurationSuffix(
+    PodcastDiscoverState discoverState,
+    PodcastDiscoverItem item,
+  ) {
+    final trackId = item.itunesId;
+    if (trackId == null) return null;
+    final millis = discoverState.episodeMeta[trackId]?.trackTimeMillis;
+    if (millis == null || millis <= 0) return null;
+    return TimeFormatter.formatDuration(Duration(milliseconds: millis));
   }
 
   @override
@@ -244,7 +177,7 @@ class _PodcastListPageState extends ConsumerState<PodcastListPage> {
           trailing: SearchModeToggle(
             searchMode: searchMode,
             isDense: isDense,
-            onTabSelected: _handleDiscoverTabSelected,
+            onTabSelected: _handleSearchModeSelected,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -274,16 +207,12 @@ class _PodcastListPageState extends ConsumerState<PodcastListPage> {
   ) {
     final l10n = context.l10n;
 
-    if (discoverState.isLoading &&
-        discoverState.topShows.isEmpty &&
-        discoverState.topEpisodes.isEmpty) {
+    if (discoverState.isLoading && !discoverState.hasData) {
       return const DiscoverBrowseSkeleton();
     }
 
     final error = discoverState.error;
-    if (error != null &&
-        discoverState.topShows.isEmpty &&
-        discoverState.topEpisodes.isEmpty) {
+    if (error != null && !discoverState.hasData) {
       return _buildErrorView(context, l10n, error);
     }
 
@@ -302,6 +231,34 @@ class _PodcastListPageState extends ConsumerState<PodcastListPage> {
     );
   }
 
+  /// Interleaves the two charts — show, episode, runner-up show — so the
+  /// carousel previews both shelves below it.
+  List<DiscoverSpotlightEntry> _buildSpotlightEntries(
+    PodcastDiscoverState discoverState,
+  ) {
+    final entries = <DiscoverSpotlightEntry>[];
+    for (var index = 0; entries.length < DiscoverSpotlightSection.maxItemCount; index++) {
+      var added = false;
+      if (index < discoverState.topShows.length) {
+        entries.add(DiscoverSpotlightEntry(
+          item: discoverState.topShows[index],
+          chartRank: index + 1,
+        ));
+        added = true;
+      }
+      if (entries.length >= DiscoverSpotlightSection.maxItemCount) break;
+      if (index < discoverState.topEpisodes.length) {
+        entries.add(DiscoverSpotlightEntry(
+          item: discoverState.topEpisodes[index],
+          chartRank: index + 1,
+        ));
+        added = true;
+      }
+      if (!added) break;
+    }
+    return entries;
+  }
+
   Widget _buildBrowseScroll(
     BuildContext context,
     PodcastDiscoverState discoverState,
@@ -311,14 +268,26 @@ class _PodcastListPageState extends ConsumerState<PodcastListPage> {
   ) {
     final l10n = context.l10n;
     final theme = Theme.of(context);
-    final visibleItems = discoverState.visibleItems;
-    final spotlightItems = visibleItems
-        .take(DiscoverSpotlightSection.maxItemCount)
-        .toList();
+    final subscribedFeedUrls = ref.watch(subscribedNormalizedFeedUrlsProvider);
+    final subscribeState = ref.watch(discoverSubscribeProvider);
+    final subscribingShowIds = subscribeState.subscribingShowIds;
+    final subscribedShowIds = _resolveSubscribedShowIds(
+      discoverState,
+      subscribedFeedUrls,
+      subscribeState.sessionSubscribedShowIds,
+    );
+    void onSubscribe(PodcastDiscoverItem item) =>
+        DiscoverInteractionHandler.subscribeFromChart(ref, context, item);
+
+    final spotlightEntries = _buildSpotlightEntries(discoverState);
+    final topShowsShelf = discoverState.topShowsPreview;
+    final topEpisodesShelf = discoverState.topEpisodesPreview;
+    final categoryShelves = discoverState.categoryShelves;
+    final hasAnyShelf =
+        topShowsShelf.isNotEmpty || topEpisodesShelf.isNotEmpty;
 
     return CustomScrollView(
       key: const Key('podcast_discover_scroll'),
-      controller: _discoverListScrollController,
       cacheExtent: ScrollConstants.largeListCacheExtent,
       physics: const AlwaysScrollableScrollPhysics(),
       slivers: [
@@ -357,50 +326,82 @@ class _PodcastListPageState extends ConsumerState<PodcastListPage> {
           ),
         SliverToBoxAdapter(
           child: DiscoverSpotlightSection(
-            items: spotlightItems,
+            entries: spotlightEntries,
             onItemTap: (item) =>
                 DiscoverInteractionHandler.handleChartRowTap(ref, context, item),
-            onItemSubscribe: _handleSubscribeFromChart,
+            onItemSubscribe: onSubscribe,
             onItemPlay: (item) => DiscoverInteractionHandler
                 .playEpisodeFromChartRow(ref, context, item),
-            subscribingShowIds: _subscribingShowIds,
-            subscribedShowIds: _subscribedShowIds,
+            subscribingShowIds: subscribingShowIds,
+            subscribedShowIds: subscribedShowIds,
           ),
         ),
-        SliverToBoxAdapter(
-          child: DiscoverTopChartsSection(
-            state: discoverState,
-            onCategorySelected: _handleDiscoverCategorySelected,
-            onCountryTap: () => _openCountrySelector(context),
-            isDense: isDense,
-          ),
-        ),
-        SliverToBoxAdapter(child: SizedBox(height: context.spacing.sm)),
-        DiscoverChartsSliver(
-          visibleItems: visibleItems,
-          onItemTap: (item) =>
-              DiscoverInteractionHandler.handleChartRowTap(ref, context, item),
-          onItemSubscribe: _handleSubscribeFromChart,
-          onItemPlay: (item) =>
-              DiscoverInteractionHandler.playEpisodeFromChartRow(ref, context, item),
-          subscribingShowIds: _subscribingShowIds,
-          subscribedShowIds: _subscribedShowIds,
-          isDense: isDense,
-        ),
-        if (discoverState.isCurrentTabLoadingMore)
-          const SliverToBoxAdapter(
-            child: Padding(
-              padding: EdgeInsets.symmetric(vertical: AppSpacing.md),
-              child: Center(
-                child: SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator.adaptive(strokeWidth: 2),
+        if (topShowsShelf.isNotEmpty) ...[
+          SliverToBoxAdapter(
+            child: _buildShelfHeader(
+              context,
+              title: l10n.podcast_discover_top_shows,
+              titleKey: 'podcast_discover_top_shows_header',
+              trailing: DiscoverCountryPill(
+                onTap: () => DiscoverInteractionHandler.openCountrySelector(
+                  ref,
+                  context,
+                  retrySearchIfNeeded: true,
                 ),
               ),
+              onSeeAll: () => context.push('/discover/charts'),
+              seeAllKey: 'podcast_discover_see_all_shows',
             ),
           ),
-        if (!discoverState.currentTabHasMore && visibleItems.isNotEmpty)
+          DiscoverChartsSliver(
+            visibleItems: topShowsShelf,
+            onItemTap: (item) =>
+                DiscoverInteractionHandler.handleChartRowTap(ref, context, item),
+            onItemSubscribe: onSubscribe,
+            onItemPlay: (item) =>
+                DiscoverInteractionHandler.playEpisodeFromChartRow(ref, context, item),
+            subscribingShowIds: subscribingShowIds,
+            subscribedShowIds: subscribedShowIds,
+            isDense: isDense,
+            listKey: 'podcast_discover_top_shows_list',
+            gridKey: 'podcast_discover_top_shows_grid',
+          ),
+        ],
+        if (topEpisodesShelf.isNotEmpty) ...[
+          SliverToBoxAdapter(
+            child: _buildShelfHeader(
+              context,
+              title: l10n.podcast_discover_top_episodes,
+              titleKey: 'podcast_discover_top_episodes_header',
+              onSeeAll: () => context.push('/discover/charts'),
+              seeAllKey: 'podcast_discover_see_all_episodes',
+            ),
+          ),
+          DiscoverChartsSliver(
+            visibleItems: topEpisodesShelf,
+            onItemTap: (item) =>
+                DiscoverInteractionHandler.handleChartRowTap(ref, context, item),
+            onItemSubscribe: onSubscribe,
+            onItemPlay: (item) =>
+                DiscoverInteractionHandler.playEpisodeFromChartRow(ref, context, item),
+            subscribingShowIds: subscribingShowIds,
+            subscribedShowIds: subscribedShowIds,
+            isDense: isDense,
+            listKey: 'podcast_discover_top_episodes_list',
+            gridKey: 'podcast_discover_top_episodes_grid',
+            subtitleSuffixBuilder: (item) =>
+                _episodeDurationSuffix(discoverState, item),
+          ),
+        ],
+        for (final shelf in categoryShelves)
+          ..._buildCategoryShelfSlivers(
+            context,
+            shelf,
+            subscribingShowIds,
+            subscribedShowIds,
+            isDense,
+          ),
+        if (hasAnyShelf)
           SliverToBoxAdapter(
             child: Padding(
               padding: EdgeInsets.symmetric(vertical: context.spacing.lg),
@@ -408,41 +409,122 @@ class _PodcastListPageState extends ConsumerState<PodcastListPage> {
                 child: Text(
                   key: const Key('podcast_discover_footer'),
                   l10n.podcast_discover_footer,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
                   ),
                 ),
               ),
             ),
           ),
-        if (visibleItems.isEmpty)
+        if (!discoverState.hasData)
           SliverToBoxAdapter(
             child: Padding(
               padding: EdgeInsets.symmetric(vertical: context.spacing.md),
-              child: discoverState.activeItems.isEmpty
-                  ? AppEmptyState(
-                      icon: Icons.leaderboard_outlined,
-                      title: l10n.podcast_discover_no_chart_data,
-                      action: FilledButton.icon(
-                        onPressed: () => ref
-                            .read(podcastDiscoverProvider.notifier)
-                            .loadInitialData(),
-                        icon: const Icon(Icons.refresh),
-                        label: Text(l10n.retry),
-                      ),
-                    )
-                  : AppEmptyState(
-                      icon: Icons.filter_alt_off_outlined,
-                      title: l10n.podcast_discover_category_empty_title,
-                      subtitle: l10n.podcast_discover_category_empty_subtitle,
-                      action: FilledButton.tonal(
-                        onPressed: _resetDiscoverCategoryFilter,
-                        child: Text(l10n.podcast_discover_see_all),
-                      ),
-                    ),
+              child: AppEmptyState(
+                icon: Icons.leaderboard_outlined,
+                title: l10n.podcast_discover_no_chart_data,
+                action: FilledButton.icon(
+                  onPressed: () => ref
+                      .read(podcastDiscoverProvider.notifier)
+                      .loadInitialData(),
+                  icon: const Icon(Icons.refresh),
+                  label: Text(l10n.retry),
+                ),
+              ),
             ),
           ),
         const SliverPadding(padding: EdgeInsets.only(bottom: AppSpacing.xl)),
+      ],
+    );
+  }
+
+  List<Widget> _buildCategoryShelfSlivers(
+    BuildContext context,
+    PodcastDiscoverCategoryShelf shelf,
+    Set<int> subscribingShowIds,
+    Set<int> subscribedShowIds,
+    bool isDense,
+  ) {
+    final normalizedKey = shelf.category.toLowerCase().replaceAll(
+          RegExp(r'[^a-z0-9]+'),
+          '_',
+        );
+    return [
+      SliverToBoxAdapter(
+        child: _buildShelfHeader(
+          context,
+          title: context.l10n.podcast_discover_category_shelf(shelf.category),
+          titleKey: 'podcast_discover_category_shelf_$normalizedKey',
+        ),
+      ),
+      DiscoverChartsSliver(
+        visibleItems: shelf.items,
+        onItemTap: (item) =>
+            DiscoverInteractionHandler.handleChartRowTap(ref, context, item),
+        onItemSubscribe: (item) =>
+            DiscoverInteractionHandler.subscribeFromChart(ref, context, item),
+        onItemPlay: (item) =>
+            DiscoverInteractionHandler.playEpisodeFromChartRow(ref, context, item),
+        subscribingShowIds: subscribingShowIds,
+        subscribedShowIds: subscribedShowIds,
+        isDense: isDense,
+        listKey: 'podcast_discover_category_list_$normalizedKey',
+        gridKey: 'podcast_discover_category_grid_$normalizedKey',
+      ),
+    ];
+  }
+
+  /// A ranked shelf header: the 24px section title with an optional
+  /// trailing control (country pill) and a "see all" push affordance.
+  Widget _buildShelfHeader(
+    BuildContext context, {
+    required String title,
+    required String titleKey,
+    Widget? trailing,
+    VoidCallback? onSeeAll,
+    String? seeAllKey,
+  }) {
+    final theme = Theme.of(context);
+    return Row(
+      key: Key(titleKey),
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        Expanded(
+          child: LinearSectionHeader(
+            title: title,
+            titleSize: 24,
+            padding: EdgeInsets.symmetric(
+              horizontal: context.spacing.xs,
+              vertical: context.spacing.smMd,
+            ),
+          ),
+        ),
+        if (trailing != null)
+          Padding(
+            padding: EdgeInsets.only(left: context.spacing.md),
+            child: trailing,
+          ),
+        if (onSeeAll != null)
+          Padding(
+            padding: EdgeInsets.only(
+              left: context.spacing.sm,
+              right: context.spacing.sm,
+              bottom: context.spacing.xs,
+            ),
+            child: TextButton.icon(
+              key: Key(seeAllKey ?? 'podcast_discover_see_all'),
+              onPressed: onSeeAll,
+              style: TextButton.styleFrom(
+                visualDensity: VisualDensity.compact,
+                foregroundColor: theme.colorScheme.primary,
+                textStyle: theme.textTheme.labelMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              icon: const Icon(Icons.chevron_right, size: 18),
+              label: Text(context.l10n.podcast_discover_see_all),
+            ),
+          ),
       ],
     );
   }

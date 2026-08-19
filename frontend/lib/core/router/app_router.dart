@@ -13,6 +13,7 @@ import 'package:sonde/features/auth/presentation/pages/reset_password_page.dart'
 import 'package:sonde/features/auth/presentation/providers/auth_provider.dart';
 import 'package:sonde/features/home/presentation/pages/home_page.dart';
 import 'package:sonde/features/podcast/presentation/navigation/podcast_navigation.dart';
+import 'package:sonde/features/podcast/presentation/pages/podcast_charts_page.dart';
 import 'package:sonde/features/podcast/presentation/pages/podcast_daily_report_page.dart';
 import 'package:sonde/features/podcast/presentation/pages/podcast_episode_detail_page.dart';
 import 'package:sonde/features/podcast/presentation/pages/podcast_episodes_page.dart';
@@ -133,6 +134,21 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                   state: state,
                   child: const PodcastListPage(),
                 ),
+                routes: [
+                  // Full charts page pushed over the shell from the
+                  // discover shelves' "see all".
+                  GoRoute(
+                    path: 'charts',
+                    name: 'discoverCharts',
+                    parentNavigatorKey: appNavigatorKey,
+                    pageBuilder: (context, state) => _buildModalPage(
+                      state: state,
+                      child: const _PlayerAwareRouteFrame(
+                        child: PodcastChartsPage(),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),

@@ -4,75 +4,6 @@ import 'package:sonde/features/podcast/data/models/podcast_search_model.dart';
 import 'package:sonde/features/podcast/presentation/providers/podcast_search_provider.dart';
 
 void main() {
-  // ── PodcastDiscoverPaginationState ──────────────────────────────
-
-  group('PodcastDiscoverPaginationState', () {
-    test('default values', () {
-      const state = PodcastDiscoverPaginationState();
-      expect(state.loadedCount, 0);
-      expect(state.isLoadingMore, isFalse);
-      expect(state.hasMore, isFalse);
-    });
-
-    test('copyWith returns new instance with updated fields', () {
-      const original = PodcastDiscoverPaginationState();
-      final updated = original.copyWith(
-        loadedCount: 25,
-        isLoadingMore: true,
-        hasMore: true,
-      );
-
-      expect(updated.loadedCount, 25);
-      expect(updated.isLoadingMore, isTrue);
-      expect(updated.hasMore, isTrue);
-
-      // Original is unchanged
-      expect(original.loadedCount, 0);
-      expect(original.isLoadingMore, isFalse);
-    });
-
-    test('copyWith preserves fields when not specified', () {
-      const state = PodcastDiscoverPaginationState(
-        loadedCount: 50,
-        isLoadingMore: true,
-        hasMore: true,
-      );
-      final updated = state.copyWith(loadedCount: 75);
-
-      expect(updated.loadedCount, 75);
-      expect(updated.isLoadingMore, isTrue);
-      expect(updated.hasMore, isTrue);
-    });
-
-    test('equality works for identical states', () {
-      const a = PodcastDiscoverPaginationState(
-        loadedCount: 10,
-        isLoadingMore: true,
-      );
-      const b = PodcastDiscoverPaginationState(
-        loadedCount: 10,
-        isLoadingMore: true,
-      );
-      expect(a, equals(b));
-      expect(a.hashCode, equals(b.hashCode));
-    });
-
-    test('inequality for different fields', () {
-      const a = PodcastDiscoverPaginationState(loadedCount: 10);
-      const b = PodcastDiscoverPaginationState(loadedCount: 20);
-      expect(a, isNot(equals(b)));
-    });
-
-    test('props contain all fields', () {
-      const state = PodcastDiscoverPaginationState(
-        loadedCount: 5,
-        isLoadingMore: true,
-        hasMore: true,
-      );
-      expect(state.props, [5, true, true]);
-    });
-  });
-
   // ── PodcastDiscoverState ────────────────────────────────────────
 
   group('PodcastDiscoverState', () {
@@ -89,16 +20,13 @@ void main() {
         expect(state.isLoading, isFalse);
         expect(state.isRefreshing, isFalse);
         expect(state.error, isNull);
-        expect(state.selectedTab, PodcastDiscoverTab.episodes);
         expect(state.selectedCategory, PodcastDiscoverState.allCategoryValue);
         expect(state.topShows, isEmpty);
         expect(state.topEpisodes, isEmpty);
-        expect(state.showsPagination, const PodcastDiscoverPaginationState());
-        expect(
-          state.episodesPagination,
-          const PodcastDiscoverPaginationState(),
-        );
+        expect(state.showFeedUrls, isEmpty);
+        expect(state.episodeMeta, isEmpty);
         expect(state.lastRefreshTime, isNull);
+        expect(state.hasData, isFalse);
       });
     });
 
@@ -180,140 +108,52 @@ void main() {
       });
     });
 
-    // -- activeItems --
+    // -- hasData / previews --
 
-    group('activeItems', () {
-      final shows = [
-        _makeItem(id: 's1', title: 'Show 1'),
-        _makeItem(id: 's2', title: 'Show 2'),
-      ];
-      final episodes = [
-        _makeItem(id: 'e1', title: 'Episode 1'),
-        _makeItem(id: 'e2', title: 'Episode 2'),
-        _makeItem(id: 'e3', title: 'Episode 3'),
-      ];
-
-      test('returns topShows when podcasts tab', () {
-        final state = defaultState().copyWith(
-          selectedTab: PodcastDiscoverTab.podcasts,
-          topShows: shows,
-          topEpisodes: episodes,
+    group('hasData and previews', () {
+      test('hasData reflects either chart', () {
+        expect(
+          defaultState().copyWith(topShows: [_makeItem(id: '1')]).hasData,
+          isTrue,
         );
-        expect(state.activeItems, shows);
+        expect(
+          defaultState().copyWith(topEpisodes: [_makeItem(id: '2')]).hasData,
+          isTrue,
+        );
       });
 
-      test('returns topEpisodes when episodes tab', () {
-        final state = defaultState().copyWith(
-          selectedTab: PodcastDiscoverTab.episodes,
-          topShows: shows,
-          topEpisodes: episodes,
-        );
-        expect(state.activeItems, episodes);
-      });
-    });
-
-    // -- currentPagination --
-
-    group('currentPagination', () {
-      test('delegates to showsPagination for podcasts tab', () {
-        const showsPag = PodcastDiscoverPaginationState(loadedCount: 42);
-        final state = defaultState().copyWith(
-          selectedTab: PodcastDiscoverTab.podcasts,
-          showsPagination: showsPag,
-        );
-        expect(state.currentPagination, showsPag);
-      });
-
-      test('delegates to episodesPagination for episodes tab', () {
-        const episodesPag = PodcastDiscoverPaginationState(loadedCount: 99);
-        final state = defaultState().copyWith(
-          selectedTab: PodcastDiscoverTab.episodes,
-          episodesPagination: episodesPag,
-        );
-        expect(state.currentPagination, episodesPag);
-      });
-    });
-
-    // -- isCurrentTabLoadingMore --
-
-    group('isCurrentTabLoadingMore', () {
-      test('returns true when current tab is loading more', () {
-        final state = defaultState().copyWith(
-          selectedTab: PodcastDiscoverTab.episodes,
-          episodesPagination: const PodcastDiscoverPaginationState(
-            isLoadingMore: true,
-          ),
-        );
-        expect(state.isCurrentTabLoadingMore, isTrue);
-      });
-
-      test('returns false when current tab is not loading more', () {
-        final state = defaultState().copyWith(
-          selectedTab: PodcastDiscoverTab.episodes,
-          episodesPagination: const PodcastDiscoverPaginationState(
-            
-          ),
-        );
-        expect(state.isCurrentTabLoadingMore, isFalse);
-      });
-    });
-
-    // -- currentTabHasMore --
-
-    group('currentTabHasMore', () {
-      test('returns value from current tab pagination', () {
-        final state = defaultState().copyWith(
-          selectedTab: PodcastDiscoverTab.podcasts,
-          showsPagination: const PodcastDiscoverPaginationState(hasMore: true),
-        );
-        expect(state.currentTabHasMore, isTrue);
-      });
-
-      test('returns false when hasMore is false', () {
-        final state = defaultState().copyWith(
-          selectedTab: PodcastDiscoverTab.podcasts,
-          showsPagination: const PodcastDiscoverPaginationState(),
-        );
-        expect(state.currentTabHasMore, isFalse);
-      });
-    });
-
-    // -- currentTabLoadedCount --
-
-    group('currentTabLoadedCount', () {
-      test('returns loadedCount from current tab pagination', () {
-        final state = defaultState().copyWith(
-          selectedTab: PodcastDiscoverTab.episodes,
-          episodesPagination: const PodcastDiscoverPaginationState(
-            loadedCount: 75,
-          ),
-        );
-        expect(state.currentTabLoadedCount, 75);
+      test('previews cap at the shelf item count', () {
+        final items = List.generate(20, (i) => _makeItem(id: '$i'));
+        final state = defaultState().copyWith(topShows: items);
+        expect(state.topShowsPreview, hasLength(7));
+        expect(state.topShowsPreview.first, items.first);
+        expect(state.topShows, hasLength(20));
       });
     });
 
     // -- categories --
 
     group('categories', () {
-      test('returns empty list when no active items', () {
+      test('returns empty list when no chart items', () {
         final state = defaultState();
         expect(state.categories, isEmpty);
       });
 
-      test('extracts genres and sorts by count descending', () {
-        final items = [
-          _makeItem(id: '1', genres: ['Technology', 'News']),
-          _makeItem(id: '2', genres: ['News']),
-          _makeItem(id: '3', genres: ['Technology']),
-          _makeItem(id: '4', genres: ['Technology', 'Comedy']),
-        ];
+      test('extracts genres from both charts and sorts by count descending',
+          () {
         final state = defaultState().copyWith(
-          selectedTab: PodcastDiscoverTab.podcasts,
-          topShows: items,
+          topShows: [
+            _makeItem(id: '1', genres: ['Technology', 'News']),
+            _makeItem(id: '2', genres: ['News']),
+            _makeItem(id: '3', genres: ['Technology']),
+          ],
+          topEpisodes: [
+            _makeItem(id: '4', genres: ['Technology', 'Comedy']),
+          ],
         );
 
         final cats = state.categories;
-        // Technology: 3, News: 2, Comedy: 1
+        // Technology: 3, News: 2, Comedy: 1 — episodes contribute too.
         expect(cats, ['Technology', 'News', 'Comedy']);
       });
 
@@ -322,10 +162,7 @@ void main() {
           _makeItem(id: '1', genres: ['banana']),
           _makeItem(id: '2', genres: ['Apple']),
         ];
-        final state = defaultState().copyWith(
-          selectedTab: PodcastDiscoverTab.podcasts,
-          topShows: items,
-        );
+        final state = defaultState().copyWith(topShows: items);
 
         final cats = state.categories;
         // Both have count 1. Tie broken alphabetically case-insensitive.
@@ -338,69 +175,117 @@ void main() {
           _makeItem(id: '1', genres: ['  Tech  ', '  ', '']),
           _makeItem(id: '2', genres: ['Tech']),
         ];
-        final state = defaultState().copyWith(
-          selectedTab: PodcastDiscoverTab.podcasts,
-          topShows: items,
-        );
+        final state = defaultState().copyWith(topShows: items);
 
         final cats = state.categories;
         expect(cats, ['Tech']);
       });
     });
 
-    // -- filteredActiveItems --
+    // -- categoryShelves --
 
-    group('filteredActiveItems', () {
-      final items = [
+    group('categoryShelves', () {
+      test('returns empty when no top shows', () {
+        expect(defaultState().categoryShelves, isEmpty);
+      });
+
+      test('slices shelves from the biggest genres in chart order', () {
+        final items = [
+          _makeItem(id: '1', genres: ['Technology']),
+          _makeItem(id: '2', genres: ['News']),
+          _makeItem(id: '3', genres: ['Technology']),
+          _makeItem(id: '4', genres: ['Technology']),
+          _makeItem(id: '5', genres: ['Technology']),
+          _makeItem(id: '6', genres: ['Technology']),
+          _makeItem(id: '7', genres: ['News']),
+          _makeItem(id: '8', genres: ['News']),
+          _makeItem(id: '9', genres: ['News']),
+          _makeItem(id: '10', genres: ['News']),
+        ];
+        final shelves =
+            defaultState().copyWith(topShows: items).categoryShelves;
+
+        // News: 5, Technology: 5 — tie broken alphabetically.
+        expect(shelves, hasLength(2));
+        expect(shelves.first.category, 'News');
+        // Ranked by chart order, capped at 7.
+        expect(
+          shelves.first.items.map((item) => item.itemId).toList(),
+          ['2', '7', '8', '9', '10'],
+        );
+      });
+
+      test('drops genres below the minimum shelf size', () {
+        final items = [
+          _makeItem(id: '1', genres: ['Technology']),
+          _makeItem(id: '2', genres: ['Technology']),
+          _makeItem(id: '3', genres: ['Technology']),
+          _makeItem(id: '4', genres: ['Technology']),
+        ];
+        final shelves =
+            defaultState().copyWith(topShows: items).categoryShelves;
+        expect(shelves, isEmpty);
+      });
+
+      test('caps the shelf count', () {
+        final items = List.generate(30, (index) {
+          final genre = switch (index % 5) {
+            0 => 'Aaa',
+            1 => 'Bbb',
+            2 => 'Ccc',
+            3 => 'Ddd',
+            _ => 'Eee',
+          };
+          return _makeItem(id: '$index', genres: [genre]);
+        });
+        final shelves =
+            defaultState().copyWith(topShows: items).categoryShelves;
+        expect(shelves, hasLength(3));
+      });
+    });
+
+    // -- filtered shows / episodes --
+
+    group('filteredShows and filteredEpisodes', () {
+      final shows = [
         _makeItem(id: '1', genres: ['Technology']),
         _makeItem(id: '2', genres: ['News']),
         _makeItem(id: '3', genres: ['Technology', 'Comedy']),
       ];
+      final episodes = [
+        _makeItem(id: '4', genres: ['Technology']),
+        _makeItem(id: '5', genres: ['News']),
+      ];
 
       test('returns all items when selectedCategory is allCategoryValue', () {
         final state = defaultState().copyWith(
-          selectedTab: PodcastDiscoverTab.podcasts,
           selectedCategory: PodcastDiscoverState.allCategoryValue,
-          topShows: items,
+          topShows: shows,
+          topEpisodes: episodes,
         );
-        expect(state.filteredActiveItems, hasLength(3));
+        expect(state.filteredShows, hasLength(3));
+        expect(state.filteredEpisodes, hasLength(2));
       });
 
-      test('filters by selectedCategory', () {
+      test('filters both charts by selectedCategory', () {
         final state = defaultState().copyWith(
-          selectedTab: PodcastDiscoverTab.podcasts,
           selectedCategory: 'Technology',
-          topShows: items,
+          topShows: shows,
+          topEpisodes: episodes,
         );
-        final filtered = state.filteredActiveItems;
-        expect(filtered, hasLength(2));
-        expect(filtered.every((item) => item.hasGenre('Technology')), isTrue);
+        expect(state.filteredShows, hasLength(2));
+        expect(state.filteredShows.every((i) => i.hasGenre('Technology')), isTrue);
+        expect(state.filteredEpisodes, hasLength(1));
       });
 
       test('returns empty when no items match category', () {
         final state = defaultState().copyWith(
-          selectedTab: PodcastDiscoverTab.podcasts,
           selectedCategory: 'Sports',
-          topShows: items,
+          topShows: shows,
+          topEpisodes: episodes,
         );
-        expect(state.filteredActiveItems, isEmpty);
-      });
-    });
-
-    // -- visibleItems --
-
-    group('visibleItems', () {
-      test('delegates to filteredActiveItems', () {
-        final items = [
-          _makeItem(id: '1', genres: ['Tech']),
-          _makeItem(id: '2', genres: ['News']),
-        ];
-        final state = defaultState().copyWith(
-          selectedTab: PodcastDiscoverTab.podcasts,
-          selectedCategory: 'Tech',
-          topShows: items,
-        );
-        expect(state.visibleItems, state.filteredActiveItems);
+        expect(state.filteredShows, isEmpty);
+        expect(state.filteredEpisodes, isEmpty);
       });
     });
 
@@ -413,32 +298,20 @@ void main() {
           country: PodcastCountry.usa,
           isLoading: true,
           error: 'err',
-          selectedTab: PodcastDiscoverTab.podcasts,
           selectedCategory: 'Tech',
           topShows: [_makeItem(id: '1')],
           topEpisodes: [_makeItem(id: '2')],
-          showsPagination: const PodcastDiscoverPaginationState(
-            loadedCount: 5,
-          ),
-          episodesPagination: const PodcastDiscoverPaginationState(
-            loadedCount: 10,
-          ),
+          showFeedUrls: const {1: 'https://example.com/feed.xml'},
           lastRefreshTime: now,
         );
         final b = PodcastDiscoverState(
           country: PodcastCountry.usa,
           isLoading: true,
           error: 'err',
-          selectedTab: PodcastDiscoverTab.podcasts,
           selectedCategory: 'Tech',
           topShows: [_makeItem(id: '1')],
           topEpisodes: [_makeItem(id: '2')],
-          showsPagination: const PodcastDiscoverPaginationState(
-            loadedCount: 5,
-          ),
-          episodesPagination: const PodcastDiscoverPaginationState(
-            loadedCount: 10,
-          ),
+          showFeedUrls: const {1: 'https://example.com/feed.xml'},
           lastRefreshTime: now,
         );
         expect(a, equals(b));
@@ -456,25 +329,23 @@ void main() {
 
     group('allCategoryValue', () {
       test('is a sentinel value distinct from real categories', () {
-        expect(PodcastDiscoverState.allCategoryValue, '__all__');
+        expect(PodcastDiscoverState.allCategoryValue, isNot(equals('News')));
       });
     });
   });
 }
 
-/// Helper to create a [PodcastDiscoverItem] for tests.
 PodcastDiscoverItem _makeItem({
-  String id = '0',
-  String title = 'Test Item',
+  required String id,
   List<String> genres = const [],
 }) {
   return PodcastDiscoverItem(
     itemId: id,
     itunesId: int.tryParse(id),
-    title: title,
-    artist: 'Artist',
-    artworkUrl: 'https://example.com/artwork.png',
-    url: 'https://example.com/item/$id',
+    title: 'Item $id',
+    artist: 'Artist $id',
+    artworkUrl: null,
+    url: 'https://podcasts.apple.com/us/podcast/id$id',
     genres: genres,
     kind: PodcastDiscoverKind.podcasts,
   );

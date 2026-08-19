@@ -70,9 +70,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.byKey(const Key('podcast_discover_tab_podcasts')));
-      await tester.pumpAndSettle();
-
+      // The single show renders on the top-shows shelf by default.
       await tester.tap(find.byKey(const Key('podcast_discover_subscribe_111')));
       await tester.pumpAndSettle();
       await tester.pump(const Duration(seconds: 4));
@@ -116,9 +114,6 @@ void main() {
             ),
           ),
         );
-        await tester.pumpAndSettle();
-
-        await tester.tap(find.byKey(const Key('podcast_discover_tab_podcasts')));
         await tester.pumpAndSettle();
 
         expect(
@@ -174,13 +169,17 @@ void main() {
       );
       await tester.pumpAndSettle();
 
+      // The trending-episodes shelf renders alongside the shows shelf.
       expect(find.byKey(const Key('podcast_discover_open_222')), findsNothing);
       expect(
         find.byKey(const Key('podcast_discover_play_222')),
         findsOneWidget,
       );
 
-      await tester.tap(find.byKey(const Key('podcast_discover_chart_row_222')));
+      final episodeRow = find.byKey(const Key('podcast_discover_chart_row_222'));
+      await tester.ensureVisible(episodeRow);
+      await tester.pumpAndSettle();
+      await tester.tap(episodeRow);
       await tester.pumpAndSettle();
 
       expect(
@@ -213,6 +212,9 @@ void main() {
           ),
           applePodcastRssServiceProvider.overrideWithValue(
             FakeApplePodcastRssService(),
+          ),
+          search.iTunesSearchServiceProvider.overrideWithValue(
+            FakeITunesSearchService(),
           ),
           podcastSubscriptionProvider.overrideWith(
             EmptyPodcastSubscriptionNotifier.new,
@@ -274,6 +276,9 @@ void main() {
           applePodcastRssServiceProvider.overrideWithValue(
             FakeApplePodcastRssService(),
           ),
+          search.iTunesSearchServiceProvider.overrideWithValue(
+            FakeITunesSearchService(),
+          ),
           podcastSubscriptionProvider.overrideWith(
             EmptyPodcastSubscriptionNotifier.new,
           ),
@@ -331,6 +336,13 @@ void main() {
   // =========================================================================
   group('PodcastListPage discover header', () {
     testWidgets('renders discover structure and sections', (tester) async {
+      // A tall mobile viewport keeps every shelf header inside the lazy
+      // sliver viewport so the structural assertions can find them.
+      tester.view.physicalSize = const Size(390, 1600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
       final container = ProviderContainer(
         overrides: [
           localStorageServiceProvider.overrideWithValue(
@@ -347,6 +359,9 @@ void main() {
           ),
           applePodcastRssServiceProvider.overrideWithValue(
             FakeApplePodcastRssService(),
+          ),
+          search.iTunesSearchServiceProvider.overrideWithValue(
+            FakeITunesSearchService(),
           ),
           search.podcastSearchProvider.overrideWith(
             () => InteractivePodcastSearchNotifier(
@@ -399,7 +414,6 @@ void main() {
         find.byKey(const Key('podcast_discover_search_input')),
         findsOneWidget,
       );
-      expect(find.text('Find a show or browse charts.'), findsNothing);
       final searchInputWidget = tester.widget<TextField>(
         find.byKey(const Key('podcast_discover_search_input')),
       );
@@ -415,35 +429,9 @@ void main() {
         find.byKey(const Key('podcast_discover_tab_selector')),
         findsOneWidget,
       );
-      expect(
-        find.byKey(const Key('podcast_discover_tab_podcasts')),
-        findsOneWidget,
-      );
-      expect(
-        find.byKey(const Key('podcast_discover_tab_episodes')),
-        findsOneWidget,
-      );
-      expect(
-        find.byKey(const Key('podcast_discover_top_charts')),
-        findsOneWidget,
-      );
-      expect(
-        find.byKey(const Key('podcast_discover_category_chips')),
-        findsOneWidget,
-      );
-      final chipsTop = tester
-          .getTopLeft(find.byKey(const Key('podcast_discover_category_chips')))
-          .dy;
-      final topChartsTop = tester
-          .getTopLeft(find.byKey(const Key('podcast_discover_top_charts')))
-          .dy;
-      expect(chipsTop, greaterThan(topChartsTop));
-      expect(find.byKey(const Key('podcast_discover_see_all')), findsNothing);
-      expect(
-        find.byKey(const Key('podcast_discover_category_chip_all')),
-        findsOneWidget,
-      );
-      expect(find.byKey(const Key('podcast_discover_see_all')), findsNothing);
+      // The magazine shelves: spotlight first, then top shows (with the
+      // country pill and see-all), trending episodes, and category
+      // shelves sliced from the chart genres.
       expect(
         find.byKey(const Key('podcast_discover_spotlight')),
         findsOneWidget,
@@ -460,6 +448,29 @@ void main() {
       expect(
         find.byKey(const Key('podcast_discover_spotlight_card_1000')),
         findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('podcast_discover_top_shows_header')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('podcast_discover_see_all_shows')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('podcast_discover_see_all_episodes')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('podcast_discover_chart_row_1000')),
+        findsOneWidget,
+      );
+      // Category shelves appear below the ranked shelves; the fake chart
+      // alternates Technology/News so both earn a shelf. The chips row
+      // itself lives on the full charts page now.
+      expect(
+        find.byKey(const Key('podcast_discover_category_chips')),
+        findsNothing,
       );
 
       expect(find.byKey(const Key('podcast_list_header_title')), findsNothing);
@@ -488,6 +499,9 @@ void main() {
           ),
           applePodcastRssServiceProvider.overrideWithValue(
             FakeApplePodcastRssService(),
+          ),
+          search.iTunesSearchServiceProvider.overrideWithValue(
+            FakeITunesSearchService(),
           ),
           search.podcastSearchProvider.overrideWith(
             () => InteractivePodcastSearchNotifier(
@@ -534,7 +548,7 @@ void main() {
   });
 
   // =========================================================================
-  // Discover browse redesign (spotlight + empty states + search states)
+  // Discover browse redesign (spotlight + shelves + search states)
   // =========================================================================
   group('PodcastListPage discover browse redesign', () {
     testWidgets('spotlight card tap opens the show episodes sheet', (
@@ -562,7 +576,8 @@ void main() {
           ),
           search.podcastSearchProvider.overrideWith(
             () => PassthroughPodcastSearchNotifier(
-                const search.PodcastSearchState()),
+              const search.PodcastSearchState(),
+            ),
           ),
         ],
       );
@@ -578,9 +593,6 @@ void main() {
           ),
         ),
       );
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.byKey(const Key('podcast_discover_tab_podcasts')));
       await tester.pumpAndSettle();
 
       final cardFinder = find.byKey(
@@ -603,73 +615,6 @@ void main() {
       );
     });
 
-    testWidgets(
-      'category with no matches shows empty state and show-all resets',
-      (tester) async {
-        final container = ProviderContainer(
-          overrides: [
-            localStorageServiceProvider.overrideWithValue(
-              MockLocalStorageService(),
-            ),
-            applePodcastRssServiceProvider.overrideWithValue(
-              FakeApplePodcastRssService(),
-            ),
-            podcastSubscriptionProvider.overrideWith(
-              EmptyPodcastSubscriptionNotifier.new,
-            ),
-            search.podcastSearchProvider.overrideWith(
-              () => PassthroughPodcastSearchNotifier(
-                  const search.PodcastSearchState()),
-            ),
-          ],
-        );
-        addTearDown(container.dispose);
-
-        await tester.pumpWidget(
-          UncontrolledProviderScope(
-            container: container,
-            child: const MaterialApp(
-              localizationsDelegates: appLocalizationsDelegates,
-              supportedLocales: AppLocalizations.supportedLocales,
-              home: PodcastListPage(),
-            ),
-          ),
-        );
-        await tester.pumpAndSettle();
-
-        final l10n = AppLocalizations.of(
-          tester.element(find.byType(PodcastListPage)),
-        )!;
-
-        container
-            .read(search.podcastDiscoverProvider.notifier)
-            .selectCategory('Nonexistent');
-        await tester.pumpAndSettle();
-
-        expect(find.text(l10n.podcast_discover_category_empty_title),
-            findsOneWidget);
-        expect(
-          find.byKey(const Key('podcast_discover_chart_row_1000')),
-          findsNothing,
-        );
-
-        final showAllButton = find.text(l10n.podcast_discover_see_all);
-        await tester.ensureVisible(showAllButton);
-        await tester.pumpAndSettle();
-        await tester.tap(showAllButton, warnIfMissed: false);
-        await tester.pumpAndSettle();
-
-        expect(
-          find.text(l10n.podcast_discover_category_empty_title),
-          findsNothing,
-        );
-        expect(
-          find.byKey(const Key('podcast_discover_chart_row_1000')),
-          findsOneWidget,
-        );
-      },
-    );
-
     testWidgets('search empty state offers clear and returns to browse', (
       tester,
     ) async {
@@ -680,6 +625,9 @@ void main() {
           ),
           applePodcastRssServiceProvider.overrideWithValue(
             FakeApplePodcastRssService(),
+          ),
+          search.iTunesSearchServiceProvider.overrideWithValue(
+            FakeITunesSearchService(),
           ),
           podcastSubscriptionProvider.overrideWith(
             EmptyPodcastSubscriptionNotifier.new,
@@ -745,6 +693,9 @@ void main() {
           ),
           applePodcastRssServiceProvider.overrideWithValue(
             FakeApplePodcastRssService(),
+          ),
+          search.iTunesSearchServiceProvider.overrideWithValue(
+            FakeITunesSearchService(),
           ),
           podcastSubscriptionProvider.overrideWith(
             EmptyPodcastSubscriptionNotifier.new,

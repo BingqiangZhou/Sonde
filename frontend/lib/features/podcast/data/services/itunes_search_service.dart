@@ -27,6 +27,7 @@ class ITunesSearchService {
   final Map<String, _CachedResponse> _cache = {};
   final Map<String, _CachedEpisodeSearchResponse> _episodeSearchCache = {};
   final Map<String, _CachedEpisodeLookupResponse> _episodeLookupCache = {};
+  final Map<String, _CachedHydrationResponse> _chartHydrationCache = {};
 
   Future<ITunesSearchResponse> searchPodcasts({
     required String term,
@@ -215,6 +216,77 @@ class ITunesSearchService {
     return lookup.findEpisodeByTrackId(episodeTrackId);
   }
 
+  /// Batched lookup across chart show ids and episode ids in a single
+  /// request: feeds the discover shelves' subscribed-state (show -> feed
+  /// url) and episode duration/date metadata. Unknown ids are simply
+  /// absent from the result.
+  Future<ITunesChartHydrationResult> lookupChartEntities({
+    required List<int> ids,
+    PodcastCountry country = PodcastCountry.china,
+  }) async {
+    final uniqueIds = ids.toSet().toList()..sort();
+    if (uniqueIds.isEmpty) {
+      return const ITunesChartHydrationResult();
+    }
+
+    final cacheKey =
+        'lookup_chart_entities_${country.code}_${uniqueIds.join(',')}';
+    final cached = _getCachedHydrationResponse(cacheKey);
+    if (cached != null) {
+      logger.AppLogger.debug('Cache hit for iTunes chart hydration');
+      return cached;
+    }
+
+    try {
+      final response = await _dio.get<dynamic>(
+        'https://itunes.apple.com/lookup',
+        queryParameters: {
+          'id': uniqueIds.join(','),
+          'country': country.code,
+          'limit': 200,
+        },
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception('iTunes API returned status ${response.statusCode}');
+      }
+
+      final data = _parseJsonMap(response.data);
+      final showFeedUrls = <int, String>{};
+      final episodeMeta = <int, ITunesPodcastEpisodeResult>{};
+      for (final result
+          in (data['results'] as List<dynamic>? ?? const [])
+              .whereType<Map<String, dynamic>>()) {
+        // Lookup returns mixed entities; the kind field separates shows
+        // from episodes without an entity filter.
+        final kind = result['kind'] as String?;
+        if (kind == 'podcast') {
+          final show = PodcastSearchResult.fromJson(result);
+          final collectionId = show.collectionId;
+          final feedUrl = show.feedUrl;
+          if (collectionId != null && feedUrl != null && feedUrl.isNotEmpty) {
+            showFeedUrls[collectionId] = feedUrl;
+          }
+        } else if (kind == 'podcast-episode') {
+          final episode = ITunesPodcastEpisodeResult.fromJson(result);
+          if (episode.trackId > 0) {
+            episodeMeta[episode.trackId] = episode;
+          }
+        }
+      }
+
+      final parsed = ITunesChartHydrationResult(
+        showFeedUrls: Map.unmodifiable(showFeedUrls),
+        episodeMeta: Map.unmodifiable(episodeMeta),
+      );
+      _setCachedHydrationResponse(cacheKey, parsed);
+      return parsed;
+    } catch (error) {
+      logger.AppLogger.debug('iTunes chart hydration failed: $error');
+      rethrow;
+    }
+  }
+
   int? extractShowIdFromApplePodcastUrl(String url) {
     final uri = Uri.tryParse(url);
     if (uri == null) {
@@ -300,6 +372,25 @@ class ITunesSearchService {
     );
   }
 
+  ITunesChartHydrationResult? _getCachedHydrationResponse(String key) {
+    final cached = _chartHydrationCache[key];
+    if (cached != null && !cached.isExpired) {
+      return cached.result;
+    }
+    _chartHydrationCache.remove(key);
+    return null;
+  }
+
+  void _setCachedHydrationResponse(
+    String key,
+    ITunesChartHydrationResult result,
+  ) {
+    _chartHydrationCache[key] = _CachedHydrationResponse(
+      result: result,
+      timestamp: DateTime.now(),
+    );
+  }
+
   /// Maps a [DioException] from the iTunes API to an [Exception] with a
   /// user-friendly message.
   Exception _mapItunesError(DioException e) {
@@ -359,7 +450,32 @@ class ITunesSearchService {
     _cache.clear();
     _episodeSearchCache.clear();
     _episodeLookupCache.clear();
+    _chartHydrationCache.clear();
     logger.AppLogger.debug('iTunes search cache cleared');
+  }
+}
+
+/// Result of a batched chart-entity lookup: show feed urls keyed by
+/// collection id, episode metadata keyed by track id.
+class ITunesChartHydrationResult {
+  const ITunesChartHydrationResult({
+    this.showFeedUrls = const {},
+    this.episodeMeta = const {},
+  });
+
+  final Map<int, String> showFeedUrls;
+  final Map<int, ITunesPodcastEpisodeResult> episodeMeta;
+}
+
+class _CachedHydrationResponse {
+  _CachedHydrationResponse({required this.result, required this.timestamp});
+
+  final ITunesChartHydrationResult result;
+  final DateTime timestamp;
+
+  bool get isExpired {
+    return DateTime.now().difference(timestamp) >
+        ITunesSearchService._cacheExpiration;
   }
 }
 

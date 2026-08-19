@@ -14,13 +14,14 @@ import 'package:sonde/features/podcast/presentation/providers/podcast_search_pro
 
 /// Builds chart responses that respect the [limit] parameter passed to
 /// [fetchTopShows] / [fetchTopEpisodes].
-/// Uses [showsBaseId] for show IDs and [episodesBaseId] for episode IDs.
-/// If [showsBaseId] == [episodesBaseId], both tabs produce the same ID range.
+/// Uses [showsBaseId] for show IDs and [episodesBaseId] for episode IDs —
+/// distinct by default because both charts render side by side and the
+/// rows key off the chart item id.
 class FakeApplePodcastRssService extends ApplePodcastRssService {
   FakeApplePodcastRssService({
     this.showsBaseId = 1000,
     int? episodesBaseId,
-  }) : episodesBaseId = episodesBaseId ?? showsBaseId;
+  }) : episodesBaseId = episodesBaseId ?? 2000;
 
   final int showsBaseId;
   final int episodesBaseId;
@@ -300,6 +301,7 @@ class FakeITunesSearchService extends ITunesSearchService {
 
   bool lookupCalled = false;
   bool lookupEpisodesCalled = false;
+  int hydrationCalls = 0;
 
   @override
   Future<PodcastSearchResult?> lookupPodcast({
@@ -313,6 +315,15 @@ class FakeITunesSearchService extends ITunesSearchService {
       artistName: 'Show Artist',
       feedUrl: 'https://example.com/feed.xml',
     );
+  }
+
+  @override
+  Future<ITunesChartHydrationResult> lookupChartEntities({
+    required List<int> ids,
+    PodcastCountry country = PodcastCountry.china,
+  }) async {
+    hydrationCalls += 1;
+    return const ITunesChartHydrationResult();
   }
 
   @override

@@ -1,4 +1,3 @@
-import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
@@ -30,7 +29,7 @@ void main() {
   // Desktop discover layout  (origin: desktop_list_layout_test.dart)
   // =========================================================================
   group('PodcastListPage desktop discover layout', () {
-    testWidgets('renders and allows switching to episodes tab', (tester) async {
+    testWidgets('renders the shelves as grids side by side', (tester) async {
       tester.view.physicalSize = const Size(1280, 900);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
@@ -42,9 +41,10 @@ void main() {
             MockLocalStorageService(),
           ),
           applePodcastRssServiceProvider.overrideWithValue(
-            FakeApplePodcastRssService(
-              episodesBaseId: 2000,
-            ),
+            FakeApplePodcastRssService(),
+          ),
+          search.iTunesSearchServiceProvider.overrideWithValue(
+            FakeITunesSearchService(),
           ),
           podcastSubscriptionProvider.overrideWith(
             EmptyPodcastSubscriptionNotifier.new,
@@ -69,150 +69,31 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.byKey(const Key('podcast_discover_grid')), findsOneWidget);
+      // Every shelf widens into a two-column grid on desktop; the top
+      // shows and trending episodes sections render side by side in one
+      // scroll view.
       expect(
-        find.byKey(const Key('podcast_discover_category_chips')),
+        find.byKey(const Key('podcast_discover_top_shows_grid')),
         findsOneWidget,
       );
       expect(
-        find.byKey(const Key('podcast_discover_category_chip_all')),
+        find.byKey(const Key('podcast_discover_top_episodes_grid')),
         findsOneWidget,
       );
-      expect(
-        find.byKey(const Key('podcast_discover_category_chip_technology')),
-        findsOneWidget,
-      );
-      expect(
-        find.byKey(const Key('podcast_discover_chart_row_2000')),
-        findsOneWidget,
-      );
-      await tester.tap(
-        find.byKey(const Key('podcast_discover_category_chip_technology')),
-      );
-      await tester.pumpAndSettle();
-      expect(
-        find.byKey(const Key('podcast_discover_chart_row_2000')),
-        findsOneWidget,
-      );
-
-      await tester.tap(find.byKey(const Key('podcast_discover_tab_podcasts')));
-      await tester.pumpAndSettle();
-
       expect(
         find.byKey(const Key('podcast_discover_chart_row_1000')),
         findsOneWidget,
       );
+      expect(
+        find.byKey(const Key('podcast_discover_chart_row_2000')),
+        findsOneWidget,
+      );
+      // The category chips live on the full charts page now.
+      expect(
+        find.byKey(const Key('podcast_discover_category_chips')),
+        findsNothing,
+      );
     });
-
-    testWidgets(
-      'uses menu icon color as selected category background in dark mode',
-      (tester) async {
-        tester.view.physicalSize = const Size(1280, 900);
-        tester.view.devicePixelRatio = 1.0;
-        addTearDown(tester.view.resetPhysicalSize);
-        addTearDown(tester.view.resetDevicePixelRatio);
-
-        final container = ProviderContainer(
-          overrides: [
-            localStorageServiceProvider.overrideWithValue(
-              MockLocalStorageService(),
-            ),
-            applePodcastRssServiceProvider.overrideWithValue(
-              FakeApplePodcastRssService(episodesBaseId: 2000),
-            ),
-            podcastSubscriptionProvider.overrideWith(
-              EmptyPodcastSubscriptionNotifier.new,
-            ),
-            search.podcastSearchProvider.overrideWith(
-              () => PassthroughPodcastSearchNotifier(
-                  const search.PodcastSearchState()),
-            ),
-          ],
-        );
-        addTearDown(container.dispose);
-
-        await tester.pumpWidget(
-          UncontrolledProviderScope(
-            container: container,
-            child: MaterialApp(
-              theme: ThemeData.light(useMaterial3: true),
-              darkTheme: ThemeData.dark(useMaterial3: true),
-              themeMode: ThemeMode.dark,
-              localizationsDelegates: appLocalizationsDelegates,
-              supportedLocales: AppLocalizations.supportedLocales,
-              home: const PodcastListPage(),
-            ),
-          ),
-        );
-        await tester.pumpAndSettle();
-
-        final allChipFinder = find.byKey(
-          const Key('podcast_discover_category_chip_all'),
-        );
-        expect(allChipFinder, findsOneWidget);
-        final allChip = tester.widget<ChoiceChip>(allChipFinder);
-        final context = tester.element(allChipFinder);
-        final scheme = Theme.of(context).colorScheme;
-
-        expect(allChip.selected, isTrue);
-        expect(allChip.selectedColor, equals(scheme.primary));
-      },
-    );
-
-    testWidgets(
-      'uses menu icon color as selected category background in light mode',
-      (tester) async {
-        tester.view.physicalSize = const Size(1280, 900);
-        tester.view.devicePixelRatio = 1.0;
-        addTearDown(tester.view.resetPhysicalSize);
-        addTearDown(tester.view.resetDevicePixelRatio);
-
-        final container = ProviderContainer(
-          overrides: [
-            localStorageServiceProvider.overrideWithValue(
-              MockLocalStorageService(),
-            ),
-            applePodcastRssServiceProvider.overrideWithValue(
-              FakeApplePodcastRssService(episodesBaseId: 2000),
-            ),
-            podcastSubscriptionProvider.overrideWith(
-              EmptyPodcastSubscriptionNotifier.new,
-            ),
-            search.podcastSearchProvider.overrideWith(
-              () => PassthroughPodcastSearchNotifier(
-                  const search.PodcastSearchState()),
-            ),
-          ],
-        );
-        addTearDown(container.dispose);
-
-        await tester.pumpWidget(
-          UncontrolledProviderScope(
-            container: container,
-            child: MaterialApp(
-              theme: ThemeData.light(useMaterial3: true),
-              darkTheme: ThemeData.dark(useMaterial3: true),
-              themeMode: ThemeMode.light,
-              localizationsDelegates: appLocalizationsDelegates,
-              supportedLocales: AppLocalizations.supportedLocales,
-              home: const PodcastListPage(),
-            ),
-          ),
-        );
-        await tester.pumpAndSettle();
-
-        final allChipFinder = find.byKey(
-          const Key('podcast_discover_category_chip_all'),
-        );
-        expect(allChipFinder, findsOneWidget);
-        final allChip = tester.widget<ChoiceChip>(allChipFinder);
-        final context = tester.element(allChipFinder);
-        final scheme = Theme.of(context).colorScheme;
-
-        expect(allChip.selected, isTrue);
-        expect(allChip.selectedColor, equals(scheme.primary));
-      },
-    );
 
     testWidgets(
       'uses desktop hero spacing and keeps country pill inset from the right edge',
@@ -228,7 +109,10 @@ void main() {
               MockLocalStorageService(),
             ),
             applePodcastRssServiceProvider.overrideWithValue(
-              FakeApplePodcastRssService(episodesBaseId: 2000),
+              FakeApplePodcastRssService(),
+            ),
+            search.iTunesSearchServiceProvider.overrideWithValue(
+              FakeITunesSearchService(),
             ),
             podcastSubscriptionProvider.overrideWith(
               EmptyPodcastSubscriptionNotifier.new,
@@ -257,19 +141,20 @@ void main() {
         final searchBarRect = tester.getRect(
           find.byKey(const Key('podcast_discover_search_bar')),
         );
-        final topChartsRect = tester.getRect(
-          find.byKey(const Key('podcast_discover_top_charts')),
+        final shelfHeaderRect = tester.getRect(
+          find.byKey(const Key('podcast_discover_top_shows_header')),
         );
         final countryPillRect = tester.getRect(
           find.byKey(const Key('podcast_discover_country_button')),
         );
 
         final heroSpacing = searchBarRect.top - heroRect.bottom;
-        final pillInset = topChartsRect.right - countryPillRect.right;
+        // The see-all button sits between the pill and the right edge, so
+        // the pill only needs to stay inset from the shelf header edge.
+        final pillInset = shelfHeaderRect.right - countryPillRect.right;
         expect(heroSpacing, greaterThanOrEqualTo(8));
         expect(heroSpacing, lessThanOrEqualTo(24));
-        expect(pillInset, greaterThanOrEqualTo(8));
-        expect(pillInset, lessThanOrEqualTo(24));
+        expect(pillInset, greaterThan(0));
       },
     );
   });
@@ -278,7 +163,7 @@ void main() {
   // Mobile discover list  (origin: mobile_card_layout_test.dart)
   // =========================================================================
   group('PodcastListPage mobile discover list', () {
-    testWidgets('scrolls spotlight, header, and chart rows in one view', (
+    testWidgets('scrolls spotlight and the ranked shelves in one view', (
       tester,
     ) async {
       tester.view.physicalSize = const Size(390, 600);
@@ -293,6 +178,9 @@ void main() {
           ),
           applePodcastRssServiceProvider.overrideWithValue(
             FakeApplePodcastRssService(),
+          ),
+          search.iTunesSearchServiceProvider.overrideWithValue(
+            FakeITunesSearchService(),
           ),
           podcastSubscriptionProvider.overrideWith(
             EmptyPodcastSubscriptionNotifier.new,
@@ -321,15 +209,14 @@ void main() {
       final spotlightFinder = find.byKey(
         const Key('podcast_discover_spotlight'),
       );
-      final headerFinder = find.byKey(const Key('podcast_discover_top_charts'));
-      final chipsFinder = find.byKey(
-        const Key('podcast_discover_category_chips'),
+      final showsHeaderFinder = find.byKey(
+        const Key('podcast_discover_top_shows_header'),
       );
       final rowFinder = find.byKey(
         const Key('podcast_discover_chart_row_1000'),
       );
-      // The carousel and chips add nested scrollables; the outer one is the
-      // first descendant in pre-order traversal.
+      // The carousel adds a nested scrollable; the outer one is the first
+      // descendant in pre-order traversal.
       final scrollableFinder = find
           .descendant(
             of: scrollFinder,
@@ -338,8 +225,7 @@ void main() {
           .first;
 
       final spotlightTopBefore = tester.getTopLeft(spotlightFinder).dy;
-      final headerTopBefore = tester.getTopLeft(headerFinder).dy;
-      final chipsTopBefore = tester.getTopLeft(chipsFinder).dy;
+      final headerTopBefore = tester.getTopLeft(showsHeaderFinder).dy;
       final scrollPositionBefore =
           tester.state<ScrollableState>(scrollableFinder).position.pixels;
 
@@ -352,105 +238,16 @@ void main() {
         tester.state<ScrollableState>(scrollableFinder).position.pixels,
         greaterThan(scrollPositionBefore),
       );
-      expect(tester.getTopLeft(headerFinder).dy, lessThan(headerTopBefore));
-      expect(tester.getTopLeft(chipsFinder).dy, lessThan(chipsTopBefore));
+      expect(
+        tester.getTopLeft(showsHeaderFinder).dy,
+        lessThan(headerTopBefore),
+      );
       expect(
         tester.getTopLeft(spotlightFinder).dy,
         lessThan(spotlightTopBefore),
       );
       expect(rowFinder, findsOneWidget);
     });
-
-    testWidgets(
-      'shows rows, filters by category chip, and paginates to 100 while scrolling',
-      (tester) async {
-        tester.view.physicalSize = const Size(390, 600);
-        tester.view.devicePixelRatio = 1.0;
-        addTearDown(tester.view.resetPhysicalSize);
-        addTearDown(tester.view.resetDevicePixelRatio);
-
-        final container = ProviderContainer(
-          overrides: [
-            localStorageServiceProvider.overrideWithValue(
-              MockLocalStorageService(),
-            ),
-            applePodcastRssServiceProvider.overrideWithValue(
-              FakeApplePodcastRssService(),
-            ),
-            podcastSubscriptionProvider.overrideWith(
-              EmptyPodcastSubscriptionNotifier.new,
-            ),
-            search.podcastSearchProvider.overrideWith(
-              () => PassthroughPodcastSearchNotifier(
-                  const search.PodcastSearchState()),
-            ),
-          ],
-        );
-        addTearDown(container.dispose);
-
-        await tester.pumpWidget(
-          UncontrolledProviderScope(
-            container: container,
-            child: const MaterialApp(
-              localizationsDelegates: appLocalizationsDelegates,
-              supportedLocales: AppLocalizations.supportedLocales,
-              home: PodcastListPage(),
-            ),
-          ),
-        );
-        await tester.pumpAndSettle();
-
-        expect(
-          find.byKey(const Key('podcast_discover_chart_row_1000')),
-          findsOneWidget,
-        );
-        expect(
-          find.byKey(const Key('podcast_discover_chart_row_1000')),
-          findsOneWidget,
-        );
-
-        await tester.tap(
-          find.byKey(const Key('podcast_discover_category_chip_technology')),
-        );
-        await tester.pumpAndSettle();
-
-        expect(
-          find.byKey(const Key('podcast_discover_chart_row_1001')),
-          findsNothing,
-        );
-        expect(
-          find.byKey(const Key('podcast_discover_chart_row_1000')),
-          findsOneWidget,
-        );
-
-        await tester.tap(
-          find.byKey(const Key('podcast_discover_category_chip_all')),
-        );
-        await tester.pumpAndSettle();
-
-        final scrollFinder = find.byKey(const Key('podcast_discover_scroll'));
-        for (var index = 0; index < 4; index++) {
-          await tester.fling(scrollFinder, const Offset(0, -1200), 3000);
-          await tester.pumpAndSettle();
-        }
-
-        expect(
-          find.byKey(const Key('podcast_discover_chart_row_1099')),
-          findsOneWidget,
-        );
-
-        final rankTextFinder = find.byKey(
-          const Key('podcast_discover_chart_rank_text_1099'),
-        );
-        expect(rankTextFinder, findsOneWidget);
-        expect(tester.widget<Text>(rankTextFinder).data, equals('100'));
-
-        final rankParagraph = tester.renderObject<RenderParagraph>(
-          find.descendant(of: rankTextFinder, matching: find.byType(RichText)),
-        );
-        expect(rankParagraph.didExceedMaxLines, isFalse);
-      },
-    );
   });
 
   // =========================================================================
@@ -472,6 +269,9 @@ void main() {
           ),
           applePodcastRssServiceProvider.overrideWithValue(
             FakeApplePodcastRssService(),
+          ),
+          search.iTunesSearchServiceProvider.overrideWithValue(
+            FakeITunesSearchService(),
           ),
           podcastSubscriptionProvider.overrideWith(
             DelayedSubscriptionNotifier.new,
@@ -527,6 +327,9 @@ void main() {
           applePodcastRssServiceProvider.overrideWithValue(
             FakeApplePodcastRssService(),
           ),
+          search.iTunesSearchServiceProvider.overrideWithValue(
+            FakeITunesSearchService(),
+          ),
           podcastSubscriptionProvider.overrideWith(
             DelayedSubscriptionNotifier.new,
           ),
@@ -578,6 +381,9 @@ void main() {
             ),
             applePodcastRssServiceProvider.overrideWithValue(
               FakeApplePodcastRssService(),
+            ),
+            search.iTunesSearchServiceProvider.overrideWithValue(
+              FakeITunesSearchService(),
             ),
             podcastSubscriptionProvider.overrideWith(
               DelayedSubscriptionNotifier.new,
@@ -632,6 +438,9 @@ void main() {
           ),
           applePodcastRssServiceProvider.overrideWithValue(
             FakeApplePodcastRssService(),
+          ),
+          search.iTunesSearchServiceProvider.overrideWithValue(
+            FakeITunesSearchService(),
           ),
           search.podcastSearchProvider.overrideWith(
             () => PassthroughPodcastSearchNotifier(

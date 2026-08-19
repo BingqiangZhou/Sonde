@@ -22,7 +22,7 @@ import 'package:sonde/features/podcast/presentation/widgets/podcast_image_widget
 /// (subscribe for shows, listen now for episodes) sit on top.
 class DiscoverSpotlightCard extends StatelessWidget {
   const DiscoverSpotlightCard({
-    required this.rank,
+    required this.chartRank,
     required this.item,
     required this.onTap,
     required this.onPrimaryAction,
@@ -39,7 +39,8 @@ class DiscoverSpotlightCard extends StatelessWidget {
   static const double artworkSize = 144;
   static const double wideArtworkSize = 112;
 
-  final int rank;
+  /// The item's rank on its source chart — explains why it is featured.
+  final int chartRank;
   final PodcastDiscoverItem item;
   final VoidCallback onTap;
   final VoidCallback onPrimaryAction;
@@ -61,11 +62,11 @@ class DiscoverSpotlightCard extends StatelessWidget {
         .podcastGradientColors[item.itemId.hashCode.abs() % AppColors.podcastGradientColors.length];
     final height = isWide ? wideCardHeight : cardHeight;
     final artwork = isWide ? wideArtworkSize : artworkSize;
-    // Fold the genre into the eyebrow so the card carries one compact
-    // context line instead of repeating the section title below.
-    final genre =
-        item.genres.where((g) => g.trim().isNotEmpty).firstOrNull;
-    final eyebrowText = genre == null ? '#$rank' : '$genre · #$rank';
+    // A semantic eyebrow — top show / top episode with the chart rank —
+    // tells the reader why the item is featured.
+    final eyebrowText = isShow
+        ? l10n.podcast_discover_spotlight_top_show(chartRank)
+        : l10n.podcast_discover_spotlight_top_episode(chartRank);
 
     return RepaintBoundary(
       key: Key('podcast_discover_spotlight_card_${item.itemId}'),
@@ -251,7 +252,7 @@ class DiscoverSpotlightCard extends StatelessWidget {
                 ),
               ),
               child: Text(
-                '#$rank',
+                '#$chartRank',
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
                   color: Colors.white,
                   fontWeight: FontWeight.w700,

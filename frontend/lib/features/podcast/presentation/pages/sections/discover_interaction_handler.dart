@@ -1,5 +1,7 @@
+import 'package:equatable/equatable.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:sonde/core/constants/app_spacing.dart';
 import 'package:sonde/core/localization/app_localizations_extension.dart';
 import 'package:sonde/core/utils/app_logger.dart' as logger;
 import 'package:sonde/core/widgets/adaptive_sheet_helper.dart';
@@ -7,10 +9,12 @@ import 'package:sonde/core/widgets/top_floating_notice.dart';
 import 'package:sonde/features/podcast/data/models/itunes_episode_lookup_model.dart';
 import 'package:sonde/features/podcast/data/models/podcast_discover_chart_model.dart';
 import 'package:sonde/features/podcast/data/models/podcast_episode_model.dart';
-import 'package:sonde/features/podcast/data/models/podcast_search_model.dart' show PodcastSearchResult;
+import 'package:sonde/features/podcast/data/models/podcast_search_model.dart';
+import 'package:sonde/features/podcast/data/services/itunes_search_service.dart';
 import 'package:sonde/features/podcast/presentation/providers/podcast_playback_providers.dart';
 import 'package:sonde/features/podcast/presentation/providers/podcast_providers.dart';
 import 'package:sonde/features/podcast/presentation/providers/podcast_search_provider.dart';
+import 'package:sonde/features/podcast/presentation/widgets/country_selector_dropdown.dart';
 import 'package:sonde/features/podcast/presentation/widgets/discover_episode_detail_sheet.dart';
 import 'package:sonde/features/podcast/presentation/widgets/discover_show_episodes_sheet.dart';
 
@@ -21,7 +25,71 @@ import 'package:sonde/features/podcast/presentation/widgets/discover_show_episod
 class DiscoverInteractionHandler {
   DiscoverInteractionHandler._();
 
+  // --- Country selector ---
+
+  /// Opens the adaptive country selector sheet and reloads the discover
+  /// charts on change. When [retrySearchIfNeeded] is set and a search is
+  /// active (discover page), the current search is re-run for the new
+  /// country.
+  static Future<void> openCountrySelector(
+    WidgetRef ref,
+    BuildContext context, {
+    bool retrySearchIfNeeded = false,
+  }) async {
+    await showAdaptiveSheet<void>(
+      context: context,
+      desktopMaxWidth: 480,
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Padding(
+            padding: EdgeInsets.all(context.spacing.md),
+            child: CountrySelectorDropdown(
+              onCountryChanged: (country) {
+                ref
+                    .read(podcastDiscoverProvider.notifier)
+                    .onCountryChanged(country);
+                if (retrySearchIfNeeded &&
+                    ref.read(podcastSearchProvider).currentQuery.isNotEmpty) {
+                  ref.read(podcastSearchProvider.notifier).retrySearch();
+                }
+                Navigator.of(sheetContext).pop();
+              },
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   // --- Subscribe ---
+
+  /// Subscribes to a chart show via the shared tracker and surfaces the
+  /// result notice. Both the discover browse page and the full charts
+  /// page use this path.
+  static Future<void> subscribeFromChart(
+    WidgetRef ref,
+    BuildContext context,
+    PodcastDiscoverItem item,
+  ) async {
+    final l10n = context.l10n;
+    final country = ref.read(countrySelectorProvider).selectedCountry;
+    final result = await ref
+        .read(discoverSubscribeProvider.notifier)
+        .subscribe(item, country: country);
+
+    if (!context.mounted) return;
+    if (result.showName == null) {
+      showErrorNotice(
+        context,
+        l10n.podcast_subscribe_failed(result.error ?? ''),
+      );
+      return;
+    }
+    showSuccessNotice(
+      context,
+      l10n.podcast_subscribe_success(result.showName ?? item.title),
+    );
+  }
 
   static Future<void> subscribeFromSearch(
     WidgetRef ref,
@@ -336,4 +404,91 @@ class DiscoverEpisodeSelection {
 
   final int showId;
   final ITunesPodcastEpisodeResult episode;
+}
+
+/// Outcome of a chart subscribe attempt. [showName] is set on success;
+/// [error] carries the failure reason.
+class DiscoverSubscribeResult {
+  const DiscoverSubscribeResult.success(this.showName) : error = null;
+  const DiscoverSubscribeResult.failure(this.error) : showName = null;
+
+  final String? showName;
+  final String? error;
+}
+
+/// Tracks per-show subscribe progress and the session-subscribed overlay
+/// shared by the discover browse page and the full charts page.
+///
+/// The authoritative subscribed state still derives from the global
+/// subscription list plus the discover provider's hydrated feed urls;
+/// this overlay only covers the window before that state catches up.
+class DiscoverSubscribeState extends Equatable {
+  const DiscoverSubscribeState({
+    this.subscribingShowIds = const {},
+    this.sessionSubscribedShowIds = const {},
+  });
+
+  final Set<int> subscribingShowIds;
+  final Set<int> sessionSubscribedShowIds;
+
+  @override
+  List<Object?> get props => [subscribingShowIds, sessionSubscribedShowIds];
+}
+
+final discoverSubscribeProvider =
+    NotifierProvider<DiscoverSubscribeNotifier, DiscoverSubscribeState>(
+      DiscoverSubscribeNotifier.new,
+    );
+
+class DiscoverSubscribeNotifier extends Notifier<DiscoverSubscribeState> {
+  ITunesSearchService get _searchService => ref.read(iTunesSearchServiceProvider);
+
+  @override
+  DiscoverSubscribeState build() => const DiscoverSubscribeState();
+
+  Future<DiscoverSubscribeResult> subscribe(
+    PodcastDiscoverItem item, {
+    required PodcastCountry country,
+  }) async {
+    final itunesId = item.itunesId;
+    if (itunesId == null) {
+      return const DiscoverSubscribeResult.failure('Invalid podcast data');
+    }
+    if (state.subscribingShowIds.contains(itunesId)) {
+      return const DiscoverSubscribeResult.failure('Subscribe already in progress');
+    }
+
+    state = DiscoverSubscribeState(
+      subscribingShowIds: {...state.subscribingShowIds, itunesId},
+      sessionSubscribedShowIds: state.sessionSubscribedShowIds,
+    );
+
+    try {
+      final lookup = await _searchService.lookupPodcast(
+        itunesId: itunesId,
+        country: country,
+      );
+      final feedUrl = lookup?.feedUrl;
+      if (feedUrl == null) throw Exception('No RSS feed url');
+
+      await ref
+          .read(podcastSubscriptionProvider.notifier)
+          .addSubscription(feedUrl: feedUrl);
+      ref
+          .read(podcastDiscoverProvider.notifier)
+          .registerShowFeedUrl(itunesId, feedUrl);
+
+      state = DiscoverSubscribeState(
+        subscribingShowIds: state.subscribingShowIds..remove(itunesId),
+        sessionSubscribedShowIds: {...state.sessionSubscribedShowIds, itunesId},
+      );
+      return DiscoverSubscribeResult.success(lookup?.collectionName ?? item.title);
+    } catch (error) {
+      state = DiscoverSubscribeState(
+        subscribingShowIds: state.subscribingShowIds..remove(itunesId),
+        sessionSubscribedShowIds: state.sessionSubscribedShowIds,
+      );
+      return DiscoverSubscribeResult.failure(error.toString());
+    }
+  }
 }

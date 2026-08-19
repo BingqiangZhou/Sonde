@@ -24,6 +24,7 @@ class DiscoverChartRow extends StatelessWidget {
     this.isSubscribed = false,
     this.isDense = false,
     this.cardMargin,
+    this.subtitleSuffix,
   });
 
   final int rank;
@@ -35,6 +36,10 @@ class DiscoverChartRow extends StatelessWidget {
   final bool isSubscribed;
   final bool isDense;
   final EdgeInsetsGeometry? cardMargin;
+
+  /// Optional pre-built suffix appended to the subtitle (e.g. a hydrated
+  /// episode duration), replacing the genre when present.
+  final String? subtitleSuffix;
 
   @override
   Widget build(BuildContext context) {
@@ -69,8 +74,11 @@ class DiscoverChartRow extends StatelessWidget {
 
     final genre =
         item.genres.where((g) => g.trim().isNotEmpty).firstOrNull;
-    final subtitleText =
-        genre == null ? item.artist : '${item.artist} · $genre';
+    final subtitleText = subtitleSuffix != null
+        ? '${item.artist} · $subtitleSuffix'
+        : genre == null
+            ? item.artist
+            : '${item.artist} · $genre';
 
     return Padding(
       key: Key('podcast_discover_chart_row_${item.itemId}'),

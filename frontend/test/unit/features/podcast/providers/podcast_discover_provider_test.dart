@@ -1,16 +1,19 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:sonde/core/constants/cache_constants.dart';
 import 'package:sonde/core/storage/local_storage_service.dart';
+import 'package:sonde/features/podcast/data/models/itunes_episode_lookup_model.dart';
 import 'package:sonde/features/podcast/data/models/podcast_discover_chart_model.dart';
 import 'package:sonde/features/podcast/data/models/podcast_search_model.dart';
 import 'package:sonde/features/podcast/data/services/apple_podcast_rss_service.dart';
+import 'package:sonde/features/podcast/data/services/itunes_search_service.dart';
 import 'package:sonde/features/podcast/presentation/providers/podcast_search_provider.dart';
 
 import '../../../../helpers/mock_local_storage_service.dart';
 
 void main() {
   group('podcastDiscoverProvider', () {
-    test('loads initial top shows and episodes', () async {
+    test('loads the whole chart in one request', () async {
       final fakeService = _FakeApplePodcastRssService();
       final container = _createContainer(fakeService);
       addTearDown(container.dispose);
@@ -18,83 +21,81 @@ void main() {
       await container.read(podcastDiscoverProvider.notifier).loadInitialData();
       final state = container.read(podcastDiscoverProvider);
 
-      expect(state.topShows, hasLength(25));
-      expect(state.topEpisodes, hasLength(25));
-      expect(state.selectedTab, PodcastDiscoverTab.episodes);
+      expect(state.topShows, hasLength(100));
+      expect(state.topEpisodes, hasLength(100));
       expect(state.selectedCategory, PodcastDiscoverState.allCategoryValue);
-      expect(state.currentTabLoadedCount, 25);
-      expect(state.currentTabHasMore, isTrue);
+      // One fetch per chart, already at the maximum limit — no hydration
+        // pagination round trips anymore.
+      expect(fakeService.showsLimits, equals([CacheConstants.discoverTopChartMaxLimit]));
+      expect(fakeService.episodeLimits, equals([CacheConstants.discoverTopChartMaxLimit]));
     });
 
-    test('supports tab switching and category filtering', () async {
-      final fakeService = _FakeApplePodcastRssService();
-      final container = _createContainer(fakeService);
+    test('derives category shelves from the top-shows chart', () async {
+      final container = _createContainer(_FakeApplePodcastRssService());
+      addTearDown(container.dispose);
+
+      await container.read(podcastDiscoverProvider.notifier).loadInitialData();
+      final state = container.read(podcastDiscoverProvider);
+
+      // The fake alternates Technology/News 50:50, so both earn a shelf;
+      // the alphabetical tie-break puts News first.
+      expect(state.categoryShelves, hasLength(2));
+      final shelf = state.categoryShelves.first;
+      expect(shelf.category, 'News');
+      expect(shelf.items, hasLength(CacheConstants.discoverShelfItemCount));
+      expect(shelf.items.every((item) => item.hasGenre('News')), isTrue);
+    });
+
+    test('category filtering applies to both charts', () async {
+      final container = _createContainer(_FakeApplePodcastRssService());
       addTearDown(container.dispose);
 
       await container.read(podcastDiscoverProvider.notifier).loadInitialData();
       final notifier = container.read(podcastDiscoverProvider.notifier);
-
-      notifier.setTab(PodcastDiscoverTab.episodes);
       notifier.selectCategory('News');
       final state = container.read(podcastDiscoverProvider);
 
-      expect(state.selectedTab, PodcastDiscoverTab.episodes);
       expect(state.selectedCategory, 'News');
+      expect(state.filteredShows.every((item) => item.hasGenre('News')), isTrue);
       expect(
-        state.filteredActiveItems.every((item) => item.hasGenre('News')),
+        state.filteredEpisodes.every((item) => item.hasGenre('News')),
         isTrue,
+      );
+      expect(state.filteredShows, isNotEmpty);
+    });
+
+    test('hydrates feed urls and episode meta after loading', () async {
+      final fakeItunes = _FakeITunesHydrationService();
+      final container = _createContainer(
+        _FakeApplePodcastRssService(),
+        itunesService: fakeItunes,
+      );
+      addTearDown(container.dispose);
+
+      await container.read(podcastDiscoverProvider.notifier).loadInitialData();
+      await Future<void>.delayed(Duration.zero);
+
+      final state = container.read(podcastDiscoverProvider);
+      expect(fakeItunes.hydrationCalls, 1);
+      expect(state.showFeedUrls[1000], 'https://example.com/feed-1000.xml');
+      expect(
+        state.episodeMeta[1000]?.trackTimeMillis,
+        1800000,
       );
     });
 
-    test(
-      'loads more current tab from top 25 to top 100 incrementally',
-      () async {
-        final fakeService = _FakeApplePodcastRssService();
-        final container = _createContainer(fakeService);
-        addTearDown(container.dispose);
+    test('registerShowFeedUrl merges into the hydrated map', () async {
+      final container = _createContainer(_FakeApplePodcastRssService());
+      addTearDown(container.dispose);
 
-        final notifier = container.read(podcastDiscoverProvider.notifier);
-        await notifier.loadInitialData();
+      final notifier = container.read(podcastDiscoverProvider.notifier);
+      notifier.registerShowFeedUrl(42, 'https://example.com/feed-42.xml');
 
-        expect(
-          container.read(podcastDiscoverProvider).topEpisodes,
-          hasLength(25),
-        );
-
-        await notifier.loadMoreCurrentTab();
-        expect(
-          container.read(podcastDiscoverProvider).topEpisodes,
-          hasLength(50),
-        );
-
-        await notifier.loadMoreCurrentTab();
-        expect(
-          container.read(podcastDiscoverProvider).topEpisodes,
-          hasLength(75),
-        );
-
-        await notifier.loadMoreCurrentTab();
-        final state = container.read(podcastDiscoverProvider);
-        expect(state.topEpisodes, hasLength(100));
-        expect(state.currentTabHasMore, isFalse);
-        expect(
-          fakeService.episodeLimits,
-          containsAllInOrder([25, 50, 75, 100]),
-        );
-
-        notifier.setTab(PodcastDiscoverTab.podcasts);
-        expect(container.read(podcastDiscoverProvider).topShows, hasLength(25));
-
-        await notifier.loadMoreCurrentTab();
-        await notifier.loadMoreCurrentTab();
-        await notifier.loadMoreCurrentTab();
-
-        final podcastsState = container.read(podcastDiscoverProvider);
-        expect(podcastsState.topShows, hasLength(100));
-        expect(podcastsState.currentTabLoadedCount, 100);
-        expect(fakeService.showsLimits, containsAllInOrder([25, 50, 75, 100]));
-      },
-    );
+      expect(
+        container.read(podcastDiscoverProvider).showFeedUrls[42],
+        'https://example.com/feed-42.xml',
+      );
+    });
 
     test('reloads on country change', () async {
       final fakeService = _FakeApplePodcastRssService();
@@ -110,7 +111,7 @@ void main() {
 
       final state = container.read(podcastDiscoverProvider);
       expect(state.country, PodcastCountry.japan);
-      expect(state.topShows, hasLength(25));
+      expect(state.topShows, hasLength(100));
       expect(fakeService.showsCalls, greaterThan(initialCalls));
     });
 
@@ -152,10 +153,6 @@ void main() {
       final container = _createContainer(fakeService);
       addTearDown(container.dispose);
 
-      container
-          .read(podcastDiscoverProvider.notifier)
-          .setTab(PodcastDiscoverTab.episodes);
-
       // During loading, state should still be loading (no partial data)
       final future = container
           .read(podcastDiscoverProvider.notifier)
@@ -175,42 +172,6 @@ void main() {
       expect(finalState.isLoading, isFalse);
     });
 
-    test('switching tabs does not auto-hydrate to top 100', () async {
-      final fakeService = _FakeApplePodcastRssService();
-      final container = _createContainer(fakeService);
-      addTearDown(container.dispose);
-
-      final notifier = container.read(podcastDiscoverProvider.notifier);
-      await notifier.loadInitialData();
-
-      notifier.setTab(PodcastDiscoverTab.podcasts);
-
-      final state = container.read(podcastDiscoverProvider);
-      expect(state.topShows, hasLength(25));
-      expect(fakeService.showsLimits, equals([25]));
-    });
-
-    test(
-      'suppresses concurrent load-more requests for the current tab',
-      () async {
-        final fakeService = _DelayedApplePodcastRssService();
-        final container = _createContainer(fakeService);
-        addTearDown(container.dispose);
-
-        final notifier = container.read(podcastDiscoverProvider.notifier);
-        await notifier.loadInitialData();
-
-        await Future.wait([
-          notifier.loadMoreCurrentTab(),
-          notifier.loadMoreCurrentTab(),
-        ]);
-
-        final state = container.read(podcastDiscoverProvider);
-        expect(state.topEpisodes, hasLength(50));
-        expect(fakeService.episodeLimits, equals([25, 50]));
-      },
-    );
-
     test(
       'clearRuntimeCache clears discover state and triggers refetch',
       () async {
@@ -227,6 +188,7 @@ void main() {
         final clearedState = container.read(podcastDiscoverProvider);
         expect(clearedState.topShows, isEmpty);
         expect(clearedState.topEpisodes, isEmpty);
+        expect(clearedState.showFeedUrls, isEmpty);
         expect(fakeService.clearCacheCalls, 1);
 
         await container
@@ -238,11 +200,17 @@ void main() {
   });
 }
 
-ProviderContainer _createContainer(ApplePodcastRssService service) {
+ProviderContainer _createContainer(
+  ApplePodcastRssService service, {
+  ITunesSearchService? itunesService,
+}) {
   return ProviderContainer(
     overrides: [
       localStorageServiceProvider.overrideWithValue(MockLocalStorageService()),
       applePodcastRssServiceProvider.overrideWithValue(service),
+      iTunesSearchServiceProvider.overrideWithValue(
+        itunesService ?? _FakeITunesHydrationService(),
+      ),
     ],
   );
 }
@@ -345,6 +313,38 @@ class _DelayedApplePodcastRssService extends _FakeApplePodcastRssService {
       kind: 'podcast-episodes',
       country: country.code,
       count: limit,
+    );
+  }
+}
+
+/// Hydration double: returns a feed url + duration for the first show /
+/// episode id it is asked about.
+class _FakeITunesHydrationService extends ITunesSearchService {
+  int hydrationCalls = 0;
+
+  @override
+  Future<ITunesChartHydrationResult> lookupChartEntities({
+    required List<int> ids,
+    PodcastCountry country = PodcastCountry.china,
+  }) async {
+    hydrationCalls += 1;
+    final showFeedUrls = <int, String>{};
+    final episodeMeta = <int, ITunesPodcastEpisodeResult>{};
+    for (final id in ids) {
+      showFeedUrls[id] = 'https://example.com/feed-$id.xml';
+      episodeMeta[id] = ITunesPodcastEpisodeResult(
+        trackId: id,
+        collectionId: id,
+        trackName: 'Episode $id',
+        collectionName: 'Show $id',
+        feedUrl: 'https://example.com/feed-$id.xml',
+        releaseDate: DateTime(2026, 2, 14),
+        trackTimeMillis: 1800000,
+      );
+    }
+    return ITunesChartHydrationResult(
+      showFeedUrls: showFeedUrls,
+      episodeMeta: episodeMeta,
     );
   }
 }

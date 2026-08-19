@@ -8,16 +8,26 @@ import 'package:sonde/core/widgets/linear_section_header.dart';
 import 'package:sonde/features/podcast/data/models/podcast_discover_chart_model.dart';
 import 'package:sonde/features/podcast/presentation/widgets/discover/discover_spotlight_card.dart';
 
+/// One spotlight entry: the chart item plus its rank on the source chart,
+/// which feeds the semantic eyebrow and the floating rank badge.
+class DiscoverSpotlightEntry {
+  const DiscoverSpotlightEntry({
+    required this.item,
+    required this.chartRank,
+  });
+
+  final PodcastDiscoverItem item;
+  final int chartRank;
+}
+
 /// Spotlight section: the top-ranked chart items as full-bleed editorial
 /// hero cards.
 ///
 /// - Narrow layouts: near-full-width snapping carousel with page dots.
 /// - Wide layouts (>= [Breakpoints.mediumLarge]): the cards side by side.
-///
-/// Hidden when fewer than two items are available.
 class DiscoverSpotlightSection extends StatefulWidget {
   const DiscoverSpotlightSection({
-    required this.items,
+    required this.entries,
     required this.onItemTap,
     required this.onItemSubscribe,
     required this.onItemPlay,
@@ -30,7 +40,7 @@ class DiscoverSpotlightSection extends StatefulWidget {
   static const double carouselViewportFraction = 0.90;
   static const double _neighborScale = 0.94;
 
-  final List<PodcastDiscoverItem> items;
+  final List<DiscoverSpotlightEntry> entries;
   final ValueChanged<PodcastDiscoverItem> onItemTap;
   final ValueChanged<PodcastDiscoverItem> onItemSubscribe;
   final ValueChanged<PodcastDiscoverItem> onItemPlay;
@@ -69,8 +79,8 @@ class _DiscoverSpotlightSectionState extends State<DiscoverSpotlightSection> {
 
   @override
   Widget build(BuildContext context) {
-    final items = widget.items;
-    if (items.length < 2) return const SizedBox.shrink();
+    final entries = widget.entries;
+    if (entries.isEmpty) return const SizedBox.shrink();
 
     return Column(
       key: const Key('podcast_discover_spotlight'),
@@ -91,7 +101,7 @@ class _DiscoverSpotlightSectionState extends State<DiscoverSpotlightSection> {
               return _SpotlightEntrance(
                 child: Row(
                   children: [
-                    for (var index = 0; index < items.length; index++) ...[
+                    for (var index = 0; index < entries.length; index++) ...[
                       if (index != 0) SizedBox(width: context.spacing.sm),
                       Expanded(child: _buildCard(index, isWide: true)),
                     ],
@@ -107,7 +117,7 @@ class _DiscoverSpotlightSectionState extends State<DiscoverSpotlightSection> {
                     child: PageView.builder(
                       key: const Key('podcast_discover_spotlight_carousel'),
                       controller: _ensureCarouselController(),
-                      itemCount: items.length,
+                      itemCount: entries.length,
                       physics: const PageScrollPhysics(),
                       itemBuilder: (context, index) {
                         final card = Padding(
@@ -142,11 +152,13 @@ class _DiscoverSpotlightSectionState extends State<DiscoverSpotlightSection> {
                       },
                     ),
                   ),
-                  SizedBox(height: context.spacing.sm),
-                  _SpotlightPageDots(
-                    count: items.length,
-                    current: _currentPage.clamp(0, items.length - 1),
-                  ),
+                  if (entries.length > 1) ...[
+                    SizedBox(height: context.spacing.sm),
+                    _SpotlightPageDots(
+                      count: entries.length,
+                      current: _currentPage.clamp(0, entries.length - 1),
+                    ),
+                  ],
                 ],
               ),
             );
@@ -157,10 +169,11 @@ class _DiscoverSpotlightSectionState extends State<DiscoverSpotlightSection> {
   }
 
   Widget _buildCard(int index, {bool isWide = false}) {
-    final item = widget.items[index];
+    final entry = widget.entries[index];
+    final item = entry.item;
     final itunesId = item.itunesId;
     return DiscoverSpotlightCard(
-      rank: index + 1,
+      chartRank: entry.chartRank,
       item: item,
       onTap: () => widget.onItemTap(item),
       onPrimaryAction: item.isPodcastShow

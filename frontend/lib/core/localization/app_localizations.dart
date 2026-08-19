@@ -1478,6 +1478,36 @@ abstract class AppLocalizations {
   /// **'Top Charts'**
   String get podcast_discover_top_charts;
 
+  /// Top shows shelf title on podcast discover page
+  ///
+  /// In en, this message translates to:
+  /// **'Top Shows'**
+  String get podcast_discover_top_shows;
+
+  /// Trending episodes shelf title on podcast discover page
+  ///
+  /// In en, this message translates to:
+  /// **'Trending Episodes'**
+  String get podcast_discover_top_episodes;
+
+  /// Category chart shelf title on podcast discover page
+  ///
+  /// In en, this message translates to:
+  /// **'Top {category}'**
+  String podcast_discover_category_shelf(String category);
+
+  /// Semantic eyebrow on a spotlight hero card featuring a chart show
+  ///
+  /// In en, this message translates to:
+  /// **'Top Show #{rank}'**
+  String podcast_discover_spotlight_top_show(int rank);
+
+  /// Semantic eyebrow on a spotlight hero card featuring a chart episode
+  ///
+  /// In en, this message translates to:
+  /// **'Top Episode #{rank}'**
+  String podcast_discover_spotlight_top_episode(int rank);
+
   /// Spotlight section title on podcast discover page
   ///
   /// In en, this message translates to:
