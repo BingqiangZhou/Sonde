@@ -1,6 +1,6 @@
 # Sonde（声读）
 
-[![Version](https://img.shields.io/badge/version-0.52.0-blue)](https://github.com/BingqiangZhou/Sonde/releases/tag/v0.52.0)
+[![Version](https://img.shields.io/badge/version-0.53.0-blue)](https://github.com/BingqiangZhou/Sonde/releases/tag/v0.53.0)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.11+-blue)](https://www.python.org/)
 [![Dart](https://img.shields.io/badge/dart-3.8+-cyan)](https://dart.dev/)
@@ -8,7 +8,7 @@
 
 「声读（Sonde）」——个人播客知识库：订阅、转录、AI 摘要与每日简报；本地部署，深度收听。
 
-**当前版本: [v0.52.0](https://github.com/BingqiangZhou/Sonde/releases/tag/v0.52.0)** (2026-04-21)
+**当前版本: [v0.53.0](https://github.com/BingqiangZhou/Sonde/releases/tag/v0.53.0)** (2026-08-19)
 
 ## 更新日志
 

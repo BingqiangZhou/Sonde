@@ -3,7 +3,7 @@ description: Sonde - personal podcast insight app.
 
 publish_to: 'none'
 
-version: 0.52.0+114
+version: 0.53.0+115
 
 environment:
   sdk: '>=3.8.0 <4.0.0'
