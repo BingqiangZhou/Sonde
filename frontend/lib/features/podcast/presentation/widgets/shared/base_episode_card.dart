@@ -18,7 +18,7 @@ class EpisodeCardConfig {
     this.imageUrl,
     this.imageSize = 62.0,
     this.imageIconSize = 24.0,
-    this.imageBorderRadius = 8.0,
+    this.imageBorderRadius = AppRadius.sm,
     this.titleMaxLines = 2,
     this.subtitleMaxLines = 1,
     this.showSubscriptionBadge = false,
@@ -33,7 +33,7 @@ class EpisodeCardConfig {
     this.dense = false,
     this.cardMargin,
     this.cardPadding,
-    this.cornerRadius = 12.0,
+    this.cornerRadius = AppRadius.md,
     this.showPlayButton = true,
     this.showQueueButton = false,
     this.isAddingToQueue = false,
@@ -558,7 +558,7 @@ class BaseEpisodeCard extends StatelessWidget {
         ),
         decoration: BoxDecoration(
           color: badgeBackgroundColor,
-          borderRadius: BorderRadius.circular(config.dense ? 8 : 12),
+          borderRadius: BorderRadius.circular(config.dense ? AppRadius.sm : AppRadius.mdLg),
         ),
         child: Text(
           config.subscriptionBadgeText ?? '',

@@ -154,7 +154,7 @@ class TranscriptDisplayWidgetState
                         : null,
                     decoration: BoxDecoration(
                       color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                      borderRadius: AppRadius.xxlRadius,
+                      borderRadius: AppRadius.pillRadius,
                     ),
                     padding: EdgeInsets.symmetric(
                       horizontal: context.spacing.md,
@@ -174,15 +174,15 @@ class TranscriptDisplayWidgetState
                             )
                           : null,
                       border: OutlineInputBorder(
-                        borderRadius: AppRadius.xxlRadius,
+                        borderRadius: AppRadius.pillRadius,
                         borderSide: BorderSide(color: scheme.outline),
                       ),
                       enabledBorder: OutlineInputBorder(
-                        borderRadius: AppRadius.xxlRadius,
+                        borderRadius: AppRadius.pillRadius,
                         borderSide: BorderSide(color: scheme.outline),
                       ),
                       focusedBorder: OutlineInputBorder(
-                        borderRadius: AppRadius.xxlRadius,
+                        borderRadius: AppRadius.pillRadius,
                         borderSide: BorderSide(
                           color: scheme.primary,
                           width: 2,

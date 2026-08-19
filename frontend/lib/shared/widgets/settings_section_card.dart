@@ -1,6 +1,6 @@
 import 'package:material_ui/material_ui.dart';
-import 'package:sonde/core/constants/app_radius.dart';
 import 'package:sonde/core/constants/app_spacing.dart';
+import 'package:sonde/core/theme/app_colors.dart';
 
 class SettingsSectionCard extends StatelessWidget {
   const SettingsSectionCard({
@@ -35,7 +35,7 @@ class SettingsSectionCard extends StatelessWidget {
           child: Material(
             color: theme.colorScheme.surfaceContainerLow,
             shape: RoundedRectangleBorder(
-              borderRadius: AppRadius.mdLgRadius,
+              borderRadius: BorderRadius.circular(appThemeOf(context).cardRadius),
               side: BorderSide(
                 color: theme.colorScheme.outlineVariant.withValues(alpha: 0.15),
               ),

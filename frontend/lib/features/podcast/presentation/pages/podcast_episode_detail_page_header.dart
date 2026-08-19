@@ -1,7 +1,7 @@
 part of 'podcast_episode_detail_page.dart';
 
-const double _artworkBorderRadiusWide = 18;
-const double _artworkBorderRadiusCompact = 10;
+const double _artworkBorderRadiusWide = AppRadius.chip;
+const double _artworkBorderRadiusCompact = AppRadius.md;
 
 extension _PodcastEpisodeDetailPageHeader on _PodcastEpisodeDetailPageState {
   bool get _isCompactPhoneLayout =>

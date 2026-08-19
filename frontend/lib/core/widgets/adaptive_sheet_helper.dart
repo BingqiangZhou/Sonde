@@ -1,9 +1,9 @@
 import 'package:cupertino_ui/cupertino_ui.dart';
 import 'package:material_ui/material_ui.dart';
 
-import 'package:sonde/core/constants/app_radius.dart';
 import 'package:sonde/core/platform/platform_helper.dart';
 import 'package:sonde/core/router/app_router.dart';
+import 'package:sonde/core/theme/app_colors.dart';
 
 /// On desktop/tablet (width >= 600), shows a centred [Dialog] within the
 /// current navigator's content area.  On mobile shows a standard
@@ -38,8 +38,10 @@ Future<T?> showAdaptiveSheet<T>({
         // ListTile 的背景与水波纹（Flutter 3.47 断言要求）。
         return Material(
           color: CupertinoColors.systemBackground.resolveFrom(sheetCtx),
-          shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.mdLg)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(
+              top: Radius.circular(appThemeOf(sheetCtx).sheetRadius),
+            ),
           ),
           clipBehavior: Clip.antiAlias,
           child: SafeArea(child: builder(sheetCtx)),
@@ -64,7 +66,7 @@ Future<T?> showAdaptiveSheet<T>({
             child: Material(
               color: Theme.of(dialogCtx).colorScheme.surfaceContainerHighest,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppRadius.xxl),
+                borderRadius: BorderRadius.circular(appThemeOf(dialogCtx).dialogRadius),
               ),
               clipBehavior: Clip.antiAlias,
               child: builder(dialogCtx),
@@ -83,14 +85,18 @@ Future<T?> showAdaptiveSheet<T>({
     useSafeArea: useSafeArea,
     useRootNavigator: true,
     backgroundColor: Colors.transparent,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xxl)),
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(
+        top: Radius.circular(appThemeOf(resolvedContext).sheetRadius),
+      ),
     ),
     builder: (sheetCtx) {
       return Material(
         color: Theme.of(sheetCtx).colorScheme.surfaceContainerHighest,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xxl)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(appThemeOf(sheetCtx).sheetRadius),
+          ),
         ),
         clipBehavior: Clip.antiAlias,
         child: builder(sheetCtx),

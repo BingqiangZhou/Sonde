@@ -1,6 +1,6 @@
 import 'package:material_ui/material_ui.dart';
-import 'package:sonde/core/constants/app_radius.dart';
 import 'package:sonde/core/constants/app_spacing.dart';
+import 'package:sonde/core/theme/app_colors.dart';
 import 'package:sonde/shared/widgets/loading_widget.dart';
 
 class QueueLoadingState extends StatelessWidget {
@@ -55,7 +55,7 @@ class QueueEmptyStateList extends StatelessWidget {
           padding: EdgeInsets.all(context.spacing.lg),
           decoration: BoxDecoration(
             color: Colors.transparent,
-            borderRadius: AppRadius.xxlRadius,
+            borderRadius: BorderRadius.circular(appThemeOf(context).cardRadius),
             border: Border.all(
               color: theme.colorScheme.outlineVariant.withValues(alpha: 0.45),
             ),

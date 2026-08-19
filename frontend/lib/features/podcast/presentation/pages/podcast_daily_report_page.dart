@@ -6,6 +6,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:sonde/core/constants/app_radius.dart';
 import 'package:sonde/core/constants/app_spacing.dart';
 import 'package:sonde/core/localization/app_localizations_extension.dart';
+import 'package:sonde/core/theme/app_colors.dart';
 import 'package:sonde/core/utils/time_formatter.dart';
 import 'package:sonde/core/widgets/adaptive/adaptive.dart';
 import 'package:sonde/core/widgets/app_shells.dart';
@@ -287,6 +288,7 @@ class _PodcastDailyReportPageState
   ) {
     final l10n = context.l10n;
     final theme = Theme.of(context);
+    final entryRadius = BorderRadius.circular(appThemeOf(context).cardRadius);
     final metaLine =
         '${item.episodeTitle} | ${item.subscriptionTitle ?? l10n.podcast_default_podcast}';
 
@@ -297,11 +299,11 @@ class _PodcastDailyReportPageState
         onTap: () {
           context.push('/podcast/episode/detail/${item.episodeId}');
         },
-        borderRadius: AppRadius.xxlCardRadius,
+        borderRadius: entryRadius,
         child: Container(
           decoration: BoxDecoration(
             color: theme.colorScheme.surfaceContainerLow,
-            borderRadius: AppRadius.xxlCardRadius,
+            borderRadius: entryRadius,
             border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.15)),
           ),
           padding: EdgeInsets.fromLTRB(context.spacing.md, context.spacing.md, context.spacing.md, context.spacing.smMd),

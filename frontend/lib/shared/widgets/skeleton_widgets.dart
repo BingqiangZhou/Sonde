@@ -298,11 +298,11 @@ class DiscoverBrowseSkeleton extends StatelessWidget {
             padding: EdgeInsets.symmetric(horizontal: context.spacing.sm),
             child: const Row(
               children: [
-                SkeletonBox(height: 28, width: 64, borderRadius: 18),
+                SkeletonBox(height: 28, width: 64, borderRadius: AppRadius.chip),
                 SizedBox(width: AppSpacing.sm),
-                SkeletonBox(height: 28, width: 88, borderRadius: 18),
+                SkeletonBox(height: 28, width: 88, borderRadius: AppRadius.chip),
                 SizedBox(width: AppSpacing.sm),
-                SkeletonBox(height: 28, width: 72, borderRadius: 18),
+                SkeletonBox(height: 28, width: 72, borderRadius: AppRadius.chip),
               ],
             ),
           ),

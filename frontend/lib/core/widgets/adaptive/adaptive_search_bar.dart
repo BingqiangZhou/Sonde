@@ -78,7 +78,7 @@ class _AdaptiveSearchBarState extends State<AdaptiveSearchBar> {
         filled: true,
         contentPadding: EdgeInsets.symmetric(horizontal: context.spacing.md),
         border: OutlineInputBorder(
-          borderRadius: AppRadius.xxlRadius,
+          borderRadius: AppRadius.pillRadius,
           borderSide: BorderSide.none,
         ),
       ),

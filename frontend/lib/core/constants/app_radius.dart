@@ -13,8 +13,11 @@ import 'package:sonde/core/theme/app_colors.dart';
 /// Design tokens for border radius throughout the app.
 ///
 /// Values are aligned with [AppThemeExtension] as the single source of truth.
-/// Use the pre-built [BorderRadius] and [RoundedRectangleBorder] getters
-/// for convenience, or access [AppThemeExtension] directly for theme-aware values.
+/// Prefer the semantic theme tokens (`appThemeOf(context).cardRadius` /
+/// `sheetRadius` / `dialogRadius` / `buttonRadius` / `itemRadius`) for those
+/// component families; use this incremental scale for everything else.
+/// Search fields are pill-shaped; hero surfaces (expanded-player cover) may
+/// use [xxl].
 class AppRadius {
   AppRadius._();
 
@@ -31,7 +34,6 @@ class AppRadius {
   static const double lgXl = 16;
   static const double xl = 20;
   static const double xxl = 28;
-  static const double xxlCard = 22;
   static const double chip = 18;
   static const double pill = 999;
 
@@ -47,7 +49,6 @@ class AppRadius {
   static BorderRadius get lgXlRadius => BorderRadius.circular(lgXl);
   static BorderRadius get xlRadius => BorderRadius.circular(xl);
   static BorderRadius get xxlRadius => BorderRadius.circular(xxl);
-  static BorderRadius get xxlCardRadius => BorderRadius.circular(xxlCard);
   static BorderRadius get chipRadius => BorderRadius.circular(chip);
   static BorderRadius get pillRadius => BorderRadius.circular(pill);
 

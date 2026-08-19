@@ -8,6 +8,7 @@ import 'package:sonde/core/constants/app_spacing.dart';
 import 'package:sonde/core/constants/breakpoints.dart';
 import 'package:sonde/core/constants/scroll_constants.dart';
 import 'package:sonde/core/localization/app_localizations_extension.dart';
+import 'package:sonde/core/theme/app_colors.dart';
 import 'package:sonde/core/utils/text_processing_cache.dart';
 import 'package:sonde/core/widgets/adaptive/adaptive.dart';
 import 'package:sonde/core/widgets/app_shells.dart';
@@ -176,7 +177,8 @@ class _PodcastFeedPageState extends ConsumerState<PodcastFeedPage> {
     }
 
     final theme = Theme.of(context);
-    final borderRadius = compact ? 12.0 : 16.0;
+    final radiusToken = appThemeOf(context);
+    final borderRadius = compact ? radiusToken.itemRadius : radiusToken.cardRadius;
 
     return Semantics(
       button: true,

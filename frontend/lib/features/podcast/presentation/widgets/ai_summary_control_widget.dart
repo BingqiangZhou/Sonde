@@ -369,7 +369,7 @@ class _AISummaryControlWidgetState
         isExpanded: true,
         decoration: InputDecoration(
           labelText: l10n.podcast_ai_model,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(extension.cardRadius)),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(extension.buttonRadius)),
           contentPadding: EdgeInsets.symmetric(
             horizontal: context.spacing.md,
             vertical: context.spacing.sm,
