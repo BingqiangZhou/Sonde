@@ -285,6 +285,16 @@ class _PodcastListPageState extends ConsumerState<PodcastListPage> {
     final categoryShelves = discoverState.categoryShelves;
     final hasAnyShelf =
         topShowsShelf.isNotEmpty || topEpisodesShelf.isNotEmpty;
+    // The country selector lives on the "Global charts" masthead row; on
+    // compact viewports the masthead is dropped and the selector falls
+    // back into the top-shows shelf header so it stays reachable.
+    final countryPill = DiscoverCountryPill(
+      onTap: () => DiscoverInteractionHandler.openCountrySelector(
+        ref,
+        context,
+        retrySearchIfNeeded: true,
+      ),
+    );
 
     return CustomScrollView(
       key: const Key('podcast_discover_scroll'),
@@ -305,13 +315,20 @@ class _PodcastListPageState extends ConsumerState<PodcastListPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    l10n.podcast_discover_header_eyebrow,
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: theme.colorScheme.primary,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 1.2,
-                    ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          l10n.podcast_discover_header_eyebrow,
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: theme.colorScheme.primary,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 1.2,
+                          ),
+                        ),
+                      ),
+                      countryPill,
+                    ],
                   ),
                   SizedBox(height: context.spacing.xxs),
                   Text(
@@ -342,13 +359,7 @@ class _PodcastListPageState extends ConsumerState<PodcastListPage> {
               context,
               title: l10n.podcast_discover_top_shows,
               titleKey: 'podcast_discover_top_shows_header',
-              trailing: DiscoverCountryPill(
-                onTap: () => DiscoverInteractionHandler.openCountrySelector(
-                  ref,
-                  context,
-                  retrySearchIfNeeded: true,
-                ),
-              ),
+              trailing: showMasthead ? null : countryPill,
               onSeeAll: () => context.push('/discover/charts'),
               seeAllKey: 'podcast_discover_see_all_shows',
             ),

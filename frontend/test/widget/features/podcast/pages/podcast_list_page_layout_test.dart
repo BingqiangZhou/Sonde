@@ -141,6 +141,9 @@ void main() {
         final searchBarRect = tester.getRect(
           find.byKey(const Key('podcast_discover_search_bar')),
         );
+        final mastheadRect = tester.getRect(
+          find.byKey(const Key('podcast_discover_masthead')),
+        );
         final shelfHeaderRect = tester.getRect(
           find.byKey(const Key('podcast_discover_top_shows_header')),
         );
@@ -149,12 +152,13 @@ void main() {
         );
 
         final heroSpacing = searchBarRect.top - heroRect.bottom;
-        // The see-all button sits between the pill and the right edge, so
-        // the pill only needs to stay inset from the shelf header edge.
-        final pillInset = shelfHeaderRect.right - countryPillRect.right;
         expect(heroSpacing, greaterThanOrEqualTo(8));
         expect(heroSpacing, lessThanOrEqualTo(24));
-        expect(pillInset, greaterThan(0));
+        // The country selector sits on the "Global charts" masthead row —
+        // above the shelves and inset from the viewport's right edge.
+        expect(countryPillRect.top, lessThan(shelfHeaderRect.top));
+        expect(countryPillRect.top, greaterThanOrEqualTo(mastheadRect.top));
+        expect(countryPillRect.right, lessThan(mastheadRect.right));
       },
     );
   });
