@@ -443,10 +443,20 @@ void main() {
         find.byKey(const Key('podcast_discover_category_chip_all')),
         findsOneWidget,
       );
-      final l10n = AppLocalizations.of(
-        tester.element(find.byType(PodcastListPage)),
-      )!;
-      expect(find.text(l10n.podcast_discover_browse_by_category), findsNothing);
+      expect(find.byKey(const Key('podcast_discover_see_all')), findsNothing);
+      expect(
+        find.byKey(const Key('podcast_discover_spotlight')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('podcast_discover_spotlight_carousel')),
+        findsOneWidget,
+      );
+      // PageView builds lazily, so only the first spotlight card exists.
+      expect(
+        find.byKey(const Key('podcast_discover_spotlight_card_1000')),
+        findsOneWidget,
+      );
 
       expect(find.byKey(const Key('podcast_list_header_title')), findsNothing);
       expect(
@@ -518,4 +528,270 @@ void main() {
       expect(clearButton, findsNothing);
     });
   });
+
+  // =========================================================================
+  // Discover browse redesign (spotlight + empty states + search states)
+  // =========================================================================
+  group('PodcastListPage discover browse redesign', () {
+    testWidgets('spotlight card tap opens the show episodes sheet', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(390, 600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final fakeLookupService = FakeITunesSearchService();
+      final container = ProviderContainer(
+        overrides: [
+          localStorageServiceProvider.overrideWithValue(
+            MockLocalStorageService(),
+          ),
+          applePodcastRssServiceProvider.overrideWithValue(
+            FakeApplePodcastRssService(),
+          ),
+          search.iTunesSearchServiceProvider.overrideWithValue(
+            fakeLookupService,
+          ),
+          podcastSubscriptionProvider.overrideWith(
+            FakePodcastSubscriptionNotifier.new,
+          ),
+          search.podcastSearchProvider.overrideWith(
+            () => PassthroughPodcastSearchNotifier(
+                const search.PodcastSearchState()),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(
+            localizationsDelegates: appLocalizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: PodcastListPage(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('podcast_discover_tab_podcasts')));
+      await tester.pumpAndSettle();
+
+      final cardFinder = find.byKey(
+        const Key('podcast_discover_spotlight_card_1000'),
+      );
+      expect(cardFinder, findsOneWidget);
+
+      // Tap the title area: the card center overlaps the subscribe CTA.
+      final cardTopLeft = tester.getTopLeft(cardFinder);
+      await tester.tapAt(cardTopLeft + const Offset(180, 30));
+      // Bounded pumps: cached-image retries under the sheet keep scheduling
+      // frames, which would make pumpAndSettle time out.
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(fakeLookupService.lookupEpisodesCalled, isTrue);
+      expect(
+        find.byKey(const Key('discover_show_episodes_sheet')),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets(
+      'category with no matches shows empty state and show-all resets',
+      (tester) async {
+        final container = ProviderContainer(
+          overrides: [
+            localStorageServiceProvider.overrideWithValue(
+              MockLocalStorageService(),
+            ),
+            applePodcastRssServiceProvider.overrideWithValue(
+              FakeApplePodcastRssService(),
+            ),
+            podcastSubscriptionProvider.overrideWith(
+              EmptyPodcastSubscriptionNotifier.new,
+            ),
+            search.podcastSearchProvider.overrideWith(
+              () => PassthroughPodcastSearchNotifier(
+                  const search.PodcastSearchState()),
+            ),
+          ],
+        );
+        addTearDown(container.dispose);
+
+        await tester.pumpWidget(
+          UncontrolledProviderScope(
+            container: container,
+            child: const MaterialApp(
+              localizationsDelegates: appLocalizationsDelegates,
+              supportedLocales: AppLocalizations.supportedLocales,
+              home: PodcastListPage(),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        final l10n = AppLocalizations.of(
+          tester.element(find.byType(PodcastListPage)),
+        )!;
+
+        container
+            .read(search.podcastDiscoverProvider.notifier)
+            .selectCategory('Nonexistent');
+        await tester.pumpAndSettle();
+
+        expect(find.text(l10n.podcast_discover_category_empty_title),
+            findsOneWidget);
+        expect(
+          find.byKey(const Key('podcast_discover_chart_row_1000')),
+          findsNothing,
+        );
+
+        final showAllButton = find.text(l10n.podcast_discover_see_all);
+        await tester.ensureVisible(showAllButton);
+        await tester.pumpAndSettle();
+        await tester.tap(showAllButton, warnIfMissed: false);
+        await tester.pumpAndSettle();
+
+        expect(
+          find.text(l10n.podcast_discover_category_empty_title),
+          findsNothing,
+        );
+        expect(
+          find.byKey(const Key('podcast_discover_chart_row_1000')),
+          findsOneWidget,
+        );
+      },
+    );
+
+    testWidgets('search empty state offers clear and returns to browse', (
+      tester,
+    ) async {
+      final container = ProviderContainer(
+        overrides: [
+          localStorageServiceProvider.overrideWithValue(
+            MockLocalStorageService(),
+          ),
+          applePodcastRssServiceProvider.overrideWithValue(
+            FakeApplePodcastRssService(),
+          ),
+          podcastSubscriptionProvider.overrideWith(
+            EmptyPodcastSubscriptionNotifier.new,
+          ),
+          search.podcastSearchProvider.overrideWith(
+            () => InteractivePodcastSearchNotifier(
+              const search.PodcastSearchState(
+                hasSearched: true,
+                currentQuery: 'nothing',
+              ),
+            ),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(
+            localizationsDelegates: appLocalizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: PodcastListPage(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final l10n = AppLocalizations.of(
+        tester.element(find.byType(PodcastListPage)),
+      )!;
+      expect(find.text(l10n.podcast_search_no_results), findsOneWidget);
+      expect(find.text(l10n.podcast_search_empty_hint), findsOneWidget);
+      expect(
+        find.byKey(const Key('podcast_discover_chart_row_1000')),
+        findsNothing,
+      );
+
+      final clearButton = find.widgetWithText(FilledButton, l10n.clear);
+      await tester.ensureVisible(clearButton);
+      await tester.tap(clearButton);
+      await tester.pumpAndSettle();
+
+      expect(find.text(l10n.podcast_search_no_results), findsNothing);
+      expect(
+        find.byKey(const Key('podcast_discover_chart_row_1000')),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('search error state retry clears the error', (tester) async {
+      final retryNotifier = RetrySpySearchNotifier(
+        const search.PodcastSearchState(
+          hasSearched: true,
+          currentQuery: 'kaboom',
+          error: 'boom',
+        ),
+      );
+      final container = ProviderContainer(
+        overrides: [
+          localStorageServiceProvider.overrideWithValue(
+            MockLocalStorageService(),
+          ),
+          applePodcastRssServiceProvider.overrideWithValue(
+            FakeApplePodcastRssService(),
+          ),
+          podcastSubscriptionProvider.overrideWith(
+            EmptyPodcastSubscriptionNotifier.new,
+          ),
+          search.podcastSearchProvider.overrideWith(() => retryNotifier),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(
+            localizationsDelegates: appLocalizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: PodcastListPage(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final l10n = AppLocalizations.of(
+        tester.element(find.byType(PodcastListPage)),
+      )!;
+      expect(find.text('boom'), findsOneWidget);
+
+      final retryButton = find.widgetWithText(FilledButton, l10n.retry);
+      await tester.ensureVisible(retryButton);
+      await tester.tap(retryButton);
+      await tester.pumpAndSettle();
+
+      expect(retryNotifier.retryCalled, isTrue);
+      expect(find.text('boom'), findsNothing);
+    });
+  });
+}
+
+/// Search notifier double that tracks [PodcastSearchNotifier.retrySearch]
+/// without touching the real iTunes service.
+class RetrySpySearchNotifier extends search.PodcastSearchNotifier {
+  RetrySpySearchNotifier(this._initialState);
+
+  final search.PodcastSearchState _initialState;
+  bool retryCalled = false;
+
+  @override
+  search.PodcastSearchState build() => _initialState;
+
+  @override
+  Future<void> retrySearch() async {
+    retryCalled = true;
+    state = state.copyWith();
+  }
 }

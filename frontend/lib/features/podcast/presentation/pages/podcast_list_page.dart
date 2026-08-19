@@ -4,14 +4,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:sonde/core/constants/app_durations.dart';
 import 'package:sonde/core/constants/app_spacing.dart';
-import 'package:sonde/core/constants/breakpoints.dart';
+import 'package:sonde/core/constants/scroll_constants.dart';
 import 'package:sonde/core/localization/app_localizations.dart';
 import 'package:sonde/core/localization/app_localizations_extension.dart';
 import 'package:sonde/core/utils/debounce.dart';
 import 'package:sonde/core/widgets/adaptive/adaptive.dart';
 import 'package:sonde/core/widgets/adaptive_sheet_helper.dart';
 import 'package:sonde/core/widgets/app_shells.dart';
-import 'package:sonde/core/widgets/linear_section_header.dart';
 import 'package:sonde/core/widgets/top_floating_notice.dart';
 import 'package:sonde/features/podcast/data/models/podcast_discover_chart_model.dart';
 import 'package:sonde/features/podcast/presentation/pages/sections/discover_interaction_handler.dart';
@@ -21,11 +20,14 @@ import 'package:sonde/features/podcast/presentation/providers/podcast_search_pro
 import 'package:sonde/features/podcast/presentation/widgets/country_selector_dropdown.dart';
 import 'package:sonde/features/podcast/presentation/widgets/discover/discover_charts_list.dart';
 import 'package:sonde/features/podcast/presentation/widgets/discover/discover_search_input.dart';
+import 'package:sonde/features/podcast/presentation/widgets/discover/discover_spotlight_section.dart';
 import 'package:sonde/features/podcast/presentation/widgets/discover/discover_top_charts_section.dart';
 import 'package:sonde/features/podcast/presentation/widgets/search/podcast_search_results_list.dart';
 import 'package:sonde/shared/widgets/skeleton_widgets.dart';
 
-/// Podcast list/discover page with search and top charts.
+/// Discover page: search plus an editorial browse view with a spotlight
+/// carousel of the top-ranked chart items and the numbered charts list,
+/// all scrolling in a single view.
 class PodcastListPage extends ConsumerStatefulWidget {
   const PodcastListPage({super.key});
 
@@ -87,6 +89,13 @@ class _PodcastListPageState extends ConsumerState<PodcastListPage> {
 
   void _handleDiscoverCategorySelected(String category) {
     ref.read(podcastDiscoverProvider.notifier).selectCategory(category);
+    _resetDiscoverListScroll();
+  }
+
+  void _resetDiscoverCategoryFilter() {
+    ref
+        .read(podcastDiscoverProvider.notifier)
+        .selectCategory(PodcastDiscoverState.allCategoryValue);
     _resetDiscoverListScroll();
   }
 
@@ -193,7 +202,6 @@ class _PodcastListPageState extends ConsumerState<PodcastListPage> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = context.l10n;
     final searchState = ref.watch(podcastSearchProvider);
     final discoverState = ref.watch(podcastDiscoverProvider);
     const isDense = true;
@@ -209,9 +217,12 @@ class _PodcastListPageState extends ConsumerState<PodcastListPage> {
                 DiscoverInteractionHandler.handleEpisodePlay(ref, context, e),
             onPodcastSubscribe: (r) =>
                 DiscoverInteractionHandler.subscribeFromSearch(ref, context, r),
+            onRetry: () =>
+                ref.read(podcastSearchProvider.notifier).retrySearch(),
+            onClear: _clearSearch,
             isDense: isDense,
           )
-        : _buildDiscoverContent(context, discoverState, isDense);
+        : _buildBrowseContent(context, discoverState, isDense);
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -222,7 +233,7 @@ class _PodcastListPageState extends ConsumerState<PodcastListPage> {
         final headerSpacing = screenWidth < 600 ? 20.0 : 12.0;
 
         return ContentShell(
-          title: l10n.podcast_discover_title,
+          title: context.l10n.podcast_discover_title,
           subtitle: '',
           headerSpacing: headerSpacing,
           roundedViewport: true,
@@ -239,7 +250,6 @@ class _PodcastListPageState extends ConsumerState<PodcastListPage> {
                 searchFocusNode: _searchFocusNode,
                 onSearchChanged: _onSearchChanged,
                 onClearSearch: _clearSearch,
-                onCountryTap: () => _openCountrySelector(context),
                 searchMode: searchMode,
                 isDense: isDense,
               ),
@@ -252,29 +262,14 @@ class _PodcastListPageState extends ConsumerState<PodcastListPage> {
     );
   }
 
-  Widget _buildDiscoverContent(
-      BuildContext context, PodcastDiscoverState discoverState, bool isDense) {
+  Widget _buildBrowseContent(
+    BuildContext context, PodcastDiscoverState discoverState, bool isDense) {
     final l10n = context.l10n;
 
     if (discoverState.isLoading &&
         discoverState.topShows.isEmpty &&
         discoverState.topEpisodes.isEmpty) {
-      return LayoutBuilder(
-        builder: (context, constraints) {
-          final screenWidth = constraints.maxWidth;
-          final isMobile = screenWidth < Breakpoints.medium;
-          if (isMobile) {
-            return const DiscoverChartSkeletonList();
-          }
-          final crossAxisCount = screenWidth < 900
-              ? 2
-              : (screenWidth < 1200 ? 3 : 4);
-          return DiscoverChartSkeletonGrid(
-            crossAxisCount: crossAxisCount,
-            itemCount: crossAxisCount * 2,
-          );
-        },
-      );
+      return const DiscoverBrowseSkeleton();
     }
 
     final error = discoverState.error;
@@ -284,37 +279,112 @@ class _PodcastListPageState extends ConsumerState<PodcastListPage> {
       return _buildErrorView(context, l10n, error);
     }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        DiscoverTopChartsSection(
-          state: discoverState,
-          onCategorySelected: _handleDiscoverCategorySelected,
-          isDense: isDense,
-        ),
-        SizedBox(height: isDense ? context.spacing.sm : context.spacing.md),
-        LinearSectionHeader.label(
-          l10n.podcast_discover_browse_by_category,
-          padding: EdgeInsets.symmetric(horizontal: context.spacing.xs, vertical: context.spacing.xs),
-        ),
-        SizedBox(height: isDense ? context.spacing.smMd : context.spacing.sm),
-        Expanded(
-          child: AdaptiveRefreshIndicator(
-            onRefresh: () => ref.read(podcastDiscoverProvider.notifier).refresh(),
-            child: DiscoverChartsList(
-              state: discoverState,
-              scrollController: _discoverListScrollController,
-              onItemTap: (item) =>
-                  DiscoverInteractionHandler.handleChartRowTap(ref, context, item),
-              onItemSubscribe: _handleSubscribeFromChart,
-              onItemPlay: (item) =>
-                  DiscoverInteractionHandler.playEpisodeFromChartRow(ref, context, item),
-              subscribingShowIds: _subscribingShowIds,
-              subscribedShowIds: _subscribedShowIds,
-              isDense: isDense,
-            ),
+    return AdaptiveRefreshIndicator.sliver(
+      onRefresh: () => ref.read(podcastDiscoverProvider.notifier).refresh(),
+      // Ignored on every platform: the builder below always supplies the
+      // scroll view (with a Cupertino refresh sliver on Apple platforms).
+      child: const SizedBox.shrink(),
+      builder: (context, refreshSliver) => _buildBrowseScroll(
+        context,
+        discoverState,
+        isDense,
+        refreshSliver,
+      ),
+    );
+  }
+
+  Widget _buildBrowseScroll(
+    BuildContext context,
+    PodcastDiscoverState discoverState,
+    bool isDense,
+    Widget? refreshSliver,
+  ) {
+    final l10n = context.l10n;
+    final visibleItems = discoverState.visibleItems;
+    final spotlightItems = visibleItems
+        .take(DiscoverSpotlightSection.maxItemCount)
+        .toList();
+
+    return CustomScrollView(
+      key: const Key('podcast_discover_scroll'),
+      controller: _discoverListScrollController,
+      cacheExtent: ScrollConstants.largeListCacheExtent,
+      physics: const AlwaysScrollableScrollPhysics(),
+      slivers: [
+        if (refreshSliver != null) refreshSliver,
+        SliverToBoxAdapter(
+          child: DiscoverSpotlightSection(
+            items: spotlightItems,
+            onItemTap: (item) =>
+                DiscoverInteractionHandler.handleChartRowTap(ref, context, item),
+            onItemSubscribe: _handleSubscribeFromChart,
+            onItemPlay: (item) => DiscoverInteractionHandler
+                .playEpisodeFromChartRow(ref, context, item),
+            subscribingShowIds: _subscribingShowIds,
+            subscribedShowIds: _subscribedShowIds,
           ),
         ),
+        SliverToBoxAdapter(
+          child: DiscoverTopChartsSection(
+            state: discoverState,
+            onCategorySelected: _handleDiscoverCategorySelected,
+            onCountryTap: () => _openCountrySelector(context),
+            isDense: isDense,
+          ),
+        ),
+        SliverToBoxAdapter(child: SizedBox(height: context.spacing.sm)),
+        DiscoverChartsSliver(
+          visibleItems: visibleItems,
+          onItemTap: (item) =>
+              DiscoverInteractionHandler.handleChartRowTap(ref, context, item),
+          onItemSubscribe: _handleSubscribeFromChart,
+          onItemPlay: (item) =>
+              DiscoverInteractionHandler.playEpisodeFromChartRow(ref, context, item),
+          subscribingShowIds: _subscribingShowIds,
+          subscribedShowIds: _subscribedShowIds,
+          isDense: isDense,
+        ),
+        if (discoverState.isCurrentTabLoadingMore)
+          const SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.symmetric(vertical: AppSpacing.md),
+              child: Center(
+                child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator.adaptive(strokeWidth: 2),
+                ),
+              ),
+            ),
+          ),
+        if (visibleItems.isEmpty)
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.symmetric(vertical: context.spacing.md),
+              child: discoverState.activeItems.isEmpty
+                  ? AppEmptyState(
+                      icon: Icons.leaderboard_outlined,
+                      title: l10n.podcast_discover_no_chart_data,
+                      action: FilledButton.icon(
+                        onPressed: () => ref
+                            .read(podcastDiscoverProvider.notifier)
+                            .loadInitialData(),
+                        icon: const Icon(Icons.refresh),
+                        label: Text(l10n.retry),
+                      ),
+                    )
+                  : AppEmptyState(
+                      icon: Icons.filter_alt_off_outlined,
+                      title: l10n.podcast_discover_category_empty_title,
+                      subtitle: l10n.podcast_discover_category_empty_subtitle,
+                      action: FilledButton.tonal(
+                        onPressed: _resetDiscoverCategoryFilter,
+                        child: Text(l10n.podcast_discover_see_all),
+                      ),
+                    ),
+            ),
+          ),
+        const SliverPadding(padding: EdgeInsets.only(bottom: AppSpacing.xl)),
       ],
     );
   }

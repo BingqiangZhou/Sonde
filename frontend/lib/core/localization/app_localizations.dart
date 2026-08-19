@@ -1466,11 +1466,11 @@ abstract class AppLocalizations {
   /// **'Top Charts'**
   String get podcast_discover_top_charts;
 
-  /// Subtitle showing trending country on podcast discover page
+  /// Spotlight section title on podcast discover page
   ///
   /// In en, this message translates to:
-  /// **'Trending in {country}'**
-  String podcast_discover_trending_in(String country);
+  /// **'Spotlight'**
+  String get podcast_discover_spotlight;
 
   /// See all button text on podcast discover charts
   ///
@@ -1484,11 +1484,17 @@ abstract class AppLocalizations {
   /// **'No chart data available'**
   String get podcast_discover_no_chart_data;
 
-  /// Category section title on podcast discover page
+  /// Empty state title when the selected category has no chart items
   ///
   /// In en, this message translates to:
-  /// **'Browse by Category'**
-  String get podcast_discover_browse_by_category;
+  /// **'Nothing in this category'**
+  String get podcast_discover_category_empty_title;
+
+  /// Empty state hint for a category with no chart items
+  ///
+  /// In en, this message translates to:
+  /// **'Try another category or browse the full charts.'**
+  String get podcast_discover_category_empty_subtitle;
 
   /// Country selector label
   ///
@@ -1501,6 +1507,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No results found'**
   String get podcast_search_no_results;
+
+  /// Search result count header on the discover page
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 result found} other{{count} results found}}'**
+  String podcast_search_results_count(int count);
+
+  /// Hint shown when search returns no results
+  ///
+  /// In en, this message translates to:
+  /// **'Try a different keyword or switch between shows and episodes.'**
+  String get podcast_search_empty_hint;
 
   /// Podcasts section title in search results
   ///

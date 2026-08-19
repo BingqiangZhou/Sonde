@@ -728,9 +728,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get podcast_discover_top_charts => 'Top Charts';
 
   @override
-  String podcast_discover_trending_in(String country) {
-    return 'Trending in $country';
-  }
+  String get podcast_discover_spotlight => 'Spotlight';
 
   @override
   String get podcast_discover_see_all => 'See All';
@@ -739,13 +737,33 @@ class AppLocalizationsEn extends AppLocalizations {
   String get podcast_discover_no_chart_data => 'No chart data available';
 
   @override
-  String get podcast_discover_browse_by_category => 'Browse by Category';
+  String get podcast_discover_category_empty_title =>
+      'Nothing in this category';
+
+  @override
+  String get podcast_discover_category_empty_subtitle =>
+      'Try another category or browse the full charts.';
 
   @override
   String get podcast_country_label => 'Country/Region';
 
   @override
   String get podcast_search_no_results => 'No results found';
+
+  @override
+  String podcast_search_results_count(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count results found',
+      one: '1 result found',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get podcast_search_empty_hint =>
+      'Try a different keyword or switch between shows and episodes.';
 
   @override
   String get podcast_search_section_podcasts => 'Podcasts';

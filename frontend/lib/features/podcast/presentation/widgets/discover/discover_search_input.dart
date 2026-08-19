@@ -1,25 +1,22 @@
 import 'package:cupertino_ui/cupertino_ui.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:sonde/core/constants/app_durations.dart';
 import 'package:sonde/core/constants/app_spacing.dart';
 import 'package:sonde/core/localization/app_localizations_extension.dart';
 import 'package:sonde/core/platform/platform_helper.dart';
 import 'package:sonde/core/theme/app_colors.dart';
-import 'package:sonde/core/widgets/adaptive/adaptive.dart';
 import 'package:sonde/features/podcast/presentation/providers/podcast_search_provider.dart';
 
-/// Search input widget for discover page with country selector.
+/// Search input widget for the discover page.
 ///
 /// Uses a filled surface container background with a prominent border
 /// and focus glow effect for better visual prominence.
-class DiscoverSearchInput extends ConsumerStatefulWidget {
+class DiscoverSearchInput extends StatefulWidget {
   const DiscoverSearchInput({
     required this.searchController,
     required this.searchFocusNode,
     required this.onSearchChanged,
     required this.onClearSearch,
-    required this.onCountryTap,
     super.key,
     this.searchMode = PodcastSearchMode.podcasts,
     this.isDense = false,
@@ -29,16 +26,14 @@ class DiscoverSearchInput extends ConsumerStatefulWidget {
   final FocusNode searchFocusNode;
   final ValueChanged<String> onSearchChanged;
   final VoidCallback onClearSearch;
-  final VoidCallback onCountryTap;
   final PodcastSearchMode searchMode;
   final bool isDense;
 
   @override
-  ConsumerState<DiscoverSearchInput> createState() =>
-      _DiscoverSearchInputState();
+  State<DiscoverSearchInput> createState() => _DiscoverSearchInputState();
 }
 
-class _DiscoverSearchInputState extends ConsumerState<DiscoverSearchInput> {
+class _DiscoverSearchInputState extends State<DiscoverSearchInput> {
   bool _isFocused = false;
 
   @override
@@ -197,77 +192,10 @@ class _DiscoverSearchInputState extends ConsumerState<DiscoverSearchInput> {
                 return const SizedBox.shrink();
               },
             ),
-            Padding(
-              padding: EdgeInsetsDirectional.only(
-                end: widget.isDense ? context.spacing.smMd : context.spacing.smMd + 1,
-              ),
-              child: _CountryButton(
-                isDense: widget.isDense,
-                onTap: widget.onCountryTap,
-              ),
+            SizedBox(
+              width: widget.isDense ? context.spacing.smMd : context.spacing.md,
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class _CountryButton extends ConsumerWidget {
-  const _CountryButton({
-    required this.isDense,
-    required this.onTap,
-  });
-
-  final bool isDense;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
-    final selectedCountry = ref.watch(
-      countrySelectorProvider.select((state) => state.selectedCountry),
-    );
-    final height = isDense ? 30.0 : 32.0;
-
-    return Material(
-      color: Colors.transparent,
-      child: AdaptiveInkWell(
-        key: const Key('podcast_discover_country_button'),
-        borderRadius: BorderRadius.circular(height / 2),
-        onTap: onTap,
-        child: Container(
-          height: height,
-          padding: EdgeInsets.symmetric(horizontal: context.spacing.sm),
-          decoration: BoxDecoration(
-            color: scheme.surfaceContainerHighest.withValues(alpha: 0.5),
-            borderRadius: BorderRadius.circular(height / 2),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.flag_outlined,
-                size: 14,
-                color: scheme.onSurfaceVariant,
-              ),
-              SizedBox(width: context.spacing.xs),
-              Text(
-                selectedCountry.code.toUpperCase(),
-                style: theme.textTheme.labelSmall?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: scheme.onSurfaceVariant,
-                ),
-              ),
-              SizedBox(width: context.spacing.xs + context.spacing.xs),
-              Icon(
-                Icons.keyboard_arrow_down_rounded,
-                size: 14,
-                color: scheme.onSurfaceVariant,
-              ),
-            ],
-          ),
         ),
       ),
     );

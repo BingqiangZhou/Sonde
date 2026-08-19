@@ -708,9 +708,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get podcast_discover_top_charts => '热门榜单';
 
   @override
-  String podcast_discover_trending_in(String country) {
-    return '$country 热门';
-  }
+  String get podcast_discover_spotlight => '精选';
 
   @override
   String get podcast_discover_see_all => '查看全部';
@@ -719,13 +717,24 @@ class AppLocalizationsZh extends AppLocalizations {
   String get podcast_discover_no_chart_data => '暂无榜单数据';
 
   @override
-  String get podcast_discover_browse_by_category => '按分类浏览';
+  String get podcast_discover_category_empty_title => '该分类暂无内容';
+
+  @override
+  String get podcast_discover_category_empty_subtitle => '换个分类试试，或查看完整榜单。';
 
   @override
   String get podcast_country_label => '国家或地区';
 
   @override
   String get podcast_search_no_results => '未找到结果';
+
+  @override
+  String podcast_search_results_count(int count) {
+    return '找到 $count 个结果';
+  }
+
+  @override
+  String get podcast_search_empty_hint => '试试其他关键词，或切换播客/单集模式。';
 
   @override
   String get podcast_search_section_podcasts => '播客';

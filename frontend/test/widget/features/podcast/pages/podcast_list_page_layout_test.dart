@@ -215,7 +215,7 @@ void main() {
     );
 
     testWidgets(
-      'uses desktop hero spacing and keeps trending label inset from the right edge',
+      'uses desktop hero spacing and keeps country pill inset from the right edge',
       (tester) async {
         tester.view.physicalSize = const Size(1280, 900);
         tester.view.devicePixelRatio = 1.0;
@@ -260,20 +260,16 @@ void main() {
         final topChartsRect = tester.getRect(
           find.byKey(const Key('podcast_discover_top_charts')),
         );
-        final trendingFinder = find.byKey(
-          const Key('podcast_discover_trending_label'),
+        final countryPillRect = tester.getRect(
+          find.byKey(const Key('podcast_discover_country_button')),
         );
-        final trendingRect = tester.getRect(trendingFinder);
-        final trendingText = tester.widget<Text>(trendingFinder);
 
         final heroSpacing = searchBarRect.top - heroRect.bottom;
-        final trendingInset = topChartsRect.right - trendingRect.right;
+        final pillInset = topChartsRect.right - countryPillRect.right;
         expect(heroSpacing, greaterThanOrEqualTo(8));
         expect(heroSpacing, lessThanOrEqualTo(24));
-        expect(trendingInset, greaterThanOrEqualTo(8));
-        expect(trendingInset, lessThanOrEqualTo(24));
-        expect(trendingText.maxLines, 1);
-        expect(trendingText.overflow, TextOverflow.ellipsis);
+        expect(pillInset, greaterThanOrEqualTo(8));
+        expect(pillInset, lessThanOrEqualTo(24));
       },
     );
   });
@@ -282,7 +278,7 @@ void main() {
   // Mobile discover list  (origin: mobile_card_layout_test.dart)
   // =========================================================================
   group('PodcastListPage mobile discover list', () {
-    testWidgets('keeps top charts header fixed while chart rows scroll', (
+    testWidgets('scrolls spotlight, header, and chart rows in one view', (
       tester,
     ) async {
       tester.view.physicalSize = const Size(390, 600);
@@ -321,30 +317,48 @@ void main() {
       );
       await tester.pumpAndSettle();
 
+      final scrollFinder = find.byKey(const Key('podcast_discover_scroll'));
+      final spotlightFinder = find.byKey(
+        const Key('podcast_discover_spotlight'),
+      );
       final headerFinder = find.byKey(const Key('podcast_discover_top_charts'));
       final chipsFinder = find.byKey(
         const Key('podcast_discover_category_chips'),
       );
-      final listFinder = find.byKey(const Key('podcast_discover_list'));
-      final scrollableFinder = find.descendant(
-        of: listFinder,
-        matching: find.byType(Scrollable),
+      final rowFinder = find.byKey(
+        const Key('podcast_discover_chart_row_1000'),
       );
+      // The carousel and chips add nested scrollables; the outer one is the
+      // first descendant in pre-order traversal.
+      final scrollableFinder = find
+          .descendant(
+            of: scrollFinder,
+            matching: find.byType(Scrollable),
+          )
+          .first;
 
+      final spotlightTopBefore = tester.getTopLeft(spotlightFinder).dy;
       final headerTopBefore = tester.getTopLeft(headerFinder).dy;
       final chipsTopBefore = tester.getTopLeft(chipsFinder).dy;
       final scrollPositionBefore =
           tester.state<ScrollableState>(scrollableFinder).position.pixels;
 
-      await tester.fling(listFinder, const Offset(0, -80), 3000);
+      // A plain drag (no ballistic fling) keeps the measured sections within
+      // the viewport.
+      await tester.drag(scrollFinder, const Offset(0, -80));
       await tester.pumpAndSettle();
 
-      expect(tester.getTopLeft(headerFinder).dy, equals(headerTopBefore));
-      expect(tester.getTopLeft(chipsFinder).dy, equals(chipsTopBefore));
       expect(
         tester.state<ScrollableState>(scrollableFinder).position.pixels,
         greaterThan(scrollPositionBefore),
       );
+      expect(tester.getTopLeft(headerFinder).dy, lessThan(headerTopBefore));
+      expect(tester.getTopLeft(chipsFinder).dy, lessThan(chipsTopBefore));
+      expect(
+        tester.getTopLeft(spotlightFinder).dy,
+        lessThan(spotlightTopBefore),
+      );
+      expect(rowFinder, findsOneWidget);
     });
 
     testWidgets(
@@ -414,9 +428,9 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        final listFinder = find.byKey(const Key('podcast_discover_list'));
+        final scrollFinder = find.byKey(const Key('podcast_discover_scroll'));
         for (var index = 0; index < 4; index++) {
-          await tester.fling(listFinder, const Offset(0, -1200), 3000);
+          await tester.fling(scrollFinder, const Offset(0, -1200), 3000);
           await tester.pumpAndSettle();
         }
 

@@ -243,67 +243,105 @@ class DiscoverChartRowSkeleton extends StatelessWidget {
   }
 }
 
-/// A list of discover chart skeleton cards for initial loading state.
-class DiscoverChartSkeletonList extends StatelessWidget {
-  const DiscoverChartSkeletonList({
-    super.key,
-    this.itemCount = 6,
-    this.compact = true,
-  });
+/// Full skeleton for the redesigned discover browse view: a spotlight card
+/// row, category chips, then the ranked chart rows (list or grid).
+class DiscoverBrowseSkeleton extends StatelessWidget {
+  const DiscoverBrowseSkeleton({super.key, this.rowCount = 6});
 
-  final int itemCount;
-  final bool compact;
+  final int rowCount;
 
   @override
   Widget build(BuildContext context) {
-    return ListView.builder(
-      physics: const NeverScrollableScrollPhysics(),
-      padding: EdgeInsets.symmetric(vertical: context.spacing.sm),
-      itemCount: itemCount,
-      itemBuilder: (context, index) => Padding(
-        padding: EdgeInsets.symmetric(vertical: context.spacing.xs),
-        child: DiscoverChartRowSkeleton(compact: compact),
-      ),
-    );
-  }
-}
+    final extension = appThemeOf(context);
+    final isMobile = MediaQuery.sizeOf(context).width < 600;
 
-/// A grid of discover chart skeleton cards for desktop layout.
-class DiscoverChartSkeletonGrid extends StatelessWidget {
-  const DiscoverChartSkeletonGrid({
-    required this.crossAxisCount,
-    super.key,
-    this.itemCount = 8,
-  });
-
-  final int itemCount;
-  final int crossAxisCount;
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final spacing = context.spacing.sm;
-        final availableWidth =
-            constraints.maxWidth - (crossAxisCount - 1) * spacing;
-        final cardWidth = availableWidth / crossAxisCount;
-        const cardHeight = 72.0;
-        final childAspectRatio = cardWidth / cardHeight;
-
-        return GridView.builder(
-          physics: const NeverScrollableScrollPhysics(),
-          padding: EdgeInsets.symmetric(vertical: context.spacing.sm),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: crossAxisCount,
-            crossAxisSpacing: spacing,
-            mainAxisSpacing: spacing,
-            childAspectRatio: childAspectRatio,
+    return ShimmerLoading(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: context.spacing.sm),
+            child: const SkeletonBox(height: 12, width: 96),
           ),
-          itemCount: itemCount,
-          itemBuilder: (context, index) =>
-              const DiscoverChartRowSkeleton(compact: true),
-        );
-      },
+          SizedBox(height: context.spacing.sm),
+          SizedBox(
+            height: 168,
+            child: Row(
+              children: [
+                Expanded(
+                  child: SkeletonBox(
+                    height: 168,
+                    borderRadius: extension.cardRadius,
+                  ),
+                ),
+                if (!isMobile) ...[
+                  SizedBox(width: context.spacing.sm),
+                  Expanded(
+                    child: SkeletonBox(
+                      height: 168,
+                      borderRadius: extension.cardRadius,
+                    ),
+                  ),
+                  SizedBox(width: context.spacing.sm),
+                  Expanded(
+                    child: SkeletonBox(
+                      height: 168,
+                      borderRadius: extension.cardRadius,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          SizedBox(height: context.spacing.md),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: context.spacing.sm),
+            child: const Row(
+              children: [
+                SkeletonBox(height: 28, width: 64, borderRadius: 18),
+                SizedBox(width: AppSpacing.sm),
+                SkeletonBox(height: 28, width: 88, borderRadius: 18),
+                SizedBox(width: AppSpacing.sm),
+                SkeletonBox(height: 28, width: 72, borderRadius: 18),
+              ],
+            ),
+          ),
+          SizedBox(height: context.spacing.md),
+          Expanded(
+            child: isMobile
+                ? ListView.builder(
+                    physics: const NeverScrollableScrollPhysics(),
+                    padding: EdgeInsets.zero,
+                    itemCount: rowCount,
+                    itemBuilder: (context, index) => Padding(
+                      padding: EdgeInsets.symmetric(vertical: context.spacing.xs),
+                      child: const DiscoverChartRowSkeleton(compact: true),
+                    ),
+                  )
+                : LayoutBuilder(
+                    builder: (context, constraints) {
+                      final spacing = context.spacing.sm;
+                      final cardWidth = (constraints.maxWidth - spacing) / 2;
+                      const cardHeight = 72.0;
+                      return GridView.builder(
+                        physics: const NeverScrollableScrollPhysics(),
+                        padding: EdgeInsets.zero,
+                        gridDelegate:
+                            SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          crossAxisSpacing: spacing,
+                          mainAxisSpacing: spacing,
+                          childAspectRatio: cardWidth / cardHeight,
+                        ),
+                        itemCount: rowCount,
+                        itemBuilder: (context, index) =>
+                            const DiscoverChartRowSkeleton(compact: true),
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
     );
   }
 }

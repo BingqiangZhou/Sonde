@@ -596,41 +596,55 @@ class AppEmptyState extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
 
-    return Center(
-      child: SurfacePanel(
-        padding: EdgeInsets.all(context.spacing.xxl),
+    // Center the panel, but fall back to scrolling when the available height
+    // shrinks below the panel's intrinsic height (e.g. with the IME open) —
+    // otherwise the action button leaves the hit-test area.
+    return LayoutBuilder(
+      builder: (context, constraints) => SingleChildScrollView(
+        padding: EdgeInsets.all(context.spacing.lg),
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 420),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 80,
-                height: 80,
-                decoration: BoxDecoration(
-                  color: scheme.primary.withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
+          constraints: BoxConstraints(
+            // Unbounded contexts (e.g. nested in a scroll view) can't center.
+            minHeight: constraints.maxHeight.isFinite ? constraints.maxHeight : 0,
+          ),
+          child: Center(
+            child: SurfacePanel(
+              padding: EdgeInsets.all(context.spacing.xxl),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 420),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 80,
+                      height: 80,
+                      decoration: BoxDecoration(
+                        color: scheme.primary.withValues(alpha: 0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(icon, size: 36, color: scheme.primary),
+                    ),
+                    SizedBox(height: context.spacing.mdLg),
+                    Text(
+                      title,
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    if (subtitle != null) ...[
+                      SizedBox(height: context.spacing.smMd),
+                      Text(
+                        subtitle!,
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: scheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                    if (action != null) ...[SizedBox(height: context.spacing.lg), action!],
+                  ],
                 ),
-                child: Icon(icon, size: 36, color: scheme.primary),
               ),
-              SizedBox(height: context.spacing.mdLg),
-              Text(
-                title,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              if (subtitle != null) ...[
-                SizedBox(height: context.spacing.smMd),
-                Text(
-                  subtitle!,
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: scheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
-              if (action != null) ...[SizedBox(height: context.spacing.lg), action!],
-            ],
+            ),
           ),
         ),
       ),

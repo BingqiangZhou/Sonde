@@ -951,15 +951,10 @@
     "@podcast_discover_top_charts":  {
                                          "description":  "Top charts section title on podcast discover page"
                                      },
-    "podcast_discover_trending_in":  "Trending in {country}",
-    "@podcast_discover_trending_in":  {
-                                          "description":  "Subtitle showing trending country on podcast discover page",
-                                          "placeholders":  {
-                                                               "country":  {
-                                                                               "type":  "String"
-                                                                           }
-                                                           }
-                                      },
+    "podcast_discover_spotlight":  "Spotlight",
+    "@podcast_discover_spotlight":  {
+                                        "description":  "Spotlight section title on podcast discover page"
+                                    },
     "podcast_discover_see_all":  "See All",
     "@podcast_discover_see_all":  {
                                       "description":  "See all button text on podcast discover charts"
@@ -968,10 +963,14 @@
     "@podcast_discover_no_chart_data":  {
                                             "description":  "Empty state text when discover charts are unavailable"
                                         },
-    "podcast_discover_browse_by_category":  "Browse by Category",
-    "@podcast_discover_browse_by_category":  {
-                                                 "description":  "Category section title on podcast discover page"
-                                             },
+    "podcast_discover_category_empty_title":  "Nothing in this category",
+    "@podcast_discover_category_empty_title":  {
+                                                   "description":  "Empty state title when the selected category has no chart items"
+                                               },
+    "podcast_discover_category_empty_subtitle":  "Try another category or browse the full charts.",
+    "@podcast_discover_category_empty_subtitle":  {
+                                                      "description":  "Empty state hint for a category with no chart items"
+                                                  },
     "podcast_country_label":  "Country/Region",
     "@podcast_country_label":  {
                                    "description":  "Country selector label"
@@ -979,6 +978,20 @@
     "podcast_search_no_results":  "No results found",
     "@podcast_search_no_results":  {
                                        "description":  "No search results message"
+                                   },
+    "podcast_search_results_count":  "{count, plural, =1{1 result found} other{{count} results found}}",
+    "@podcast_search_results_count":  {
+                                          "description":  "Search result count header on the discover page",
+                                          "placeholders":  {
+                                                               "count":  {
+                                                                             "type":  "int",
+                                                                             "plural":  true
+                                                                         }
+                                                           }
+                                      },
+    "podcast_search_empty_hint":  "Try a different keyword or switch between shows and episodes.",
+    "@podcast_search_empty_hint":  {
+                                       "description":  "Hint shown when search returns no results"
                                    },
     "podcast_search_section_podcasts":  "Podcasts",
     "@podcast_search_section_podcasts":  {

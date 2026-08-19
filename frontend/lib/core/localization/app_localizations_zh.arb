@@ -951,15 +951,10 @@
     "@podcast_discover_top_charts":  {
                                          "description":  "播客发现页热门榜单分区标题"
                                      },
-    "podcast_discover_trending_in":  "{country} 热门",
-    "@podcast_discover_trending_in":  {
-                                          "description":  "播客发现页榜单地区副标题",
-                                          "placeholders":  {
-                                                               "country":  {
-                                                                               "type":  "String"
-                                                                           }
-                                                           }
-                                      },
+    "podcast_discover_spotlight":  "精选",
+    "@podcast_discover_spotlight":  {
+                                        "description":  "播客发现页精选分区标题"
+                                    },
     "podcast_discover_see_all":  "查看全部",
     "@podcast_discover_see_all":  {
                                       "description":  "播客发现页榜单查看全部按钮"
@@ -968,10 +963,14 @@
     "@podcast_discover_no_chart_data":  {
                                             "description":  "播客发现页榜单空状态文案"
                                         },
-    "podcast_discover_browse_by_category":  "按分类浏览",
-    "@podcast_discover_browse_by_category":  {
-                                                 "description":  "播客发现页分类分区标题"
-                                             },
+    "podcast_discover_category_empty_title":  "该分类暂无内容",
+    "@podcast_discover_category_empty_title":  {
+                                                   "description":  "播客发现页所选分类无榜单条目时的空状态标题"
+                                               },
+    "podcast_discover_category_empty_subtitle":  "换个分类试试，或查看完整榜单。",
+    "@podcast_discover_category_empty_subtitle":  {
+                                                      "description":  "播客发现页所选分类无榜单条目时的提示文案"
+                                                  },
     "podcast_country_label":  "国家或地区",
     "@podcast_country_label":  {
                                    "description":  "国家选择器标签"
@@ -979,6 +978,20 @@
     "podcast_search_no_results":  "未找到结果",
     "@podcast_search_no_results":  {
                                        "description":  "无搜索结果消息"
+                                   },
+    "podcast_search_results_count":  "找到 {count} 个结果",
+    "@podcast_search_results_count":  {
+                                          "description":  "发现页搜索结果数量标题",
+                                          "placeholders":  {
+                                                               "count":  {
+                                                                             "type":  "int",
+                                                                             "plural":  true
+                                                                         }
+                                                           }
+                                      },
+    "podcast_search_empty_hint":  "试试其他关键词，或切换播客/单集模式。",
+    "@podcast_search_empty_hint":  {
+                                       "description":  "搜索无结果时的提示文案"
                                    },
     "podcast_search_section_podcasts":  "播客",
     "@podcast_search_section_podcasts":  {
