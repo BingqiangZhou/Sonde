@@ -4,7 +4,6 @@ import 'package:sonde/core/utils/time_formatter.dart';
 import 'package:sonde/features/podcast/data/models/playback_history_lite_model.dart';
 import 'package:sonde/features/podcast/data/models/podcast_daily_report_model.dart';
 import 'package:sonde/features/podcast/data/models/podcast_episode_model.dart';
-import 'package:sonde/features/podcast/data/models/podcast_highlight_model.dart';
 import 'package:sonde/features/podcast/data/models/podcast_playback_model.dart';
 import 'package:sonde/features/podcast/data/models/podcast_queue_model.dart';
 import 'package:sonde/features/podcast/data/models/podcast_subscription_model.dart';
@@ -306,34 +305,4 @@ class PodcastRepository {
 
   Future<void> deleteTranscription(int episodeId) =>
       _apiCall(() => _apiService.deleteTranscription(episodeId));
-
-  // === Highlights Management ===
-
-  Future<HighlightsListResponse> getHighlights({
-    DateTime? date,
-    int page = 1,
-    int perPage = 20,
-    int? episodeId,
-  }) =>
-      _apiCall(() => _apiService.getHighlights(
-            date != null ? TimeFormatter.formatDate(date) : null,
-            page,
-            perPage,
-            episodeId,
-          ));
-
-  Future<HighlightDatesResponse> getHighlightDates() =>
-      _apiCall(_apiService.getHighlightDates);
-
-  Future<HighlightStatsResponse> getHighlightStats() =>
-      _apiCall(_apiService.getHighlightStats);
-
-  Future<void> toggleHighlightFavorite(int highlightId) =>
-      _apiCall(() => _apiService.toggleHighlightFavorite(highlightId));
-
-  Future<void> deleteHighlight(int highlightId) =>
-      _apiCall(() => _apiService.deleteHighlight(highlightId));
-
-  Future<HighlightExtractResponse> extractEpisodeHighlights(int episodeId) =>
-      _apiCall(() => _apiService.extractEpisodeHighlights(episodeId));
 }

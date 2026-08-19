@@ -2,7 +2,6 @@ import 'package:dio/dio.dart';
 import 'package:sonde/features/podcast/data/models/playback_history_lite_model.dart';
 import 'package:sonde/features/podcast/data/models/podcast_daily_report_model.dart';
 import 'package:sonde/features/podcast/data/models/podcast_episode_model.dart';
-import 'package:sonde/features/podcast/data/models/podcast_highlight_model.dart';
 import 'package:sonde/features/podcast/data/models/podcast_playback_model.dart';
 import 'package:sonde/features/podcast/data/models/podcast_queue_model.dart';
 import 'package:sonde/features/podcast/data/models/podcast_subscription_model.dart';
@@ -186,31 +185,4 @@ abstract class PodcastApiService {
 
   @DELETE('/podcasts/episodes/{episodeId}/transcription')
   Future<void> deleteTranscription(@Path('episodeId') int episodeId);
-
-  // === Highlights Management ===
-
-  @GET('/podcasts/highlights')
-  Future<HighlightsListResponse> getHighlights(
-    @Query('date') String? date,
-    @Query('page') int page,
-    @Query('per_page') int perPage,
-    @Query('episode_id') int? episodeId,
-  );
-
-  @GET('/podcasts/highlights/dates')
-  Future<HighlightDatesResponse> getHighlightDates();
-
-  @GET('/podcasts/highlights/stats')
-  Future<HighlightStatsResponse> getHighlightStats();
-
-  @POST('/podcasts/episodes/{episodeId}/highlights/extract')
-  Future<HighlightExtractResponse> extractEpisodeHighlights(
-    @Path('episodeId') int episodeId,
-  );
-
-  @POST('/podcasts/highlights/{highlightId}/toggle-favorite')
-  Future<void> toggleHighlightFavorite(@Path('highlightId') int highlightId);
-
-  @DELETE('/podcasts/highlights/{highlightId}')
-  Future<void> deleteHighlight(@Path('highlightId') int highlightId);
 }

@@ -17,7 +17,6 @@ import 'package:sonde/features/podcast/presentation/pages/podcast_daily_report_p
 import 'package:sonde/features/podcast/presentation/pages/podcast_episode_detail_page.dart';
 import 'package:sonde/features/podcast/presentation/pages/podcast_episodes_page.dart';
 import 'package:sonde/features/podcast/presentation/pages/podcast_feed_page.dart';
-import 'package:sonde/features/podcast/presentation/pages/podcast_highlights_page.dart';
 import 'package:sonde/features/podcast/presentation/pages/podcast_list_page.dart';
 import 'package:sonde/features/podcast/presentation/widgets/podcast_bottom_player_widget.dart';
 import 'package:sonde/features/profile/presentation/pages/profile_cache_management_page.dart';
@@ -224,24 +223,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             state: state,
             child: _PlayerAwareRouteFrame(
               child: PodcastDailyReportPage(
-                initialDate: parsedDate,
-              ),
-            ),
-          );
-        },
-      ),
-
-      // Highlights
-      GoRoute(
-        path: '/highlights',
-        name: 'highlights',
-        pageBuilder: (context, state) {
-          final dateParam = state.uri.queryParameters['date'];
-          final parsedDate = _parseDateOnlyQuery(dateParam);
-          return _buildModalPage(
-            state: state,
-            child: _PlayerAwareRouteFrame(
-              child: PodcastHighlightsPage(
                 initialDate: parsedDate,
               ),
             ),

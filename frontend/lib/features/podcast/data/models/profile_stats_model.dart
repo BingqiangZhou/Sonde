@@ -9,7 +9,6 @@ class ProfileStatsModel extends Equatable {
     required this.pendingSummaries,
     required this.playedEpisodes,
     this.latestDailyReportDate,
-    this.totalHighlights = 0,
   });
 
   factory ProfileStatsModel.fromJson(Map<String, dynamic> json) {
@@ -20,7 +19,6 @@ class ProfileStatsModel extends Equatable {
       pendingSummaries: (json['pending_summaries'] as num?)?.toInt() ?? 0,
       playedEpisodes: (json['played_episodes'] as num?)?.toInt() ?? 0,
       latestDailyReportDate: json['latest_daily_report_date'] as String?,
-      totalHighlights: (json['total_highlights'] as num?)?.toInt() ?? 0,
     );
   }
   final int totalSubscriptions;
@@ -29,7 +27,6 @@ class ProfileStatsModel extends Equatable {
   final int pendingSummaries;
   final int playedEpisodes;
   final String? latestDailyReportDate;
-  final int totalHighlights;
 
   @override
   List<Object?> get props => [
@@ -39,6 +36,5 @@ class ProfileStatsModel extends Equatable {
     pendingSummaries,
     playedEpisodes,
     latestDailyReportDate,
-    totalHighlights,
   ];
 }

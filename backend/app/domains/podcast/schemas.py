@@ -527,7 +527,6 @@ class PodcastProfileStatsResponse(PodcastBaseSchema):
     pending_summaries: int
     played_episodes: int
     latest_daily_report_date: str | None = None
-    total_highlights: int = 0
 
 
 # === Transcription相关 ===
@@ -865,57 +864,3 @@ class PodcastSubscriptionBulkDeleteResponse(PodcastBaseSchema):
         default_factory=list,
         description="成功删除的订阅ID列表",
     )
-
-
-# === Highlight相关 ===
-
-
-class HighlightResponse(PodcastBaseSchema):
-    """高光观点响应"""
-
-    id: int
-    episode_id: int
-    episode_title: str
-    subscription_title: str | None = None
-    original_text: str
-    context_before: str | None = None
-    context_after: str | None = None
-    insight_score: float
-    novelty_score: float
-    actionability_score: float
-    overall_score: float
-    speaker_hint: str | None = None
-    timestamp_hint: str | None = None
-    topic_tags: list[str] = Field(default_factory=list)
-    is_user_favorited: bool = False
-    created_at: datetime
-
-
-class HighlightListResponse(PodcastBaseSchema):
-    """高光列表响应"""
-
-    items: list[HighlightResponse] = Field(default_factory=list)
-    total: int
-    page: int
-    size: int
-    pages: int
-
-
-class HighlightDatesResponse(PodcastBaseSchema):
-    """高光日期列表响应"""
-
-    dates: list[date] = Field(default_factory=list)
-
-
-class HighlightStatsResponse(PodcastBaseSchema):
-    """高光统计数据响应"""
-
-    total_highlights: int
-    avg_score: float
-    latest_extraction_date: date | None = None
-
-
-class HighlightFavoriteRequest(PodcastBaseSchema):
-    """收藏高光请求"""
-
-    favorited: bool = Field(..., description="是否收藏")

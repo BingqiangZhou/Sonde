@@ -4,7 +4,7 @@ import 'package:sonde/core/constants/app_durations.dart';
 import 'package:sonde/core/theme/app_colors.dart';
 import 'package:sonde/features/podcast/presentation/widgets/shared/episode_card_utils.dart';
 
-/// Shared calendar day cell builder for daily report and highlights pages.
+/// Shared calendar day cell builder for the daily report page.
 class CalendarPanelHelper {
   CalendarPanelHelper._();
 

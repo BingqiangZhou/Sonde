@@ -2,10 +2,6 @@
 
 from app.core.celery_app import celery_app
 from app.domains.podcast.tasks.tasks_daily_report import generate_daily_podcast_reports
-from app.domains.podcast.tasks.tasks_highlight import (
-    extract_episode_highlights,
-    extract_pending_highlights,
-)
 from app.domains.podcast.tasks.tasks_maintenance import (
     auto_cleanup_cache_files,
     cleanup_old_playback_states,
@@ -29,8 +25,6 @@ __all__ = [
     "celery_app",
     "cleanup_old_playback_states",
     "cleanup_old_transcription_temp_files",
-    "extract_episode_highlights",
-    "extract_pending_highlights",
     "generate_daily_podcast_reports",
     "generate_episode_summary",
     "generate_pending_summaries",

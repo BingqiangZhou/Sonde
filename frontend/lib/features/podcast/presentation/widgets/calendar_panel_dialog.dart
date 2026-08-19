@@ -14,8 +14,8 @@ import 'package:table_calendar/table_calendar.dart';
 
 /// Shows a calendar panel dialog anchored to the top-right of the screen.
 ///
-/// This replaces the duplicated `_showCalendarPanel()` methods in the
-/// highlights and daily-report pages.
+/// This replaces the duplicated `_showCalendarPanel()` methods that
+/// previously existed in panel pages.
 ///
 /// Parameters:
 /// - [context] - Build context for showing the dialog.
@@ -115,8 +115,8 @@ Future<void> showCalendarPanelDialog({
 ///
 /// Renders a `TableCalendar` with marker dots for dates that have data,
 /// a loading indicator, and a title. This widget replaces the duplicated
-/// `_buildCalendarPanelContent()` methods in the highlights and daily-report
-/// pages.
+/// `_buildCalendarPanelContent()` methods that previously existed in
+/// panel pages.
 ///
 /// All data is passed in as parameters -- the parent is responsible for
 /// watching providers and supplying the current state.

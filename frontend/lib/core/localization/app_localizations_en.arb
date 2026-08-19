@@ -2061,19 +2061,15 @@
     "@sidebarAppTitle":  {
                              "description":  "App title shown in the desktop sidebar header"
                          },
-    "podcast_highlights_title":  "Highlights",
     "@podcast_highlights_title":  {
                                        "description":  "Highlights feature title"
                                    },
-    "podcast_highlights_loading":  "Loading...",
     "@podcast_highlights_loading":  {
                                           "description":  "Highlights loading message"
                                       },
-    "podcast_highlights_empty":  "No highlights yet",
     "@podcast_highlights_empty":  {
                                         "description":  "Highlights empty state message"
                                     },
-    "podcast_highlights_items":  "{count, plural, one{1 highlight} other{{count} highlights}}",
     "@podcast_highlights_items":  {
                                         "description":  "Highlights count label",
                                         "placeholders":  {
@@ -2082,46 +2078,30 @@
                                                                        }
                                                          }
                                     },
-    "podcast_highlights_insight":  "Insight",
     "@podcast_highlights_insight":  {
                                           "description":  "Highlight insight label"
                                       },
-    "podcast_highlights_novelty":  "Novelty",
     "@podcast_highlights_novelty":  {
                                           "description":  "Highlight novelty label"
                                       },
-    "podcast_highlights_actionability":  "Actionability",
     "@podcast_highlights_actionability":  {
                                                 "description":  "Highlight actionability label"
                                             },
-    "podcast_highlights_favorite":  "Favorite",
     "@podcast_highlights_favorite":  {
                                             "description":  "Favorite highlight button"
                                         },
-    "podcast_highlights_unfavorite":  "Unfavorite",
     "@podcast_highlights_unfavorite":  {
                                                 "description":  "Unfavorite highlight button"
                                             },
-    "podcast_highlights_dates":  "Select Date",
     "@podcast_highlights_dates":  {
                                           "description":  "Highlights date selector title"
                                       },
-    "podcast_highlights_generated_prefix":  "Generated at",
-    "podcast_highlights_original_quote":  "Original Quote",
-    "podcast_highlights_load_failed":  "Failed to load",
-    "podcast_highlights_cannot_load":  "Cannot load highlights",
-    "podcast_highlights_retry":  "Retry",
-    "podcast_highlights_load_more_error":  "Failed to load more highlights. Please try again.",
     "@podcast_highlights_load_more_error":  {
                                               "description":  "Error message when loading more highlights fails"
                                           },
-    "podcast_highlights_no_highs":  "No highlights",
-    "podcast_highlights_loading_highlights":  "Loading highlights...",
-    "podcast_highlights_favorited":  "Favorited",
     "@podcast_highlights_favorited":  {
                                             "description":  "Already favorited state"
                                         },
-    "podcast_highlights_overall_score":  "Score: {score}",
     "@podcast_highlights_overall_score":  {
                                                 "description":  "Overall score display",
                                                 "placeholders":  {
@@ -2130,11 +2110,9 @@
                                                     }
                                                 }
                                             },
-    "podcast_highlights_topic_tags":  "Topics",
     "@podcast_highlights_topic_tags":  {
                                             "description":  "Topic tags section label"
                                         },
-    "podcast_highlights_multiple_count":  "{count, plural, one{1 highlight} other{{count} highlights}}",
     "@podcast_highlights_multiple_count":  {
                                                 "description":  "Multiple highlights count in sheet header",
                                                 "placeholders":  {
@@ -2143,35 +2121,27 @@
                                                     }
                                                 }
                                             },
-    "podcast_highlights_extract_hint":  "Extract key insights from this transcript",
     "@podcast_highlights_extract_hint":  {
                                                 "description":  "Hint text for extracting highlights"
                                             },
-    "podcast_highlights_extract_action":  "Extract",
     "@podcast_highlights_extract_action":  {
                                                 "description":  "Extract highlights button text"
                                             },
-    "podcast_highlights_extract_queued":  "Highlight extraction started. Please check back in a few minutes.",
     "@podcast_highlights_extract_queued":  {
                                                 "description":  "Message shown when highlight extraction is queued"
                                             },
-    "podcast_highlights_extract_failed":  "Failed to start highlight extraction",
     "@podcast_highlights_extract_failed":  {
                                                 "description":  "Message shown when highlight extraction fails"
                                             },
-    "podcast_transcript_view_full":  "Full Text",
     "@podcast_transcript_view_full":  {
                                                 "description":  "Full transcript view mode label"
                                             },
-    "podcast_transcript_view_highlights":  "Highlights",
     "@podcast_transcript_view_highlights":  {
                                                 "description":  "Highlights view mode label"
                                             },
-    "podcast_highlights_empty_title":  "No Highlights Yet",
     "@podcast_highlights_empty_title":  {
                                                 "description":  "Title for empty highlights state"
                                             },
-    "podcast_highlights_empty_subtitle":  "Extract key insights from this episode",
     "@podcast_highlights_empty_subtitle":  {
                                                 "description":  "Subtitle for empty highlights state"
                                             },
@@ -2590,7 +2560,6 @@
     "@ai_tab_eyebrow":  {
                          "description":  "AI tab eyebrow text"
                      },
-    "ai_tab_subtitle": "Daily reports, highlights, and more",
     "@ai_tab_subtitle":  {
                           "description":  "AI tab subtitle"
                         },
@@ -2598,7 +2567,6 @@
     "@ai_tab_daily_report_subtitle":  {
                                         "description":  "AI tab daily report card subtitle"
                                       },
-    "ai_tab_highlights_subtitle": "Key insights from your listening history",
     "@ai_tab_highlights_subtitle":  {
                                         "description":  "AI tab highlights card subtitle"
                                       },

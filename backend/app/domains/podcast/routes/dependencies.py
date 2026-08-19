@@ -17,7 +17,6 @@ from app.domains.podcast.services.episode_service import (
     PodcastEpisodeService,
     PodcastSubscriptionService,
 )
-from app.domains.podcast.services.highlight_service import HighlightService
 from app.domains.podcast.services.playback_service import (
     PodcastPlaybackService,
     PodcastQueueService,
@@ -223,15 +222,6 @@ def get_daily_report_service(
     return DailyReportService(db, user_id)
 
 
-def get_highlight_service(
-    db: AsyncSession = Depends(get_db_session_dependency),
-    user_id: int = Depends(require_api_key),
-    redis: RedisCache = Depends(get_redis_client),
-) -> HighlightService:
-    """Provide request-scoped podcast highlight service."""
-    return HighlightService(db, user_id, redis=redis)
-
-
 def get_summary_workflow_service(
     db: AsyncSession = Depends(get_db_session_dependency),
 ) -> SummaryWorkflowService:
@@ -255,7 +245,6 @@ def get_podcast_task_orchestration_service(
 
 __all__ = [
     "get_daily_report_service",
-    "get_highlight_service",
     "get_podcast_episode_repository",
     "get_podcast_episode_service",
     "get_podcast_parser",

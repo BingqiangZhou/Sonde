@@ -64,9 +64,6 @@ class ProfileActivityCards extends ConsumerWidget {
       stats?.latestDailyReportDate,
       isLoading: isLoading,
     );
-    final highlightsCount = isLoading
-        ? '...'
-        : (stats?.totalHighlights.toString() ?? '0');
 
     if (isMobile) {
       final cards = _buildCardList(
@@ -76,7 +73,6 @@ class ProfileActivityCards extends ConsumerWidget {
         summaryCount: summaryCount,
         historyCount: historyCount,
         latestDailyReportDateText: latestDailyReportDateText,
-        highlightsCount: highlightsCount,
         scheme: scheme,
       );
       return Column(
@@ -102,7 +98,6 @@ class ProfileActivityCards extends ConsumerWidget {
           summaryCount: summaryCount,
           historyCount: historyCount,
           latestDailyReportDateText: latestDailyReportDateText,
-          highlightsCount: highlightsCount,
           scheme: scheme,
         );
 
@@ -124,7 +119,6 @@ class ProfileActivityCards extends ConsumerWidget {
     required String summaryCount,
     required String historyCount,
     required String latestDailyReportDateText,
-    required String highlightsCount,
     required ColorScheme scheme,
   }) {
     final l10n = context.l10n;
@@ -173,16 +167,6 @@ class ProfileActivityCards extends ConsumerWidget {
             PodcastNavigation.goToDailyReport(context),
         showChevron: true,
         cardKey: const Key('profile_daily_report_card'),
-      ),
-      _buildActivityCard(
-        context,
-        icon: Icons.lightbulb_outline,
-        label: l10n.podcast_highlights_title,
-        value: highlightsCount,
-        color: scheme.secondary,
-        onTap: () => PodcastNavigation.goToHighlights(context),
-        showChevron: true,
-        cardKey: const Key('profile_highlights_card'),
       ),
     ];
   }

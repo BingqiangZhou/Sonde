@@ -6,8 +6,6 @@ from typing import Any
 
 from app.domains.podcast.schemas import (
     DailyReportDateItem,
-    HighlightListResponse,
-    HighlightResponse,
     PodcastDailyReportDatesResponse,
     PodcastEpisodeListResponse,
     PodcastEpisodeResponse,
@@ -181,19 +179,3 @@ def build_summary_models_response(
         for model in models
     ]
     return SummaryModelsResponse(models=model_infos, total=len(model_infos))
-
-
-def build_highlight_list_response(payload: dict[str, Any]) -> HighlightListResponse:
-    """Build the highlights list response."""
-    items = [HighlightResponse(**item) for item in payload.get("items", [])]
-    total = payload["total"]
-    size = payload.get("per_page") or payload.get("size", 20)
-    page = payload["page"]
-    pages = (total + size - 1) // size if size > 0 else 0
-    return HighlightListResponse(
-        items=items,
-        total=total,
-        page=page,
-        size=size,
-        pages=pages,
-    )

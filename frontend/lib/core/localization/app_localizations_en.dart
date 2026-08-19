@@ -1538,119 +1538,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sidebarAppTitle => 'AI Assistant';
 
   @override
-  String get podcast_highlights_title => 'Highlights';
-
-  @override
-  String get podcast_highlights_loading => 'Loading...';
-
-  @override
-  String get podcast_highlights_empty => 'No highlights yet';
-
-  @override
-  String podcast_highlights_items(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count highlights',
-      one: '1 highlight',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String get podcast_highlights_insight => 'Insight';
-
-  @override
-  String get podcast_highlights_novelty => 'Novelty';
-
-  @override
-  String get podcast_highlights_actionability => 'Actionability';
-
-  @override
-  String get podcast_highlights_favorite => 'Favorite';
-
-  @override
-  String get podcast_highlights_unfavorite => 'Unfavorite';
-
-  @override
-  String get podcast_highlights_dates => 'Select Date';
-
-  @override
-  String get podcast_highlights_generated_prefix => 'Generated at';
-
-  @override
-  String get podcast_highlights_original_quote => 'Original Quote';
-
-  @override
-  String get podcast_highlights_load_failed => 'Failed to load';
-
-  @override
-  String get podcast_highlights_cannot_load => 'Cannot load highlights';
-
-  @override
-  String get podcast_highlights_retry => 'Retry';
-
-  @override
-  String get podcast_highlights_load_more_error =>
-      'Failed to load more highlights. Please try again.';
-
-  @override
-  String get podcast_highlights_no_highs => 'No highlights';
-
-  @override
-  String get podcast_highlights_loading_highlights => 'Loading highlights...';
-
-  @override
-  String get podcast_highlights_favorited => 'Favorited';
-
-  @override
-  String podcast_highlights_overall_score(double score) {
-    return 'Score: $score';
-  }
-
-  @override
-  String get podcast_highlights_topic_tags => 'Topics';
-
-  @override
-  String podcast_highlights_multiple_count(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count highlights',
-      one: '1 highlight',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String get podcast_highlights_extract_hint =>
-      'Extract key insights from this transcript';
-
-  @override
-  String get podcast_highlights_extract_action => 'Extract';
-
-  @override
-  String get podcast_highlights_extract_queued =>
-      'Highlight extraction started. Please check back in a few minutes.';
-
-  @override
-  String get podcast_highlights_extract_failed =>
-      'Failed to start highlight extraction';
-
-  @override
-  String get podcast_transcript_view_full => 'Full Text';
-
-  @override
-  String get podcast_transcript_view_highlights => 'Highlights';
-
-  @override
-  String get podcast_highlights_empty_title => 'No Highlights Yet';
-
-  @override
-  String get podcast_highlights_empty_subtitle =>
-      'Extract key insights from this episode';
-
-  @override
   String get auth_brand_name => 'Personal AI Workspace';
 
   @override
@@ -2009,15 +1896,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get ai_tab_eyebrow => 'AI Assistant';
 
   @override
-  String get ai_tab_subtitle => 'Daily reports, highlights, and more';
-
-  @override
   String get ai_tab_daily_report_subtitle =>
       'Review your personalized daily digest';
-
-  @override
-  String get ai_tab_highlights_subtitle =>
-      'Key insights from your listening history';
 
   @override
   String get ai_tab_chat_title => 'AI Assistant';

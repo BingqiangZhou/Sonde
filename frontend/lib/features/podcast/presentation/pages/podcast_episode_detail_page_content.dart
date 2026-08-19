@@ -57,17 +57,13 @@ extension _PodcastEpisodeDetailPageContent on _PodcastEpisodeDetailPageState {
   Widget _buildTranscriptContent(PodcastEpisodeModel episode) {
     final tProvider = transcriptionProvider(widget.episodeId);
     final transcriptionState = ref.watch(tProvider);
-    final highlightsState = ref.watch(episodeHighlightsProvider(widget.episodeId));
 
     return transcriptionState.when(
       data: (transcription) {
         if (transcription != null && isTranscriptionCompleted(transcription)) {
           return TranscriptDisplayWidget(
             key: _transcriptKey,
-            episodeId: widget.episodeId,
-            episodeTitle: episode.title,
             transcription: transcription,
-            highlights: highlightsState.value?.items,
           );
         }
 

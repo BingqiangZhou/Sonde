@@ -11,7 +11,6 @@ import 'package:sonde/features/auth/presentation/providers/auth_provider.dart';
 import 'package:sonde/features/podcast/presentation/providers/podcast_daily_report_providers.dart';
 import 'package:sonde/features/podcast/presentation/providers/podcast_episodes_providers.dart';
 import 'package:sonde/features/podcast/presentation/providers/podcast_feed_providers.dart';
-import 'package:sonde/features/podcast/presentation/providers/podcast_highlights_providers.dart';
 import 'package:sonde/features/podcast/presentation/providers/podcast_providers.dart';
 import 'package:sonde/features/podcast/presentation/providers/podcast_search_provider.dart';
 
@@ -113,8 +112,6 @@ class ServerConfigNotifier extends Notifier<ServerConfigState> {
     ref.invalidate(podcastStatsProvider);
     ref.invalidate(dailyReportProvider);
     ref.invalidate(dailyReportDatesProvider);
-    ref.invalidate(highlightsProvider);
-    ref.invalidate(highlightDatesProvider);
     ref.invalidate(podcastSearchProvider);
   }
 

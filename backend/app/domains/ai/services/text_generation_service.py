@@ -59,7 +59,7 @@ class BaseModelManager:
         Args:
             db: AsyncSession for database access
             model_type: The type of AI model this manager handles
-            operation_name: Human-readable name for logging (e.g., "Highlight extraction")
+            operation_name: Human-readable name for logging (e.g., "Summary generation")
         """
         self.db = db
         self.model_type = model_type

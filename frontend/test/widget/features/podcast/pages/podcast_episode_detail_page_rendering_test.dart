@@ -117,13 +117,6 @@ void main() {
       await tester.tap(transcriptTab);
       await tester.pumpAndSettle();
 
-      // Default view is now highlights - switch to full transcript view
-      final fullTextButton = find.textContaining('Full Text');
-      if (fullTextButton.evaluate().isNotEmpty) {
-        await tester.tap(fullTextButton);
-        await tester.pumpAndSettle();
-      }
-
       expect(find.textContaining('Transcript content'), findsOneWidget);
 
       // Tap the summary tab using its text label

@@ -246,7 +246,7 @@ async def call_ai_api_with_retry(
         prompt: The prompt to send
         response_parser: Async callable to parse the response content
         ai_model_repo: Repository for tracking usage (must have increment_usage method)
-        operation_name: Name for logging (e.g., "Highlight extraction", "Summary generation")
+        operation_name: Name for logging (e.g., "Summary generation")
         max_retries: Maximum retry attempts (defaults to settings.AI_CLIENT_MAX_RETRIES)
         base_delay: Base delay in seconds for exponential backoff (defaults to settings.AI_CLIENT_BASE_DELAY)
         max_prompt_length: Maximum prompt length before truncation (defaults to settings.AI_CLIENT_MAX_PROMPT_LENGTH)

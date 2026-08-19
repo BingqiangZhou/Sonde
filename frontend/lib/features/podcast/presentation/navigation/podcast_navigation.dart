@@ -123,23 +123,6 @@ class PodcastNavigation {
     );
   }
 
-  /// Navigate to highlights page
-  static void goToHighlights(
-    BuildContext context, {
-    DateTime? date,
-  }) {
-    final routingContext = _resolveRoutingContext(context);
-    if (routingContext == null) {
-      return;
-    }
-    GoRouter.of(routingContext).pushNamed(
-      'highlights',
-      queryParameters: {
-        if (date != null) 'date': EpisodeCardUtils.formatDate(date),
-      },
-    );
-  }
-
   /// Navigate to podcast list page deterministically
   static void popToList(BuildContext context) {
     final routingContext = _resolveRoutingContext(context);

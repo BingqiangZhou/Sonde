@@ -1482,102 +1482,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get sidebarAppTitle => 'AI 助手';
 
   @override
-  String get podcast_highlights_title => '高光观点';
-
-  @override
-  String get podcast_highlights_loading => '加载中...';
-
-  @override
-  String get podcast_highlights_empty => '暂无高光观点';
-
-  @override
-  String podcast_highlights_items(int count) {
-    return '$count 条高光';
-  }
-
-  @override
-  String get podcast_highlights_insight => '洞察力';
-
-  @override
-  String get podcast_highlights_novelty => '新颖性';
-
-  @override
-  String get podcast_highlights_actionability => '可操作性';
-
-  @override
-  String get podcast_highlights_favorite => '收藏';
-
-  @override
-  String get podcast_highlights_unfavorite => '取消收藏';
-
-  @override
-  String get podcast_highlights_dates => '选择日期';
-
-  @override
-  String get podcast_highlights_generated_prefix => '生成于';
-
-  @override
-  String get podcast_highlights_original_quote => '原文引用';
-
-  @override
-  String get podcast_highlights_load_failed => '加载失败';
-
-  @override
-  String get podcast_highlights_cannot_load => '无法加载高光观点';
-
-  @override
-  String get podcast_highlights_retry => '重试';
-
-  @override
-  String get podcast_highlights_load_more_error => '加载更多精选失败，请重试。';
-
-  @override
-  String get podcast_highlights_no_highs => '暂无高光';
-
-  @override
-  String get podcast_highlights_loading_highlights => '正在加载高光观点';
-
-  @override
-  String get podcast_highlights_favorited => '已收藏';
-
-  @override
-  String podcast_highlights_overall_score(double score) {
-    return '评分: $score';
-  }
-
-  @override
-  String get podcast_highlights_topic_tags => '主题标签';
-
-  @override
-  String podcast_highlights_multiple_count(int count) {
-    return '$count 条高光';
-  }
-
-  @override
-  String get podcast_highlights_extract_hint => '从转录文本中提取关键观点';
-
-  @override
-  String get podcast_highlights_extract_action => '提取';
-
-  @override
-  String get podcast_highlights_extract_queued => '高光提取已开始，请几分钟后刷新查看';
-
-  @override
-  String get podcast_highlights_extract_failed => '启动高光提取失败';
-
-  @override
-  String get podcast_transcript_view_full => '全文';
-
-  @override
-  String get podcast_transcript_view_highlights => '高亮';
-
-  @override
-  String get podcast_highlights_empty_title => '暂无高亮';
-
-  @override
-  String get podcast_highlights_empty_subtitle => '从本期播客中提取关键见解';
-
-  @override
   String get auth_brand_name => '个人 AI 工作空间';
 
   @override
@@ -1920,13 +1824,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get ai_tab_eyebrow => 'AI 助手';
 
   @override
-  String get ai_tab_subtitle => '日报、 高光观点和更多';
-
-  @override
   String get ai_tab_daily_report_subtitle => '查看你的个性化每日摘要';
-
-  @override
-  String get ai_tab_highlights_subtitle => '从收听历史中获取关键见解';
 
   @override
   String get ai_tab_chat_title => 'AI 助手';

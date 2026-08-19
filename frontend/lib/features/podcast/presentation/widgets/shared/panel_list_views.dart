@@ -8,7 +8,7 @@ import 'package:sonde/core/widgets/custom_adaptive_navigation.dart';
 import 'package:sonde/features/podcast/presentation/constants/podcast_ui_constants.dart';
 
 /// Shared page skeleton for panel-style list pages (history,
-/// subscriptions, highlights, daily report).
+/// subscriptions, daily report).
 ///
 /// Scaffold > transparent Material > ResponsiveContainer (maxWidth
 /// [kPanelListMaxWidth]) > optional adaptive pull-to-refresh > optional

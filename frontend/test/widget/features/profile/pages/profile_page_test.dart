@@ -559,7 +559,7 @@ void main() {
 
     await tester.pump();
 
-    expect(find.text('...'), findsNWidgets(5));
+    expect(find.text('...'), findsNWidgets(4));
     expect(find.text('--'), findsOneWidget);
   });
 
@@ -592,7 +592,7 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    expect(find.text('0'), findsNWidgets(5));
+    expect(find.text('0'), findsNWidgets(4));
     expect(find.text('5'), findsNothing);
   });
 
@@ -625,7 +625,7 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    expect(find.text('0'), findsNWidgets(5));
+    expect(find.text('0'), findsNWidgets(4));
     expect(find.text('5'), findsNothing);
   });
 

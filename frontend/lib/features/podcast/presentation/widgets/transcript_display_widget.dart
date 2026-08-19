@@ -11,32 +11,19 @@ import 'package:sonde/core/platform/platform_helper.dart';
 import 'package:sonde/core/theme/app_colors.dart';
 import 'package:sonde/core/utils/debounce.dart';
 import 'package:sonde/core/utils/text_processing_cache.dart';
-import 'package:sonde/core/widgets/adaptive/adaptive.dart';
 import 'package:sonde/core/widgets/app_shells.dart';
-import 'package:sonde/core/widgets/top_floating_notice.dart';
-import 'package:sonde/features/podcast/data/models/podcast_highlight_model.dart';
 import 'package:sonde/features/podcast/data/models/podcast_transcription_model.dart';
 import 'package:sonde/features/podcast/presentation/providers/transcription_providers.dart';
-import 'package:sonde/features/podcast/presentation/providers/podcast_highlights_providers.dart';
-import 'package:sonde/features/podcast/presentation/widgets/highlight_card.dart';
-import 'package:sonde/features/podcast/presentation/widgets/highlight_detail_sheet.dart';
-
-/// View mode for transcript display
-enum TranscriptViewMode { highlights, fullTranscript }
 
 class TranscriptDisplayWidget extends ConsumerStatefulWidget {
 
   const TranscriptDisplayWidget({
-    required this.episodeId, required this.episodeTitle, super.key,
-    this.transcription,
+    required this.transcription,
     this.onSearchChanged,
-    this.highlights,
+    super.key,
   });
-  final int episodeId;
-  final String episodeTitle;
   final PodcastTranscriptionResponse? transcription;
   final void Function(String)? onSearchChanged;
-  final List<HighlightResponse>? highlights;
 
   @override
   ConsumerState<TranscriptDisplayWidget> createState() =>
@@ -46,19 +33,10 @@ class TranscriptDisplayWidget extends ConsumerStatefulWidget {
 class TranscriptDisplayWidgetState
     extends ConsumerState<TranscriptDisplayWidget> {
   final TextEditingController _searchController = TextEditingController();
-  // Separate scroll controllers for each view to avoid accessibility tree issues
-  final ScrollController _highlightsScrollController = ScrollController();
-  final ScrollController _fullTranscriptScrollController = ScrollController();
+  final ScrollController _transcriptScrollController = ScrollController();
   List<String> _searchResults = [];
   bool _isSearching = false;
   DebounceTimer? _searchDebounce;
-
-  // View mode state - always default to highlights view
-  TranscriptViewMode _viewMode = TranscriptViewMode.highlights;
-
-  // Cached sorted highlights - only re-sorted when highlights data changes
-  List<HighlightResponse>? _cachedSortedHighlights;
-  List<HighlightResponse>? _lastRawHighlights;
 
   @override
   void initState() {
@@ -68,11 +46,8 @@ class TranscriptDisplayWidgetState
 
   /// 滚动到顶部
   void scrollToTop() {
-    final controller = _viewMode == TranscriptViewMode.highlights
-        ? _highlightsScrollController
-        : _fullTranscriptScrollController;
-    if (controller.hasClients) {
-      controller.animateTo(
+    if (_transcriptScrollController.hasClients) {
+      _transcriptScrollController.animateTo(
         0,
         duration: AppDurations.scrollAnimation,
         curve: Curves.easeInOut,
@@ -85,8 +60,7 @@ class TranscriptDisplayWidgetState
     _searchDebounce?.dispose();
     _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
-    _highlightsScrollController.dispose();
-    _fullTranscriptScrollController.dispose();
+    _transcriptScrollController.dispose();
     super.dispose();
   }
 
@@ -139,92 +113,7 @@ class TranscriptDisplayWidgetState
       return _buildEmptyState(context);
     }
 
-    final hasHighlights = widget.highlights != null && widget.highlights!.isNotEmpty;
-
-    return Column(
-      children: [
-        // View mode toggle (Highlights | Full Text)
-        _buildViewModeToggle(context),
-
-        // Highlight extraction banner (show if no highlights)
-        if (!hasHighlights && !_isSearching)
-          _buildExtractHighlightsBanner(context),
-
-        // Content - switch between highlights and full transcript
-        Expanded(
-          child: _viewMode == TranscriptViewMode.highlights
-              ? _buildHighlightsView(context)
-              : _buildFullTranscript(context, content),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildExtractHighlightsBanner(BuildContext context) {
-    final l10n = context.l10n;
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
-    final extension = appThemeOf(context);
-
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.symmetric(horizontal: context.spacing.md, vertical: context.spacing.smMd),
-      margin: EdgeInsets.fromLTRB(context.spacing.md, 0, context.spacing.md, context.spacing.sm),
-      decoration: BoxDecoration(
-        color: scheme.primaryContainer.withValues(alpha: 0.2),
-        borderRadius: BorderRadius.circular(extension.itemRadius),
-        border: Border.all(
-          color: scheme.primary.withValues(alpha: 0.3),
-        ),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            Icons.auto_awesome_outlined,
-            size: 20,
-            color: scheme.primary,
-          ),
-          SizedBox(width: context.spacing.smMd),
-          Expanded(
-            child: Text(
-              l10n.podcast_highlights_extract_hint,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: scheme.onSurface,
-              ),
-            ),
-          ),
-          SizedBox(width: context.spacing.sm),
-          TextButton.icon(
-            onPressed: _extractHighlights,
-            icon: const Icon(Icons.auto_awesome, size: 16),
-            label: Text(l10n.podcast_highlights_extract_action),
-            style: TextButton.styleFrom(
-              foregroundColor: scheme.primary,
-              padding: EdgeInsets.symmetric(horizontal: context.spacing.smMd, vertical: context.spacing.sm),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _extractHighlights() async {
-    final response = await extractEpisodeHighlights(ref, widget.episodeId);
-    if (!mounted) return;
-
-    final l10n = context.l10n;
-    if (response != null) {
-      showTopFloatingNotice(
-        context,
-        message: l10n.podcast_highlights_extract_queued,
-      );
-    } else {
-      showTopFloatingNotice(
-        context,
-        message: l10n.podcast_highlights_extract_failed,
-        isError: true,
-      );
-    }
+    return _buildFullTranscript(context, content);
   }
 
   Widget _buildSearchBar(BuildContext context) {
@@ -311,125 +200,12 @@ class TranscriptDisplayWidgetState
     );
   }
 
-  Widget _buildViewModeToggle(BuildContext context) {
-    final l10n = context.l10n;
-
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: context.spacing.md, vertical: context.spacing.sm),
-      child: AdaptiveSegmentedControl<TranscriptViewMode>(
-        selected: _viewMode,
-        onChanged: (value) {
-          setState(() => _viewMode = value);
-        },
-        segments: {
-          TranscriptViewMode.highlights: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.auto_awesome_outlined, size: 18),
-              SizedBox(width: context.spacing.xs),
-              Flexible(
-                child: Text(
-                  l10n.podcast_transcript_view_highlights,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-          TranscriptViewMode.fullTranscript: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.article_outlined, size: 18),
-              SizedBox(width: context.spacing.xs),
-              Flexible(
-                child: Text(
-                  l10n.podcast_transcript_view_full,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-        },
-      ),
-    );
-  }
-
-  Widget _buildHighlightsView(BuildContext context) {
-    final highlights = widget.highlights;
-
-    if (highlights == null || highlights.isEmpty) {
-      return _buildEmptyHighlightsState(context);
-    }
-
-    // Only re-sort when the highlights reference changes (new data from parent)
-    if (!identical(highlights, _lastRawHighlights)) {
-      _lastRawHighlights = highlights;
-      _cachedSortedHighlights = List<HighlightResponse>.from(highlights)
-        ..sort((a, b) => b.overallScore.compareTo(a.overallScore));
-    }
-    final sortedHighlights = _cachedSortedHighlights!;
-
-    return ListView.builder(
-      scrollCacheExtent: const ScrollCacheExtent.pixels(500), controller: _highlightsScrollController,
-      padding: EdgeInsets.all(context.spacing.md),
-      itemCount: sortedHighlights.length,
-      itemBuilder: (context, index) {
-        return Padding(
-          padding: EdgeInsets.only(bottom: context.spacing.smMd),
-          child: RepaintBoundary(
-            key: ValueKey('highlight_card_${sortedHighlights[index].id}'),
-            child: HighlightCard(
-              highlight: sortedHighlights[index],
-              onTap: () => showHighlightDetailSheet(
-                context: context,
-                highlight: sortedHighlights[index],
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildEmptyHighlightsState(BuildContext context) {
-    final l10n = context.l10n;
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
-
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.auto_awesome_outlined,
-            size: 64,
-            color: scheme.onSurfaceVariant.withValues(alpha: 0.5),
-          ),
-          SizedBox(height: context.spacing.md),
-          Text(
-            l10n.podcast_highlights_empty_title,
-            style: theme.textTheme.titleMedium?.copyWith(
-              color: scheme.onSurface,
-            ),
-          ),
-          SizedBox(height: context.spacing.sm),
-          Text(
-            l10n.podcast_highlights_empty_subtitle,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: scheme.onSurfaceVariant,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildFullTranscript(BuildContext context, String content) {
     // 根据句号分段（支持中英文句号）
     final segments = TextProcessingCache.getCachedSentences(content);
 
     return Column(
       children: [
-        // Search bar (only in full transcript view)
         _buildSearchBar(context),
 
         // Content area
@@ -439,13 +215,12 @@ class TranscriptDisplayWidgetState
               : Container(
                   padding: EdgeInsets.zero,
                   child: ListView.separated(
-                    scrollCacheExtent: const ScrollCacheExtent.pixels(500), controller: _fullTranscriptScrollController,
+                    scrollCacheExtent: const ScrollCacheExtent.pixels(500), controller: _transcriptScrollController,
                     itemCount: segments.length,
                     separatorBuilder: (context, index) => SizedBox(height: context.spacing.smMd),
                     itemBuilder: (context, index) {
                       return RepaintBoundary(
                         key: ValueKey('transcript_segment_${segments[index].hashCode}'),
-                        // Use normal segment only - no highlight styling in full transcript view
                         child: _buildNormalSegment(context, segments[index], index),
                       );
                     },
@@ -516,7 +291,7 @@ class TranscriptDisplayWidgetState
     return Container(
       padding: EdgeInsets.all(context.spacing.md),
       child: ListView.builder(
-        scrollCacheExtent: const ScrollCacheExtent.pixels(500), controller: _fullTranscriptScrollController,
+        scrollCacheExtent: const ScrollCacheExtent.pixels(500), controller: _transcriptScrollController,
         itemCount: _searchResults.length,
         itemBuilder: (context, index) {
           final result = _searchResults[index];
@@ -651,8 +426,7 @@ class _FormattedTranscriptWidgetState
 
     if (content == null || content.isEmpty) {
       return const TranscriptDisplayWidget(
-        episodeId: 0,
-        episodeTitle: '',
+        transcription: null,
       );
     }
 
@@ -667,8 +441,6 @@ class _FormattedTranscriptWidgetState
       // Fall back to plain text display
       return TranscriptDisplayWidget(
         transcription: widget.transcription,
-        episodeId: 0,
-        episodeTitle: '',
       );
     }
 

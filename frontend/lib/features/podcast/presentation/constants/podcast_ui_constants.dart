@@ -18,5 +18,5 @@ const double kPodcastRowCardTargetHeight =
     kPodcastRowCardImageSize + (kPodcastRowCardVerticalPadding * 2);
 
 // Max content width for panel-style list pages (history, subscriptions,
-// highlights, daily report, episodes, cache management).
+// daily report, episodes, cache management).
 const double kPanelListMaxWidth = 1480;

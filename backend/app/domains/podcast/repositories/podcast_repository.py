@@ -26,7 +26,6 @@ from app.core.exceptions import (
 )
 from app.core.redis import RedisCache, get_shared_redis
 from app.domains.podcast.models import (
-    EpisodeHighlight,
     PodcastDailyReport,
     PodcastEpisode,
     PodcastPlaybackState,
@@ -1621,7 +1620,6 @@ class PodcastRepository:
         )
 
     async def get_profile_stats_aggregated(self, user_id: int) -> dict[str, Any]:
-        Subscription, UserSubscription = _get_subscription_models()
         total_subscriptions = (
             await self.db.scalar(self._subscription_count_stmt(user_id)) or 0
         )
@@ -1639,25 +1637,6 @@ class PodcastRepository:
         latest_report_result = await self.db.execute(latest_report_stmt)
         latest_report_date = latest_report_result.scalar_one_or_none()
 
-        # Count highlights from user's active subscriptions
-        highlight_count_stmt = (
-            select(func.count(EpisodeHighlight.id))
-            .join(PodcastEpisode, EpisodeHighlight.episode_id == PodcastEpisode.id)
-            .join(Subscription, PodcastEpisode.subscription_id == Subscription.id)
-            .join(
-                UserSubscription,
-                Subscription.id == UserSubscription.subscription_id,
-            )
-            .where(
-                and_(
-                    *self._active_user_subscription_filters(user_id),
-                    EpisodeHighlight.status == "active",
-                )
-            )
-        )
-        highlight_count_result = await self.db.execute(highlight_count_stmt)
-        total_highlights = highlight_count_result.scalar() or 0
-
         return {
             "total_subscriptions": total_subscriptions,
             "total_episodes": episode_stats.total_episodes or 0,
@@ -1667,7 +1646,6 @@ class PodcastRepository:
             "latest_daily_report_date": latest_report_date.isoformat()
             if latest_report_date
             else None,
-            "total_highlights": total_highlights,
         }
 
     async def get_user_stats_aggregated(self, user_id: int) -> dict[str, Any]:
