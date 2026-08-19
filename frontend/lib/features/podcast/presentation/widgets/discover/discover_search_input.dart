@@ -1,10 +1,10 @@
 import 'package:cupertino_ui/cupertino_ui.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:sonde/core/constants/app_durations.dart';
+import 'package:sonde/core/constants/app_radius.dart';
 import 'package:sonde/core/constants/app_spacing.dart';
 import 'package:sonde/core/localization/app_localizations_extension.dart';
 import 'package:sonde/core/platform/platform_helper.dart';
-import 'package:sonde/core/theme/app_colors.dart';
 import 'package:sonde/features/podcast/presentation/providers/podcast_search_provider.dart';
 
 /// Search input widget for the discover page.
@@ -70,7 +70,6 @@ class _DiscoverSearchInputState extends State<DiscoverSearchInput> {
     final l10n = context.l10n;
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final extension = appThemeOf(context);
     final hintLabel =
         widget.searchMode == PodcastSearchMode.episodes
             ? l10n.podcast_search_section_episodes
@@ -98,7 +97,8 @@ class _DiscoverSearchInputState extends State<DiscoverSearchInput> {
         height: widget.isDense ? 44 : 48,
         decoration: BoxDecoration(
           color: backgroundColor,
-          borderRadius: BorderRadius.circular(extension.cardRadius),
+          // Pill radius echoes the hero CTA and page-dots language.
+          borderRadius: BorderRadius.circular(AppRadius.pill),
           border: Border.all(color: borderColor, width: borderWidth),
           boxShadow: _isFocused
               ? [

@@ -27,41 +27,51 @@ class DiscoverCategoryChips extends StatelessWidget {
     ];
     final keyOccurrences = <String, int>{};
 
-    return SingleChildScrollView(
-      key: const Key('podcast_discover_category_chips'),
-      scrollDirection: Axis.horizontal,
-      padding: EdgeInsets.symmetric(
-        horizontal: context.spacing.sm,
-        vertical: context.spacing.xs + context.spacing.xs,
-      ),
-      child: Row(
-        children: [
-          for (var index = 0; index < chipItems.length; index++) ...[
-            () {
-              final rawValue = chipItems[index];
-              final baseKey = _normalizeCategoryKey(rawValue);
-              final count = (keyOccurrences[baseKey] ?? 0) + 1;
-              keyOccurrences[baseKey] = count;
-              final uniqueKey = count == 1 ? baseKey : '${baseKey}_$count';
+    // Trailing-edge fade hints that the chip row scrolls horizontally.
+    return ShaderMask(
+      shaderCallback: (rect) => LinearGradient(
+        begin: Alignment.centerLeft,
+        end: Alignment.centerRight,
+        colors: const [Colors.black, Colors.black, Colors.transparent],
+        stops: const [0, 0.94, 1],
+      ).createShader(rect),
+      blendMode: BlendMode.dstIn,
+      child: SingleChildScrollView(
+        key: const Key('podcast_discover_category_chips'),
+        scrollDirection: Axis.horizontal,
+        padding: EdgeInsets.symmetric(
+          horizontal: context.spacing.sm,
+          vertical: context.spacing.xs + context.spacing.xs,
+        ),
+        child: Row(
+          children: [
+            for (var index = 0; index < chipItems.length; index++) ...[
+              () {
+                final rawValue = chipItems[index];
+                final baseKey = _normalizeCategoryKey(rawValue);
+                final count = (keyOccurrences[baseKey] ?? 0) + 1;
+                keyOccurrences[baseKey] = count;
+                final uniqueKey = count == 1 ? baseKey : '${baseKey}_$count';
 
-              return RepaintBoundary(
-                key: ValueKey('category_chip_$uniqueKey'),
-                child: _CategoryChip(
-                  theme: theme,
-                  label: rawValue == '__all__'
-                      ? l10n.podcast_filter_all
-                      : rawValue,
-                  selected: rawValue == '__all__'
-                      ? selected == '__all__'
-                      : selected.toLowerCase() == rawValue.toLowerCase(),
-                  onSelected: (_) => onCategorySelected(rawValue),
-                  keyValue: uniqueKey,
-                ),
-              );
-            }(),
-            if (index != chipItems.length - 1) SizedBox(width: context.spacing.sm),
+                return RepaintBoundary(
+                  key: ValueKey('category_chip_$uniqueKey'),
+                  child: _CategoryChip(
+                    theme: theme,
+                    label: rawValue == '__all__'
+                        ? l10n.podcast_filter_all
+                        : rawValue,
+                    selected: rawValue == '__all__'
+                        ? selected == '__all__'
+                        : selected.toLowerCase() == rawValue.toLowerCase(),
+                    onSelected: (_) => onCategorySelected(rawValue),
+                    keyValue: uniqueKey,
+                  ),
+                );
+              }(),
+              if (index != chipItems.length - 1) SizedBox(width: context.spacing.sm),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
@@ -114,7 +124,9 @@ class _CategoryChip extends StatelessWidget {
         visualDensity: const VisualDensity(horizontal: -1, vertical: -2),
         side: selected
             ? BorderSide(color: selectedBackgroundColor)
-            : BorderSide.none,
+            : BorderSide(
+                color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
+              ),
         shape: RoundedRectangleBorder(borderRadius: AppRadius.chipRadius),
         labelStyle: theme.textTheme.labelLarge?.copyWith(
           fontWeight: FontWeight.w600,
@@ -123,7 +135,7 @@ class _CategoryChip extends StatelessWidget {
               : theme.colorScheme.onSurfaceVariant,
         ),
         selectedColor: selectedBackgroundColor,
-        backgroundColor: Colors.transparent,
+        backgroundColor: theme.colorScheme.surfaceContainerLow,
         padding: EdgeInsets.symmetric(horizontal: context.spacing.md, vertical: context.spacing.sm),
       ),
     );

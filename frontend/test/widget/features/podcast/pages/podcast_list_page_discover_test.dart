@@ -452,6 +452,10 @@ void main() {
         find.byKey(const Key('podcast_discover_spotlight_carousel')),
         findsOneWidget,
       );
+      expect(
+        find.byKey(const Key('podcast_discover_spotlight_dots')),
+        findsOneWidget,
+      );
       // PageView builds lazily, so only the first spotlight card exists.
       expect(
         find.byKey(const Key('podcast_discover_spotlight_card_1000')),

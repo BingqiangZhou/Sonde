@@ -725,16 +725,30 @@ class AppLocalizationsEn extends AppLocalizations {
   String get podcast_discover_title => 'Discover';
 
   @override
+  String get podcast_discover_header_eyebrow => 'GLOBAL CHARTS';
+
+  @override
+  String get podcast_discover_header_subtitle =>
+      'Top podcasts & episodes, updated daily';
+
+  @override
   String get podcast_discover_top_charts => 'Top Charts';
 
   @override
   String get podcast_discover_spotlight => 'Spotlight';
 
   @override
+  String get podcast_discover_listen_now => 'Listen Now';
+
+  @override
   String get podcast_discover_see_all => 'See All';
 
   @override
   String get podcast_discover_no_chart_data => 'No chart data available';
+
+  @override
+  String get podcast_discover_footer =>
+      'End of the charts · Data from Apple Podcasts';
 
   @override
   String get podcast_discover_category_empty_title =>

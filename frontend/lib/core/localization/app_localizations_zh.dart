@@ -705,16 +705,28 @@ class AppLocalizationsZh extends AppLocalizations {
   String get podcast_discover_title => '发现';
 
   @override
+  String get podcast_discover_header_eyebrow => '全球榜单';
+
+  @override
+  String get podcast_discover_header_subtitle => '热门播客与单集，每日更新';
+
+  @override
   String get podcast_discover_top_charts => '热门榜单';
 
   @override
   String get podcast_discover_spotlight => '精选';
 
   @override
+  String get podcast_discover_listen_now => '立即收听';
+
+  @override
   String get podcast_discover_see_all => '查看全部';
 
   @override
   String get podcast_discover_no_chart_data => '暂无榜单数据';
+
+  @override
+  String get podcast_discover_footer => '已到榜单末尾 · 数据来自 Apple 播客榜单';
 
   @override
   String get podcast_discover_category_empty_title => '该分类暂无内容';

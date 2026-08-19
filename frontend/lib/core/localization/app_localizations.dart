@@ -1460,6 +1460,18 @@ abstract class AppLocalizations {
   /// **'Discover'**
   String get podcast_discover_title;
 
+  /// Eyebrow label above the discover page title
+  ///
+  /// In en, this message translates to:
+  /// **'GLOBAL CHARTS'**
+  String get podcast_discover_header_eyebrow;
+
+  /// Subtitle under the discover page title
+  ///
+  /// In en, this message translates to:
+  /// **'Top podcasts & episodes, updated daily'**
+  String get podcast_discover_header_subtitle;
+
   /// Top charts section title on podcast discover page
   ///
   /// In en, this message translates to:
@@ -1472,6 +1484,12 @@ abstract class AppLocalizations {
   /// **'Spotlight'**
   String get podcast_discover_spotlight;
 
+  /// Primary CTA on spotlight hero cards for chart episodes
+  ///
+  /// In en, this message translates to:
+  /// **'Listen Now'**
+  String get podcast_discover_listen_now;
+
   /// See all button text on podcast discover charts
   ///
   /// In en, this message translates to:
@@ -1483,6 +1501,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No chart data available'**
   String get podcast_discover_no_chart_data;
+
+  /// Footer note at the end of the discover charts list
+  ///
+  /// In en, this message translates to:
+  /// **'End of the charts · Data from Apple Podcasts'**
+  String get podcast_discover_footer;
 
   /// Empty state title when the selected category has no chart items
   ///

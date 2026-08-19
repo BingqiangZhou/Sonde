@@ -9,9 +9,9 @@ import 'package:sonde/features/podcast/presentation/widgets/shared/base_episode_
 
 /// Chart row widget for displaying a single discover item with rank and actions.
 ///
-/// Uses card-style container matching [BaseEpisodeCard] visual pattern:
-/// `surfaceContainerLow` background, outline border, corner radius,
-/// and optional identity gradient bar for top-3 ranked items.
+/// The rank is an oversized light-weight numeral — colored for the top 3
+/// (gold/coral/violet) and a ghost texture for the rest — on a card-style
+/// container matching [BaseEpisodeCard] visual pattern.
 class DiscoverChartRow extends StatelessWidget {
   const DiscoverChartRow({
     required this.rank,
@@ -36,15 +36,12 @@ class DiscoverChartRow extends StatelessWidget {
   final bool isDense;
   final EdgeInsetsGeometry? cardMargin;
 
-  static const double _identityBarWidth = 3;
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final extension = appThemeOf(context);
     final showSubscribe = item.isPodcastShow;
-    final rankLabel = '$rank';
-    final rankSlotWidth = isDense ? 36.0 : 48.0;
+    final rankSlotWidth = isDense ? 40.0 : 48.0;
     final actionSlotWidth = isDense ? 32.0 : 48.0;
     final innerPadding = isDense ? context.spacing.sm : context.spacing.md;
     final imageSize = isDense ? 48.0 : 62.0;
@@ -55,7 +52,6 @@ class DiscoverChartRow extends StatelessWidget {
         (isDense ? theme.textTheme.bodySmall : theme.textTheme.bodyMedium)
             ?.copyWith(color: theme.colorScheme.onSurfaceVariant);
 
-    final isTop3 = rank <= 3;
     // 显式 List<Color>：switch 含 `const []` 分支时推断会退化为 List<dynamic>。
     final List<Color> identityColors = switch (rank) {
       1 => AppColors.goldColors,
@@ -63,194 +59,189 @@ class DiscoverChartRow extends StatelessWidget {
       3 => AppColors.violetColors,
       _ => const <Color>[],
     };
+    // Ghost numerals whisper the item's hero palette so the chart list
+    // reads as one color system with the spotlight above.
+    final itemPalette = AppColors
+        .podcastGradientColors[item.itemId.hashCode.abs() % AppColors.podcastGradientColors.length];
     final rankColor = rank <= 3
         ? identityColors.first
-        : theme.colorScheme.onSurfaceVariant;
+        : itemPalette.first.withValues(alpha: 0.38);
 
-    final cardContent = Container(
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(extension.cardRadius),
-        border: Border.all(
-          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.15),
-        ),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: AdaptiveInkWell(
-          borderRadius: BorderRadius.circular(extension.cardRadius),
-          onTap: onTap,
-          child: Padding(
-            padding: EdgeInsets.symmetric(
-              vertical: isDense ? context.spacing.sm : context.spacing.md,
-              horizontal: innerPadding,
-            ),
-            child: Row(
-              children: [
-                SizedBox(
-                  width: rankSlotWidth,
-                  child: Center(
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Text(
-                        key: Key(
-                          'podcast_discover_chart_rank_text_${item.itemId}',
-                        ),
-                        rankLabel,
-                        maxLines: 1,
-                        textAlign: TextAlign.center,
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          color: rankColor,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                SizedBox(
-                  width: isDense ? context.spacing.xs - 1 : context.spacing.smMd,
-                ),
-                RepaintBoundary(
-                  child: ClipRRect(
-                    borderRadius:
-                        BorderRadius.circular(extension.buttonRadius),
-                    child: PodcastImageWidget(
-                      imageUrl: item.artworkUrl,
-                      width: imageSize,
-                      height: imageSize,
-                      iconSize: 20,
-                    ),
-                  ),
-                ),
-                SizedBox(
-                  width: isDense ? context.spacing.xs : context.spacing.md,
-                ),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        item.title,
-                        maxLines: isDense ? 1 : 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: titleStyle,
-                      ),
-                      SizedBox(
-                        height: context.spacing.xxs,
-                      ),
-                      Text(
-                        item.artist,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: subtitleStyle,
-                      ),
-                    ],
-                  ),
-                ),
-                SizedBox(
-                  width: isDense ? context.spacing.xs : context.spacing.sm,
-                ),
-                if (showSubscribe)
-                  SizedBox(
-                    width: actionSlotWidth,
-                    child: Center(
-                      child: SizedBox(
-                        width: isDense ? 32 : 36,
-                        height: isDense ? 32 : 36,
-                        child: isSubscribing
-                            ? Padding(
-                                padding: EdgeInsets.all(context.spacing.sm),
-                                child: const CircularProgressIndicator.adaptive(
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : IconButton(
-                                key: Key(
-                                  'podcast_discover_subscribe_${item.itemId}',
-                                ),
-                                onPressed: isSubscribed ? null : onSubscribe,
-                                tooltip: context.l10n.podcast_subscribe,
-                                style: IconButton.styleFrom(
-                                  minimumSize: Size(isDense ? 32 : 36, isDense ? 32 : 36),
-                                  maximumSize: Size(isDense ? 32 : 36, isDense ? 32 : 36),
-                                  tapTargetSize:
-                                      MaterialTapTargetSize.padded,
-                                  visualDensity: VisualDensity.compact,
-                                  padding: EdgeInsets.zero,
-                                ),
-                                icon: Icon(
-                                  isSubscribed
-                                      ? Icons.check_circle
-                                      : Icons.add_circle_outline,
-                                ),
-                              ),
-                      ),
-                    ),
-                  ),
-                if (!showSubscribe)
-                  SizedBox(
-                    width: actionSlotWidth,
-                    child: Center(
-                      child: SizedBox(
-                        width: isDense ? 32 : 36,
-                        height: isDense ? 32 : 36,
-                        child: IconButton(
-                          key: Key(
-                            'podcast_discover_play_${item.itemId}',
-                          ),
-                          onPressed: onPlay,
-                          tooltip: context.l10n.podcast_play,
-                          style: IconButton.styleFrom(
-                            minimumSize: Size(isDense ? 32 : 36, isDense ? 32 : 36),
-                            maximumSize: Size(isDense ? 32 : 36, isDense ? 32 : 36),
-                            tapTargetSize: MaterialTapTargetSize.padded,
-                            visualDensity: VisualDensity.compact,
-                            padding: EdgeInsets.zero,
-                            foregroundColor:
-                                theme.colorScheme.onSurfaceVariant,
-                          ),
-                          icon: const Icon(Icons.play_circle_outline, size: 24),
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-
-    final wrappedCard = isTop3
-        ? Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildIdentityBar(extension.cardRadius, identityColors),
-              Expanded(child: cardContent),
-            ],
-          )
-        : cardContent;
+    final genre =
+        item.genres.where((g) => g.trim().isNotEmpty).firstOrNull;
+    final subtitleText =
+        genre == null ? item.artist : '${item.artist} · $genre';
 
     return Padding(
       key: Key('podcast_discover_chart_row_${item.itemId}'),
       padding: cardMargin ??
           EdgeInsets.symmetric(vertical: isDense ? context.spacing.xxs : context.spacing.sm),
-      child: wrappedCard,
-    );
-  }
-
-  Widget _buildIdentityBar(double cornerRadius, List<Color> colors) {
-    return Container(
-      width: _identityBarWidth,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: colors,
+      child: Container(
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surfaceContainerLow,
+          borderRadius: BorderRadius.circular(extension.cardRadius),
+          border: Border.all(
+            color: theme.colorScheme.outlineVariant.withValues(alpha: 0.15),
+          ),
         ),
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(cornerRadius),
-          bottomLeft: Radius.circular(cornerRadius),
+        child: Material(
+          color: Colors.transparent,
+          child: AdaptiveInkWell(
+            borderRadius: BorderRadius.circular(extension.cardRadius),
+            onTap: onTap,
+            child: Padding(
+              padding: EdgeInsets.symmetric(
+                vertical: isDense ? context.spacing.sm : context.spacing.md,
+                horizontal: innerPadding,
+              ),
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: rankSlotWidth,
+                    child: Center(
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          key: Key(
+                            'podcast_discover_chart_rank_text_${item.itemId}',
+                          ),
+                          '$rank',
+                          maxLines: 1,
+                          textAlign: TextAlign.center,
+                          style: theme.textTheme.displaySmall?.copyWith(
+                            fontSize: 30,
+                            fontWeight: FontWeight.w200,
+                            height: 1.1,
+                            color: rankColor,
+                            fontFeatures: const [FontFeature.tabularFigures()],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(
+                    width: isDense ? context.spacing.xs - 1 : context.spacing.smMd,
+                  ),
+                  RepaintBoundary(
+                    child: Container(
+                      width: imageSize,
+                      height: imageSize,
+                      decoration: BoxDecoration(
+                        borderRadius:
+                            BorderRadius.circular(extension.buttonRadius),
+                        // Medal ring for the top 3, matching the rank color.
+                        border: rank <= 3
+                            ? Border.all(
+                                color: rankColor.withValues(alpha: 0.7),
+                                width: 2,
+                              )
+                            : null,
+                      ),
+                      child: ClipRRect(
+                        borderRadius:
+                            BorderRadius.circular(extension.buttonRadius),
+                        child: PodcastImageWidget(
+                          imageUrl: item.artworkUrl,
+                          width: imageSize,
+                          height: imageSize,
+                          iconSize: 20,
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(
+                    width: isDense ? context.spacing.xs : context.spacing.md,
+                  ),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          item.title,
+                          maxLines: isDense ? 1 : 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: titleStyle,
+                        ),
+                        SizedBox(
+                          height: context.spacing.xxs,
+                        ),
+                        Text(
+                          subtitleText,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: subtitleStyle,
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(
+                    width: isDense ? context.spacing.xs : context.spacing.sm,
+                  ),
+                  if (showSubscribe)
+                    SizedBox(
+                      width: actionSlotWidth,
+                      child: Center(
+                        child: SizedBox(
+                          width: isDense ? 32 : 36,
+                          height: isDense ? 32 : 36,
+                          child: isSubscribing
+                              ? Padding(
+                                  padding: EdgeInsets.all(context.spacing.sm),
+                                  child: const CircularProgressIndicator.adaptive(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : IconButton.filledTonal(
+                                  key: Key(
+                                    'podcast_discover_subscribe_${item.itemId}',
+                                  ),
+                                  onPressed: isSubscribed ? null : onSubscribe,
+                                  tooltip: context.l10n.podcast_subscribe,
+                                  style: IconButton.styleFrom(
+                                    minimumSize: Size(isDense ? 32 : 36, isDense ? 32 : 36),
+                                    maximumSize: Size(isDense ? 32 : 36, isDense ? 32 : 36),
+                                    tapTargetSize:
+                                        MaterialTapTargetSize.padded,
+                                    visualDensity: VisualDensity.compact,
+                                    padding: EdgeInsets.zero,
+                                  ),
+                                  icon: Icon(
+                                    isSubscribed ? Icons.check : Icons.add,
+                                    size: 18,
+                                  ),
+                                ),
+                        ),
+                      ),
+                    ),
+                  if (!showSubscribe)
+                    SizedBox(
+                      width: actionSlotWidth,
+                      child: Center(
+                        child: SizedBox(
+                          width: isDense ? 32 : 36,
+                          height: isDense ? 32 : 36,
+                          child: IconButton.filledTonal(
+                            key: Key(
+                              'podcast_discover_play_${item.itemId}',
+                            ),
+                            onPressed: onPlay,
+                            tooltip: context.l10n.podcast_play,
+                            style: IconButton.styleFrom(
+                              minimumSize: Size(isDense ? 32 : 36, isDense ? 32 : 36),
+                              maximumSize: Size(isDense ? 32 : 36, isDense ? 32 : 36),
+                              tapTargetSize: MaterialTapTargetSize.padded,
+                              visualDensity: VisualDensity.compact,
+                              padding: EdgeInsets.zero,
+                            ),
+                            icon: const Icon(Icons.play_arrow_rounded, size: 20),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
         ),
       ),
     );

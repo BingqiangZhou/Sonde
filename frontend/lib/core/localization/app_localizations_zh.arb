@@ -947,6 +947,14 @@
     "@podcast_discover_title":  {
                                     "description":  "播客发现页标题"
                                 },
+    "podcast_discover_header_eyebrow":  "全球榜单",
+    "@podcast_discover_header_eyebrow":  {
+                                             "description":  "播客发现页标题上方的眉题"
+                                         },
+    "podcast_discover_header_subtitle":  "热门播客与单集，每日更新",
+    "@podcast_discover_header_subtitle":  {
+                                              "description":  "播客发现页标题下方副标题"
+                                          },
     "podcast_discover_top_charts":  "热门榜单",
     "@podcast_discover_top_charts":  {
                                          "description":  "播客发现页热门榜单分区标题"
@@ -955,6 +963,10 @@
     "@podcast_discover_spotlight":  {
                                         "description":  "播客发现页精选分区标题"
                                     },
+    "podcast_discover_listen_now":  "立即收听",
+    "@podcast_discover_listen_now":  {
+                                         "description":  "发现页精选大卡单集的主操作按钮"
+                                     },
     "podcast_discover_see_all":  "查看全部",
     "@podcast_discover_see_all":  {
                                       "description":  "播客发现页榜单查看全部按钮"
@@ -963,6 +975,10 @@
     "@podcast_discover_no_chart_data":  {
                                             "description":  "播客发现页榜单空状态文案"
                                         },
+    "podcast_discover_footer":  "已到榜单末尾 · 数据来自 Apple 播客榜单",
+    "@podcast_discover_footer":  {
+                                     "description":  "播客发现页榜单列表底部的结束标注"
+                                 },
     "podcast_discover_category_empty_title":  "该分类暂无内容",
     "@podcast_discover_category_empty_title":  {
                                                    "description":  "播客发现页所选分类无榜单条目时的空状态标题"
@@ -2061,44 +2077,6 @@
     "@sidebarAppTitle":  {
                              "description":  "桌面端侧边栏标题"
                          },
-    "@podcast_highlights_title":  {
-                                       "description":  "高光观点功能标题"
-                                   },
-    "@podcast_highlights_loading":  {
-                                          "description":  "高光观点加载中提示"
-                                      },
-    "@podcast_highlights_empty":  {
-                                        "description":  "高光观点空状态提示"
-                                    },
-    "@podcast_highlights_items":  {
-                                        "description":  "高光观点数量文案",
-                                        "placeholders":  {
-                                                             "count":  {
-                                                                           "type":  "int"
-                                                                       }
-                                                         }
-                                    },
-    "@podcast_highlights_insight":  {
-                                          "description":  "高光观点-洞察力标签"
-                                      },
-    "@podcast_highlights_novelty":  {
-                                          "description":  "高光观点-新颖性标签"
-                                      },
-    "@podcast_highlights_actionability":  {
-                                                "description":  "高光观点-可操作性标签"
-                                            },
-    "@podcast_highlights_favorite":  {
-                                            "description":  "收藏高光观点按钮"
-                                        },
-    "@podcast_highlights_unfavorite":  {
-                                                "description":  "取消收藏高光观点按钮"
-                                            },
-    "@podcast_highlights_dates":  {
-                                          "description":  "高光观点日期选择器标题"
-                                      },
-    "@podcast_highlights_load_more_error":  {
-                                              "description":  "加载更多精选失败时的错误提示"
-                                          },
     "auth_brand_name":  "个人 AI 工作空间",
     "auth_agree_prefix":  "我同意 ",
     "auth_reset_email_sent_to":  "密码重置链接已发送至\n{email}",
@@ -2514,15 +2492,9 @@
     "@ai_tab_eyebrow":  {
                         "description":  "AI 标签页眉栏文本"
                       },
-    "@ai_tab_subtitle":  {
-                          "description":  "AI 标签页副标题"
-                        },
     "ai_tab_daily_report_subtitle": "查看你的个性化每日摘要",
     "@ai_tab_daily_report_subtitle":  {
                                         "description":  "AI 标签页日报卡片副标题"
-                                      },
-    "@ai_tab_highlights_subtitle":  {
-                                        "description":  "AI 标签页高光观点卡片副标题"
                                       },
     "ai_tab_chat_title": "AI 助手",
     "@ai_tab_chat_title":  {

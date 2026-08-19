@@ -265,12 +265,12 @@ class DiscoverBrowseSkeleton extends StatelessWidget {
           ),
           SizedBox(height: context.spacing.sm),
           SizedBox(
-            height: 168,
+            height: 200,
             child: Row(
               children: [
                 Expanded(
                   child: SkeletonBox(
-                    height: 168,
+                    height: 200,
                     borderRadius: extension.cardRadius,
                   ),
                 ),
@@ -292,6 +292,15 @@ class DiscoverBrowseSkeleton extends StatelessWidget {
                 ],
               ],
             ),
+          ),
+          SizedBox(height: context.spacing.sm),
+          const Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              SkeletonBox(height: 6, width: 18, borderRadius: AppRadius.pill),
+              SizedBox(width: AppSpacing.sm),
+              SkeletonBox(height: 6, width: 6, borderRadius: AppRadius.pill),
+            ],
           ),
           SizedBox(height: context.spacing.md),
           Padding(

@@ -947,6 +947,14 @@
     "@podcast_discover_title":  {
                                     "description":  "Podcast discover page title"
                                 },
+    "podcast_discover_header_eyebrow":  "GLOBAL CHARTS",
+    "@podcast_discover_header_eyebrow":  {
+                                             "description":  "Eyebrow label above the discover page title"
+                                         },
+    "podcast_discover_header_subtitle":  "Top podcasts & episodes, updated daily",
+    "@podcast_discover_header_subtitle":  {
+                                              "description":  "Subtitle under the discover page title"
+                                          },
     "podcast_discover_top_charts":  "Top Charts",
     "@podcast_discover_top_charts":  {
                                          "description":  "Top charts section title on podcast discover page"
@@ -955,6 +963,10 @@
     "@podcast_discover_spotlight":  {
                                         "description":  "Spotlight section title on podcast discover page"
                                     },
+    "podcast_discover_listen_now":  "Listen Now",
+    "@podcast_discover_listen_now":  {
+                                         "description":  "Primary CTA on spotlight hero cards for chart episodes"
+                                     },
     "podcast_discover_see_all":  "See All",
     "@podcast_discover_see_all":  {
                                       "description":  "See all button text on podcast discover charts"
@@ -963,6 +975,10 @@
     "@podcast_discover_no_chart_data":  {
                                             "description":  "Empty state text when discover charts are unavailable"
                                         },
+    "podcast_discover_footer":  "End of the charts · Data from Apple Podcasts",
+    "@podcast_discover_footer":  {
+                                     "description":  "Footer note at the end of the discover charts list"
+                                 },
     "podcast_discover_category_empty_title":  "Nothing in this category",
     "@podcast_discover_category_empty_title":  {
                                                    "description":  "Empty state title when the selected category has no chart items"
@@ -2061,90 +2077,6 @@
     "@sidebarAppTitle":  {
                              "description":  "App title shown in the desktop sidebar header"
                          },
-    "@podcast_highlights_title":  {
-                                       "description":  "Highlights feature title"
-                                   },
-    "@podcast_highlights_loading":  {
-                                          "description":  "Highlights loading message"
-                                      },
-    "@podcast_highlights_empty":  {
-                                        "description":  "Highlights empty state message"
-                                    },
-    "@podcast_highlights_items":  {
-                                        "description":  "Highlights count label",
-                                        "placeholders":  {
-                                                             "count":  {
-                                                                           "type":  "int"
-                                                                       }
-                                                         }
-                                    },
-    "@podcast_highlights_insight":  {
-                                          "description":  "Highlight insight label"
-                                      },
-    "@podcast_highlights_novelty":  {
-                                          "description":  "Highlight novelty label"
-                                      },
-    "@podcast_highlights_actionability":  {
-                                                "description":  "Highlight actionability label"
-                                            },
-    "@podcast_highlights_favorite":  {
-                                            "description":  "Favorite highlight button"
-                                        },
-    "@podcast_highlights_unfavorite":  {
-                                                "description":  "Unfavorite highlight button"
-                                            },
-    "@podcast_highlights_dates":  {
-                                          "description":  "Highlights date selector title"
-                                      },
-    "@podcast_highlights_load_more_error":  {
-                                              "description":  "Error message when loading more highlights fails"
-                                          },
-    "@podcast_highlights_favorited":  {
-                                            "description":  "Already favorited state"
-                                        },
-    "@podcast_highlights_overall_score":  {
-                                                "description":  "Overall score display",
-                                                "placeholders":  {
-                                                    "score":  {
-                                                        "type":  "double"
-                                                    }
-                                                }
-                                            },
-    "@podcast_highlights_topic_tags":  {
-                                            "description":  "Topic tags section label"
-                                        },
-    "@podcast_highlights_multiple_count":  {
-                                                "description":  "Multiple highlights count in sheet header",
-                                                "placeholders":  {
-                                                    "count":  {
-                                                        "type":  "int"
-                                                    }
-                                                }
-                                            },
-    "@podcast_highlights_extract_hint":  {
-                                                "description":  "Hint text for extracting highlights"
-                                            },
-    "@podcast_highlights_extract_action":  {
-                                                "description":  "Extract highlights button text"
-                                            },
-    "@podcast_highlights_extract_queued":  {
-                                                "description":  "Message shown when highlight extraction is queued"
-                                            },
-    "@podcast_highlights_extract_failed":  {
-                                                "description":  "Message shown when highlight extraction fails"
-                                            },
-    "@podcast_transcript_view_full":  {
-                                                "description":  "Full transcript view mode label"
-                                            },
-    "@podcast_transcript_view_highlights":  {
-                                                "description":  "Highlights view mode label"
-                                            },
-    "@podcast_highlights_empty_title":  {
-                                                "description":  "Title for empty highlights state"
-                                            },
-    "@podcast_highlights_empty_subtitle":  {
-                                                "description":  "Subtitle for empty highlights state"
-                                            },
     "auth_brand_name":  "Personal AI Workspace",
     "auth_agree_prefix":  "I agree to the ",
     "auth_reset_email_sent_to":  "We've sent a password reset link to\n{email}",
@@ -2560,15 +2492,9 @@
     "@ai_tab_eyebrow":  {
                          "description":  "AI tab eyebrow text"
                      },
-    "@ai_tab_subtitle":  {
-                          "description":  "AI tab subtitle"
-                        },
     "ai_tab_daily_report_subtitle": "Review your personalized daily digest",
     "@ai_tab_daily_report_subtitle":  {
                                         "description":  "AI tab daily report card subtitle"
-                                      },
-    "@ai_tab_highlights_subtitle":  {
-                                        "description":  "AI tab highlights card subtitle"
                                       },
     "ai_tab_chat_title": "AI Assistant",
     "@ai_tab_chat_title":  {

@@ -208,22 +208,6 @@ class _PodcastListPageState extends ConsumerState<PodcastListPage> {
     final hasSearched = searchState.hasSearched;
     final searchMode = searchState.searchMode;
 
-    final content = hasSearched
-        ? PodcastSearchResultsList(
-            searchState: searchState,
-            onEpisodeTap: (e) =>
-                DiscoverInteractionHandler.handleEpisodeTap(ref, context, e),
-            onEpisodePlay: (e) =>
-                DiscoverInteractionHandler.handleEpisodePlay(ref, context, e),
-            onPodcastSubscribe: (r) =>
-                DiscoverInteractionHandler.subscribeFromSearch(ref, context, r),
-            onRetry: () =>
-                ref.read(podcastSearchProvider.notifier).retrySearch(),
-            onClear: _clearSearch,
-            isDense: isDense,
-          )
-        : _buildBrowseContent(context, discoverState, isDense);
-
     return LayoutBuilder(
       builder: (context, constraints) {
         final screenHeight = MediaQuery.sizeOf(context).height;
@@ -231,6 +215,26 @@ class _PodcastListPageState extends ConsumerState<PodcastListPage> {
         final useCompactShell =
             constraints.maxHeight < 540 || screenHeight < 720;
         final headerSpacing = screenWidth < 600 ? 20.0 : 12.0;
+        // Magazine masthead only where there is room for it; short
+        // viewports keep the browse content closer to the top.
+        final showMasthead = !useCompactShell;
+
+        final content = hasSearched
+            ? PodcastSearchResultsList(
+                searchState: searchState,
+                onEpisodeTap: (e) =>
+                    DiscoverInteractionHandler.handleEpisodeTap(ref, context, e),
+                onEpisodePlay: (e) =>
+                    DiscoverInteractionHandler.handleEpisodePlay(ref, context, e),
+                onPodcastSubscribe: (r) => DiscoverInteractionHandler
+                    .subscribeFromSearch(ref, context, r),
+                onRetry: () =>
+                    ref.read(podcastSearchProvider.notifier).retrySearch(),
+                onClear: _clearSearch,
+                isDense: isDense,
+              )
+            : _buildBrowseContent(
+                context, discoverState, isDense, showMasthead);
 
         return ContentShell(
           title: context.l10n.podcast_discover_title,
@@ -263,7 +267,11 @@ class _PodcastListPageState extends ConsumerState<PodcastListPage> {
   }
 
   Widget _buildBrowseContent(
-    BuildContext context, PodcastDiscoverState discoverState, bool isDense) {
+    BuildContext context,
+    PodcastDiscoverState discoverState,
+    bool isDense,
+    bool showMasthead,
+  ) {
     final l10n = context.l10n;
 
     if (discoverState.isLoading &&
@@ -289,6 +297,7 @@ class _PodcastListPageState extends ConsumerState<PodcastListPage> {
         discoverState,
         isDense,
         refreshSliver,
+        showMasthead,
       ),
     );
   }
@@ -298,8 +307,10 @@ class _PodcastListPageState extends ConsumerState<PodcastListPage> {
     PodcastDiscoverState discoverState,
     bool isDense,
     Widget? refreshSliver,
+    bool showMasthead,
   ) {
     final l10n = context.l10n;
+    final theme = Theme.of(context);
     final visibleItems = discoverState.visibleItems;
     final spotlightItems = visibleItems
         .take(DiscoverSpotlightSection.maxItemCount)
@@ -312,6 +323,38 @@ class _PodcastListPageState extends ConsumerState<PodcastListPage> {
       physics: const AlwaysScrollableScrollPhysics(),
       slivers: [
         if (refreshSliver != null) refreshSliver,
+        if (showMasthead)
+          SliverToBoxAdapter(
+            child: Padding(
+              key: const Key('podcast_discover_masthead'),
+              padding: EdgeInsets.fromLTRB(
+                context.spacing.xs,
+                context.spacing.xxs,
+                context.spacing.xs,
+                context.spacing.xs,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    l10n.podcast_discover_header_eyebrow,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.primary,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                  SizedBox(height: context.spacing.xxs),
+                  Text(
+                    l10n.podcast_discover_header_subtitle,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         SliverToBoxAdapter(
           child: DiscoverSpotlightSection(
             items: spotlightItems,
@@ -353,6 +396,21 @@ class _PodcastListPageState extends ConsumerState<PodcastListPage> {
                   width: 20,
                   height: 20,
                   child: CircularProgressIndicator.adaptive(strokeWidth: 2),
+                ),
+              ),
+            ),
+          ),
+        if (!discoverState.currentTabHasMore && visibleItems.isNotEmpty)
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.symmetric(vertical: context.spacing.lg),
+              child: Center(
+                child: Text(
+                  key: const Key('podcast_discover_footer'),
+                  l10n.podcast_discover_footer,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
                 ),
               ),
             ),

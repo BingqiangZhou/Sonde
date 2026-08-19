@@ -31,16 +31,30 @@ class DiscoverTopChartsSection extends ConsumerWidget {
       key: const Key('podcast_discover_top_charts'),
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        LinearSectionHeader.label(
-          l10n.podcast_discover_top_charts,
-          padding: EdgeInsets.symmetric(
-            horizontal: context.spacing.xs,
-            vertical: isDense ? context.spacing.xs : context.spacing.smMd,
-          ),
-          trailing: Padding(
-            padding: EdgeInsets.only(right: context.spacing.sm),
-            child: DiscoverCountryPill(onTap: onCountryTap),
-          ),
+        // The display header aligns its own trailing on a text baseline,
+        // unsafe for the pill — pair them in an outer row instead.
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Expanded(
+              child: LinearSectionHeader(
+                title: l10n.podcast_discover_top_charts,
+                titleSize: 24,
+                padding: EdgeInsets.symmetric(
+                  horizontal: context.spacing.xs,
+                  vertical: isDense ? context.spacing.smMd : context.spacing.md,
+                ),
+              ),
+            ),
+            Padding(
+              padding: EdgeInsets.only(
+                left: context.spacing.md,
+                right: context.spacing.sm,
+                bottom: context.spacing.xs,
+              ),
+              child: DiscoverCountryPill(onTap: onCountryTap),
+            ),
+          ],
         ),
         SizedBox(height: isDense ? context.spacing.xxs : context.spacing.smMd),
         DiscoverCategoryChips(
