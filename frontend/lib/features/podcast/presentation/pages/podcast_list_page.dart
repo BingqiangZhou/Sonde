@@ -26,10 +26,9 @@ import 'package:sonde/features/podcast/presentation/widgets/discover/discover_se
 import 'package:sonde/features/podcast/presentation/widgets/search/podcast_search_results_list.dart';
 import 'package:sonde/shared/widgets/skeleton_widgets.dart';
 
-/// Discover page: search plus a charts-led browse view — short ranked
-/// shelves (top shows, trending episodes, and the biggest category
-/// charts) under the "Global charts" masthead, with the full charts
-/// behind a "see all" push.
+/// Discover page: search plus a charts-led browse view — the top-shows
+/// and trending-episodes shelves under the "Global charts" masthead, with
+/// the full charts (and their category chips) behind a "see all" push.
 class PodcastListPage extends ConsumerStatefulWidget {
   const PodcastListPage({super.key});
 
@@ -252,7 +251,6 @@ class _PodcastListPageState extends ConsumerState<PodcastListPage> {
 
     final topShowsShelf = discoverState.topShowsPreview;
     final topEpisodesShelf = discoverState.topEpisodesPreview;
-    final categoryShelves = discoverState.categoryShelves;
     final hasAnyShelf =
         topShowsShelf.isNotEmpty || topEpisodesShelf.isNotEmpty;
     // The country selector lives on the "Global charts" masthead row; on
@@ -362,14 +360,6 @@ class _PodcastListPageState extends ConsumerState<PodcastListPage> {
                 _episodeDurationSuffix(discoverState, item),
           ),
         ],
-        for (final shelf in categoryShelves)
-          ..._buildCategoryShelfSlivers(
-            context,
-            shelf,
-            subscribingShowIds,
-            subscribedShowIds,
-            isDense,
-          ),
         if (hasAnyShelf)
           SliverToBoxAdapter(
             child: Padding(
@@ -405,42 +395,6 @@ class _PodcastListPageState extends ConsumerState<PodcastListPage> {
         const SliverPadding(padding: EdgeInsets.only(bottom: AppSpacing.xl)),
       ],
     );
-  }
-
-  List<Widget> _buildCategoryShelfSlivers(
-    BuildContext context,
-    PodcastDiscoverCategoryShelf shelf,
-    Set<int> subscribingShowIds,
-    Set<int> subscribedShowIds,
-    bool isDense,
-  ) {
-    final normalizedKey = shelf.category.toLowerCase().replaceAll(
-          RegExp(r'[^a-z0-9]+'),
-          '_',
-        );
-    return [
-      SliverToBoxAdapter(
-        child: _buildShelfHeader(
-          context,
-          title: context.l10n.podcast_discover_category_shelf(shelf.category),
-          titleKey: 'podcast_discover_category_shelf_$normalizedKey',
-        ),
-      ),
-      DiscoverChartsSliver(
-        visibleItems: shelf.items,
-        onItemTap: (item) =>
-            DiscoverInteractionHandler.handleChartRowTap(ref, context, item),
-        onItemSubscribe: (item) =>
-            DiscoverInteractionHandler.subscribeFromChart(ref, context, item),
-        onItemPlay: (item) =>
-            DiscoverInteractionHandler.playEpisodeFromChartRow(ref, context, item),
-        subscribingShowIds: subscribingShowIds,
-        subscribedShowIds: subscribedShowIds,
-        isDense: isDense,
-        listKey: 'podcast_discover_category_list_$normalizedKey',
-        gridKey: 'podcast_discover_category_grid_$normalizedKey',
-      ),
-    ];
   }
 
   /// A ranked shelf header: the 24px section title with an optional

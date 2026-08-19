@@ -182,68 +182,6 @@ void main() {
       });
     });
 
-    // -- categoryShelves --
-
-    group('categoryShelves', () {
-      test('returns empty when no top shows', () {
-        expect(defaultState().categoryShelves, isEmpty);
-      });
-
-      test('slices shelves from the biggest genres in chart order', () {
-        final items = [
-          _makeItem(id: '1', genres: ['Technology']),
-          _makeItem(id: '2', genres: ['News']),
-          _makeItem(id: '3', genres: ['Technology']),
-          _makeItem(id: '4', genres: ['Technology']),
-          _makeItem(id: '5', genres: ['Technology']),
-          _makeItem(id: '6', genres: ['Technology']),
-          _makeItem(id: '7', genres: ['News']),
-          _makeItem(id: '8', genres: ['News']),
-          _makeItem(id: '9', genres: ['News']),
-          _makeItem(id: '10', genres: ['News']),
-        ];
-        final shelves =
-            defaultState().copyWith(topShows: items).categoryShelves;
-
-        // News: 5, Technology: 5 — tie broken alphabetically.
-        expect(shelves, hasLength(2));
-        expect(shelves.first.category, 'News');
-        // Ranked by chart order, capped at 7.
-        expect(
-          shelves.first.items.map((item) => item.itemId).toList(),
-          ['2', '7', '8', '9', '10'],
-        );
-      });
-
-      test('drops genres below the minimum shelf size', () {
-        final items = [
-          _makeItem(id: '1', genres: ['Technology']),
-          _makeItem(id: '2', genres: ['Technology']),
-          _makeItem(id: '3', genres: ['Technology']),
-          _makeItem(id: '4', genres: ['Technology']),
-        ];
-        final shelves =
-            defaultState().copyWith(topShows: items).categoryShelves;
-        expect(shelves, isEmpty);
-      });
-
-      test('caps the shelf count', () {
-        final items = List.generate(30, (index) {
-          final genre = switch (index % 5) {
-            0 => 'Aaa',
-            1 => 'Bbb',
-            2 => 'Ccc',
-            3 => 'Ddd',
-            _ => 'Eee',
-          };
-          return _makeItem(id: '$index', genres: [genre]);
-        });
-        final shelves =
-            defaultState().copyWith(topShows: items).categoryShelves;
-        expect(shelves, hasLength(3));
-      });
-    });
-
     // -- filtered shows / episodes --
 
     group('filteredShows and filteredEpisodes', () {

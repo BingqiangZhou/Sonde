@@ -324,21 +324,6 @@ class CountrySelectorNotifier extends Notifier<CountrySelectorState> {
 
 // Discover
 
-/// A ranked chart shelf for one category, sliced client-side from the
-/// loaded top-shows chart.
-class PodcastDiscoverCategoryShelf extends Equatable {
-
-  const PodcastDiscoverCategoryShelf({
-    required this.category,
-    required this.items,
-  });
-  final String category;
-  final List<PodcastDiscoverItem> items;
-
-  @override
-  List<Object?> get props => [category, items];
-}
-
 class PodcastDiscoverState extends Equatable {
 
   const PodcastDiscoverState({
@@ -434,39 +419,6 @@ class PodcastDiscoverState extends Equatable {
         return a.key.toLowerCase().compareTo(b.key.toLowerCase());
       });
     return sorted.map((entry) => entry.key).toList();
-  }
-
-  /// The biggest genres in the top-shows chart, each earning a short
-  /// ranked shelf on the browse page — Apple's parallel category charts.
-  List<PodcastDiscoverCategoryShelf> get categoryShelves {
-    final counts = <String, int>{};
-    for (final item in topShows) {
-      for (final genre in item.genres) {
-        final trimmed = genre.trim();
-        if (trimmed.isEmpty) continue;
-        counts[trimmed] = (counts[trimmed] ?? 0) + 1;
-      }
-    }
-
-    final sorted = counts.entries.toList()
-      ..sort((a, b) {
-        final countCompare = b.value.compareTo(a.value);
-        if (countCompare != 0) return countCompare;
-        return a.key.toLowerCase().compareTo(b.key.toLowerCase());
-      });
-
-    return sorted
-        .where((entry) => entry.value >= CacheConstants.discoverCategoryShelfMinItems)
-        .take(CacheConstants.discoverCategoryShelfCount)
-        .map((entry) => PodcastDiscoverCategoryShelf(
-              category: entry.key,
-              items: topShows
-                  .where((item) => item.hasGenre(entry.key))
-                  .take(CacheConstants.discoverShelfItemCount)
-                  .toList(),
-            ))
-        .where((shelf) => shelf.items.isNotEmpty)
-        .toList();
   }
 
   List<PodcastDiscoverItem> get filteredShows => selectedCategory == allCategoryValue

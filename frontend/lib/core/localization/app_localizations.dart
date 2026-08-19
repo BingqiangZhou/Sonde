@@ -1490,12 +1490,6 @@ abstract class AppLocalizations {
   /// **'Trending Episodes'**
   String get podcast_discover_top_episodes;
 
-  /// Category chart shelf title on podcast discover page
-  ///
-  /// In en, this message translates to:
-  /// **'Top {category}'**
-  String podcast_discover_category_shelf(String category);
-
   /// See all button text on podcast discover charts
   ///
   /// In en, this message translates to:

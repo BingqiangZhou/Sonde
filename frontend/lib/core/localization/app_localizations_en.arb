@@ -967,15 +967,6 @@
     "@podcast_discover_top_episodes":  {
                                            "description":  "Trending episodes shelf title on podcast discover page"
                                        },
-    "podcast_discover_category_shelf":  "Top {category}",
-    "@podcast_discover_category_shelf":  {
-                                             "description":  "Category chart shelf title on podcast discover page",
-                                             "placeholders":  {
-                                                                  "category":  {
-                                                                                   "type":  "String"
-                                                                               }
-                                                              }
-                                         },
     "podcast_discover_see_all":  "See All",
     "@podcast_discover_see_all":  {
                                       "description":  "See all button text on podcast discover charts"

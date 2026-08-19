@@ -36,10 +36,4 @@ class CacheConstants {
 
   /// Number of ranked rows shown per shelf on the discover browse page.
   static const int discoverShelfItemCount = 7;
-
-  /// Category shelves sliced from the top-shows chart on the browse page.
-  static const int discoverCategoryShelfCount = 3;
-
-  /// Minimum shows in a category for it to earn its own shelf.
-  static const int discoverCategoryShelfMinItems = 5;
 }

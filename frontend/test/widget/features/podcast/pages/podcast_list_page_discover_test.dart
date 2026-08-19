@@ -430,8 +430,8 @@ void main() {
         findsOneWidget,
       );
       // The charts-led shelves: top shows (with the country pill and
-      // see-all) then trending episodes, with category shelves sliced
-      // from the chart genres below — no spotlight carousel anymore.
+      // see-all) then trending episodes — no spotlight carousel and no
+      // category shelves; both live on the full charts page via chips.
       expect(
         find.byKey(const Key('podcast_discover_spotlight')),
         findsNothing,

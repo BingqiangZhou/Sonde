@@ -741,11 +741,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get podcast_discover_top_episodes => 'Trending Episodes';
 
   @override
-  String podcast_discover_category_shelf(String category) {
-    return 'Top $category';
-  }
-
-  @override
   String get podcast_discover_see_all => 'See All';
 
   @override

@@ -967,15 +967,6 @@
     "@podcast_discover_top_episodes":  {
                                            "description":  "播客发现页热门单集货架标题"
                                        },
-    "podcast_discover_category_shelf":  "热门{category}",
-    "@podcast_discover_category_shelf":  {
-                                             "description":  "播客发现页分类榜单货架标题",
-                                             "placeholders":  {
-                                                                  "category":  {
-                                                                                   "type":  "String"
-                                                                               }
-                                                              }
-                                         },
     "podcast_discover_see_all":  "查看全部",
     "@podcast_discover_see_all":  {
                                       "description":  "播客发现页榜单查看全部按钮"

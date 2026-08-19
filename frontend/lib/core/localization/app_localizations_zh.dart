@@ -720,11 +720,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get podcast_discover_top_episodes => '热门单集';
 
   @override
-  String podcast_discover_category_shelf(String category) {
-    return '热门$category';
-  }
-
-  @override
   String get podcast_discover_see_all => '查看全部';
 
   @override

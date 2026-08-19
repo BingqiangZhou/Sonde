@@ -243,15 +243,10 @@ class DiscoverChartRowSkeleton extends StatelessWidget {
   }
 }
 
-/// Full skeleton for the discover browse view: short ranked shelves —
-/// top shows, trending episodes, and a category shelf — mirroring the
-/// charts-led layout.
+/// Full skeleton for the discover browse view: the two ranked shelves —
+/// top shows and trending episodes — mirroring the charts-led layout.
 class DiscoverBrowseSkeleton extends StatelessWidget {
-  const DiscoverBrowseSkeleton({super.key, this.tailRowCount = 3});
-
-  /// Extra rows below the shelves, standing in for the trailing
-  /// category shelf and footer.
-  final int tailRowCount;
+  const DiscoverBrowseSkeleton({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -268,11 +263,6 @@ class DiscoverBrowseSkeleton extends StatelessWidget {
             context: context,
             isMobile: MediaQuery.sizeOf(context).width < 600,
             rowCount: 3,
-          ),
-          _SkeletonShelf(
-            context: context,
-            isMobile: MediaQuery.sizeOf(context).width < 600,
-            rowCount: tailRowCount,
           ),
         ],
       ),

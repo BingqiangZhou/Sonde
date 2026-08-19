@@ -30,22 +30,6 @@ void main() {
       expect(fakeService.episodeLimits, equals([CacheConstants.discoverTopChartMaxLimit]));
     });
 
-    test('derives category shelves from the top-shows chart', () async {
-      final container = _createContainer(_FakeApplePodcastRssService());
-      addTearDown(container.dispose);
-
-      await container.read(podcastDiscoverProvider.notifier).loadInitialData();
-      final state = container.read(podcastDiscoverProvider);
-
-      // The fake alternates Technology/News 50:50, so both earn a shelf;
-      // the alphabetical tie-break puts News first.
-      expect(state.categoryShelves, hasLength(2));
-      final shelf = state.categoryShelves.first;
-      expect(shelf.category, 'News');
-      expect(shelf.items, hasLength(CacheConstants.discoverShelfItemCount));
-      expect(shelf.items.every((item) => item.hasGenre('News')), isTrue);
-    });
-
     test('category filtering applies to both charts', () async {
       final container = _createContainer(_FakeApplePodcastRssService());
       addTearDown(container.dispose);
