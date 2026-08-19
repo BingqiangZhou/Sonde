@@ -2237,59 +2237,6 @@
     "@download_button_retry":  {
                                        "description":  "重新下载提示"
                                    },
-    "profile_downloads":  "下载管理",
-    "@profile_downloads":  {
-                                   "description":  "个人中心的下载管理菜单项"
-                               },
-    "profile_downloads_subtitle":  "管理已下载的剧集",
-    "@profile_downloads_subtitle":  {
-                                            "description":  "下载管理菜单项副标题"
-                                        },
-    "downloads_page_title":  "下载管理",
-    "@downloads_page_title":  {
-                                      "description":  "下载管理页面标题"
-                                  },
-    "downloads_empty":  "暂无下载",
-    "@downloads_empty":  {
-                                 "description":  "下载列表为空提示"
-                             },
-    "downloads_empty_subtitle":  "下载的剧集将显示在这里",
-    "@downloads_empty_subtitle":  {
-                                          "description":  "下载列表为空副标题"
-                                      },
-    "podcast_downloads_load_error":  "加载下载列表失败，请重试。",
-    "@podcast_downloads_load_error":  {
-                                          "description":  "下载列表加载失败时的错误提示"
-                                      },
-    "downloads_delete_all":  "全部删除",
-    "@downloads_delete_all":  {
-                                      "description":  "删除全部下载按钮"
-                                  },
-    "downloads_delete_confirm":  "删除全部下载？",
-    "@downloads_delete_confirm":  {
-                                          "description":  "删除全部下载确认标题"
-                                      },
-    "downloads_delete_confirm_message":  "将移除所有已下载的音频文件，此操作不可撤销。",
-    "@downloads_delete_confirm_message":  {
-                                                 "description":  "删除全部下载确认消息"
-                                             },
-    "downloads_active_title":  "正在下载",
-    "@downloads_active_title":  {
-                                        "description":  "正在下载区域标题"
-                                    },
-    "downloads_completed_title":  "已下载",
-    "@downloads_completed_title":  {
-                                           "description":  "已下载区域标题"
-                                       },
-    "downloads_items":  "{count} 个下载",
-    "@downloads_items":  {
-                                    "description":  "下载数量副标题",
-                                    "placeholders":  {
-                                        "count":  {
-                                            "type":  "int"
-                                        }
-                                    }
-                                },
     "appearance_title":  "外观",
     "@appearance_title":  {
                                     "description":  "外观设置页面标题"

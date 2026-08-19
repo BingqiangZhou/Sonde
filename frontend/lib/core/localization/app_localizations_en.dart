@@ -1751,52 +1751,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get download_button_retry => 'Retry download';
 
   @override
-  String get profile_downloads => 'Downloads';
-
-  @override
-  String get profile_downloads_subtitle => 'Manage downloaded episodes';
-
-  @override
-  String get downloads_page_title => 'Downloads';
-
-  @override
-  String get downloads_empty => 'No downloads yet';
-
-  @override
-  String get downloads_empty_subtitle => 'Downloaded episodes will appear here';
-
-  @override
-  String get podcast_downloads_load_error =>
-      'Failed to load downloads. Please try again.';
-
-  @override
-  String get downloads_delete_all => 'Delete all';
-
-  @override
-  String get downloads_delete_confirm => 'Delete all downloads?';
-
-  @override
-  String get downloads_delete_confirm_message =>
-      'This will remove all downloaded audio files. This action cannot be undone.';
-
-  @override
-  String get downloads_active_title => 'Active downloads';
-
-  @override
-  String get downloads_completed_title => 'Downloaded';
-
-  @override
-  String downloads_items(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count downloads',
-      one: '1 download',
-    );
-    return '$_temp0';
-  }
-
-  @override
   String get appearance_title => 'Appearance';
 
   @override

@@ -14,7 +14,6 @@ import 'package:sonde/features/auth/presentation/providers/auth_provider.dart';
 import 'package:sonde/features/home/presentation/pages/home_page.dart';
 import 'package:sonde/features/podcast/presentation/navigation/podcast_navigation.dart';
 import 'package:sonde/features/podcast/presentation/pages/podcast_daily_report_page.dart';
-import 'package:sonde/features/podcast/presentation/pages/podcast_downloads_page.dart';
 import 'package:sonde/features/podcast/presentation/pages/podcast_episode_detail_page.dart';
 import 'package:sonde/features/podcast/presentation/pages/podcast_episodes_page.dart';
 import 'package:sonde/features/podcast/presentation/pages/podcast_feed_page.dart';
@@ -193,17 +192,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                       state: state,
                       child: const _PlayerAwareRouteFrame(
                         child: ProfileSubscriptionsPage(),
-                      ),
-                    ),
-                  ),
-                  GoRoute(
-                    path: 'downloads',
-                    name: 'profile-downloads',
-                    parentNavigatorKey: appNavigatorKey,
-                    pageBuilder: (context, state) => _buildModalPage(
-                      state: state,
-                      child: const _PlayerAwareRouteFrame(
-                        child: PodcastDownloadsPage(),
                       ),
                     ),
                   ),

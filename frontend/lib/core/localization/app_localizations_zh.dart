@@ -1681,44 +1681,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get download_button_retry => '重新下载';
 
   @override
-  String get profile_downloads => '下载管理';
-
-  @override
-  String get profile_downloads_subtitle => '管理已下载的剧集';
-
-  @override
-  String get downloads_page_title => '下载管理';
-
-  @override
-  String get downloads_empty => '暂无下载';
-
-  @override
-  String get downloads_empty_subtitle => '下载的剧集将显示在这里';
-
-  @override
-  String get podcast_downloads_load_error => '加载下载列表失败，请重试。';
-
-  @override
-  String get downloads_delete_all => '全部删除';
-
-  @override
-  String get downloads_delete_confirm => '删除全部下载？';
-
-  @override
-  String get downloads_delete_confirm_message => '将移除所有已下载的音频文件，此操作不可撤销。';
-
-  @override
-  String get downloads_active_title => '正在下载';
-
-  @override
-  String get downloads_completed_title => '已下载';
-
-  @override
-  String downloads_items(int count) {
-    return '$count 个下载';
-  }
-
-  @override
   String get appearance_title => '外观';
 
   @override

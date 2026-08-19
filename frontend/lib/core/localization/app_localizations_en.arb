@@ -2283,59 +2283,6 @@
     "@download_button_retry":  {
                                        "description":  "Retry download tooltip"
                                    },
-    "profile_downloads":  "Downloads",
-    "@profile_downloads":  {
-                                   "description":  "Downloads menu item in profile page"
-                               },
-    "profile_downloads_subtitle":  "Manage downloaded episodes",
-    "@profile_downloads_subtitle":  {
-                                            "description":  "Subtitle for downloads menu item"
-                                        },
-    "downloads_page_title":  "Downloads",
-    "@downloads_page_title":  {
-                                      "description":  "Downloads page title"
-                                  },
-    "downloads_empty":  "No downloads yet",
-    "@downloads_empty":  {
-                                 "description":  "Empty state for downloads page"
-                             },
-    "downloads_empty_subtitle":  "Downloaded episodes will appear here",
-    "@downloads_empty_subtitle":  {
-                                          "description":  "Subtitle for empty downloads state"
-                                      },
-    "podcast_downloads_load_error":  "Failed to load downloads. Please try again.",
-    "@podcast_downloads_load_error":  {
-                                          "description":  "Error message when downloads list fails to load"
-                                      },
-    "downloads_delete_all":  "Delete all",
-    "@downloads_delete_all":  {
-                                      "description":  "Delete all downloads button"
-                                  },
-    "downloads_delete_confirm":  "Delete all downloads?",
-    "@downloads_delete_confirm":  {
-                                          "description":  "Confirmation to delete all downloads"
-                                      },
-    "downloads_delete_confirm_message":  "This will remove all downloaded audio files. This action cannot be undone.",
-    "@downloads_delete_confirm_message":  {
-                                                 "description":  "Message for delete all confirmation dialog"
-                                             },
-    "downloads_active_title":  "Active downloads",
-    "@downloads_active_title":  {
-                                        "description":  "Section title for active downloads"
-                                    },
-    "downloads_completed_title":  "Downloaded",
-    "@downloads_completed_title":  {
-                                           "description":  "Section title for completed downloads"
-                                       },
-    "downloads_items":  "{count, plural, one{1 download} other{{count} downloads}}",
-    "@downloads_items":  {
-                                    "description":  "Download count subtitle",
-                                    "placeholders":  {
-                                        "count":  {
-                                            "type":  "int"
-                                        }
-                                    }
-                                },
     "appearance_title":  "Appearance",
     "@appearance_title":  {
                                     "description":  "Title for the Appearance settings page"
