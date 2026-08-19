@@ -35,5 +35,5 @@ class CacheConstants {
   static const int discoverTopChartMaxLimit = 100;
 
   /// Number of ranked rows shown per shelf on the discover browse page.
-  static const int discoverShelfItemCount = 7;
+  static const int discoverShelfItemCount = 5;
 }

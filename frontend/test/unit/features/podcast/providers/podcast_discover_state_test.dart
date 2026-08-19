@@ -125,7 +125,7 @@ void main() {
       test('previews cap at the shelf item count', () {
         final items = List.generate(20, (i) => _makeItem(id: '$i'));
         final state = defaultState().copyWith(topShows: items);
-        expect(state.topShowsPreview, hasLength(7));
+        expect(state.topShowsPreview, hasLength(5));
         expect(state.topShowsPreview.first, items.first);
         expect(state.topShows, hasLength(20));
       });
