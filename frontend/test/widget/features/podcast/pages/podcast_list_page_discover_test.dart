@@ -202,71 +202,9 @@ void main() {
   // =========================================================================
   // Discover search sections  (origin: discover_search_sections_test.dart)
   // =========================================================================
-  group('PodcastListPage discover search mode selector', () {
-    testWidgets('shows selector and renders podcast results in podcast mode',
-        (tester) async {
-      final container = ProviderContainer(
-        overrides: [
-          localStorageServiceProvider.overrideWithValue(
-            MockLocalStorageService(),
-          ),
-          applePodcastRssServiceProvider.overrideWithValue(
-            FakeApplePodcastRssService(),
-          ),
-          search.iTunesSearchServiceProvider.overrideWithValue(
-            FakeITunesSearchService(),
-          ),
-          podcastSubscriptionProvider.overrideWith(
-            EmptyPodcastSubscriptionNotifier.new,
-          ),
-          search.podcastSearchProvider.overrideWith(
-            () => PassthroughPodcastSearchNotifier(
-              const search.PodcastSearchState(
-                hasSearched: true,
-                searchMode: search.PodcastSearchMode.podcasts,
-                podcastResults: [
-                  PodcastSearchResult(
-                    collectionId: 100,
-                    collectionName: 'Test Podcast',
-                    artistName: 'Tester',
-                    feedUrl: 'https://example.com/feed.xml',
-                    artworkUrl100: 'https://example.com/podcast.png',
-                    trackCount: 10,
-                    primaryGenreName: 'Tech',
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      );
-      addTearDown(container.dispose);
-
-      await tester.pumpWidget(
-        UncontrolledProviderScope(
-          container: container,
-          child: const MaterialApp(
-            localizationsDelegates: appLocalizationsDelegates,
-            supportedLocales: AppLocalizations.supportedLocales,
-            home: PodcastListPage(),
-          ),
-        ),
-      );
-      await tester.pumpAndSettle();
-
-      expect(find.byKey(const Key('podcast_discover_search_results')), findsOneWidget);
-      expect(
-        find.byKey(const Key('podcast_discover_tab_selector')),
-        findsOneWidget,
-      );
-      expect(
-        find.byKey(const ValueKey('search_https://example.com/feed.xml')),
-        findsOneWidget,
-      );
-      expect(find.byKey(const ValueKey('episode_search_200')), findsNothing);
-    });
-
-    testWidgets('shows selector and renders episode results in episode mode',
+  group('PodcastListPage discover search results', () {
+    testWidgets(
+        'one search renders both the podcast and episode sections',
         (tester) async {
       final container = ProviderContainer(
         overrides: [
@@ -286,6 +224,17 @@ void main() {
             () => PassthroughPodcastSearchNotifier(
               search.PodcastSearchState(
                 hasSearched: true,
+                podcastResults: [
+                  PodcastSearchResult(
+                    collectionId: 100,
+                    collectionName: 'Test Podcast',
+                    artistName: 'Tester',
+                    feedUrl: 'https://example.com/feed.xml',
+                    artworkUrl100: 'https://example.com/podcast.png',
+                    trackCount: 10,
+                    primaryGenreName: 'Tech',
+                  ),
+                ],
                 episodeResults: [
                   ITunesPodcastEpisodeResult(
                     trackId: 200,
@@ -319,15 +268,17 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byKey(const Key('podcast_discover_search_results')), findsOneWidget);
+      // No mode selector anymore — one search covers both kinds.
       expect(
         find.byKey(const Key('podcast_discover_tab_selector')),
+        findsNothing,
+      );
+      // Both sections render under their own headers.
+      expect(
+        find.byKey(const ValueKey('search_https://example.com/feed.xml')),
         findsOneWidget,
       );
       expect(find.byKey(const ValueKey('episode_search_200')), findsOneWidget);
-      expect(
-        find.byKey(const ValueKey('search_https://example.com/feed.xml')),
-        findsNothing,
-      );
     });
   });
 
@@ -425,9 +376,10 @@ void main() {
       expect(decoration.disabledBorder, InputBorder.none);
       expect(decoration.errorBorder, InputBorder.none);
       expect(decoration.focusedErrorBorder, InputBorder.none);
+      // The search mode toggle is gone — search covers both kinds.
       expect(
         find.byKey(const Key('podcast_discover_tab_selector')),
-        findsOneWidget,
+        findsNothing,
       );
       // The charts-led shelves: top shows (with the country pill and
       // see-all) then trending episodes — no spotlight carousel and no

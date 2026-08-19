@@ -14,8 +14,10 @@ import 'package:sonde/features/podcast/presentation/widgets/podcast_episode_sear
 import 'package:sonde/features/podcast/presentation/widgets/podcast_search_result_card.dart';
 import 'package:sonde/shared/widgets/skeleton_widgets.dart';
 
-/// Search results view for the discover page: skeleton loading, proper
-/// empty/error states, and a result-count header above the results.
+/// Search results view for the discover page: one query returns both
+/// shows and episodes, rendered as two labeled sections in a single
+/// scroll view — skeleton loading, proper empty/error states, and a
+/// result-count header above everything.
 ///
 /// Podcast results adapt to a two-column grid on wide layouts; episode
 /// results stay in a single column.
@@ -60,13 +62,9 @@ class PodcastSearchResultsList extends ConsumerWidget {
       );
     }
 
-    final isEpisodeMode =
-        searchState.searchMode == search.PodcastSearchMode.episodes;
-    final results = isEpisodeMode
-        ? searchState.episodeResults
-        : searchState.podcastResults;
-
-    if (results.isEmpty) {
+    final podcastResults = searchState.podcastResults;
+    final episodeResults = searchState.episodeResults;
+    if (podcastResults.isEmpty && episodeResults.isEmpty) {
       return AppEmptyState(
         icon: Icons.search_off,
         title: l10n.podcast_search_no_results,
@@ -83,42 +81,76 @@ class PodcastSearchResultsList extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         LinearSectionHeader.label(
-          l10n.podcast_search_results_count(results.length),
+          l10n.podcast_search_results_count(
+            podcastResults.length + episodeResults.length,
+          ),
           padding: EdgeInsets.symmetric(
             horizontal: context.spacing.xs,
             vertical: context.spacing.xs,
           ),
         ),
-        Expanded(
-          child: isEpisodeMode
-              ? _buildEpisodeResults()
-              : _buildPodcastResults(context, ref),
-        ),
+        Expanded(child: _buildResults(context, ref)),
       ],
     );
   }
 
-  Widget _buildEpisodeResults() {
-    return ListView.builder(
+  Widget _buildResults(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
+    final podcastResults = searchState.podcastResults;
+    final episodeResults = searchState.episodeResults;
+
+    return CustomScrollView(
       key: const Key('podcast_discover_search_results'),
-      padding: const EdgeInsets.only(bottom: AppSpacing.md),
-      itemCount: searchState.episodeResults.length,
-      itemBuilder: (context, index) {
-        final episode = searchState.episodeResults[index];
-        return RepaintBoundary(
-          key: ValueKey('episode_result_${episode.trackId}'),
-          child: _EpisodeSearchResultItem(
-            episode: episode,
-            isDense: isDense,
-            onTap: () => onEpisodeTap(episode),
-            onPlay: () => onEpisodePlay(episode),
+      slivers: [
+        if (podcastResults.isNotEmpty) ...[
+          SliverToBoxAdapter(
+            child: LinearSectionHeader.label(
+              l10n.podcast_search_section_podcasts,
+              padding: EdgeInsets.symmetric(
+                horizontal: context.spacing.xs,
+                vertical: context.spacing.xs,
+              ),
+            ),
           ),
-        );
-      },
+          _buildPodcastSliver(context, ref, podcastResults),
+        ],
+        if (episodeResults.isNotEmpty) ...[
+          SliverToBoxAdapter(
+            child: LinearSectionHeader.label(
+              l10n.podcast_search_section_episodes,
+              padding: EdgeInsets.symmetric(
+                horizontal: context.spacing.xs,
+                vertical: context.spacing.xs,
+              ),
+            ),
+          ),
+          SliverList.builder(
+            itemCount: episodeResults.length,
+            itemBuilder: (context, index) {
+              final episode = episodeResults[index];
+              return RepaintBoundary(
+                key: ValueKey('episode_result_${episode.trackId}'),
+                child: PodcastEpisodeSearchResultCard(
+                  episode: episode,
+                  dense: isDense,
+                  onTap: () => onEpisodeTap(episode),
+                  onPlay: () => onEpisodePlay(episode),
+                  key: ValueKey('episode_search_${episode.trackId}'),
+                ),
+              );
+            },
+          ),
+        ],
+        const SliverPadding(padding: EdgeInsets.only(bottom: AppSpacing.md)),
+      ],
     );
   }
 
-  Widget _buildPodcastResults(BuildContext context, WidgetRef ref) {
+  Widget _buildPodcastSliver(
+    BuildContext context,
+    WidgetRef ref,
+    List<PodcastSearchResult> results,
+  ) {
     final normalizedSubscribedFeedUrls = ref.watch(
       subscribedNormalizedFeedUrlsProvider,
     );
@@ -140,29 +172,25 @@ class PodcastSearchResultsList extends ConsumerWidget {
       );
     }
 
-    return LayoutBuilder(
+    return SliverLayoutBuilder(
       builder: (context, constraints) {
-        final isMobile = constraints.maxWidth < Breakpoints.medium;
-        final results = searchState.podcastResults;
+        final isMobile = constraints.crossAxisExtent < Breakpoints.medium;
 
         if (isMobile) {
-          return ListView.builder(
-            key: const Key('podcast_discover_search_results'),
-            padding: EdgeInsets.only(bottom: context.spacing.md),
+          return SliverList.builder(
             itemCount: results.length,
-            itemBuilder: (context, index) => buildItem(context, results[index]),
+            itemBuilder: (context, index) =>
+                buildItem(context, results[index]),
           );
         }
 
         final spacing = context.spacing.sm;
-        final cardWidth = (constraints.maxWidth - spacing) / 2;
+        final cardWidth = (constraints.crossAxisExtent - spacing) / 2;
         // Dense result rows (artwork + title/subtitle/metadata) need ~120px
         // in the Ahem test font; 128 keeps a comfortable margin.
         const cardHeight = 128.0;
 
-        return GridView.builder(
-          key: const Key('podcast_discover_search_results'),
-          padding: EdgeInsets.only(bottom: context.spacing.md),
+        return SliverGrid.builder(
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 2,
             crossAxisSpacing: spacing,
@@ -173,31 +201,6 @@ class PodcastSearchResultsList extends ConsumerWidget {
           itemBuilder: (context, index) => buildItem(context, results[index]),
         );
       },
-    );
-  }
-}
-
-class _EpisodeSearchResultItem extends StatelessWidget {
-  const _EpisodeSearchResultItem({
-    required this.episode,
-    required this.isDense,
-    required this.onTap,
-    required this.onPlay,
-  });
-
-  final ITunesPodcastEpisodeResult episode;
-  final bool isDense;
-  final VoidCallback onTap;
-  final VoidCallback onPlay;
-
-  @override
-  Widget build(BuildContext context) {
-    return PodcastEpisodeSearchResultCard(
-      episode: episode,
-      dense: isDense,
-      onTap: onTap,
-      onPlay: onPlay,
-      key: ValueKey('episode_search_${episode.trackId}'),
     );
   }
 }

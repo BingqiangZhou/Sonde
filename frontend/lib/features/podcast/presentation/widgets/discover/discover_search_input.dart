@@ -5,7 +5,6 @@ import 'package:sonde/core/constants/app_radius.dart';
 import 'package:sonde/core/constants/app_spacing.dart';
 import 'package:sonde/core/localization/app_localizations_extension.dart';
 import 'package:sonde/core/platform/platform_helper.dart';
-import 'package:sonde/features/podcast/presentation/providers/podcast_search_provider.dart';
 
 /// Search input widget for the discover page.
 ///
@@ -18,7 +17,6 @@ class DiscoverSearchInput extends StatefulWidget {
     required this.onSearchChanged,
     required this.onClearSearch,
     super.key,
-    this.searchMode = PodcastSearchMode.podcasts,
     this.isDense = false,
   });
 
@@ -26,7 +24,6 @@ class DiscoverSearchInput extends StatefulWidget {
   final FocusNode searchFocusNode;
   final ValueChanged<String> onSearchChanged;
   final VoidCallback onClearSearch;
-  final PodcastSearchMode searchMode;
   final bool isDense;
 
   @override
@@ -70,15 +67,8 @@ class _DiscoverSearchInputState extends State<DiscoverSearchInput> {
     final l10n = context.l10n;
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final hintLabel =
-        widget.searchMode == PodcastSearchMode.episodes
-            ? l10n.podcast_search_section_episodes
-            : l10n.podcast_search_section_podcasts;
-    final isZh =
-        Localizations.localeOf(context).languageCode.startsWith('zh');
-    final hintText = isZh
-        ? '${l10n.search}$hintLabel...'
-        : '${l10n.search} $hintLabel...';
+    // One search covers both result kinds — the placeholder says so.
+    final hintText = '${l10n.podcast_search_hint_combined}...';
 
     final borderColor = _isFocused
         ? scheme.primary

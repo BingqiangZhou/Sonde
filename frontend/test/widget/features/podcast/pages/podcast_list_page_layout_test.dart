@@ -298,17 +298,12 @@ void main() {
       );
 
       await tester.pump();
-      final tabSelector = find.byKey(const Key('podcast_discover_tab_selector'));
       final searchBar = find.byKey(const Key('podcast_discover_search_bar'));
-      expect(tabSelector, findsOneWidget);
       expect(searchBar, findsOneWidget);
-      final initialTabHeight = tester.getSize(tabSelector).height;
       final initialSearchHeight = tester.getSize(searchBar).height;
-      expect(initialTabHeight, lessThanOrEqualTo(40));
       expect(initialSearchHeight, lessThanOrEqualTo(44));
 
       await tester.pump(const Duration(milliseconds: 30));
-      expect(tester.getSize(tabSelector).height, initialTabHeight);
       expect(tester.getSize(searchBar).height, initialSearchHeight);
       expect(tester.takeException(), isNull);
     });

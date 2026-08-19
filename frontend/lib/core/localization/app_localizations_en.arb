@@ -1005,10 +1005,14 @@
                                                                          }
                                                            }
                                       },
-    "podcast_search_empty_hint":  "Try a different keyword or switch between shows and episodes.",
+    "podcast_search_empty_hint":  "Try a different keyword.",
     "@podcast_search_empty_hint":  {
                                        "description":  "Hint shown when search returns no results"
                                    },
+    "podcast_search_hint_combined":  "Search podcasts & episodes",
+    "@podcast_search_hint_combined":  {
+                                           "description":  "Discover search box placeholder; one query searches both podcasts and episodes"
+                                       },
     "podcast_search_section_podcasts":  "Podcasts",
     "@podcast_search_section_podcasts":  {
                                              "description":  "Podcasts section title in search results"

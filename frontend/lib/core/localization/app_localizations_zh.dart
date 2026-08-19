@@ -746,7 +746,10 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get podcast_search_empty_hint => '试试其他关键词，或切换播客/单集模式。';
+  String get podcast_search_empty_hint => '试试其他关键词。';
+
+  @override
+  String get podcast_search_hint_combined => '搜索播客与分集';
 
   @override
   String get podcast_search_section_podcasts => '播客';

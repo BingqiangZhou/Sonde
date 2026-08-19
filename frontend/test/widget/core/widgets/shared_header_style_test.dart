@@ -170,15 +170,7 @@ class _FixedPodcastSearchNotifier extends PodcastSearchNotifier {
   PodcastSearchState build() => _state;
 
   @override
-  void searchPodcasts(String query) {}
-
-  @override
-  void searchEpisodes(String query) {}
-
-  @override
-  void setSearchMode(PodcastSearchMode mode) {
-    state = state.copyWith(searchMode: mode);
-  }
+  void search(String query) {}
 
   @override
   void clearSearch() {}

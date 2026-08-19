@@ -17,7 +17,6 @@ import 'package:sonde/core/widgets/top_floating_notice.dart';
 import 'package:sonde/features/podcast/data/models/podcast_discover_chart_model.dart';
 import 'package:sonde/features/podcast/data/utils/podcast_url_utils.dart';
 import 'package:sonde/features/podcast/presentation/pages/sections/discover_interaction_handler.dart';
-import 'package:sonde/features/podcast/presentation/pages/sections/search_mode_toggle.dart';
 import 'package:sonde/features/podcast/presentation/providers/podcast_providers.dart';
 import 'package:sonde/features/podcast/presentation/providers/podcast_search_provider.dart';
 import 'package:sonde/features/podcast/presentation/widgets/discover/discover_charts_list.dart';
@@ -73,10 +72,6 @@ class _PodcastListPageState extends ConsumerState<PodcastListPage> {
     }
   }
 
-  void _handleSearchModeSelected(PodcastSearchMode mode) {
-    ref.read(podcastSearchProvider.notifier).setSearchMode(mode);
-  }
-
   void _onSearchChanged(String query) {
     if (query.trim().isEmpty) {
       _searchDebounce?.cancel();
@@ -86,13 +81,7 @@ class _PodcastListPageState extends ConsumerState<PodcastListPage> {
     _searchDebounce?.cancel();
     _searchDebounce = DebounceTimer(
       AppDurations.debounceMedium,
-      () {
-        final notifier = ref.read(podcastSearchProvider.notifier);
-        final mode = ref.read(podcastSearchProvider).searchMode;
-        mode == PodcastSearchMode.episodes
-            ? notifier.searchEpisodes(query)
-            : notifier.searchPodcasts(query);
-      },
+      () => ref.read(podcastSearchProvider.notifier).search(query),
     );
   }
 
@@ -137,7 +126,6 @@ class _PodcastListPageState extends ConsumerState<PodcastListPage> {
     final discoverState = ref.watch(podcastDiscoverProvider);
     const isDense = true;
     final hasSearched = searchState.hasSearched;
-    final searchMode = searchState.searchMode;
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -172,11 +160,6 @@ class _PodcastListPageState extends ConsumerState<PodcastListPage> {
           subtitle: '',
           headerSpacing: headerSpacing,
           roundedViewport: true,
-          trailing: SearchModeToggle(
-            searchMode: searchMode,
-            isDense: isDense,
-            onTabSelected: _handleSearchModeSelected,
-          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -185,7 +168,6 @@ class _PodcastListPageState extends ConsumerState<PodcastListPage> {
                 searchFocusNode: _searchFocusNode,
                 onSearchChanged: _onSearchChanged,
                 onClearSearch: _clearSearch,
-                searchMode: searchMode,
                 isDense: isDense,
               ),
               SizedBox(height: useCompactShell ? context.spacing.smMd : context.spacing.md),

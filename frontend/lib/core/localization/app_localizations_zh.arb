@@ -1005,10 +1005,14 @@
                                                                          }
                                                            }
                                       },
-    "podcast_search_empty_hint":  "试试其他关键词，或切换播客/单集模式。",
+    "podcast_search_empty_hint":  "试试其他关键词。",
     "@podcast_search_empty_hint":  {
                                        "description":  "搜索无结果时的提示文案"
                                    },
+    "podcast_search_hint_combined":  "搜索播客与分集",
+    "@podcast_search_hint_combined":  {
+                                           "description":  "发现页搜索框占位文案；一次搜索同时查播客与分集"
+                                       },
     "podcast_search_section_podcasts":  "播客",
     "@podcast_search_section_podcasts":  {
                                              "description":  "搜索结果播客分区标题"

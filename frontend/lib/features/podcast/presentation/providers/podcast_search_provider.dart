@@ -14,8 +14,6 @@ import 'package:sonde/features/podcast/data/models/podcast_search_model.dart';
 import 'package:sonde/features/podcast/data/services/apple_podcast_rss_service.dart';
 import 'package:sonde/features/podcast/data/services/itunes_search_service.dart';
 
-enum PodcastSearchMode { podcasts, episodes }
-
 final podcastSearchDebounceDurationProvider = Provider<Duration>((ref) {
   return AppDurations.debounceMedium;
 });
@@ -30,7 +28,6 @@ class PodcastSearchState extends Equatable {
     this.error,
     this.currentQuery = '',
     this.searchCountry = PodcastCountry.china,
-    this.searchMode = PodcastSearchMode.episodes,
   });
   final List<PodcastSearchResult> podcastResults;
   final List<ITunesPodcastEpisodeResult> episodeResults;
@@ -39,7 +36,6 @@ class PodcastSearchState extends Equatable {
   final String? error;
   final String currentQuery;
   final PodcastCountry searchCountry;
-  final PodcastSearchMode searchMode;
 
   PodcastSearchState copyWith({
     List<PodcastSearchResult>? podcastResults,
@@ -49,7 +45,6 @@ class PodcastSearchState extends Equatable {
     String? error,
     String? currentQuery,
     PodcastCountry? searchCountry,
-    PodcastSearchMode? searchMode,
   }) {
     return PodcastSearchState(
       podcastResults: podcastResults ?? this.podcastResults,
@@ -59,7 +54,6 @@ class PodcastSearchState extends Equatable {
       error: error,
       currentQuery: currentQuery ?? this.currentQuery,
       searchCountry: searchCountry ?? this.searchCountry,
-      searchMode: searchMode ?? this.searchMode,
     );
   }
 
@@ -72,7 +66,6 @@ class PodcastSearchState extends Equatable {
         error,
         currentQuery,
         searchCountry,
-        searchMode,
       ];
 }
 
@@ -99,40 +92,14 @@ class PodcastSearchNotifier extends Notifier<PodcastSearchState> {
     return const PodcastSearchState();
   }
 
-  void searchPodcasts(String query) {
-    _scheduleSearch(query, PodcastSearchMode.podcasts);
-  }
-
-  void searchEpisodes(String query) {
-    _scheduleSearch(query, PodcastSearchMode.episodes);
-  }
-
-  void setSearchMode(PodcastSearchMode mode) {
-    if (state.searchMode == mode) {
-      return;
-    }
-
-    final hasQuery = state.currentQuery.trim().isNotEmpty;
-    state = state.copyWith(
-      searchMode: mode,
-      isLoading: hasQuery,
-      hasSearched: hasQuery,
-      podcastResults: mode == PodcastSearchMode.podcasts
-          ? state.podcastResults
-          : const [],
-      episodeResults: mode == PodcastSearchMode.episodes
-          ? state.episodeResults
-          : const [],
-    );
-
-    if (hasQuery) {
-      _scheduleSearch(state.currentQuery, mode, bypassDebounce: true);
-    }
+  /// Searches both podcasts and podcast episodes for [query] — one
+  /// search, two result kinds, rendered as separate sections.
+  void search(String query) {
+    _scheduleSearch(query);
   }
 
   void _scheduleSearch(
-    String query,
-    PodcastSearchMode mode, {
+    String query, {
     bool bypassDebounce = false,
   }) {
     _debounce?.cancel();
@@ -140,7 +107,7 @@ class PodcastSearchNotifier extends Notifier<PodcastSearchState> {
 
     if (normalizedQuery.isEmpty) {
       _searchToken.cancel();
-      state = PodcastSearchState(searchMode: mode);
+      state = const PodcastSearchState();
       return;
     }
 
@@ -148,59 +115,40 @@ class PodcastSearchNotifier extends Notifier<PodcastSearchState> {
       isLoading: true,
       hasSearched: true,
       currentQuery: normalizedQuery,
-      searchMode: mode,
     );
 
     final requestId = _searchToken.begin();
     final delay = bypassDebounce ? Duration.zero : _debounceDuration;
     _debounce = utils.DebounceTimer(delay, () async {
-      await _performSearch(normalizedQuery, mode, requestId: requestId);
+      await _performSearch(normalizedQuery, requestId: requestId);
     });
   }
 
   Future<void> _performSearch(
-    String query,
-    PodcastSearchMode mode, {
+    String query, {
     required int requestId,
   }) async {
     final country = ref.read(countrySelectorProvider).selectedCountry;
     final searchService = ref.read(iTunesSearchServiceProvider);
 
     try {
-      if (mode == PodcastSearchMode.podcasts) {
-        final response = await searchService.searchPodcasts(
-          term: query,
-          country: country,
-        );
-        if (!_isRequestActive(requestId, query, mode)) {
-          return;
-        }
-        state = state.copyWith(
-          podcastResults: response.results,
-          episodeResults: const [],
-          isLoading: false,
-          searchCountry: country,
-          searchMode: mode,
-        );
-        return;
-      }
+      // Both charts in parallel — the results view sections them.
+      final (podcastResponse, episodes) = await (
+        searchService.searchPodcasts(term: query, country: country),
+        searchService.searchPodcastEpisodes(term: query, country: country),
+      ).wait;
 
-      final episodes = await searchService.searchPodcastEpisodes(
-        term: query,
-        country: country,
-      );
-      if (!_isRequestActive(requestId, query, mode)) {
+      if (!_isRequestActive(requestId, query)) {
         return;
       }
       state = state.copyWith(
-        podcastResults: const [],
+        podcastResults: podcastResponse.results,
         episodeResults: episodes,
         isLoading: false,
         searchCountry: country,
-        searchMode: mode,
       );
     } catch (error) {
-      if (!_isRequestActive(requestId, query, mode)) {
+      if (!_isRequestActive(requestId, query)) {
         return;
       }
       state = state.copyWith(
@@ -209,25 +157,18 @@ class PodcastSearchNotifier extends Notifier<PodcastSearchState> {
         isLoading: false,
         searchCountry: country,
         error: mapErrorMessage(error),
-        searchMode: mode,
       );
     }
   }
 
-  bool _isRequestActive(
-    int requestId,
-    String query,
-    PodcastSearchMode mode,
-  ) {
-    return _searchToken.isCurrent(requestId) &&
-        state.currentQuery == query &&
-        state.searchMode == mode;
+  bool _isRequestActive(int requestId, String query) {
+    return _searchToken.isCurrent(requestId) && state.currentQuery == query;
   }
 
   void clearSearch() {
     _debounce?.cancel();
     _searchToken.cancel();
-    state = PodcastSearchState(searchMode: state.searchMode);
+    state = const PodcastSearchState();
   }
 
   Future<void> retrySearch() async {
@@ -239,7 +180,6 @@ class PodcastSearchNotifier extends Notifier<PodcastSearchState> {
     final requestId = _searchToken.begin();
     await _performSearch(
       state.currentQuery,
-      state.searchMode,
       requestId: requestId,
     );
   }

@@ -274,15 +274,7 @@ class InteractivePodcastSearchNotifier extends PodcastSearchNotifier {
   PodcastSearchState build() => _initialState;
 
   @override
-  void searchPodcasts(String query) {
-    state = state.copyWith(
-      currentQuery: query,
-      hasSearched: query.trim().isNotEmpty,
-    );
-  }
-
-  @override
-  void searchEpisodes(String query) {
+  void search(String query) {
     state = state.copyWith(
       currentQuery: query,
       hasSearched: query.trim().isNotEmpty,
@@ -291,7 +283,7 @@ class InteractivePodcastSearchNotifier extends PodcastSearchNotifier {
 
   @override
   void clearSearch() {
-    state = PodcastSearchState(searchMode: state.searchMode);
+    state = const PodcastSearchState();
   }
 }
 

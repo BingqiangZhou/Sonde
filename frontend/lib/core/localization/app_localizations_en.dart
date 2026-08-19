@@ -776,8 +776,10 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get podcast_search_empty_hint =>
-      'Try a different keyword or switch between shows and episodes.';
+  String get podcast_search_empty_hint => 'Try a different keyword.';
+
+  @override
+  String get podcast_search_hint_combined => 'Search podcasts & episodes';
 
   @override
   String get podcast_search_section_podcasts => 'Podcasts';

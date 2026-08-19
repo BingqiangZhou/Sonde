@@ -1541,8 +1541,14 @@ abstract class AppLocalizations {
   /// Hint shown when search returns no results
   ///
   /// In en, this message translates to:
-  /// **'Try a different keyword or switch between shows and episodes.'**
+  /// **'Try a different keyword.'**
   String get podcast_search_empty_hint;
+
+  /// Discover search box placeholder; one query searches both podcasts and episodes
+  ///
+  /// In en, this message translates to:
+  /// **'Search podcasts & episodes'**
+  String get podcast_search_hint_combined;
 
   /// Podcasts section title in search results
   ///
