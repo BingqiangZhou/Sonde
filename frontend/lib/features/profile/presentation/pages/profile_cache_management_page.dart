@@ -10,6 +10,7 @@ import 'package:sonde/core/providers/core_providers.dart';
 import 'package:sonde/core/theme/app_colors.dart';
 import 'package:sonde/core/utils/app_logger.dart' as logger;
 import 'package:sonde/core/widgets/adaptive/adaptive.dart';
+import 'package:sonde/core/widgets/app_dialog.dart';
 import 'package:sonde/core/widgets/app_dialog_helper.dart';
 import 'package:sonde/core/widgets/app_shells.dart';
 import 'package:sonde/core/widgets/custom_adaptive_navigation.dart';
@@ -304,8 +305,7 @@ class _ProfileCacheManagementPageState
     showAppDialog<void>(
       context: context,
       barrierDismissible: false,
-      builder: (context) => AlertDialog.adaptive(
-        backgroundColor: Colors.transparent,
+      builder: (context) => AppDialog(
         content: Row(
           mainAxisSize: MainAxisSize.min,
           children: [

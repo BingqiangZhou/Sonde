@@ -7,6 +7,7 @@ import 'package:sonde/core/localization/app_localizations.dart';
 import 'package:sonde/core/localization/app_localizations_extension.dart';
 import 'package:sonde/core/theme/app_colors.dart';
 import 'package:sonde/core/widgets/adaptive/adaptive.dart';
+import 'package:sonde/core/widgets/app_dialog.dart';
 import 'package:sonde/core/widgets/app_dialog_helper.dart';
 import 'package:sonde/core/widgets/app_shells.dart';
 import 'package:sonde/core/widgets/top_floating_notice.dart';
@@ -58,8 +59,7 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
     final l10n = context.l10n;
     showAppDialog<void>(
       context: context,
-      builder: (context) => AlertDialog.adaptive(
-        backgroundColor: Colors.transparent,
+      builder: (context) => AppDialog(
         title: Text(l10n.error),
         content: Text(message),
         actions: [

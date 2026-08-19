@@ -72,3 +72,4 @@
 | `admin` is under `domains/` | `admin/` is a separate top-level module at `app/admin/` |
 | Generated `AppLocalizations.localizationsDelegates` | Use app-owned `appLocalizationsDelegates` from `lib/core/localization/l10n_delegates.dart` (generated getter references old `flutter_localizations` delegates; incompatible with `material_ui`/`cupertino_ui`) |
 | Hand-edit generated `app_localizations*.dart` | Edit the `.arb` sources, re-run `flutter gen-l10n` |
+| Hand-rolled dialog shells (`AlertDialog`, raw `Dialog`, custom Containers) | `showAppDialog` + `AppDialog` shell from `lib/core/widgets/` (confirmations via `showAppConfirmationDialog`) |

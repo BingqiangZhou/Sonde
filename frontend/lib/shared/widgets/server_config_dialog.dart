@@ -5,12 +5,12 @@ import 'package:go_router/go_router.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:sonde/core/constants/app_radius.dart';
 import 'package:sonde/core/constants/app_spacing.dart';
-import 'package:sonde/core/constants/breakpoints.dart';
 import 'package:sonde/core/localization/app_localizations_extension.dart';
 import 'package:sonde/core/network/server_health_service.dart';
 import 'package:sonde/core/providers/core_providers.dart';
 import 'package:sonde/core/router/app_router.dart';
 import 'package:sonde/core/widgets/adaptive/adaptive.dart';
+import 'package:sonde/core/widgets/app_dialog.dart';
 import 'package:sonde/core/widgets/app_dialog_helper.dart';
 import 'package:sonde/core/widgets/top_floating_notice.dart';
 
@@ -100,98 +100,72 @@ class _ServerConfigDialogState extends ConsumerState<ServerConfigDialog> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final screenWidth = MediaQuery.sizeOf(context).width;
-    final isMobile = screenWidth < Breakpoints.medium;
-    final dialogWidth = isMobile ? screenWidth - context.spacing.xxl : 500.0;
     final scheme = Theme.of(context).colorScheme;
 
-    return Dialog(
-      backgroundColor: Colors.transparent,
-      insetPadding: EdgeInsets.all(context.spacing.md),
-      child: Material(
-        color: scheme.surfaceContainerHigh,
-        borderRadius: AppRadius.xlRadius,
-        clipBehavior: Clip.antiAlias,
-        child: SizedBox(
-          width: dialogWidth,
-          child: SingleChildScrollView(
-            padding: EdgeInsets.all(context.spacing.lg),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  l10n.backend_api_server_config,
-                  style: Theme.of(context).textTheme.headlineSmall,
-                ),
-                SizedBox(height: context.spacing.md),
-                SizedBox(
-                  width: double.infinity,
-                  child: _buildConnectionStatusPanel(),
-                ),
-                SizedBox(height: context.spacing.smMd),
-                TextField(
-                  controller: _serverUrlController,
-                  decoration: InputDecoration(
-                    labelText: l10n.backend_api_url_label,
-                    hintText: l10n.backend_api_url_hint,
-                    border: const OutlineInputBorder(),
-                    errorText: _connectionStatus == ConnectionStatus.failed
-                        ? _connectionMessage ?? l10n.connection_error_hint
-                        : null,
-                    prefixIcon: _buildProtocolToggle(scheme),
-                    prefixIconConstraints: const BoxConstraints(),
-                    suffixIcon: ValueListenableBuilder<TextEditingValue>(
-                      valueListenable: _serverUrlController,
-                      builder: (context, value, child) {
-                        return value.text.isNotEmpty
-                            ? IconButton(
-                                icon: const Icon(Icons.close),
-                                onPressed: () {
-                                  _serverUrlController.clear();
-                                  _onServerUrlChanged('');
-                                },
-                                tooltip: l10n.clear,
-                              )
-                            : const SizedBox.shrink();
-                      },
-                    ),
-                  ),
-                  onChanged: _onServerUrlChanged,
-                ),
-                SizedBox(height: context.spacing.sm),
-                Text(
-                  l10n.backend_api_description,
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: scheme.onSurfaceVariant,
-                  ),
-                ),
-                SizedBox(height: context.spacing.lg),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    Flexible(
-                      child: TextButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        child: Text(l10n.cancel),
-                      ),
-                    ),
-                    SizedBox(width: context.spacing.sm),
-                    Flexible(
-                      child: TextButton(
-                        onPressed: _connectionStatus == ConnectionStatus.success
-                            ? () => _saveServerConfig(context)
-                            : null,
-                        child: Text(l10n.save),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+    return AppDialog(
+      maxWidth: 500,
+      title: Text(l10n.backend_api_server_config),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(
+              width: double.infinity,
+              child: _buildConnectionStatusPanel(),
             ),
-          ),
+            SizedBox(height: context.spacing.smMd),
+            TextField(
+              controller: _serverUrlController,
+              decoration: InputDecoration(
+                labelText: l10n.backend_api_url_label,
+                hintText: l10n.backend_api_url_hint,
+                border: const OutlineInputBorder(),
+                errorText: _connectionStatus == ConnectionStatus.failed
+                    ? _connectionMessage ?? l10n.connection_error_hint
+                    : null,
+                prefixIcon: _buildProtocolToggle(scheme),
+                prefixIconConstraints: const BoxConstraints(),
+                suffixIcon: ValueListenableBuilder<TextEditingValue>(
+                  valueListenable: _serverUrlController,
+                  builder: (context, value, child) {
+                    return value.text.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.close),
+                            onPressed: () {
+                              _serverUrlController.clear();
+                              _onServerUrlChanged('');
+                            },
+                            tooltip: l10n.clear,
+                          )
+                        : const SizedBox.shrink();
+                  },
+                ),
+              ),
+              onChanged: _onServerUrlChanged,
+            ),
+            SizedBox(height: context.spacing.sm),
+            Text(
+              l10n.backend_api_description,
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: scheme.onSurfaceVariant,
+              ),
+            ),
+          ],
         ),
       ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(l10n.cancel),
+        ),
+        TextButton(
+          onPressed: _connectionStatus == ConnectionStatus.success
+              ? () => _saveServerConfig(context)
+              : null,
+          child: Text(l10n.save),
+        ),
+      ],
     );
   }
 
@@ -391,23 +365,10 @@ class _ServerConfigDialogState extends ConsumerState<ServerConfigDialog> {
       return;
     }
 
-    final confirmed = await showAppDialog<bool>(
+    final confirmed = await showAppConfirmationDialog(
       context: dialogContext,
-      builder: (ctx) => AlertDialog.adaptive(
-        backgroundColor: Colors.transparent,
-        title: Text(l10n.profile_server_switch_title),
-        content: Text(l10n.profile_server_switch_message),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: Text(l10n.cancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text(l10n.confirm),
-          ),
-        ],
-      ),
+      title: l10n.profile_server_switch_title,
+      message: l10n.profile_server_switch_message,
     );
 
     if (confirmed != true) return;
@@ -419,21 +380,19 @@ class _ServerConfigDialogState extends ConsumerState<ServerConfigDialog> {
       useRootNavigator: true,
       builder: (ctx) => PopScope(
         canPop: false,
-        child: Center(
-          child: Padding(
-            padding: EdgeInsets.all(ctx.spacing.xl),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                SizedBox(
-                  width: ctx.spacing.md,
-                  height: ctx.spacing.md,
-                  child: const CircularProgressIndicator.adaptive(strokeWidth: 2),
-                ),
-                SizedBox(height: ctx.spacing.lg),
-                Text(l10n.profile_server_switch_clearing),
-              ],
-            ),
+        child: AppDialog(
+          maxWidth: 400,
+          content: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                width: ctx.spacing.mdLg,
+                height: ctx.spacing.mdLg,
+                child: const CircularProgressIndicator.adaptive(strokeWidth: 2),
+              ),
+              SizedBox(width: ctx.spacing.md),
+              Flexible(child: Text(l10n.profile_server_switch_clearing)),
+            ],
           ),
         ),
       ),

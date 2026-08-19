@@ -5,6 +5,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:sonde/core/localization/app_localizations.dart';
 import 'package:sonde/core/localization/l10n_delegates.dart';
 import 'package:sonde/core/theme/app_theme.dart';
+import 'package:sonde/core/widgets/app_dialog.dart';
 import 'package:sonde/features/settings/presentation/widgets/update_dialog.dart';
 import 'package:sonde/shared/models/github_release.dart';
 
@@ -106,11 +107,12 @@ This is an **important** update.
       await tester.pumpWidget(_buildTestApp(release));
       await tester.pumpAndSettle();
 
+      // The unified AppDialog fills the screen width minus the dialog inset
+      // padding (16 * 2), consistent with every other dialog on mobile.
       expect(
-        find.byWidgetPredicate(
-          (widget) => widget is SizedBox && widget.width == 358.0,
-        ),
-        findsOneWidget,
+        tester.getSize(find.byType(AppDialog)).width,
+        358.0,
+        reason: 'Dialog width should equal screen width minus inset padding',
       );
     });
 

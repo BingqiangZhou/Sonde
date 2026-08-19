@@ -4,6 +4,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:sonde/core/localization/app_localizations.dart';
 import 'package:sonde/core/localization/l10n_delegates.dart';
 import 'package:sonde/core/storage/local_storage_service.dart';
+import 'package:sonde/core/widgets/app_dialog.dart';
 import 'package:sonde/shared/widgets/server_config_dialog.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -236,11 +237,12 @@ void main() {
 
       await tester.pumpAndSettle();
 
+      // The unified AppDialog fills the screen width minus the dialog inset
+      // padding (16 * 2), consistent with every other dialog on mobile.
       expect(
-        find.byWidgetPredicate(
-          (widget) => widget is SizedBox && widget.width == 362.0,
-        ),
-        findsOneWidget,
+        tester.getSize(find.byType(AppDialog)).width,
+        358.0,
+        reason: 'Dialog width should equal screen width minus inset padding',
       );
     });
   });

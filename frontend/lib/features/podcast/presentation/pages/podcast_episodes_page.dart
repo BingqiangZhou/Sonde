@@ -12,6 +12,7 @@ import 'package:sonde/core/platform/platform_helper.dart';
 import 'package:sonde/core/theme/app_colors.dart';
 import 'package:sonde/core/utils/app_logger.dart' as logger;
 import 'package:sonde/core/widgets/adaptive/adaptive.dart';
+import 'package:sonde/core/widgets/app_dialog.dart';
 import 'package:sonde/core/widgets/app_dialog_helper.dart';
 import 'package:sonde/core/widgets/custom_adaptive_navigation.dart';
 import 'package:sonde/core/widgets/top_floating_notice.dart';

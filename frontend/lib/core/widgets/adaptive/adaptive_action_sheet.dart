@@ -2,6 +2,7 @@ import 'package:cupertino_ui/cupertino_ui.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:sonde/core/constants/app_spacing.dart';
 import 'package:sonde/core/platform/platform_helper.dart';
+import 'package:sonde/core/theme/app_colors.dart';
 
 /// An action for [showAdaptiveActionSheet].
 class AdaptiveActionSheetAction {
@@ -65,8 +66,10 @@ Future<void> showAdaptiveActionSheet({
       // 背景与水波纹（Flutter 3.47 断言要求）。
       return Material(
         color: theme.colorScheme.surfaceContainerHighest,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(appThemeOf(sheetContext).sheetRadius),
+          ),
         ),
         clipBehavior: Clip.antiAlias,
         child: SafeArea(

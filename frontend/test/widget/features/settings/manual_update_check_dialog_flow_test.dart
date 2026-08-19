@@ -5,6 +5,7 @@ import 'package:sonde/core/localization/app_localizations.dart';
 import 'package:sonde/core/localization/l10n_delegates.dart';
 import 'package:sonde/core/services/app_update_service.dart';
 import 'package:sonde/core/theme/app_theme.dart';
+import 'package:sonde/core/widgets/app_dialog.dart';
 import 'package:sonde/features/settings/presentation/providers/app_update_provider.dart';
 import 'package:sonde/features/settings/presentation/widgets/update_dialog.dart';
 import 'package:sonde/shared/models/github_release.dart';
@@ -166,11 +167,12 @@ void main() {
       await tester.tap(find.text('Open Check Dialog'));
       await tester.pumpAndSettle();
 
+      // The unified AppDialog fills the screen width minus the dialog inset
+      // padding (16 * 2), consistent with every other dialog on mobile.
       expect(
-        find.byWidgetPredicate(
-          (widget) => widget is SizedBox && widget.width == 358.0,
-        ),
-        findsOneWidget,
+        tester.getSize(find.byType(AppDialog)).width,
+        358.0,
+        reason: 'Dialog width should equal screen width minus inset padding',
       );
 
       await tester.tap(find.text('Close'));

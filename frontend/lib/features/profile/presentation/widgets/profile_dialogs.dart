@@ -3,152 +3,24 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:sonde/core/constants/app_spacing.dart';
-import 'package:sonde/core/constants/breakpoints.dart';
 import 'package:sonde/core/localization/app_localizations_extension.dart';
 import 'package:sonde/core/localization/locale_provider.dart';
 import 'package:sonde/core/network/exceptions/network_exceptions.dart';
 import 'package:sonde/core/platform/platform_helper.dart';
 import 'package:sonde/core/theme/theme_provider.dart';
 import 'package:sonde/core/widgets/adaptive/adaptive.dart';
+import 'package:sonde/core/widgets/app_dialog.dart';
 import 'package:sonde/core/widgets/app_dialog_helper.dart';
 import 'package:sonde/core/widgets/top_floating_notice.dart';
 import 'package:sonde/features/auth/presentation/providers/auth_provider.dart';
 import 'package:sonde/shared/widgets/custom_text_field.dart';
 
-// Profile page dialogs, extracted from profile_page.dart. These do not use
-// showAppDialog because profile dialogs need constrained width, which
-// showAppDialog does not support. See app_dialog_helper.dart.
-
-double _dialogMaxWidth(BuildContext context) {
-  return ResponsiveDialogHelper.maxWidth(
-    context,
-    desktopMaxWidth: 720,
-    mobileHorizontalMargin: context.spacing.xs,
-  );
-}
-
-EdgeInsets _dialogInsetPadding(BuildContext context) {
-  if (context.isMobile) {
-    return EdgeInsets.symmetric(
-      horizontal: context.spacing.xs,
-      vertical: context.spacing.md,
-    );
-  }
-  return EdgeInsets.zero;
-}
-
-Future<T?> showProfileDialog<T>(
-  BuildContext context, {
-  required Widget Function(BuildContext dialogContext) builder,
-  bool barrierDismissible = true,
-}) {
-  if (PlatformHelper.isApple(context)) {
-    return showCupertinoDialog<T>(
-      context: context,
-      barrierDismissible: barrierDismissible,
-      builder: (dialogContext) => Center(
-        child: ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: _dialogMaxWidth(context)),
-          child: Material(
-            color: Colors.transparent,
-            child: builder(dialogContext),
-          ),
-        ),
-      ),
-    );
-  }
-  return showDialog<T>(
-    context: context,
-    barrierDismissible: barrierDismissible,
-    builder: (dialogContext) => Dialog(
-      backgroundColor: Colors.transparent,
-      insetPadding: _dialogInsetPadding(context),
-      child: ConstrainedBox(
-        constraints: BoxConstraints(maxWidth: _dialogMaxWidth(context)),
-        child: builder(dialogContext),
-      ),
-    ),
-  );
-}
-
-Widget buildProfileDialogContent({
-  required BuildContext dialogContext,
-  required Widget title,
-  required Widget content,
-  required List<Widget> actions,
-}) {
-  final isIOS = PlatformHelper.isApple(dialogContext);
-  final theme = Theme.of(dialogContext);
-
-  return Material(
-    color: isIOS
-        ? CupertinoColors.systemBackground.resolveFrom(dialogContext)
-        : theme.colorScheme.surfaceContainerHighest,
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(isIOS ? 14 : 28),
-    ),
-    clipBehavior: Clip.antiAlias,
-    child: Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Padding(
-          padding: EdgeInsets.fromLTRB(dialogContext.spacing.lg, isIOS ? AppSpacing.mdLg : AppSpacing.lg, dialogContext.spacing.lg, isIOS ? AppSpacing.sm : AppSpacing.md),
-          child: Align(
-            alignment: isIOS ? Alignment.center : AlignmentDirectional.centerStart,
-            child: DefaultTextStyle(
-              style: isIOS
-                  ? CupertinoTheme.of(dialogContext)
-                      .textTheme
-                      .textStyle
-                      .copyWith(fontSize: theme.textTheme.titleLarge?.fontSize, fontWeight: FontWeight.w600)
-                  : theme.textTheme.titleLarge!,
-              child: title,
-            ),
-          ),
-        ),
-        Padding(
-          padding: EdgeInsets.fromLTRB(dialogContext.spacing.lg, 0, dialogContext.spacing.lg, dialogContext.spacing.md),
-          child: Align(
-            alignment: isIOS ? Alignment.center : AlignmentDirectional.centerStart,
-            child: DefaultTextStyle(
-              style: isIOS
-                  ? CupertinoTheme.of(dialogContext)
-                      .textTheme
-                      .textStyle
-                      .copyWith(fontSize: theme.textTheme.bodyMedium?.fontSize)
-                  : theme.textTheme.bodyMedium!,
-              child: content,
-            ),
-          ),
-        ),
-        if (actions.isNotEmpty) ...[
-          Divider(height: 1, color: theme.colorScheme.outlineVariant),
-          if (isIOS)
-            IntrinsicHeight(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: actions
-                    .map((a) => Expanded(child: a))
-                    .toList(),
-              ),
-            )
-          else
-            Padding(
-              padding: EdgeInsets.fromLTRB(dialogContext.spacing.md, dialogContext.spacing.smMd, dialogContext.spacing.md, dialogContext.spacing.smMd),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: actions,
-              ),
-            ),
-        ],
-      ],
-    ),
-  );
-}
+// Profile page dialogs, extracted from profile_page.dart. All dialogs share
+// the AppDialog shell via showAppDialog; profile forms use a wider maxWidth.
 
 void showEditProfileDialog(BuildContext context) {
-  showProfileDialog<void>(
-    context,
+  showAppDialog<void>(
+    context: context,
     builder: (dialogContext) => _EditProfileDialog(outerContext: context),
   );
 }
@@ -233,8 +105,8 @@ class _EditProfileDialogState extends ConsumerState<_EditProfileDialog> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    return buildProfileDialogContent(
-      dialogContext: context,
+    return AppDialog(
+      maxWidth: 720,
       title: Text(l10n.profile_edit_profile),
       content: Form(
         key: _formKey,
@@ -297,12 +169,12 @@ class _EditProfileDialogState extends ConsumerState<_EditProfileDialog> {
 
 void showSecurityDialog(BuildContext context, WidgetRef ref) {
   final l10n = context.l10n;
-  showProfileDialog<void>(
-    context,
+  showAppDialog<void>(
+    context: context,
     builder: (dialogContext) {
       final iconColor = ResponsiveDialogHelper.iconColor(dialogContext);
-      return buildProfileDialogContent(
-        dialogContext: dialogContext,
+      return AppDialog(
+        maxWidth: 720,
         title: Text(l10n.profile_security),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -351,11 +223,11 @@ void showChangePasswordDialog(BuildContext context, WidgetRef ref) {
   final authState = ref.read(authProvider);
   final userEmail = authState.user?.email;
 
-  showProfileDialog<void>(
-    context,
+  showAppDialog<void>(
+    context: context,
     builder: (dialogContext) {
-      return buildProfileDialogContent(
-        dialogContext: dialogContext,
+      return AppDialog(
+        maxWidth: 720,
         title: Text(l10n.profile_password_change_title),
         content: Text(
           userEmail != null
@@ -402,8 +274,8 @@ void showChangePasswordDialog(BuildContext context, WidgetRef ref) {
 }
 
 void showLanguageDialog(BuildContext context) {
-  showProfileDialog<void>(
-    context,
+  showAppDialog<void>(
+    context: context,
     builder: (dialogContext) {
       return Consumer(
         builder: (dialogContext, ref, _) {
@@ -411,8 +283,8 @@ void showLanguageDialog(BuildContext context) {
           final l10n = dialogContext.l10n;
           final iconColor = ResponsiveDialogHelper.iconColor(dialogContext);
 
-          return buildProfileDialogContent(
-            dialogContext: dialogContext,
+          return AppDialog(
+            maxWidth: 720,
             title: Text(l10n.language),
             content: Column(
               mainAxisSize: MainAxisSize.min,
@@ -462,12 +334,12 @@ Future<void> showProfileAboutDialog(BuildContext context) async {
   final packageInfo = await PackageInfo.fromPlatform();
   if (!context.mounted) return;
 
-  showProfileDialog<void>(
-    context,
+  showAppDialog<void>(
+    context: context,
     builder: (dialogContext) {
       final iconColor = ResponsiveDialogHelper.iconColor(dialogContext);
-      return buildProfileDialogContent(
-        dialogContext: dialogContext,
+      return AppDialog(
+        maxWidth: 720,
         title: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -515,8 +387,8 @@ Future<void> showProfileAboutDialog(BuildContext context) async {
 }
 
 void showAppearanceDialog(BuildContext context) {
-  showProfileDialog<void>(
-    context,
+  showAppDialog<void>(
+    context: context,
     builder: (dialogContext) {
       return Consumer(
         builder: (dialogContext, ref, _) {
@@ -524,8 +396,8 @@ void showAppearanceDialog(BuildContext context) {
           final l10n = dialogContext.l10n;
           final iconColor = ResponsiveDialogHelper.iconColor(dialogContext);
 
-          return buildProfileDialogContent(
-            dialogContext: dialogContext,
+          return AppDialog(
+            maxWidth: 720,
             title: Text(l10n.appearance_title),
             content: Column(
               mainAxisSize: MainAxisSize.min,
@@ -582,11 +454,11 @@ void showAppearanceDialog(BuildContext context) {
 
 void showLogoutDialog(BuildContext context, WidgetRef ref) {
   final l10n = context.l10n;
-  showProfileDialog<void>(
-    context,
+  showAppDialog<void>(
+    context: context,
     builder: (dialogContext) {
-      return buildProfileDialogContent(
-        dialogContext: dialogContext,
+      return AppDialog(
+        maxWidth: 720,
         title: Text(l10n.profile_logout_title),
         content: Text(l10n.profile_logout_message),
         actions: [

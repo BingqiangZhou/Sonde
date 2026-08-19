@@ -333,8 +333,7 @@ extension _PodcastEpisodesPageView on _PodcastEpisodesPageState {
     showAppDialog<void>(
       context: context,
       builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog.adaptive(
-          backgroundColor: Colors.transparent,
+        builder: (context, setDialogState) => AppDialog(
           title: Text(l10n.podcast_filter_episodes),
           content: Column(
             mainAxisSize: MainAxisSize.min,

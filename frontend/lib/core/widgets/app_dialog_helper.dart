@@ -1,17 +1,21 @@
 import 'package:cupertino_ui/cupertino_ui.dart';
 import 'package:material_ui/material_ui.dart';
 
-import 'package:sonde/core/constants/app_spacing.dart';
 import 'package:sonde/core/constants/breakpoints.dart';
+import 'package:sonde/core/localization/app_localizations_extension.dart';
 import 'package:sonde/core/platform/platform_helper.dart';
+import 'package:sonde/core/widgets/app_dialog.dart';
 
-/// Show a dialog.
+/// Show a modal dialog built on the [AppDialog] shell.
 ///
 /// Example:
 /// ```dart
 /// showAppDialog(
 ///   context: context,
-///   builder: (ctx) => AlertDialog(title: Text('Hello')),
+///   builder: (ctx) => AppDialog(
+///     title: Text(l10n.some_title),
+///     content: Text(l10n.some_message),
+///   ),
 /// );
 /// ```
 Future<T?> showAppDialog<T>({
@@ -19,7 +23,6 @@ Future<T?> showAppDialog<T>({
   required Widget Function(BuildContext) builder,
   bool barrierDismissible = true,
   Color barrierColor = Colors.black54,
-  double borderRadius = 28,
   bool useRootNavigator = false,
 }) {
   if (PlatformHelper.isApple(context)) {
@@ -27,7 +30,7 @@ Future<T?> showAppDialog<T>({
       context: context,
       barrierDismissible: barrierDismissible,
       useRootNavigator: useRootNavigator,
-      builder: builder,
+      builder: (dialogContext) => Center(child: builder(dialogContext)),
     );
   }
   return showDialog<T>(
@@ -35,20 +38,15 @@ Future<T?> showAppDialog<T>({
     barrierDismissible: barrierDismissible,
     barrierColor: barrierColor,
     useRootNavigator: useRootNavigator,
-    builder: (dialogCtx) {
-      return Container(
-        constraints: const BoxConstraints(maxWidth: 560),
-        decoration: BoxDecoration(
-          color: Theme.of(dialogCtx).colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(borderRadius),
-        ),
-        child: builder(dialogCtx),
-      );
-    },
+    builder: (dialogContext) => Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: ResponsiveDialogHelper.insetPadding(),
+      child: builder(dialogContext),
+    ),
   );
 }
 
-/// Show a simple confirmation dialog.
+/// Show a simple confirmation dialog built on the [AppDialog] shell.
 ///
 /// Returns `true` if confirmed, `false` if cancelled, `null` if dismissed.
 ///
@@ -68,84 +66,50 @@ Future<bool?> showAppConfirmationDialog({
   String? cancelText,
   String? confirmText,
   bool isDestructive = false,
-  double borderRadius = 28,
 }) {
-  if (PlatformHelper.isApple(context)) {
-    return showCupertinoDialog<bool>(
-      context: context,
-      builder: (dialogCtx) => CupertinoAlertDialog(
-        title: Padding(
-          padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-          child: Text(title),
-        ),
-        content: Text(message),
-        actions: [
-          CupertinoDialogAction(
-            onPressed: () => Navigator.of(dialogCtx).pop(false),
-            child: Text(cancelText ?? 'Cancel'),
-          ),
-          CupertinoDialogAction(
-            isDestructiveAction: isDestructive,
-            isDefaultAction: true,
-            onPressed: () => Navigator.of(dialogCtx).pop(true),
-            child: Text(confirmText ?? 'Confirm'),
-          ),
-        ],
-      ),
-    );
-  }
+  final l10n = context.l10n;
+  final resolvedCancelText = cancelText ?? l10n.cancel;
+  final resolvedConfirmText = confirmText ?? l10n.confirm;
 
-  final theme = Theme.of(context);
   return showAppDialog<bool>(
     context: context,
-    builder: (dialogCtx) {
-      return Padding(
-        padding: EdgeInsets.all(context.spacing.lg),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              title,
-              style: theme.textTheme.headlineSmall,
-            ),
-            SizedBox(height: context.spacing.md),
-            Text(
-              message,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-            SizedBox(height: context.spacing.lg),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                Flexible(
-                  child: TextButton(
-                    onPressed: () => Navigator.of(dialogCtx).pop(false),
-                    child: Text(cancelText ?? 'Cancel'),
-                  ),
-                ),
-                SizedBox(width: context.spacing.sm),
-                Flexible(
-                  child: TextButton(
-                    onPressed: () => Navigator.of(dialogCtx).pop(true),
-                    style: isDestructive
-                        ? TextButton.styleFrom(
-                            foregroundColor: theme.colorScheme.error,
-                          )
-                        : null,
-                    child: Text(
-                      confirmText ?? 'Confirm',
-                      style: isDestructive
-                          ? TextStyle(color: theme.colorScheme.error)
-                          : null,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
+    builder: (dialogContext) {
+      final Widget cancelAction;
+      final Widget confirmAction;
+      if (PlatformHelper.isApple(dialogContext)) {
+        cancelAction = CupertinoDialogAction(
+          onPressed: () => Navigator.of(dialogContext).pop(false),
+          child: Text(resolvedCancelText),
+        );
+        confirmAction = CupertinoDialogAction(
+          isDestructiveAction: isDestructive,
+          isDefaultAction: true,
+          onPressed: () => Navigator.of(dialogContext).pop(true),
+          child: Text(resolvedConfirmText),
+        );
+      } else {
+        final errorColor = Theme.of(dialogContext).colorScheme.error;
+        cancelAction = TextButton(
+          onPressed: () => Navigator.of(dialogContext).pop(false),
+          child: Text(resolvedCancelText),
+        );
+        confirmAction = TextButton(
+          onPressed: () => Navigator.of(dialogContext).pop(true),
+          style: isDestructive
+              ? TextButton.styleFrom(foregroundColor: errorColor)
+              : null,
+          child: Text(
+            resolvedConfirmText,
+            style: isDestructive
+                ? TextStyle(color: errorColor)
+                : null,
+          ),
+        );
+      }
+      return AppDialog(
+        title: Text(title),
+        content: Text(message),
+        actions: [cancelAction, confirmAction],
       );
     },
   );

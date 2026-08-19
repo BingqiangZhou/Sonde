@@ -3,12 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:sonde/core/constants/app_radius.dart';
 import 'package:sonde/core/constants/app_spacing.dart';
-import 'package:sonde/core/constants/app_text_styles.dart';
 import 'package:sonde/core/constants/breakpoints.dart';
 import 'package:sonde/core/localization/app_localizations_extension.dart';
 import 'package:sonde/core/platform/platform_helper.dart';
 import 'package:sonde/core/services/app_update_service.dart';
 import 'package:sonde/core/utils/app_logger.dart' as logger;
+import 'package:sonde/core/widgets/app_dialog.dart';
 import 'package:sonde/core/widgets/app_dialog_helper.dart';
 import 'package:sonde/core/widgets/top_floating_notice.dart';
 import 'package:sonde/features/settings/presentation/providers/app_update_provider.dart';
@@ -108,17 +108,9 @@ class _AppUpdateDialogState extends ConsumerState<AppUpdateDialog> {
     final l10n = context.l10n;
     final theme = Theme.of(context);
     final palette = _UpdateDialogPalette.of(theme);
-    final isMobile = context.isMobile;
-    final dialogWidth = ResponsiveDialogHelper.maxWidth(
-      context,
-      desktopMaxWidth: 500,
-    );
 
-    return AlertDialog.adaptive(
-      backgroundColor: Colors.transparent,
-      insetPadding: isMobile
-          ? ResponsiveDialogHelper.insetPadding()
-          : EdgeInsets.symmetric(horizontal: context.spacing.xl, vertical: context.spacing.lg),
+    return AppDialog(
+      maxWidth: 500,
       title: Row(
         children: [
           Icon(Icons.system_update_alt, color: palette.accent, size: context.spacing.xl),
@@ -141,7 +133,7 @@ class _AppUpdateDialogState extends ConsumerState<AppUpdateDialog> {
         ],
       ),
       content: SizedBox(
-        width: dialogWidth,
+        width: double.infinity,
         child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -157,133 +149,48 @@ class _AppUpdateDialogState extends ConsumerState<AppUpdateDialog> {
           ),
         ),
       ),
-      actions: isMobile
-          ? _buildMobileActions(context, theme)
-          : _buildDesktopActions(context, theme),
+      // Stretched in a row on mobile, end-aligned on desktop (AppDialog shell).
+      actions: _buildActions(context, theme),
     );
   }
 
-  /// Desktop actions layout
-  List<Widget> _buildDesktopActions(BuildContext context, ThemeData theme) {
+  List<Widget> _buildActions(BuildContext context, ThemeData theme) {
     final l10n = context.l10n;
     final palette = _UpdateDialogPalette.of(theme);
     final spacing = context.spacing;
     return [
-      // Use Row to control alignment
-      Row(
-        children: [
-          // Skip this version (left)
-          TextButton.icon(
-            onPressed: () => _handleSkip(context),
-            icon: const Icon(Icons.skip_next, size: 18),
-            label: Text(l10n.update_skip_this_version),
-          ),
-
-          const Spacer(),
-
-          // Later + Download (right)
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(l10n.update_later),
-          ),
-
-          SizedBox(width: spacing.sm),
-
-          // Download button (primary action) — disabled when no platform asset
-          Flexible(
-            child: FilledButton.icon(
-              onPressed: _isDownloading || !_hasPlatformAsset
-                  ? null
-                  : () => _handleDownload(context),
-              icon: _isDownloading
-                  ? SizedBox(
-                      width: spacing.lg,
-                      height: spacing.lg,
-                      child: const CircularProgressIndicator.adaptive(
-                        strokeWidth: 2,
-                      ),
-                    )
-                  : const Icon(Icons.download, size: 18),
-              label: Text(
-                _hasPlatformAsset
-                    ? l10n.update_download
-                    : l10n.update_platform_no_asset,
-                overflow: TextOverflow.ellipsis,
-              ),
-              style: FilledButton.styleFrom(
-                backgroundColor: palette.accent,
-                foregroundColor: palette.accentOn,
-              ),
-            ),
-          ),
-        ],
+      TextButton.icon(
+        onPressed: () => _handleSkip(context),
+        icon: const Icon(Icons.skip_next, size: 18),
+        label: Text(l10n.update_skip_this_version),
       ),
-    ];
-  }
-
-  /// Mobile actions layout
-  List<Widget> _buildMobileActions(BuildContext context, ThemeData theme) {
-    final l10n = context.l10n;
-    final palette = _UpdateDialogPalette.of(theme);
-    final spacing = context.spacing;
-    return [
-      SizedBox(
-        width: double.infinity,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            FilledButton.icon(
-              onPressed: _isDownloading || !_hasPlatformAsset
-                  ? null
-                  : () => _handleDownload(context),
-              icon: _isDownloading
-                  ? SizedBox(
-                      width: spacing.lg,
-                      height: spacing.lg,
-                      child: const CircularProgressIndicator.adaptive(
-                        strokeWidth: 2,
-                      ),
-                    )
-                  : const Icon(Icons.download, size: 18),
-              label: Text(
-                _hasPlatformAsset
-                    ? l10n.update_download
-                    : l10n.update_platform_no_asset,
-                overflow: TextOverflow.ellipsis,
-              ),
-              style: FilledButton.styleFrom(
-                backgroundColor: palette.accent,
-                foregroundColor: palette.accentOn,
-                padding: EdgeInsets.symmetric(vertical: spacing.smMd),
-              ),
-            ),
-            SizedBox(height: spacing.sm),
-            Row(
-              children: [
-                Expanded(
-                  child: TextButton.icon(
-                    onPressed: () => _handleSkip(context),
-                    icon: const Icon(Icons.skip_next, size: 18),
-                    label: Text(
-                      l10n.update_skip_this_version,
-                      style: AppTextStyles.caption(),
-                    ),
-                    style: TextButton.styleFrom(
-                      padding: EdgeInsets.symmetric(vertical: spacing.sm),
-                    ),
-                  ),
+      TextButton(
+        onPressed: () => Navigator.of(context).pop(),
+        child: Text(l10n.update_later),
+      ),
+      // Download button (primary action) — disabled when no platform asset
+      FilledButton.icon(
+        onPressed: _isDownloading || !_hasPlatformAsset
+            ? null
+            : () => _handleDownload(context),
+        icon: _isDownloading
+            ? SizedBox(
+                width: spacing.lg,
+                height: spacing.lg,
+                child: const CircularProgressIndicator.adaptive(
+                  strokeWidth: 2,
                 ),
-                SizedBox(width: spacing.sm),
-                Expanded(
-                  child: TextButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: Text(l10n.update_later),
-                  ),
-                ),
-              ],
-            ),
-          ],
+              )
+            : const Icon(Icons.download, size: 18),
+        label: Text(
+          _hasPlatformAsset
+              ? l10n.update_download
+              : l10n.update_platform_no_asset,
+          overflow: TextOverflow.ellipsis,
+        ),
+        style: FilledButton.styleFrom(
+          backgroundColor: palette.accent,
+          foregroundColor: palette.accentOn,
         ),
       ),
     ];
@@ -386,10 +293,13 @@ class _AppUpdateDialogState extends ConsumerState<AppUpdateDialog> {
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
                 SizedBox(width: context.spacing.sm),
-                Text(
-                  '${l10n.update_published_at}: ${widget.release.formattedPublishedDate}',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
+                Flexible(
+                  child: Text(
+                    '${l10n.update_published_at}: ${widget.release.formattedPublishedDate}',
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ),
                 if (asset != null) ...[
@@ -400,10 +310,13 @@ class _AppUpdateDialogState extends ConsumerState<AppUpdateDialog> {
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
                   SizedBox(width: context.spacing.sm),
-                  Text(
-                    '${l10n.update_file_size}: ${asset.formattedSize}',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
+                  Flexible(
+                    child: Text(
+                      '${l10n.update_file_size}: ${asset.formattedSize}',
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
                     ),
                   ),
                 ],
@@ -669,14 +582,10 @@ class ManualUpdateCheckDialog extends ConsumerStatefulWidget {
   static Future<void> show(BuildContext context) {
     if (_isShowing) return Future.value();
     _isShowing = true;
-    try {
-      return showAppDialog(
-        context: context,
-        builder: (context) => const ManualUpdateCheckDialog(),
-      );
-    } finally {
-      _isShowing = false;
-    }
+    return showAppDialog<void>(
+      context: context,
+      builder: (context) => const ManualUpdateCheckDialog(),
+    ).whenComplete(() => _isShowing = false);
   }
 
   @override
@@ -702,16 +611,11 @@ class _ManualUpdateCheckDialogState
     final l10n = context.l10n;
     final state = ref.watch(manualUpdateCheckProvider);
     _maybeRedirectToDetailedDialog(context, state);
-    final dialogWidth = ResponsiveDialogHelper.maxWidth(
-      context,
-      desktopMaxWidth: 400,
-    );
-    return AlertDialog.adaptive(
-      backgroundColor: Colors.transparent,
-      insetPadding: ResponsiveDialogHelper.insetPadding(),
+    return AppDialog(
+      maxWidth: 400,
       title: Text(l10n.update_check_updates),
       content: SizedBox(
-        width: dialogWidth,
+        width: double.infinity,
         child: _buildContent(context, state),
       ),
       actions: _buildActions(context, state),
