@@ -1496,30 +1496,6 @@ abstract class AppLocalizations {
   /// **'Top {category}'**
   String podcast_discover_category_shelf(String category);
 
-  /// Semantic eyebrow on a spotlight hero card featuring a chart show
-  ///
-  /// In en, this message translates to:
-  /// **'Top Show #{rank}'**
-  String podcast_discover_spotlight_top_show(int rank);
-
-  /// Semantic eyebrow on a spotlight hero card featuring a chart episode
-  ///
-  /// In en, this message translates to:
-  /// **'Top Episode #{rank}'**
-  String podcast_discover_spotlight_top_episode(int rank);
-
-  /// Spotlight section title on podcast discover page
-  ///
-  /// In en, this message translates to:
-  /// **'Spotlight'**
-  String get podcast_discover_spotlight;
-
-  /// Primary CTA on spotlight hero cards for chart episodes
-  ///
-  /// In en, this message translates to:
-  /// **'Listen Now'**
-  String get podcast_discover_listen_now;
-
   /// See all button text on podcast discover charts
   ///
   /// In en, this message translates to:

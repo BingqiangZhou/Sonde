@@ -243,9 +243,9 @@ class DiscoverChartRowSkeleton extends StatelessWidget {
   }
 }
 
-/// Full skeleton for the discover browse view: a spotlight card row with
-/// page dots, then short ranked shelves — top shows, trending episodes,
-/// and a category shelf — mirroring the magazine layout.
+/// Full skeleton for the discover browse view: short ranked shelves —
+/// top shows, trending episodes, and a category shelf — mirroring the
+/// charts-led layout.
 class DiscoverBrowseSkeleton extends StatelessWidget {
   const DiscoverBrowseSkeleton({super.key, this.tailRowCount = 3});
 
@@ -255,61 +255,23 @@ class DiscoverBrowseSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final extension = appThemeOf(context);
-    final isMobile = MediaQuery.sizeOf(context).width < 600;
-
     return ShimmerLoading(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: context.spacing.sm),
-            child: const SkeletonBox(height: 12, width: 96),
-          ),
-          SizedBox(height: context.spacing.sm),
-          SizedBox(
-            height: 200,
-            child: Row(
-              children: [
-                Expanded(
-                  child: SkeletonBox(
-                    height: 200,
-                    borderRadius: extension.cardRadius,
-                  ),
-                ),
-                if (!isMobile) ...[
-                  SizedBox(width: context.spacing.sm),
-                  Expanded(
-                    child: SkeletonBox(
-                      height: 168,
-                      borderRadius: extension.cardRadius,
-                    ),
-                  ),
-                  SizedBox(width: context.spacing.sm),
-                  Expanded(
-                    child: SkeletonBox(
-                      height: 168,
-                      borderRadius: extension.cardRadius,
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-          SizedBox(height: context.spacing.sm),
-          const Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              SkeletonBox(height: 6, width: 18, borderRadius: AppRadius.pill),
-              SizedBox(width: AppSpacing.sm),
-              SkeletonBox(height: 6, width: 6, borderRadius: AppRadius.pill),
-            ],
-          ),
-          _SkeletonShelf(context: context, isMobile: isMobile, rowCount: 3),
-          _SkeletonShelf(context: context, isMobile: isMobile, rowCount: 3),
           _SkeletonShelf(
             context: context,
-            isMobile: isMobile,
+            isMobile: MediaQuery.sizeOf(context).width < 600,
+            rowCount: 4,
+          ),
+          _SkeletonShelf(
+            context: context,
+            isMobile: MediaQuery.sizeOf(context).width < 600,
+            rowCount: 3,
+          ),
+          _SkeletonShelf(
+            context: context,
+            isMobile: MediaQuery.sizeOf(context).width < 600,
             rowCount: tailRowCount,
           ),
         ],

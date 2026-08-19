@@ -725,22 +725,6 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String podcast_discover_spotlight_top_show(int rank) {
-    return '热门节目第 $rank 名';
-  }
-
-  @override
-  String podcast_discover_spotlight_top_episode(int rank) {
-    return '热门单集第 $rank 名';
-  }
-
-  @override
-  String get podcast_discover_spotlight => '精选';
-
-  @override
-  String get podcast_discover_listen_now => '立即收听';
-
-  @override
   String get podcast_discover_see_all => '查看全部';
 
   @override

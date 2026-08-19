@@ -23,14 +23,13 @@ import 'package:sonde/features/podcast/presentation/providers/podcast_search_pro
 import 'package:sonde/features/podcast/presentation/widgets/discover/discover_charts_list.dart';
 import 'package:sonde/features/podcast/presentation/widgets/discover/discover_country_pill.dart';
 import 'package:sonde/features/podcast/presentation/widgets/discover/discover_search_input.dart';
-import 'package:sonde/features/podcast/presentation/widgets/discover/discover_spotlight_section.dart';
 import 'package:sonde/features/podcast/presentation/widgets/search/podcast_search_results_list.dart';
 import 'package:sonde/shared/widgets/skeleton_widgets.dart';
 
-/// Discover page: search plus an Apple-Podcasts-style magazine browse view —
-/// a spotlight carousel over short ranked shelves (top shows, trending
-/// episodes, and the biggest category charts), with the full charts behind
-/// a "see all" push.
+/// Discover page: search plus a charts-led browse view — short ranked
+/// shelves (top shows, trending episodes, and the biggest category
+/// charts) under the "Global charts" masthead, with the full charts
+/// behind a "see all" push.
 class PodcastListPage extends ConsumerStatefulWidget {
   const PodcastListPage({super.key});
 
@@ -231,34 +230,6 @@ class _PodcastListPageState extends ConsumerState<PodcastListPage> {
     );
   }
 
-  /// Interleaves the two charts — show, episode, runner-up show — so the
-  /// carousel previews both shelves below it.
-  List<DiscoverSpotlightEntry> _buildSpotlightEntries(
-    PodcastDiscoverState discoverState,
-  ) {
-    final entries = <DiscoverSpotlightEntry>[];
-    for (var index = 0; entries.length < DiscoverSpotlightSection.maxItemCount; index++) {
-      var added = false;
-      if (index < discoverState.topShows.length) {
-        entries.add(DiscoverSpotlightEntry(
-          item: discoverState.topShows[index],
-          chartRank: index + 1,
-        ));
-        added = true;
-      }
-      if (entries.length >= DiscoverSpotlightSection.maxItemCount) break;
-      if (index < discoverState.topEpisodes.length) {
-        entries.add(DiscoverSpotlightEntry(
-          item: discoverState.topEpisodes[index],
-          chartRank: index + 1,
-        ));
-        added = true;
-      }
-      if (!added) break;
-    }
-    return entries;
-  }
-
   Widget _buildBrowseScroll(
     BuildContext context,
     PodcastDiscoverState discoverState,
@@ -279,7 +250,6 @@ class _PodcastListPageState extends ConsumerState<PodcastListPage> {
     void onSubscribe(PodcastDiscoverItem item) =>
         DiscoverInteractionHandler.subscribeFromChart(ref, context, item);
 
-    final spotlightEntries = _buildSpotlightEntries(discoverState);
     final topShowsShelf = discoverState.topShowsPreview;
     final topEpisodesShelf = discoverState.topEpisodesPreview;
     final categoryShelves = discoverState.categoryShelves;
@@ -341,18 +311,6 @@ class _PodcastListPageState extends ConsumerState<PodcastListPage> {
               ),
             ),
           ),
-        SliverToBoxAdapter(
-          child: DiscoverSpotlightSection(
-            entries: spotlightEntries,
-            onItemTap: (item) =>
-                DiscoverInteractionHandler.handleChartRowTap(ref, context, item),
-            onItemSubscribe: onSubscribe,
-            onItemPlay: (item) => DiscoverInteractionHandler
-                .playEpisodeFromChartRow(ref, context, item),
-            subscribingShowIds: subscribingShowIds,
-            subscribedShowIds: subscribedShowIds,
-          ),
-        ),
         if (topShowsShelf.isNotEmpty) ...[
           SliverToBoxAdapter(
             child: _buildShelfHeader(

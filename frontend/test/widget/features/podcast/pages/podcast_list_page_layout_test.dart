@@ -167,7 +167,7 @@ void main() {
   // Mobile discover list  (origin: mobile_card_layout_test.dart)
   // =========================================================================
   group('PodcastListPage mobile discover list', () {
-    testWidgets('scrolls spotlight and the ranked shelves in one view', (
+    testWidgets('scrolls the masthead and the ranked shelves in one view', (
       tester,
     ) async {
       tester.view.physicalSize = const Size(390, 600);
@@ -210,17 +210,15 @@ void main() {
       await tester.pumpAndSettle();
 
       final scrollFinder = find.byKey(const Key('podcast_discover_scroll'));
-      final spotlightFinder = find.byKey(
-        const Key('podcast_discover_spotlight'),
-      );
       final showsHeaderFinder = find.byKey(
         const Key('podcast_discover_top_shows_header'),
+      );
+      final thirdRowFinder = find.byKey(
+        const Key('podcast_discover_chart_row_1002'),
       );
       final rowFinder = find.byKey(
         const Key('podcast_discover_chart_row_1000'),
       );
-      // The carousel adds a nested scrollable; the outer one is the first
-      // descendant in pre-order traversal.
       final scrollableFinder = find
           .descendant(
             of: scrollFinder,
@@ -228,8 +226,8 @@ void main() {
           )
           .first;
 
-      final spotlightTopBefore = tester.getTopLeft(spotlightFinder).dy;
-      final headerTopBefore = tester.getTopLeft(showsHeaderFinder).dy;
+      final showsHeaderTopBefore = tester.getTopLeft(showsHeaderFinder).dy;
+      final thirdRowTopBefore = tester.getTopLeft(thirdRowFinder).dy;
       final scrollPositionBefore =
           tester.state<ScrollableState>(scrollableFinder).position.pixels;
 
@@ -244,11 +242,11 @@ void main() {
       );
       expect(
         tester.getTopLeft(showsHeaderFinder).dy,
-        lessThan(headerTopBefore),
+        lessThan(showsHeaderTopBefore),
       );
       expect(
-        tester.getTopLeft(spotlightFinder).dy,
-        lessThan(spotlightTopBefore),
+        tester.getTopLeft(thirdRowFinder).dy,
+        lessThan(thirdRowTopBefore),
       );
       expect(rowFinder, findsOneWidget);
     });

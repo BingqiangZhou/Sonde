@@ -976,32 +976,6 @@
                                                                                }
                                                               }
                                          },
-    "podcast_discover_spotlight_top_show":  "Top Show #{rank}",
-    "@podcast_discover_spotlight_top_show":  {
-                                                 "description":  "Semantic eyebrow on a spotlight hero card featuring a chart show",
-                                                 "placeholders":  {
-                                                                      "rank":  {
-                                                                                   "type":  "int"
-                                                                               }
-                                                                  }
-                                             },
-    "podcast_discover_spotlight_top_episode":  "Top Episode #{rank}",
-    "@podcast_discover_spotlight_top_episode":  {
-                                                    "description":  "Semantic eyebrow on a spotlight hero card featuring a chart episode",
-                                                    "placeholders":  {
-                                                                         "rank":  {
-                                                                                      "type":  "int"
-                                                                                  }
-                                                                     }
-                                                },
-    "podcast_discover_spotlight":  "Spotlight",
-    "@podcast_discover_spotlight":  {
-                                        "description":  "Spotlight section title on podcast discover page"
-                                    },
-    "podcast_discover_listen_now":  "Listen Now",
-    "@podcast_discover_listen_now":  {
-                                         "description":  "Primary CTA on spotlight hero cards for chart episodes"
-                                     },
     "podcast_discover_see_all":  "See All",
     "@podcast_discover_see_all":  {
                                       "description":  "See all button text on podcast discover charts"

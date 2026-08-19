@@ -746,22 +746,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String podcast_discover_spotlight_top_show(int rank) {
-    return 'Top Show #$rank';
-  }
-
-  @override
-  String podcast_discover_spotlight_top_episode(int rank) {
-    return 'Top Episode #$rank';
-  }
-
-  @override
-  String get podcast_discover_spotlight => 'Spotlight';
-
-  @override
-  String get podcast_discover_listen_now => 'Listen Now';
-
-  @override
   String get podcast_discover_see_all => 'See All';
 
   @override

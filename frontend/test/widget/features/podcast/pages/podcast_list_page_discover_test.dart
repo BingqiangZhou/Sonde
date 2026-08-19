@@ -429,25 +429,12 @@ void main() {
         find.byKey(const Key('podcast_discover_tab_selector')),
         findsOneWidget,
       );
-      // The magazine shelves: spotlight first, then top shows (with the
-      // country pill and see-all), trending episodes, and category
-      // shelves sliced from the chart genres.
+      // The charts-led shelves: top shows (with the country pill and
+      // see-all) then trending episodes, with category shelves sliced
+      // from the chart genres below — no spotlight carousel anymore.
       expect(
         find.byKey(const Key('podcast_discover_spotlight')),
-        findsOneWidget,
-      );
-      expect(
-        find.byKey(const Key('podcast_discover_spotlight_carousel')),
-        findsOneWidget,
-      );
-      expect(
-        find.byKey(const Key('podcast_discover_spotlight_dots')),
-        findsOneWidget,
-      );
-      // PageView builds lazily, so only the first spotlight card exists.
-      expect(
-        find.byKey(const Key('podcast_discover_spotlight_card_1000')),
-        findsOneWidget,
+        findsNothing,
       );
       expect(
         find.byKey(const Key('podcast_discover_top_shows_header')),
@@ -548,73 +535,9 @@ void main() {
   });
 
   // =========================================================================
-  // Discover browse redesign (spotlight + shelves + search states)
+  // Discover browse redesign (shelves + search states)
   // =========================================================================
   group('PodcastListPage discover browse redesign', () {
-    testWidgets('spotlight card tap opens the show episodes sheet', (
-      tester,
-    ) async {
-      tester.view.physicalSize = const Size(390, 600);
-      tester.view.devicePixelRatio = 1.0;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
-
-      final fakeLookupService = FakeITunesSearchService();
-      final container = ProviderContainer(
-        overrides: [
-          localStorageServiceProvider.overrideWithValue(
-            MockLocalStorageService(),
-          ),
-          applePodcastRssServiceProvider.overrideWithValue(
-            FakeApplePodcastRssService(),
-          ),
-          search.iTunesSearchServiceProvider.overrideWithValue(
-            fakeLookupService,
-          ),
-          podcastSubscriptionProvider.overrideWith(
-            FakePodcastSubscriptionNotifier.new,
-          ),
-          search.podcastSearchProvider.overrideWith(
-            () => PassthroughPodcastSearchNotifier(
-              const search.PodcastSearchState(),
-            ),
-          ),
-        ],
-      );
-      addTearDown(container.dispose);
-
-      await tester.pumpWidget(
-        UncontrolledProviderScope(
-          container: container,
-          child: const MaterialApp(
-            localizationsDelegates: appLocalizationsDelegates,
-            supportedLocales: AppLocalizations.supportedLocales,
-            home: PodcastListPage(),
-          ),
-        ),
-      );
-      await tester.pumpAndSettle();
-
-      final cardFinder = find.byKey(
-        const Key('podcast_discover_spotlight_card_1000'),
-      );
-      expect(cardFinder, findsOneWidget);
-
-      // Tap the title area: the card center overlaps the subscribe CTA.
-      final cardTopLeft = tester.getTopLeft(cardFinder);
-      await tester.tapAt(cardTopLeft + const Offset(180, 30));
-      // Bounded pumps: cached-image retries under the sheet keep scheduling
-      // frames, which would make pumpAndSettle time out.
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 300));
-
-      expect(fakeLookupService.lookupEpisodesCalled, isTrue);
-      expect(
-        find.byKey(const Key('discover_show_episodes_sheet')),
-        findsOneWidget,
-      );
-    });
-
     testWidgets('search empty state offers clear and returns to browse', (
       tester,
     ) async {

@@ -976,32 +976,6 @@
                                                                                }
                                                               }
                                          },
-    "podcast_discover_spotlight_top_show":  "热门节目第 {rank} 名",
-    "@podcast_discover_spotlight_top_show":  {
-                                                 "description":  "精选大卡（榜单节目）的语义化眉题",
-                                                 "placeholders":  {
-                                                                      "rank":  {
-                                                                                   "type":  "int"
-                                                                               }
-                                                                  }
-                                             },
-    "podcast_discover_spotlight_top_episode":  "热门单集第 {rank} 名",
-    "@podcast_discover_spotlight_top_episode":  {
-                                                    "description":  "精选大卡（榜单单集）的语义化眉题",
-                                                    "placeholders":  {
-                                                                         "rank":  {
-                                                                                      "type":  "int"
-                                                                                  }
-                                                                     }
-                                                },
-    "podcast_discover_spotlight":  "精选",
-    "@podcast_discover_spotlight":  {
-                                        "description":  "播客发现页精选分区标题"
-                                    },
-    "podcast_discover_listen_now":  "立即收听",
-    "@podcast_discover_listen_now":  {
-                                         "description":  "发现页精选大卡单集的主操作按钮"
-                                     },
     "podcast_discover_see_all":  "查看全部",
     "@podcast_discover_see_all":  {
                                       "description":  "播客发现页榜单查看全部按钮"
