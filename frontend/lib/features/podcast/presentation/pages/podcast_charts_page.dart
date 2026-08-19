@@ -8,7 +8,6 @@ import 'package:sonde/core/localization/app_localizations_extension.dart';
 import 'package:sonde/core/utils/time_formatter.dart';
 import 'package:sonde/core/widgets/adaptive/adaptive.dart';
 import 'package:sonde/core/widgets/app_shells.dart';
-import 'package:sonde/core/widgets/linear_section_header.dart';
 import 'package:sonde/features/podcast/data/models/podcast_discover_chart_model.dart';
 import 'package:sonde/features/podcast/data/utils/podcast_url_utils.dart';
 import 'package:sonde/features/podcast/presentation/pages/sections/discover_interaction_handler.dart';
@@ -19,12 +18,18 @@ import 'package:sonde/features/podcast/presentation/widgets/discover/discover_ch
 import 'package:sonde/features/podcast/presentation/widgets/discover/discover_country_pill.dart';
 import 'package:sonde/shared/widgets/skeleton_widgets.dart';
 
-/// Full Top Charts page pushed from the discover browse view ("see all").
+/// Which ranked chart the full charts page renders — each discover shelf's
+/// "see all" lands on its own section.
+enum PodcastChartsSection { shows, episodes }
+
+/// Full charts page pushed from a discover shelf's "see all".
 ///
-/// Apple's charts layout: a category selector above both ranked sections —
-/// every chip switches the top-shows and trending-episodes lists together.
+/// Renders one ranked chart ([section]) in full, with the category chips
+/// above it — Apple's per-chart page shape.
 class PodcastChartsPage extends ConsumerStatefulWidget {
-  const PodcastChartsPage({super.key});
+  const PodcastChartsPage({this.section = PodcastChartsSection.shows, super.key});
+
+  final PodcastChartsSection section;
 
   @override
   ConsumerState<PodcastChartsPage> createState() => _PodcastChartsPageState();
@@ -71,11 +76,14 @@ class _PodcastChartsPageState extends ConsumerState<PodcastChartsPage> {
   @override
   Widget build(BuildContext context) {
     final discoverState = ref.watch(podcastDiscoverProvider);
-    const isDense = true;
+    final l10n = context.l10n;
+    final sectionLabel = widget.section == PodcastChartsSection.shows
+        ? l10n.podcast_discover_top_shows
+        : l10n.podcast_discover_top_episodes;
 
     return ContentShell(
-      title: context.l10n.podcast_discover_top_charts,
-      subtitle: '',
+      title: l10n.podcast_discover_top_charts,
+      subtitle: sectionLabel,
       roundedViewport: true,
       leading: IconButton(
         key: const Key('podcast_charts_back'),
@@ -86,14 +94,13 @@ class _PodcastChartsPageState extends ConsumerState<PodcastChartsPage> {
         onTap: () =>
             DiscoverInteractionHandler.openCountrySelector(ref, context),
       ),
-      child: _buildBody(context, discoverState, isDense),
+      child: _buildBody(context, discoverState),
     );
   }
 
   Widget _buildBody(
     BuildContext context,
     PodcastDiscoverState discoverState,
-    bool isDense,
   ) {
     if (discoverState.isLoading && !discoverState.hasData) {
       return const DiscoverChartsSkeleton();
@@ -119,7 +126,6 @@ class _PodcastChartsPageState extends ConsumerState<PodcastChartsPage> {
       builder: (context, refreshSliver) => _buildScroll(
         context,
         discoverState,
-        isDense,
         refreshSliver,
       ),
     );
@@ -128,11 +134,11 @@ class _PodcastChartsPageState extends ConsumerState<PodcastChartsPage> {
   Widget _buildScroll(
     BuildContext context,
     PodcastDiscoverState discoverState,
-    bool isDense,
     Widget? refreshSliver,
   ) {
     final l10n = context.l10n;
     final theme = Theme.of(context);
+    final isShowsSection = widget.section == PodcastChartsSection.shows;
     final subscribedFeedUrls = ref.watch(subscribedNormalizedFeedUrlsProvider);
     final subscribeState = ref.watch(discoverSubscribeProvider);
     final subscribingShowIds = subscribeState.subscribingShowIds;
@@ -144,9 +150,8 @@ class _PodcastChartsPageState extends ConsumerState<PodcastChartsPage> {
     void onSubscribe(PodcastDiscoverItem item) =>
         DiscoverInteractionHandler.subscribeFromChart(ref, context, item);
 
-    final filteredShows = discoverState.filteredShows;
-    final filteredEpisodes = discoverState.filteredEpisodes;
-    final hasData = discoverState.hasData;
+    final visibleItems =
+        isShowsSection ? discoverState.filteredShows : discoverState.filteredEpisodes;
 
     return CustomScrollView(
       key: const Key('podcast_charts_scroll'),
@@ -161,19 +166,9 @@ class _PodcastChartsPageState extends ConsumerState<PodcastChartsPage> {
                 ref.read(podcastDiscoverProvider.notifier).selectCategory(category),
           ),
         ),
-        if (filteredShows.isNotEmpty) ...[
-          SliverToBoxAdapter(
-            child: LinearSectionHeader(
-              title: l10n.podcast_discover_top_shows,
-              titleSize: 24,
-              padding: EdgeInsets.symmetric(
-                horizontal: context.spacing.xs,
-                vertical: context.spacing.smMd,
-              ),
-            ),
-          ),
+        if (visibleItems.isNotEmpty) ...[
           DiscoverChartsSliver(
-            visibleItems: filteredShows,
+            visibleItems: visibleItems,
             onItemTap: (item) =>
                 DiscoverInteractionHandler.handleChartRowTap(ref, context, item),
             onItemSubscribe: onSubscribe,
@@ -181,39 +176,19 @@ class _PodcastChartsPageState extends ConsumerState<PodcastChartsPage> {
                 DiscoverInteractionHandler.playEpisodeFromChartRow(ref, context, item),
             subscribingShowIds: subscribingShowIds,
             subscribedShowIds: subscribedShowIds,
-            isDense: isDense,
-            listKey: 'podcast_charts_shows_list',
-            gridKey: 'podcast_charts_shows_grid',
+            isDense: true,
+            listKey: isShowsSection
+                ? 'podcast_charts_shows_list'
+                : 'podcast_charts_episodes_list',
+            gridKey: isShowsSection
+                ? 'podcast_charts_shows_grid'
+                : 'podcast_charts_episodes_grid',
+            subtitleSuffixBuilder: isShowsSection
+                ? null
+                : (item) => _episodeDurationSuffix(discoverState, item),
           ),
         ],
-        if (filteredEpisodes.isNotEmpty) ...[
-          SliverToBoxAdapter(
-            child: LinearSectionHeader(
-              title: l10n.podcast_discover_top_episodes,
-              titleSize: 24,
-              padding: EdgeInsets.symmetric(
-                horizontal: context.spacing.xs,
-                vertical: context.spacing.smMd,
-              ),
-            ),
-          ),
-          DiscoverChartsSliver(
-            visibleItems: filteredEpisodes,
-            onItemTap: (item) =>
-                DiscoverInteractionHandler.handleChartRowTap(ref, context, item),
-            onItemSubscribe: onSubscribe,
-            onItemPlay: (item) =>
-                DiscoverInteractionHandler.playEpisodeFromChartRow(ref, context, item),
-            subscribingShowIds: subscribingShowIds,
-            subscribedShowIds: subscribedShowIds,
-            isDense: isDense,
-            listKey: 'podcast_charts_episodes_list',
-            gridKey: 'podcast_charts_episodes_grid',
-            subtitleSuffixBuilder: (item) =>
-                _episodeDurationSuffix(discoverState, item),
-          ),
-        ],
-        if (hasData && filteredShows.isEmpty && filteredEpisodes.isEmpty)
+        if (discoverState.hasData && visibleItems.isEmpty)
           SliverToBoxAdapter(
             child: Padding(
               padding: EdgeInsets.symmetric(vertical: context.spacing.md),
@@ -230,7 +205,7 @@ class _PodcastChartsPageState extends ConsumerState<PodcastChartsPage> {
               ),
             ),
           ),
-        if (hasData)
+        if (discoverState.hasData)
           SliverToBoxAdapter(
             child: Padding(
               padding: EdgeInsets.symmetric(vertical: context.spacing.lg),

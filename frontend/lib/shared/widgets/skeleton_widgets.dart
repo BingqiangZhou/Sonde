@@ -315,8 +315,8 @@ class _SkeletonShelf extends StatelessWidget {
   }
 }
 
-/// Skeleton for the full charts page: category chips row, then the two
-/// long ranked sections.
+/// Skeleton for the full charts page: the category chips row, then the
+/// single ranked chart it filters.
 class DiscoverChartsSkeleton extends StatelessWidget {
   const DiscoverChartsSkeleton({super.key});
 
@@ -344,12 +344,7 @@ class DiscoverChartsSkeleton extends StatelessWidget {
           _SkeletonShelf(
             context: context,
             isMobile: MediaQuery.sizeOf(context).width < 600,
-            rowCount: 6,
-          ),
-          _SkeletonShelf(
-            context: context,
-            isMobile: MediaQuery.sizeOf(context).width < 600,
-            rowCount: 6,
+            rowCount: 8,
           ),
         ],
       ),

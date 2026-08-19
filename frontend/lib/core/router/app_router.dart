@@ -135,18 +135,24 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                   child: const PodcastListPage(),
                 ),
                 routes: [
-                  // Full charts page pushed over the shell from the
-                  // discover shelves' "see all".
+                  // Full charts page pushed over the shell from a discover
+                  // shelf's "see all"; ?section= picks which chart renders.
                   GoRoute(
                     path: 'charts',
                     name: 'discoverCharts',
                     parentNavigatorKey: appNavigatorKey,
-                    pageBuilder: (context, state) => _buildModalPage(
-                      state: state,
-                      child: const _PlayerAwareRouteFrame(
-                        child: PodcastChartsPage(),
-                      ),
-                    ),
+                    pageBuilder: (context, state) {
+                      final section =
+                          state.uri.queryParameters['section'] == 'episodes'
+                              ? PodcastChartsSection.episodes
+                              : PodcastChartsSection.shows;
+                      return _buildModalPage(
+                        state: state,
+                        child: _PlayerAwareRouteFrame(
+                          child: PodcastChartsPage(section: section),
+                        ),
+                      );
+                    },
                   ),
                 ],
               ),

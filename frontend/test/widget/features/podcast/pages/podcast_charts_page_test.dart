@@ -48,6 +48,7 @@ void main() {
     WidgetTester tester,
     ProviderContainer container, {
     ThemeMode themeMode = ThemeMode.system,
+    PodcastChartsSection section = PodcastChartsSection.shows,
   }) {
     return tester.pumpWidget(
       UncontrolledProviderScope(
@@ -58,22 +59,27 @@ void main() {
           themeMode: themeMode,
           localizationsDelegates: appLocalizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
-          home: const PodcastChartsPage(),
+          home: PodcastChartsPage(section: section),
         ),
       ),
     );
   }
 
   group('PodcastChartsPage', () {
-    testWidgets('renders both ranked sections with the category chips above',
-        (tester) async {
+    testWidgets('shows section renders the shows chart under the chips', (
+      tester,
+    ) async {
       tester.view.physicalSize = const Size(390, 844);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
 
       final container = createContainer();
-      await pumpPage(tester, container);
+      await pumpPage(
+        tester,
+        container,
+        section: PodcastChartsSection.shows,
+      );
       await tester.pumpAndSettle();
 
       final chipsTop = tester
@@ -89,18 +95,55 @@ void main() {
         find.byKey(const Key('podcast_discover_category_chip_all')),
         findsOneWidget,
       );
-      // Both charts render side by side under the same selector.
+      // Only the requested chart renders — the episodes list stays out.
       expect(
-        find.byKey(const Key('podcast_discover_chart_row_1000')),
+        find.byKey(const Key('podcast_charts_shows_list')),
         findsOneWidget,
       );
       expect(
-        find.byKey(const Key('podcast_charts_back')),
+        find.byKey(const Key('podcast_charts_episodes_list')),
+        findsNothing,
+      );
+      expect(find.byKey(const Key('podcast_charts_back')), findsOneWidget);
+    });
+
+    testWidgets('episodes section renders the episodes chart only', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final container = createContainer();
+      await pumpPage(
+        tester,
+        container,
+        section: PodcastChartsSection.episodes,
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const Key('podcast_charts_episodes_list')),
         findsOneWidget,
+      );
+      // Fake shows start at 1000, episodes at 2000.
+      expect(
+        find.byKey(const Key('podcast_discover_chart_row_2000')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('podcast_discover_chart_row_1000')),
+        findsNothing,
       );
     });
 
-    testWidgets('category chip filters both sections', (tester) async {
+    testWidgets('category chip filters the ranked rows', (tester) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
       final container = createContainer();
       await pumpPage(tester, container);
       await tester.pumpAndSettle();
@@ -124,6 +167,11 @@ void main() {
     testWidgets(
       'category with no matches shows empty state and see-all resets',
       (tester) async {
+        tester.view.physicalSize = const Size(390, 844);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
         final container = createContainer();
         await pumpPage(tester, container);
         await tester.pumpAndSettle();
