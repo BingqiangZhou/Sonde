@@ -705,12 +705,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get podcast_discover_title => '发现';
 
   @override
-  String get podcast_discover_header_eyebrow => '全球榜单';
-
-  @override
-  String get podcast_discover_header_subtitle => '热门播客与单集，每日更新';
-
-  @override
   String get podcast_discover_top_charts => '热门榜单';
 
   @override

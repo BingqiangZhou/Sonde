@@ -725,13 +725,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get podcast_discover_title => 'Discover';
 
   @override
-  String get podcast_discover_header_eyebrow => 'GLOBAL CHARTS';
-
-  @override
-  String get podcast_discover_header_subtitle =>
-      'Top podcasts & episodes, updated daily';
-
-  @override
   String get podcast_discover_top_charts => 'Top Charts';
 
   @override

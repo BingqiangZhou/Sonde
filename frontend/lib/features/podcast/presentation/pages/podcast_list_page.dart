@@ -26,8 +26,9 @@ import 'package:sonde/features/podcast/presentation/widgets/search/podcast_searc
 import 'package:sonde/shared/widgets/skeleton_widgets.dart';
 
 /// Discover page: search plus a charts-led browse view — the top-shows
-/// and trending-episodes shelves under the "Global charts" masthead, with
-/// the full charts (and their category chips) behind a "see all" push.
+/// and trending-episodes shelves, with the country selector beside the
+/// page title and the full charts (and their category chips) behind a
+/// "see all" push.
 class PodcastListPage extends ConsumerStatefulWidget {
   const PodcastListPage({super.key});
 
@@ -134,9 +135,6 @@ class _PodcastListPageState extends ConsumerState<PodcastListPage> {
         final useCompactShell =
             constraints.maxHeight < 540 || screenHeight < 720;
         final headerSpacing = screenWidth < 600 ? 20.0 : 12.0;
-        // Magazine masthead only where there is room for it; short
-        // viewports keep the browse content closer to the top.
-        final showMasthead = !useCompactShell;
 
         final content = hasSearched
             ? PodcastSearchResultsList(
@@ -152,14 +150,20 @@ class _PodcastListPageState extends ConsumerState<PodcastListPage> {
                 onClear: _clearSearch,
                 isDense: isDense,
               )
-            : _buildBrowseContent(
-                context, discoverState, isDense, showMasthead);
+            : _buildBrowseContent(context, discoverState, isDense);
 
         return ContentShell(
           title: context.l10n.podcast_discover_title,
           subtitle: '',
           headerSpacing: headerSpacing,
           roundedViewport: true,
+          trailing: DiscoverCountryPill(
+            onTap: () => DiscoverInteractionHandler.openCountrySelector(
+              ref,
+              context,
+              retrySearchIfNeeded: true,
+            ),
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -183,7 +187,6 @@ class _PodcastListPageState extends ConsumerState<PodcastListPage> {
     BuildContext context,
     PodcastDiscoverState discoverState,
     bool isDense,
-    bool showMasthead,
   ) {
     final l10n = context.l10n;
 
@@ -206,7 +209,6 @@ class _PodcastListPageState extends ConsumerState<PodcastListPage> {
         discoverState,
         isDense,
         refreshSliver,
-        showMasthead,
       ),
     );
   }
@@ -216,7 +218,6 @@ class _PodcastListPageState extends ConsumerState<PodcastListPage> {
     PodcastDiscoverState discoverState,
     bool isDense,
     Widget? refreshSliver,
-    bool showMasthead,
   ) {
     final l10n = context.l10n;
     final theme = Theme.of(context);
@@ -235,16 +236,6 @@ class _PodcastListPageState extends ConsumerState<PodcastListPage> {
     final topEpisodesShelf = discoverState.topEpisodesPreview;
     final hasAnyShelf =
         topShowsShelf.isNotEmpty || topEpisodesShelf.isNotEmpty;
-    // The country selector lives on the "Global charts" masthead row; on
-    // compact viewports the masthead is dropped and the selector falls
-    // back into the top-shows shelf header so it stays reachable.
-    final countryPill = DiscoverCountryPill(
-      onTap: () => DiscoverInteractionHandler.openCountrySelector(
-        ref,
-        context,
-        retrySearchIfNeeded: true,
-      ),
-    );
 
     return CustomScrollView(
       key: const Key('podcast_discover_scroll'),
@@ -252,52 +243,12 @@ class _PodcastListPageState extends ConsumerState<PodcastListPage> {
       physics: const AlwaysScrollableScrollPhysics(),
       slivers: [
         if (refreshSliver != null) refreshSliver,
-        if (showMasthead)
-          SliverToBoxAdapter(
-            child: Padding(
-              key: const Key('podcast_discover_masthead'),
-              padding: EdgeInsets.fromLTRB(
-                context.spacing.xs,
-                context.spacing.xxs,
-                context.spacing.xs,
-                context.spacing.xs,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          l10n.podcast_discover_header_eyebrow,
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            color: theme.colorScheme.primary,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 1.2,
-                          ),
-                        ),
-                      ),
-                      countryPill,
-                    ],
-                  ),
-                  SizedBox(height: context.spacing.xxs),
-                  Text(
-                    l10n.podcast_discover_header_subtitle,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
         if (topShowsShelf.isNotEmpty) ...[
           SliverToBoxAdapter(
             child: _buildShelfHeader(
               context,
               title: l10n.podcast_discover_top_shows,
               titleKey: 'podcast_discover_top_shows_header',
-              trailing: showMasthead ? null : countryPill,
               onSeeAll: () => context.push('/discover/charts?section=shows'),
               seeAllKey: 'podcast_discover_see_all_shows',
             ),

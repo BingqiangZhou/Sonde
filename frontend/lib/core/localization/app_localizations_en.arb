@@ -947,14 +947,6 @@
     "@podcast_discover_title":  {
                                     "description":  "Podcast discover page title"
                                 },
-    "podcast_discover_header_eyebrow":  "GLOBAL CHARTS",
-    "@podcast_discover_header_eyebrow":  {
-                                             "description":  "Eyebrow label above the discover page title"
-                                         },
-    "podcast_discover_header_subtitle":  "Top podcasts & episodes, updated daily",
-    "@podcast_discover_header_subtitle":  {
-                                              "description":  "Subtitle under the discover page title"
-                                          },
     "podcast_discover_top_charts":  "Top Charts",
     "@podcast_discover_top_charts":  {
                                          "description":  "Top charts section title on podcast discover page"

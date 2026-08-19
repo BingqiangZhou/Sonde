@@ -1460,18 +1460,6 @@ abstract class AppLocalizations {
   /// **'Discover'**
   String get podcast_discover_title;
 
-  /// Eyebrow label above the discover page title
-  ///
-  /// In en, this message translates to:
-  /// **'GLOBAL CHARTS'**
-  String get podcast_discover_header_eyebrow;
-
-  /// Subtitle under the discover page title
-  ///
-  /// In en, this message translates to:
-  /// **'Top podcasts & episodes, updated daily'**
-  String get podcast_discover_header_subtitle;
-
   /// Top charts section title on podcast discover page
   ///
   /// In en, this message translates to:
