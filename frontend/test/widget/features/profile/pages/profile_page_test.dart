@@ -1056,7 +1056,7 @@ void main() {
     expect(cards, isNotEmpty);
 
     for (final card in cards) {
-      expect(card.borderRadius, 14);
+      expect(card.borderRadius, 16);
     }
   });
 
@@ -1144,7 +1144,7 @@ void main() {
     final viewportClip = tester.widget<ClipRRect>(
       find.byKey(const Key('content_shell_viewport_clip')),
     );
-    expect(viewportClip.borderRadius, BorderRadius.circular(14));
+    expect(viewportClip.borderRadius, BorderRadius.circular(16));
   });
 
   testWidgets('keeps desktop profile cards unchanged', (

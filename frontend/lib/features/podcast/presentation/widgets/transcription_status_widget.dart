@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:sonde/core/constants/app_radius.dart';
 import 'package:sonde/core/constants/app_spacing.dart';
 import 'package:sonde/core/localization/app_localizations.dart';
 import 'package:sonde/core/localization/app_localizations_extension.dart';
@@ -77,7 +78,7 @@ class TranscriptionStatusWidget extends ConsumerWidget {
               height: 80,
               decoration: BoxDecoration(
                 color: accentColor.withValues(alpha: 0.12),
-                borderRadius: const BorderRadius.all(Radius.circular(40)),
+                borderRadius: AppRadius.pillRadius,
               ),
               child: Icon(Icons.transcribe, size: 40, color: accentColor),
             ),

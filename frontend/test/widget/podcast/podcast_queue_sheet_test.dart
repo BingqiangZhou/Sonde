@@ -51,7 +51,7 @@ void main() {
       expect(surface.clipBehavior, Clip.antiAlias);
       expect(
         surface.borderRadius,
-        const BorderRadius.vertical(top: Radius.circular(28)),
+        const BorderRadius.vertical(top: Radius.circular(20)),
       );
     });
 

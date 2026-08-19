@@ -2,17 +2,13 @@ import 'package:cupertino_ui/cupertino_ui.dart';
 import 'package:flutter/foundation.dart' show defaultTargetPlatform;
 import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:sonde/core/constants/app_radius.dart';
 import 'package:sonde/core/constants/app_spacing.dart';
 import 'package:sonde/core/theme/app_colors.dart';
 
 /// ============================================================
 /// Refined Minimal Design System - 简约现代设计系统
 ///
-/// Typography System:
-/// - Headings: Space Grotesk (几何感、科技感、未来感)
-/// - Body: Inter (行业标准、极致清晰、屏幕优化)
-/// - Monospace: IBM Plex Mono (人文主义等宽、专业感)
+/// Typography: system fonts on all platforms for native feel.
 /// ============================================================
 
 class AppTheme {
@@ -46,7 +42,7 @@ class AppTheme {
     return CupertinoThemeData(
       brightness: brightness,
       primaryColor: isDark
-          ? const Color(0xFF5E5CE6)
+          ? AppColors.primaryLight
           : AppColors.primary,
       scaffoldBackgroundColor: isDark
           ? AppColors.darkBackground
@@ -91,9 +87,6 @@ class AppTheme {
         ? (isDark ? AppThemeExtension.darkIOS() : AppThemeExtension.lightIOS())
         : (isDark ? AppThemeExtension.dark : AppThemeExtension.light);
 
-    // Use system font on all platforms for native feel.
-    final googleTextTheme = textTheme;
-
     return ThemeData(
       useMaterial3: true,
       brightness: brightness,
@@ -101,7 +94,7 @@ class AppTheme {
       scaffoldBackgroundColor: isDark
           ? AppColors.darkBackground
           : AppColors.lightBackground,
-      textTheme: googleTextTheme,
+      textTheme: textTheme,
       pageTransitionsTheme: const PageTransitionsTheme(
         builders: {
           TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
@@ -170,15 +163,15 @@ class AppTheme {
           ) ?? const TextStyle(),
         contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.mdXs),
         border: OutlineInputBorder(
-          borderRadius: AppRadius.mdLgRadius,
+          borderRadius: BorderRadius.circular(extension.buttonRadius),
           borderSide: BorderSide(color: scheme.outline.withValues(alpha: 0.2)),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: AppRadius.mdLgRadius,
+          borderRadius: BorderRadius.circular(extension.buttonRadius),
           borderSide: BorderSide(color: scheme.outline.withValues(alpha: 0.2)),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: AppRadius.mdLgRadius,
+          borderRadius: BorderRadius.circular(extension.buttonRadius),
           borderSide: BorderSide(color: scheme.primary, width: 1.5),
         ),
         errorBorder: _inputBorder(extension, scheme.error),
@@ -256,12 +249,14 @@ class AppTheme {
         }),
         indicatorColor: scheme.primary.withValues(alpha: isDark ? 0.22 : 0.14),
       ),
-      bottomSheetTheme: const BottomSheetThemeData(
+      bottomSheetTheme: BottomSheetThemeData(
         backgroundColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(extension.sheetRadius),
+          ),
         ),
       ),
       navigationRailTheme: NavigationRailThemeData(
@@ -366,7 +361,7 @@ class AppTheme {
     return base.copyWith(
       // Primary - Apple systemIndigo
       primary: isDark
-          ? const Color(0xFF5E5CE6) // systemIndigo dark
+          ? AppColors.primaryLight // systemIndigo dark
           : AppColors.primary, // systemIndigo light
       onPrimary: isDark ? const Color(0xFF0C0A1A) : Colors.white,
       primaryContainer: isDark

@@ -1,4 +1,5 @@
 import 'package:material_ui/material_ui.dart';
+import 'package:sonde/core/constants/app_radius.dart';
 import 'package:sonde/core/constants/app_spacing.dart';
 import 'package:sonde/core/constants/app_text_styles.dart';
 import 'package:sonde/core/localization/app_localizations.dart';
@@ -48,7 +49,7 @@ class CompletedStateWidget extends StatelessWidget {
               height: 80,
               decoration: BoxDecoration(
                 color: scheme.tertiary.withValues(alpha: 0.1),
-                borderRadius: const BorderRadius.all(Radius.circular(40)),
+                borderRadius: AppRadius.pillRadius,
               ),
               child: Icon(Icons.check_circle, size: 40, color: scheme.tertiary),
             ),
@@ -232,7 +233,7 @@ class FailedStateWidget extends StatelessWidget {
               height: 80,
               decoration: BoxDecoration(
                 color: scheme.error.withValues(alpha: 0.1),
-                borderRadius: const BorderRadius.all(Radius.circular(40)),
+                borderRadius: AppRadius.pillRadius,
               ),
               child: Icon(Icons.error_outline, size: 40, color: scheme.error),
             ),

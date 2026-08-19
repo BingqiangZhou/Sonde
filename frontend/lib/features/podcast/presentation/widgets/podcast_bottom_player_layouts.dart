@@ -8,7 +8,6 @@ class _ReservedBottomBackground extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final tokens = appThemeOf(context);
     final baseColor = Color.alphaBlend(
       theme.colorScheme.surface.withValues(
         alpha: theme.brightness == Brightness.dark ? 0.20 : 0.28,
@@ -24,10 +23,7 @@ class _ReservedBottomBackground extends StatelessWidget {
           fit: StackFit.expand,
           children: [
             DecoratedBox(
-              decoration: BoxDecoration(
-                color: baseColor,
-                gradient: tokens.shellGradient,
-              ),
+              decoration: BoxDecoration(color: baseColor),
             ),
             DecoratedBox(
               decoration: BoxDecoration(
@@ -75,20 +71,24 @@ class _PodcastMiniDock extends ConsumerWidget {
         alignment: Alignment.bottomCenter,
         child: ConstrainedBox(
           constraints: BoxConstraints(maxWidth: viewportSpec.dockMaxWidth),
-          child: Material(
-            key: const Key('podcast_bottom_player_mini'),
-            color: Colors.transparent,
-            elevation: 4,
-            shadowColor: Colors.black.withValues(alpha: 0.15),
-            borderRadius: AppRadius.lgRadius,
-            clipBehavior: Clip.antiAlias,
-            child: _MiniDockBody(
-              episode: episode,
-              onExpand: () => _openExpandedPlayer(ref),
-              showPrimaryKeys: true,
-              pauseTooltip: l10n.podcast_player_pause,
-              playTooltip: l10n.podcast_player_play,
-              listTooltip: l10n.podcast_player_list,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              borderRadius: AppRadius.lgRadius,
+              boxShadow: [appThemeOf(context).shadowLg],
+            ),
+            child: Material(
+              key: const Key('podcast_bottom_player_mini'),
+              color: Colors.transparent,
+              borderRadius: AppRadius.lgRadius,
+              clipBehavior: Clip.antiAlias,
+              child: _MiniDockBody(
+                episode: episode,
+                onExpand: () => _openExpandedPlayer(ref),
+                showPrimaryKeys: true,
+                pauseTooltip: l10n.podcast_player_pause,
+                playTooltip: l10n.podcast_player_play,
+                listTooltip: l10n.podcast_player_list,
+              ),
             ),
           ),
         ),

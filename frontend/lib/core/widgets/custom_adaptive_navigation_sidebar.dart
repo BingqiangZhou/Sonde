@@ -44,8 +44,7 @@ extension _CustomAdaptiveNavigationSidebar on _CustomAdaptiveNavigationState {
                   context.l10n.sidebarAppTitle,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 15,
+                  style: Theme.of(context).textTheme.titleSmall!.copyWith(
                     fontWeight: FontWeight.w700,
                     letterSpacing: -0.3,
                     color: Theme.of(context).colorScheme.onSurface,
@@ -130,7 +129,7 @@ extension _CustomAdaptiveNavigationSidebar on _CustomAdaptiveNavigationState {
         child: Container(
           padding: const EdgeInsets.all(4),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(5),
+            borderRadius: BorderRadius.circular(AppRadius.xs),
           ),
           child: Tooltip(
             message: icon == Icons.chevron_left
@@ -186,14 +185,14 @@ extension _CustomAdaptiveNavigationSidebar on _CustomAdaptiveNavigationState {
             message: destination.label,
             child: _NavInkWell(
               onTap: () => widget.onDestinationSelected?.call(index),
-              borderRadius: 8,
+              borderRadius: AppRadius.sm,
               isSelected: isSelected,
               child: Container(
                 width: 38,
                 height: 38,
                 decoration: BoxDecoration(
                   color: isSelected ? selectedBgColor : null,
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: AppRadius.smRadius,
                 ),
                 child: Center(
                   child: IconTheme(
@@ -223,13 +222,13 @@ extension _CustomAdaptiveNavigationSidebar on _CustomAdaptiveNavigationState {
         label: destination.label,
         child: _NavInkWell(
           onTap: () => widget.onDestinationSelected?.call(index),
-          borderRadius: 7,
+          borderRadius: AppRadius.sm,
           isSelected: isSelected,
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
             decoration: BoxDecoration(
               color: isSelected ? selectedBgColor : null,
-              borderRadius: BorderRadius.circular(7),
+              borderRadius: AppRadius.smRadius,
             ),
             child: Row(
               children: [
@@ -255,9 +254,10 @@ extension _CustomAdaptiveNavigationSidebar on _CustomAdaptiveNavigationState {
                     destination.label,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: isSelected ? FontWeight.w500 : FontWeight.normal,
+                    style: theme.textTheme.labelMedium!.copyWith(
+                      fontWeight: isSelected
+                          ? FontWeight.w500
+                          : FontWeight.w400,
                       color: isSelected
                           ? selectedTextColor
                           : unselectedTextColor,

@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:sonde/core/localization/app_localizations_extension.dart';
+import 'package:sonde/core/theme/app_colors.dart';
 import 'package:sonde/core/widgets/adaptive/adaptive.dart';
 import 'package:sonde/core/widgets/adaptive_sheet_helper.dart';
 import 'package:sonde/features/podcast/presentation/providers/podcast_playback_providers.dart';
@@ -10,10 +11,6 @@ import 'package:sonde/features/podcast/presentation/widgets/queue/queue_list_wid
 
 class PodcastQueueSheet extends ConsumerWidget {
   const PodcastQueueSheet({super.key});
-
-  static const BorderRadius _sheetBorderRadius = BorderRadius.vertical(
-    top: Radius.circular(28),
-  );
 
   static Future<void>? _activeShowFuture;
 
@@ -54,6 +51,7 @@ class PodcastQueueSheet extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
     final title = l10n.queue_up_next;
+    final sheetRadius = appThemeOf(context).sheetRadius;
     final queueAsync = ref.watch(podcastQueueControllerProvider);
     final queueOperation = ref.watch(podcastQueueOperationProvider);
     final queueSyncing = ref.watch(audioQueueSyncingProvider);
@@ -120,7 +118,9 @@ class PodcastQueueSheet extends ConsumerWidget {
       height: MediaQuery.sizeOf(context).height * sheetHeightFactor,
       child: ClipRRect(
         key: const Key('podcast_queue_sheet_surface'),
-        borderRadius: _sheetBorderRadius,
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(sheetRadius),
+        ),
         child: DecoratedBox(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
