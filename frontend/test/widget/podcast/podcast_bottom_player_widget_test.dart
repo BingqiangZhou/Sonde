@@ -13,6 +13,7 @@ import 'package:sonde/features/podcast/data/models/podcast_queue_model.dart';
 import 'package:sonde/features/podcast/presentation/providers/podcast_playback_providers.dart';
 import 'package:sonde/features/podcast/presentation/widgets/podcast_bottom_player_widget.dart';
 import 'package:sonde/features/podcast/presentation/widgets/podcast_queue_sheet.dart';
+import 'package:sonde/features/podcast/presentation/widgets/selector_sheet_common.dart';
 
 import '../../helpers/podcast_episode_detail_helper.dart';
 
@@ -49,6 +50,40 @@ void main() {
         find.byKey(const Key('podcast_bottom_player_expanded')),
         findsOneWidget,
       );
+    });
+
+    testWidgets('expanded sheet fills the entire viewport', (tester) async {
+      _setMobileViewport(tester);
+      final audioNotifier = TestAudioPlayerNotifier(
+        AudioPlayerState(currentEpisode: _episode(), duration: 180000),
+      );
+      final queueController = TestPodcastQueueController();
+      final uiNotifier = TestPodcastPlayerUiNotifier(
+        const PodcastPlayerUiState(
+          presentation: PodcastPlayerPresentation.expanded,
+        ),
+      );
+
+      await tester.pumpWidget(
+        _createWidget(
+          audioNotifier: audioNotifier,
+          queueController: queueController,
+          uiNotifier: uiNotifier,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final sheetRect = tester.getRect(
+        find.byKey(const Key('podcast_player_mobile_sheet')),
+      );
+      expect(sheetRect, const Rect.fromLTWH(0, 0, 390, 844));
+
+      // Bottom controls stay inside the page above its bottom padding.
+      final transportRect = tester.getRect(
+        find.byKey(const Key('podcast_bottom_player_play_pause')),
+      );
+      expect(transportRect.bottom, lessThan(844));
+      expect(transportRect.bottom, greaterThan(700));
     });
 
     testWidgets('dock playlist button opens queue sheet directly', (
@@ -193,7 +228,7 @@ void main() {
       },
     );
 
-    testWidgets('expanded header shows direct speed and sleep actions', (
+    testWidgets('expanded page arranges top bar and bottom action rows', (
       tester,
     ) async {
       _setMobileViewport(tester);
@@ -216,10 +251,11 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      final sleepButton = find.byKey(const Key('podcast_bottom_player_sleep'));
       final collapseButton = find.byKey(
         const Key('podcast_bottom_player_collapse'),
       );
+      final sleepButton = find.byKey(const Key('podcast_bottom_player_sleep'));
+      final speedChip = find.byKey(const Key('podcast_bottom_player_speed'));
       final playlistButton = find.byKey(
         const Key('podcast_bottom_player_playlist'),
       );
@@ -229,24 +265,31 @@ void main() {
 
       expect(sleepButton, findsOneWidget);
       expect(playlistButton, findsOneWidget);
+      // Top bar: collapse chevron on the left, sleep timer on the right.
       expect(
-        (tester.getCenter(sleepButton).dy - tester.getCenter(collapseButton).dy)
+        (tester.getCenter(sleepButton).dy -
+                tester.getCenter(collapseButton).dy)
             .abs(),
         lessThan(20),
       );
       expect(
-        tester.getCenter(sleepButton).dx < tester.getCenter(collapseButton).dx,
+        tester.getCenter(sleepButton).dx > tester.getCenter(collapseButton).dx,
+        isTrue,
+      );
+      // Secondary row: speed chip and queue share the bottom action row,
+      // below the transport controls.
+      expect(
+        (tester.getCenter(speedChip).dy - tester.getCenter(playlistButton).dy)
+            .abs(),
+        lessThan(20),
+      );
+      expect(
+        tester.getCenter(speedChip).dx < tester.getCenter(playlistButton).dx,
         isTrue,
       );
       expect(
-        (tester.getCenter(playlistButton).dy -
-                tester.getCenter(playPauseButton).dy)
-            .abs(),
-        lessThan(20),
-      );
-      expect(
-        tester.getCenter(playlistButton).dx >
-            tester.getCenter(playPauseButton).dx,
+        tester.getCenter(playlistButton).dy >
+            tester.getCenter(playPauseButton).dy,
         isTrue,
       );
 
@@ -259,6 +302,45 @@ void main() {
       await tester.tap(find.byKey(const Key('podcast_bottom_player_sleep')));
       await tester.pumpAndSettle();
       expect(find.text('Sleep Timer'), findsOneWidget);
+    });
+
+    testWidgets('sleep timer sheet shows preset pills and tinted actions', (
+      tester,
+    ) async {
+      _setMobileViewport(tester);
+      final audioNotifier = TestAudioPlayerNotifier(
+        AudioPlayerState(currentEpisode: _episode(), duration: 180000),
+      );
+      final queueController = TestPodcastQueueController();
+      final uiNotifier = TestPodcastPlayerUiNotifier(
+        const PodcastPlayerUiState(
+          presentation: PodcastPlayerPresentation.expanded,
+        ),
+      );
+
+      await tester.pumpWidget(
+        _createWidget(
+          audioNotifier: audioNotifier,
+          queueController: queueController,
+          uiNotifier: uiNotifier,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('podcast_bottom_player_sleep')));
+      await tester.pumpAndSettle();
+
+      // Duration presets render as pills.
+      expect(find.byKey(const Key('sleep_timer_option_5')), findsOneWidget);
+      expect(find.byKey(const Key('sleep_timer_option_90')), findsOneWidget);
+      // Timer inactive: after-episode action shown, cancel action hidden.
+      expect(find.text('Stop after this episode'), findsOneWidget);
+      expect(find.text('Cancel timer'), findsNothing);
+
+      // Header close button dismisses the sheet.
+      await tester.tap(find.byIcon(Icons.close_rounded));
+      await tester.pumpAndSettle();
+      expect(find.text('Sleep Timer'), findsNothing);
     });
 
     testWidgets('expanded content is no longer wrapped by internal cards', (
@@ -296,8 +378,60 @@ void main() {
         find.byKey(const Key('podcast_bottom_player_expanded_progress')),
       );
 
-      expect(heroWidget, isA<Row>());
+      expect(heroWidget, isA<Column>());
       expect(progressWidget, isA<Column>());
+    });
+
+    testWidgets('expanded hero stacks large centered artwork above title', (
+      tester,
+    ) async {
+      _setMobileViewport(tester);
+      final audioNotifier = TestAudioPlayerNotifier(
+        AudioPlayerState(currentEpisode: _episode(), duration: 180000),
+      );
+      final queueController = TestPodcastQueueController();
+      final uiNotifier = TestPodcastPlayerUiNotifier(
+        const PodcastPlayerUiState(
+          presentation: PodcastPlayerPresentation.expanded,
+        ),
+      );
+
+      await tester.pumpWidget(
+        _createWidget(
+          audioNotifier: audioNotifier,
+          queueController: queueController,
+          uiNotifier: uiNotifier,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final sheetRect = tester.getRect(
+        find.byKey(const Key('podcast_player_mobile_sheet')),
+      );
+      final coverRect = tester.getRect(
+        find.byKey(const Key('podcast_bottom_player_expanded_cover')),
+      );
+      final titleRect = tester.getRect(
+        find.byKey(const Key('podcast_bottom_player_expanded_title_text')),
+      );
+      final metaRect = tester.getRect(
+        find.byKey(const Key('podcast_bottom_player_expanded_meta')),
+      );
+
+      // Square, prominently sized, horizontally centered artwork.
+      expect(coverRect.width, greaterThan(200));
+      expect(coverRect.height, closeTo(coverRect.width, 0.1));
+      expect(
+        (coverRect.center.dx - sheetRect.center.dx).abs(),
+        lessThan(2),
+      );
+      // Title and meta stack below the artwork, both centered.
+      expect(titleRect.top, greaterThan(coverRect.bottom));
+      expect(metaRect.top, greaterThan(titleRect.bottom));
+      expect(
+        (titleRect.center.dx - sheetRect.center.dx).abs(),
+        lessThan(2),
+      );
     });
 
     testWidgets('non-home embedded route paints reserved background', (
@@ -333,86 +467,6 @@ void main() {
       expect(tester.widget<SizedBox>(backgroundFinder).height, greaterThan(0));
     });
 
-    testWidgets('single-line expanded title block is vertically centered', (
-      tester,
-    ) async {
-      _setMobileViewport(tester);
-      final audioNotifier = TestAudioPlayerNotifier(
-        AudioPlayerState(
-          currentEpisode: _episode(
-            title: 'Short title',
-          ),
-          duration: 180000,
-        ),
-      );
-      final queueController = TestPodcastQueueController();
-      final uiNotifier = TestPodcastPlayerUiNotifier(
-        const PodcastPlayerUiState(
-          presentation: PodcastPlayerPresentation.expanded,
-        ),
-      );
-
-      await tester.pumpWidget(
-        _createWidget(
-          audioNotifier: audioNotifier,
-          queueController: queueController,
-          uiNotifier: uiNotifier,
-        ),
-      );
-      await tester.pumpAndSettle();
-
-      final heroRect = tester.getRect(
-        find.byKey(const Key('podcast_bottom_player_expanded_hero')),
-      );
-      final titleRect = tester.getRect(
-        find.byKey(const Key('podcast_bottom_player_expanded_title_text')),
-      );
-      final metaRect = tester.getRect(
-        find.byKey(const Key('podcast_bottom_player_expanded_meta')),
-      );
-      final contentCenterY = (titleRect.top + metaRect.bottom) / 2;
-
-      expect((contentCenterY - heroRect.center.dy).abs(), lessThan(8));
-    });
-
-    testWidgets('two-line expanded title remains top aligned', (tester) async {
-      _setMobileViewport(tester);
-      final audioNotifier = TestAudioPlayerNotifier(
-        AudioPlayerState(
-          currentEpisode: _episode(
-            title:
-                'This is a deliberately long podcast title that should wrap '
-                'onto a second line in the expanded player',
-          ),
-          duration: 180000,
-        ),
-      );
-      final queueController = TestPodcastQueueController();
-      final uiNotifier = TestPodcastPlayerUiNotifier(
-        const PodcastPlayerUiState(
-          presentation: PodcastPlayerPresentation.expanded,
-        ),
-      );
-
-      await tester.pumpWidget(
-        _createWidget(
-          audioNotifier: audioNotifier,
-          queueController: queueController,
-          uiNotifier: uiNotifier,
-        ),
-      );
-      await tester.pumpAndSettle();
-
-      final heroRect = tester.getRect(
-        find.byKey(const Key('podcast_bottom_player_expanded_hero')),
-      );
-      final titleRect = tester.getRect(
-        find.byKey(const Key('podcast_bottom_player_expanded_title_text')),
-      );
-
-      expect(titleRect.top - heroRect.top, lessThan(6));
-    });
-
     // TODO: fix showAdaptiveSheet navigation context in tests
     testWidgets(
       'speed sheet uses server-backed initial selection state',
@@ -445,12 +499,12 @@ void main() {
       final subscriptionCheckbox = tester.widget<CheckboxListTile>(
         find.byType(CheckboxListTile),
       );
-      final speedChip = tester.widget<ChoiceChip>(
-        find.widgetWithText(ChoiceChip, '1.5x'),
+      final speedPill = tester.widget<SelectorOptionPill>(
+        find.byKey(const Key('playback_speed_option_1.5x')),
       );
 
       expect(subscriptionCheckbox.value, isTrue);
-      expect(speedChip.selected, isTrue);
+      expect(speedPill.selected, isTrue);
       expect(audioNotifier.resolvePlaybackRateSelectionCalls, 1);
     });
 
@@ -527,12 +581,12 @@ void main() {
       final subscriptionCheckbox = tester.widget<CheckboxListTile>(
         find.byType(CheckboxListTile),
       );
-      final speedChip = tester.widget<ChoiceChip>(
-        find.widgetWithText(ChoiceChip, '1.5x'),
+      final speedPill = tester.widget<SelectorOptionPill>(
+        find.byKey(const Key('playback_speed_option_1.5x')),
       );
 
       expect(subscriptionCheckbox.value, isTrue);
-      expect(speedChip.selected, isTrue);
+      expect(speedPill.selected, isTrue);
     });
 
     testWidgets('user speed choice is not overwritten by late correction', (
@@ -562,7 +616,7 @@ void main() {
 
       await tester.tap(find.byKey(const Key('podcast_bottom_player_speed')));
       await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(ChoiceChip, '2x'));
+      await tester.tap(find.byKey(const Key('playback_speed_option_2x')));
       await tester.pumpAndSettle();
 
       selectionCompleter.complete((speed: 1.5, applyToSubscription: true));
@@ -571,12 +625,12 @@ void main() {
       final subscriptionCheckbox = tester.widget<CheckboxListTile>(
         find.byType(CheckboxListTile),
       );
-      final selectedSpeedChip = tester.widget<ChoiceChip>(
-        find.widgetWithText(ChoiceChip, '2x'),
+      final selectedSpeedPill = tester.widget<SelectorOptionPill>(
+        find.byKey(const Key('playback_speed_option_2x')),
       );
 
       expect(subscriptionCheckbox.value, isFalse);
-      expect(selectedSpeedChip.selected, isTrue);
+      expect(selectedSpeedPill.selected, isTrue);
     });
 
     testWidgets('expanded transport controls seek and toggle playback', (

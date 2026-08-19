@@ -232,94 +232,124 @@ class _PodcastExpandedOverlay extends ConsumerWidget {
     required this.episode,
     required this.viewportSpec,
     required this.visible,
-    required this.applySafeArea,
   });
 
   final PodcastEpisodeModel episode;
   final PodcastPlayerViewportSpec viewportSpec;
   final bool visible;
-  final bool applySafeArea;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final mediaSize = MediaQuery.sizeOf(context);
-    final maxPanelWidth = math.min(
+    final maxContentWidth = math.min(
       mediaSize.width - (viewportSpec.dockHorizontalPadding * 2),
       viewportSpec.layoutMode == PodcastPlayerLayoutMode.mobile
           ? double.infinity
           : 720.0,
     );
-    final surface = Align(
-      alignment: Alignment.bottomCenter,
-      child: Padding(
-        padding: EdgeInsets.fromLTRB(
-          viewportSpec.dockHorizontalPadding,
-          viewportSpec.dockTopPadding,
-          viewportSpec.dockHorizontalPadding,
-          viewportSpec.dockBottomSpacing,
-        ),
-        child: ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: maxPanelWidth),
-          child: AnimatedSlide(
-            duration: _kPlayerTransition,
-            curve: Curves.easeOutCubic,
-            offset: visible ? Offset.zero : const Offset(0, 1.08),
-            child: AnimatedOpacity(
-              duration: _kPlayerTransition,
-              curve: Curves.easeOutCubic,
-              opacity: visible ? 1 : 0,
-              child: Container(
-                key: visible ? const Key('podcast_player_mobile_sheet') : null,
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(viewportSpec.mobileDrawerBorderRadius),
+
+    // Full-screen player page: the surface fills the whole viewport and the
+    // content column is only width-constrained (centered) on tablet/desktop.
+    return IgnorePointer(
+      ignoring: !visible,
+      child: AnimatedSlide(
+        duration: _kPlayerTransition,
+        curve: Curves.easeOutCubic,
+        offset: visible ? Offset.zero : const Offset(0, 1.08),
+        child: AnimatedOpacity(
+          duration: _kPlayerTransition,
+          curve: Curves.easeOutCubic,
+          opacity: visible ? 1 : 0,
+          child: Container(
+            key: visible ? const Key('podcast_player_mobile_sheet') : null,
+            color: theme.colorScheme.surfaceContainerHighest,
+            width: double.infinity,
+            height: double.infinity,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                _ArtworkBackdrop(
+                  imageUrl: episode.subscriptionImageUrl ?? episode.imageUrl,
                 ),
-                child: Material(
-                  type: MaterialType.transparency,
-                  child: _ExpandedPanelContent(
-                    episode: episode,
-                    showPrimaryKeys: visible,
+                SafeArea(
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxWidth: maxContentWidth,
+                      ),
+                      child: Material(
+                        type: MaterialType.transparency,
+                        child: _ExpandedPanelContent(
+                          episode: episode,
+                          showPrimaryKeys: visible,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
-              ),
+              ],
             ),
           ),
         ),
       ),
     );
+  }
+}
 
-    final overlay = Stack(
-      fit: StackFit.expand,
-      children: [
-        IgnorePointer(
-          ignoring: !visible,
-          child: AnimatedOpacity(
-            duration: _kPlayerTransition,
-            curve: Curves.easeOutCubic,
-            opacity: visible ? 1 : 0,
-            child: Semantics(
-              button: true,
-              hint: 'Collapse player',
-              child: GestureDetector(
-                onTap: () =>
-                    ref.read(podcastPlayerUiProvider.notifier).collapse(),
-                child: ColoredBox(
-                  color: theme.colorScheme.scrim.withValues(alpha: 0.22),
-                ),
-              ),
-            ),
-          ),
-        ),
-        IgnorePointer(ignoring: !visible, child: surface),
-      ],
-    );
+/// Blurred, dimmed full-bleed artwork behind the full-screen player page.
+class _ArtworkBackdrop extends StatelessWidget {
+  const _ArtworkBackdrop({required this.imageUrl});
 
-    if (!applySafeArea) {
-      return overlay;
+  final String? imageUrl;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    if (imageUrl == null || imageUrl!.isEmpty) {
+      return const SizedBox.shrink();
     }
 
-    return SafeArea(top: false, child: overlay);
+    final veilAlpha = theme.brightness == Brightness.dark ? 0.84 : 0.9;
+    return IgnorePointer(
+      child: RepaintBoundary(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            // Oversize the image so the blur does not fade at the edges.
+            final width = constraints.maxWidth * 1.4;
+            final height = constraints.maxHeight * 1.4;
+            return ClipRect(
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  ImageFiltered(
+                    imageFilter: ImageFilter.blur(
+                      sigmaX: 56,
+                      sigmaY: 56,
+                      tileMode: TileMode.decal,
+                    ),
+                    child: Center(
+                      child: PodcastImageWidget(
+                        imageUrl: imageUrl,
+                        width: width,
+                        height: height,
+                        iconSize: 160,
+                      ),
+                    ),
+                  ),
+                  DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.surfaceContainerHighest
+                          .withValues(alpha: veilAlpha),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+      ),
+    );
   }
 }
 
@@ -340,8 +370,7 @@ class _ExpandedPanelContent extends StatelessWidget {
         key: showPrimaryKeys
             ? const Key('podcast_bottom_player_expanded')
             : null,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Center(
             child: Semantics(
@@ -366,26 +395,37 @@ class _ExpandedPanelContent extends StatelessWidget {
               ),
             ),
           ),
-          SizedBox(height: context.spacing.smMd),
-          _ExpandedHeader(episode: episode),
-          SizedBox(height: context.spacing.smMd),
-          _ExpandedHero(episode: episode),
-          SizedBox(height: context.spacing.smMd),
+          SizedBox(height: context.spacing.xs),
+          const _ExpandedTopBar(),
+          // The artwork + title block floats in the space between the top
+          // bar and the bottom-anchored progress + transport controls.
+          Expanded(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final artworkSize = [
+                  constraints.maxWidth * 0.78,
+                  constraints.maxHeight * 0.58,
+                  360.0,
+                ].reduce(math.min).clamp(160.0, 360.0);
+                return _ExpandedHero(episode: episode, artworkSize: artworkSize);
+              },
+            ),
+          ),
           const _ExpandedProgressSection(),
-          SizedBox(height: context.spacing.smMd),
+          SizedBox(height: context.spacing.md),
           const RepaintBoundary(
             child: _TransportRow(),
           ),
+          SizedBox(height: context.spacing.md),
+          const _ExpandedSecondaryActions(),
         ],
       ),
     );
   }
 }
 
-class _ExpandedHeader extends ConsumerWidget {
-  const _ExpandedHeader({required this.episode});
-
-  final PodcastEpisodeModel episode;
+class _ExpandedTopBar extends ConsumerWidget {
+  const _ExpandedTopBar();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -393,62 +433,71 @@ class _ExpandedHeader extends ConsumerWidget {
     final theme = Theme.of(context);
     return Row(
       children: [
-        Expanded(
-          child: Text(
-            l10n.podcast_player_now_playing,
-            style: theme.textTheme.titleMedium?.copyWith(
-              color: theme.colorScheme.onSurface,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-        ),
-        _SleepTimerButton(onPressed: () => _showSleepSelector(context, ref)),
         IconButton(
           key: const Key('podcast_bottom_player_collapse'),
           tooltip: l10n.podcast_player_collapse,
           onPressed: () =>
               ref.read(podcastPlayerUiProvider.notifier).collapse(),
-          icon: const Icon(Icons.close_rounded),
+          icon: const Icon(Icons.keyboard_arrow_down_rounded),
+          iconSize: 30,
         ),
+        Expanded(
+          child: Center(
+            child: Text(
+              l10n.podcast_player_now_playing,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.titleSmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.4,
+              ),
+            ),
+          ),
+        ),
+        _SleepTimerButton(onPressed: () => _showSleepSelector(context, ref)),
       ],
     );
   }
 }
 
-class _ExpandedHero extends ConsumerWidget {
-  const _ExpandedHero({required this.episode});
+class _ExpandedHero extends StatelessWidget {
+  const _ExpandedHero({required this.episode, required this.artworkSize});
 
   final PodcastEpisodeModel episode;
+  final double artworkSize;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final textColor = theme.colorScheme.onSurfaceVariant;
-    const imageSize = 72.0;
 
-    return Row(
-      key: const Key('podcast_bottom_player_expanded_hero'),
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        KeyedSubtree(
-          key: const Key('podcast_bottom_player_expanded_cover'),
-          child: RepaintBoundary(
-            child: _CoverImage(
+    return Center(
+      child: Column(
+        key: const Key('podcast_bottom_player_expanded_hero'),
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          RepaintBoundary(
+            child: _HeroArtwork(
               imageUrl: episode.subscriptionImageUrl ?? episode.imageUrl,
-              size: imageSize,
+              size: artworkSize,
             ),
           ),
-        ),
-        SizedBox(width: context.spacing.smMd),
-        Expanded(
-          child: Semantics(
+          SizedBox(height: context.spacing.lg),
+          Semantics(
             button: true,
             hint: 'View episode details',
             child: GestureDetector(
               key: const Key('podcast_bottom_player_expanded_title'),
               behavior: HitTestBehavior.opaque,
               onTap: () {
-                var resolvedCurrentLocation = ref.read(currentRouteProvider);
+                final container = ProviderScope.containerOf(
+                  context,
+                  listen: false,
+                );
+                var resolvedCurrentLocation = container.read(
+                  currentRouteProvider,
+                );
                 try {
                   resolvedCurrentLocation = GoRouterState.of(context).uri.toString();
                 } catch (e) {
@@ -467,76 +516,38 @@ class _ExpandedHero extends ConsumerWidget {
                   episodeId: episode.id,
                 );
               },
-            child: SizedBox(
-              key: const Key('podcast_bottom_player_expanded_text_block'),
-              height: imageSize,
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final titleStyle = theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  );
-                  final isSingleLineTitle = _isSingleLineTitle(
-                    context,
-                    titleStyle,
-                    constraints.maxWidth,
-                  );
-                  return Column(
-                    key: const Key(
-                      'podcast_bottom_player_expanded_text_column',
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    key: const Key('podcast_bottom_player_expanded_title_text'),
+                    episode.title,
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      height: 1.25,
                     ),
-                    mainAxisAlignment: isSingleLineTitle
-                        ? MainAxisAlignment.center
-                        : MainAxisAlignment.start,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        key: const Key(
-                          'podcast_bottom_player_expanded_title_text',
-                        ),
-                        episode.title,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: titleStyle,
-                      ),
-                      SizedBox(height: context.spacing.sm),
-                      Text(
-                        key: const Key('podcast_bottom_player_expanded_meta'),
-                        _buildEpisodeMetaLine(episode),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: textColor,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  );
-                },
+                  ),
+                  SizedBox(height: context.spacing.sm),
+                  Text(
+                    key: const Key('podcast_bottom_player_expanded_meta'),
+                    _buildEpisodeMetaLine(episode),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: textColor,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
-        ),
+        ],
       ),
-      ],
     );
-  }
-
-  bool _isSingleLineTitle(
-    BuildContext context,
-    TextStyle? titleStyle,
-    double maxWidth,
-  ) {
-    if (!maxWidth.isFinite || maxWidth <= 0) {
-      return false;
-    }
-    final painter = TextPainter(
-      text: TextSpan(text: episode.title, style: titleStyle),
-      textDirection: Directionality.of(context),
-      textScaler: MediaQuery.textScalerOf(context),
-      locale: Localizations.maybeLocaleOf(context),
-      maxLines: 2,
-    )..layout(maxWidth: maxWidth);
-    return painter.computeLineMetrics().length <= 1;
   }
 
   String _buildEpisodeMetaLine(PodcastEpisodeModel episode) {
@@ -548,6 +559,42 @@ class _ExpandedHero extends ConsumerWidget {
       episode.formattedDuration,
     ];
     return parts.join('  ·  ');
+  }
+}
+
+class _HeroArtwork extends StatelessWidget {
+  const _HeroArtwork({required this.imageUrl, required this.size});
+
+  final String? imageUrl;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      key: const Key('podcast_bottom_player_expanded_cover'),
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        borderRadius: AppRadius.xxlRadius,
+        boxShadow: [
+          BoxShadow(
+            color: theme.colorScheme.shadow.withValues(alpha: 0.28),
+            blurRadius: 28,
+            offset: const Offset(0, 12),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: AppRadius.xxlRadius,
+        child: PodcastImageWidget(
+          imageUrl: imageUrl,
+          width: size,
+          height: size,
+          iconSize: size * 0.32,
+        ),
+      ),
+    );
   }
 }
 

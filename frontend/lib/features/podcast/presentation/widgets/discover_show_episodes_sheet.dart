@@ -4,6 +4,7 @@ import 'package:sonde/core/constants/app_spacing.dart';
 import 'package:sonde/core/localization/app_localizations_extension.dart';
 import 'package:sonde/features/podcast/data/models/itunes_episode_lookup_model.dart';
 import 'package:sonde/features/podcast/data/models/podcast_episode_model.dart';
+import 'package:sonde/features/podcast/presentation/widgets/selector_sheet_common.dart';
 import 'package:sonde/features/podcast/presentation/widgets/simplified_episode_card.dart';
 
 class DiscoverShowEpisodesSheet extends StatelessWidget {
@@ -24,30 +25,25 @@ class DiscoverShowEpisodesSheet extends StatelessWidget {
     final now = DateTime.now();
 
     return SafeArea(
-      child: Padding(
+      child: Column(
         key: const Key('discover_show_episodes_sheet'),
-        padding: EdgeInsets.fromLTRB(context.spacing.md, context.spacing.smMd, context.spacing.md, context.spacing.md),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              showTitle,
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w700,
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          SelectorSheetHeader(
+            icon: Icons.podcasts_rounded,
+            title: showTitle,
+            titleMaxLines: 2,
+            subtitle: '${episodes.length} ${l10n.podcast_episodes}',
+          ),
+          Flexible(
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(
+                context.spacing.md,
+                context.spacing.sm,
+                context.spacing.md,
+                context.spacing.md,
               ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-            SizedBox(height: context.spacing.sm),
-            Text(
-              '${episodes.length} ${l10n.podcast_episodes}',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-            SizedBox(height: context.spacing.smMd),
-            Flexible(
               child: episodes.isEmpty
                   ? Center(
                       child: Text(
@@ -94,8 +90,8 @@ class DiscoverShowEpisodesSheet extends StatelessWidget {
                       },
                     ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

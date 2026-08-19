@@ -3,8 +3,8 @@ import 'package:sonde/core/constants/app_spacing.dart';
 
 import 'package:sonde/core/localization/app_localizations_extension.dart';
 import 'package:sonde/core/router/app_router.dart';
-import 'package:sonde/core/widgets/adaptive/adaptive.dart';
 import 'package:sonde/core/widgets/adaptive_sheet_helper.dart';
+import 'package:sonde/features/podcast/presentation/widgets/selector_sheet_common.dart';
 
 /// Represents the user's sleep timer selection.
 class SleepTimerSelection {
@@ -74,86 +74,76 @@ Future<SleepTimerSelection?> showSleepTimerSelectorSheet({
     context: resolvedContext,
     builder: (context) {
       final l10n = context.l10n;
+      final theme = Theme.of(context);
 
       return SafeArea(
         child: SingleChildScrollView(
-          child: Padding(
-            padding: EdgeInsets.fromLTRB(context.spacing.md, context.spacing.sm, context.spacing.md, context.spacing.md),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  l10n.player_sleep_timer_title,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              SelectorSheetHeader(
+                icon: Icons.bedtime_rounded,
+                title: l10n.player_sleep_timer_title,
+                subtitle: l10n.player_sleep_timer_desc,
+              ),
+              Padding(
+                padding: EdgeInsets.fromLTRB(
+                  context.spacing.md,
+                  context.spacing.md,
+                  context.spacing.md,
+                  context.spacing.md,
                 ),
-                SizedBox(height: context.spacing.xs),
-                Text(
-                  l10n.player_sleep_timer_desc,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                SizedBox(height: context.spacing.md),
-                // Duration presets
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: _kSleepTimerPresets.map((preset) {
-                    return ActionChip(
-                      label: Text(_formatPresetDuration(preset, context)),
-                      onPressed: () {
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Duration presets
+                    Wrap(
+                      spacing: context.spacing.sm,
+                      runSpacing: context.spacing.sm,
+                      children: [
+                        for (final preset in _kSleepTimerPresets)
+                          SelectorOptionPill(
+                            key: Key('sleep_timer_option_${preset.inMinutes}'),
+                            label: _formatPresetDuration(preset, context),
+                            onTap: () {
+                              Navigator.of(
+                                context,
+                              ).pop(SleepTimerSelection(duration: preset));
+                            },
+                          ),
+                      ],
+                    ),
+                    SizedBox(height: context.spacing.mdLg),
+                    // After current episode
+                    SelectorActionRow(
+                      icon: Icons.stop_circle_rounded,
+                      label: l10n.player_stop_after_episode,
+                      onTap: () {
                         Navigator.of(
                           context,
-                        ).pop(SleepTimerSelection(duration: preset));
+                        ).pop(const SleepTimerSelection.afterEpisode());
                       },
-                    );
-                  }).toList(),
-                ),
-                SizedBox(height: context.spacing.smMd),
-                const Divider(),
-                // After current episode
-                AdaptiveListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: Icon(
-                    Icons.stop_circle_outlined,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                  title: Text(
-                    context.l10n.player_stop_after_episode,
-                  ),
-                  onTap: () {
-                    Navigator.of(
-                      context,
-                    ).pop(const SleepTimerSelection.afterEpisode());
-                  },
-                ),
-                // Cancel timer (only when active)
-                if (isTimerActive) ...[
-                  const Divider(),
-                  AdaptiveListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: Icon(
-                      Icons.timer_off,
-                      color: Theme.of(context).colorScheme.error,
                     ),
-                    title: Text(
-                      l10n.player_cancel_timer,
-                      style: TextStyle(
-                            color: Theme.of(context).colorScheme.error,
-                          ),
-                    ),
-                    onTap: () {
-                      Navigator.of(
-                        context,
-                      ).pop(const SleepTimerSelection.cancel());
-                    },
-                  ),
-                ],
-              ],
-            ),
+                    // Cancel timer (only when active)
+                    if (isTimerActive) ...[
+                      SizedBox(height: context.spacing.sm),
+                      SelectorActionRow(
+                        icon: Icons.timer_off_rounded,
+                        label: l10n.player_cancel_timer,
+                        foregroundColor: theme.colorScheme.error,
+                        onTap: () {
+                          Navigator.of(
+                            context,
+                          ).pop(const SleepTimerSelection.cancel());
+                        },
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
       );

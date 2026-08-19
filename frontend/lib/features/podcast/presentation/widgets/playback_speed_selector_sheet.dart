@@ -7,6 +7,7 @@ import 'package:sonde/core/utils/app_logger.dart' as logger;
 import 'package:sonde/core/widgets/adaptive/adaptive.dart';
 import 'package:sonde/core/widgets/adaptive_sheet_helper.dart';
 import 'package:sonde/features/podcast/presentation/constants/playback_speed_options.dart';
+import 'package:sonde/features/podcast/presentation/widgets/selector_sheet_common.dart';
 
 typedef PlaybackSpeedSheetInitialSelection = ({
   double speed,
@@ -114,66 +115,76 @@ class _PlaybackSpeedSelectorSheetState
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final l10n = context.l10n;
 
     return SafeArea(
       child: SingleChildScrollView(
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(context.spacing.md, context.spacing.sm, context.spacing.md, context.spacing.md),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                l10n.player_playback_speed_title,
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            SelectorSheetHeader(
+              icon: Icons.speed_rounded,
+              title: l10n.player_playback_speed_title,
+            ),
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                context.spacing.md,
+                context.spacing.md,
+                context.spacing.md,
+                context.spacing.md,
               ),
-              SizedBox(height: context.spacing.md),
-              Wrap(
-                spacing: context.spacing.sm,
-                runSpacing: context.spacing.sm,
-                children: kPlaybackSpeedOptions.map((speed) {
-                  return ChoiceChip(
-                    label: Text(formatPlaybackSpeed(speed)),
-                    selected: (_selectedSpeed - speed).abs() < 0.0001,
-                    onSelected: (_) => _selectSpeed(speed),
-                  );
-                }).toList(),
-              ),
-              SizedBox(height: context.spacing.sm),
-              AdaptiveCheckboxListTile(
-                contentPadding: EdgeInsets.zero,
-                value: _applyToSubscription,
-                onChanged: widget.allowApplyToSubscription
-                    ? _toggleApplyToSubscription
-                    : null,
-                title: Text(
-                  l10n.player_apply_subscription_only,
-                ),
-                subtitle: Text(
-                  l10n.player_apply_subscription_subtitle,
-                ),
-              ),
-              SizedBox(height: context.spacing.sm),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: () {
-                    Navigator.of(context).pop(
-                      PlaybackSpeedSelection(
-                        speed: _selectedSpeed,
-                        applyToSubscription: _applyToSubscription,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Wrap(
+                    spacing: context.spacing.sm,
+                    runSpacing: context.spacing.sm,
+                    children: [
+                      for (final speed in kPlaybackSpeedOptions)
+                        SelectorOptionPill(
+                          key: Key(
+                            'playback_speed_option_${formatPlaybackSpeed(speed)}',
+                          ),
+                          label: formatPlaybackSpeed(speed),
+                          selected: (_selectedSpeed - speed).abs() < 0.0001,
+                          onTap: () => _selectSpeed(speed),
+                        ),
+                    ],
+                  ),
+                  SizedBox(height: context.spacing.md),
+                  AdaptiveCheckboxListTile(
+                    contentPadding: EdgeInsets.zero,
+                    value: _applyToSubscription,
+                    onChanged: widget.allowApplyToSubscription
+                        ? _toggleApplyToSubscription
+                        : null,
+                    title: Text(l10n.player_apply_subscription_only),
+                    subtitle: Text(l10n.player_apply_subscription_subtitle),
+                  ),
+                  SizedBox(height: context.spacing.mdLg),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton(
+                      style: FilledButton.styleFrom(
+                        minimumSize: const Size(64, 48),
                       ),
-                    );
-                  },
-                  child: Text(l10n.apply_button),
-                ),
+                      onPressed: () {
+                        Navigator.of(context).pop(
+                          PlaybackSpeedSelection(
+                            speed: _selectedSpeed,
+                            applyToSubscription: _applyToSubscription,
+                          ),
+                        );
+                      },
+                      child: Text(l10n.apply_button),
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

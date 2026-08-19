@@ -5,61 +5,79 @@ class _TransportRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = context.l10n;
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        // Speed chip: isolated Consumer — only rebuilds when rate changes.
-        Consumer(
-          builder: (context, ref, _) {
-            return RepaintBoundary(
-              child: _PlaybackSpeedChip(
-                speed: ref.watch(audioPlaybackRateProvider),
-                onTap: () => _showSpeedSelector(context, ref),
-              ),
-            );
-          },
-        ),
-        SizedBox(width: context.spacing.sm),
-        // Skip/play-pause: static buttons — no progress watch.
         const RepaintBoundary(
           child: _SkipButton(
             keyValue: 'podcast_bottom_player_rewind_10',
             deltaMs: -10000,
             icon: Icons.replay_10_rounded,
             tooltipLocalizationKey: _TooltipKey.rewind10,
+            iconSize: 36,
           ),
         ),
-        SizedBox(width: context.spacing.smMd),
+        SizedBox(width: context.spacing.mdLg),
         const RepaintBoundary(
           child: _PlayPauseButtonLarge(),
         ),
-        SizedBox(width: context.spacing.smMd),
+        SizedBox(width: context.spacing.mdLg),
         const RepaintBoundary(
           child: _SkipButton(
             keyValue: 'podcast_bottom_player_forward_30',
             deltaMs: 30000,
             icon: Icons.forward_30_rounded,
             tooltipLocalizationKey: _TooltipKey.forward30,
+            iconSize: 36,
           ),
         ),
-        SizedBox(width: context.spacing.sm),
-        // Queue button: isolated Consumer — only rebuilds when sheet state changes.
-        Consumer(
-          builder: (context, ref, _) {
-            final queueSheetOpen =
-                ref.watch(podcastPlayerQueueSheetOpenProvider);
-            return IconButton(
-              key: const Key('podcast_bottom_player_playlist'),
-              tooltip: l10n.podcast_player_list,
-              onPressed: queueSheetOpen
-                  ? null
-                  : () => _showQueueSheet(context, ref),
-              icon: const Icon(Icons.playlist_play_rounded),
-            );
-          },
-        ),
       ],
+    );
+  }
+}
+
+/// Secondary actions below the transport row: playback speed + queue.
+class _ExpandedSecondaryActions extends StatelessWidget {
+  const _ExpandedSecondaryActions();
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 360),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          // Speed chip: isolated Consumer — only rebuilds when rate changes.
+          Consumer(
+            builder: (context, ref, _) {
+              return RepaintBoundary(
+                child: _PlaybackSpeedChip(
+                  speed: ref.watch(audioPlaybackRateProvider),
+                  onTap: () => _showSpeedSelector(context, ref),
+                ),
+              );
+            },
+          ),
+          // Queue button: isolated Consumer so it does not rebuild while
+          // queue-sheet state changes.
+          Consumer(
+            builder: (context, ref, _) {
+              final queueSheetOpen =
+                  ref.watch(podcastPlayerQueueSheetOpenProvider);
+              return IconButton(
+                key: const Key('podcast_bottom_player_playlist'),
+                tooltip: l10n.podcast_player_list,
+                iconSize: 26,
+                onPressed: queueSheetOpen
+                    ? null
+                    : () => _showQueueSheet(context, ref),
+                icon: const Icon(Icons.playlist_play_rounded),
+              );
+            },
+          ),
+        ],
+      ),
     );
   }
 }
@@ -75,17 +93,26 @@ class _PlaybackSpeedChip extends StatelessWidget {
     final theme = Theme.of(context);
     return Material(
       color: Colors.transparent,
-      borderRadius: AppRadius.lgRadius,
+      borderRadius: AppRadius.pillRadius,
       child: AdaptiveInkWell(
         key: const Key('podcast_bottom_player_speed'),
-        borderRadius: AppRadius.lgRadius,
+        borderRadius: AppRadius.pillRadius,
         onTap: onTap,
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: context.spacing.smMd, vertical: context.spacing.sm),
+        child: Container(
+          padding: EdgeInsets.symmetric(
+            horizontal: context.spacing.mdLg,
+            vertical: context.spacing.sm,
+          ),
+          decoration: BoxDecoration(
+            borderRadius: AppRadius.pillRadius,
+            border: Border.all(
+              color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+            ),
+          ),
           child: Text(
             formatPlaybackSpeed(speed),
-            style: theme.textTheme.labelMedium?.copyWith(
-              fontWeight: FontWeight.w700,
+            style: theme.textTheme.labelLarge?.copyWith(
+              fontWeight: FontWeight.w800,
             ),
           ),
         ),
@@ -130,12 +157,14 @@ class _SkipButton extends ConsumerWidget {
     required this.deltaMs,
     required this.icon,
     required this.tooltipLocalizationKey,
+    this.iconSize = 30,
   });
 
   final String keyValue;
   final int deltaMs;
   final IconData icon;
   final _TooltipKey tooltipLocalizationKey;
+  final double iconSize;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -148,7 +177,7 @@ class _SkipButton extends ConsumerWidget {
     return IconButton(
       key: Key(keyValue),
       tooltip: tooltip,
-      iconSize: 30,
+      iconSize: iconSize,
       onPressed: () {
         AdaptiveHaptic.lightImpact();
         // Use ref.read to avoid rebuilding on every progress tick (500ms).
@@ -175,13 +204,15 @@ class _PlayPauseButtonLarge extends ConsumerWidget {
     final theme = Theme.of(context);
 
     return Container(
+      width: 80,
+      height: 80,
       decoration: BoxDecoration(
         color: theme.colorScheme.primaryContainer,
         shape: BoxShape.circle,
       ),
       child: IconButton(
         key: const Key('podcast_bottom_player_play_pause'),
-        iconSize: 42,
+        iconSize: 46,
         tooltip: transport.isPlaying
             ? l10n.podcast_player_pause
             : l10n.podcast_player_play,
@@ -198,8 +229,8 @@ class _PlayPauseButtonLarge extends ConsumerWidget {
         },
         icon: transport.isLoading
             ? const SizedBox(
-                width: 22,
-                height: 22,
+                width: 26,
+                height: 26,
                 child: CircularProgressIndicator.adaptive(strokeWidth: 3),
               )
             : Icon(

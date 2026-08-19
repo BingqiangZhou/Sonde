@@ -187,6 +187,7 @@ class _HomeShellWidgetState extends ConsumerState<HomeShellWidget>
     final isHomeShellPlayerRoute =
         currentRoute.isNotEmpty && isHomeShellRoute(currentRoute);
     final isDesktop = PlatformHelper.isDesktop(context);
+    final isPlayerExpanded = ref.watch(podcastPlayerExpandedProvider);
 
     if (isHomeShellPlayerRoute) {
       _syncPlayerHostOverride(_buildPlayerHostOverride());
@@ -206,6 +207,9 @@ class _HomeShellWidgetState extends ConsumerState<HomeShellWidget>
         // The global player dock floats above mobile nav; reserve its
         // geometry here so the core shell stays feature-agnostic.
         mobileOverlayReserve: _mobilePlayerOverlayReserve(context),
+        // The expanded player covers the whole page — let the floating
+        // mobile nav dock slide away while it is showing.
+        hideMobileNavDock: isPlayerExpanded,
         destinations: _buildDestinations(context),
         selectedIndex: widget.navigationShell.currentIndex,
         onDestinationSelected: _handleNavigation,

@@ -104,6 +104,47 @@ void main() {
       expect(uiNotifier.state.isExpanded, isFalse);
     });
 
+    testWidgets('mobile nav dock hides while the player page is expanded', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final uiNotifier = TestPodcastPlayerUiNotifier();
+
+      await _pumpHomeShellWidget(
+        tester,
+        audioNotifier: TestAudioPlayerNotifier(
+          AudioPlayerState(currentEpisode: _episode()),
+        ),
+        initialTab: 2,
+        route: '/profile',
+        uiNotifier: uiNotifier,
+      );
+
+      final dockFinder = find.byKey(
+        const Key('custom_adaptive_navigation_mobile_dock'),
+      );
+      expect(dockFinder.hitTestable(), findsOneWidget);
+
+      uiNotifier.expand();
+      await tester.pumpAndSettle();
+
+      // The full-screen player covers the page: the dock must neither be
+      // visible nor intercept taps meant for the player.
+      expect(dockFinder.hitTestable(), findsNothing);
+      final sheetRect = tester.getRect(
+        find.byKey(const Key('podcast_player_mobile_sheet')),
+      );
+      expect(sheetRect, const Rect.fromLTWH(0, 0, 390, 844));
+
+      await tester.tap(find.byKey(const Key('podcast_bottom_player_collapse')));
+      await tester.pumpAndSettle();
+      expect(dockFinder.hitTestable(), findsOneWidget);
+    });
+
     testWidgets('desktop home shell still renders the dock', (tester) async {
       tester.view.physicalSize = const Size(1200, 900);
       tester.view.devicePixelRatio = 1.0;
@@ -616,6 +657,3 @@ PodcastEpisodeModel _episode() {
     createdAt: now,
   );
 }
-
-
-

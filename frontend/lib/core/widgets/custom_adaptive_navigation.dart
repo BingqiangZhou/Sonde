@@ -32,6 +32,7 @@ class CustomAdaptiveNavigation extends ConsumerStatefulWidget {
     this.mobileOverlayReserve,
     this.mobileNavDockInset = 12,
     this.mobileNavBarHeight = 60,
+    this.hideMobileNavDock = false,
     this.globalOverlayBodyPadding = 0,
     this.desktopNavExpanded = true,
     this.onDesktopNavToggle,
@@ -57,6 +58,11 @@ class CustomAdaptiveNavigation extends ConsumerStatefulWidget {
 
   /// Visual height of the mobile nav bar content.
   final double mobileNavBarHeight;
+
+  /// Hides the floating mobile nav dock with a slide/fade transition —
+  /// for callers that show a full-screen overlay (e.g. the expanded
+  /// player) covering the whole page.
+  final bool hideMobileNavDock;
 
   final double globalOverlayBodyPadding;
   final bool desktopNavExpanded;
@@ -174,7 +180,10 @@ class _CustomAdaptiveNavigationState extends ConsumerState<CustomAdaptiveNavigat
                   duration: _kBottomAccessoryPaddingTransition,
                   curve: Curves.easeOutCubic,
                   padding: EdgeInsets.only(
-                    bottom: totalBottomReserve,
+                    // A full-screen overlay (hideMobileNavDock) covers the
+                    // reserved dock strip too — let the body span edge to
+                    // edge while it is showing.
+                    bottom: widget.hideMobileNavDock ? 0 : totalBottomReserve,
                   ),
                   child: shouldUsePageView
                       ? PageView(
@@ -205,21 +214,38 @@ class _CustomAdaptiveNavigationState extends ConsumerState<CustomAdaptiveNavigat
             left: 0,
             right: 0,
             bottom: 0,
-            child: SafeArea(
-              top: false,
-              minimum: EdgeInsets.fromLTRB(
-                widget.mobileNavDockInset,
-                0,
-                widget.mobileNavDockInset,
-                widget.mobileNavDockInset,
-              ),
-              child: Align(
-                child: _CleanDock(
-                  key: const Key('custom_adaptive_navigation_mobile_dock'),
-                  width: width < Breakpoints.mini
-                      ? width - (widget.mobileNavDockInset * 2)
-                      : 396,
-                  child: _buildMobileNavBar(context),
+            child: IgnorePointer(
+              ignoring: widget.hideMobileNavDock,
+              child: AnimatedSlide(
+                duration: _kBottomAccessoryPaddingTransition,
+                curve: Curves.easeOutCubic,
+                offset: widget.hideMobileNavDock
+                    ? const Offset(0, 1.2)
+                    : Offset.zero,
+                child: AnimatedOpacity(
+                  duration: _kBottomAccessoryPaddingTransition,
+                  curve: Curves.easeOutCubic,
+                  opacity: widget.hideMobileNavDock ? 0 : 1,
+                  child: SafeArea(
+                    top: false,
+                    minimum: EdgeInsets.fromLTRB(
+                      widget.mobileNavDockInset,
+                      0,
+                      widget.mobileNavDockInset,
+                      widget.mobileNavDockInset,
+                    ),
+                    child: Align(
+                      child: _CleanDock(
+                        key: const Key(
+                          'custom_adaptive_navigation_mobile_dock',
+                        ),
+                        width: width < Breakpoints.mini
+                            ? width - (widget.mobileNavDockInset * 2)
+                            : 396,
+                        child: _buildMobileNavBar(context),
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ),

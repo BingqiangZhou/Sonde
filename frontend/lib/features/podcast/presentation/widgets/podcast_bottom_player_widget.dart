@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math' as math;
+import 'dart:ui' show ImageFilter, TileMode;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -171,7 +172,6 @@ class PodcastPlayerLayoutFrame extends ConsumerWidget {
             episode: episode,
             viewportSpec: spec,
             visible: isExpanded,
-            applySafeArea: applyMiniPlayerSafeArea,
           ),
       ],
     );

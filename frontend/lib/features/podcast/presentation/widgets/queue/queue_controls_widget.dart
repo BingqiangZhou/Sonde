@@ -4,6 +4,7 @@ import 'package:sonde/core/constants/app_spacing.dart';
 import 'package:sonde/core/localization/app_localizations.dart';
 import 'package:sonde/core/localization/app_localizations_extension.dart';
 import 'package:sonde/features/podcast/presentation/providers/podcast_playback_providers.dart';
+import 'package:sonde/features/podcast/presentation/widgets/selector_sheet_common.dart';
 
 class QueueHeader extends StatelessWidget {
   const QueueHeader({
@@ -26,72 +27,42 @@ class QueueHeader extends StatelessWidget {
       queueSyncing: queueSyncing,
     );
 
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.fromLTRB(context.spacing.md, context.spacing.smMd, context.spacing.smMd, context.spacing.smMd),
-      decoration: BoxDecoration(
-        color: Colors.transparent,
-        border: Border(
-          bottom: BorderSide(
-            color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
-          ),
-        ),
+    final showCountChip = itemCount != null;
+    final showStatusChip = statusLabel != null;
+
+    return SelectorSheetHeader(
+      icon: Icons.queue_music_rounded,
+      title: title,
+      titleStyle: theme.textTheme.titleLarge?.copyWith(
+        fontWeight: FontWeight.w800,
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: theme.textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          Padding(
-            padding: EdgeInsets.only(top: context.spacing.xs, bottom: context.spacing.xs),
-            child: Row(
+      trailing: IconButton(
+        tooltip: l10n.refresh,
+        visualDensity: VisualDensity.compact,
+        onPressed: onRefresh,
+        icon: const Icon(Icons.refresh),
+      ),
+      bottom: (showCountChip || showStatusChip)
+          ? Row(
               children: [
-                Expanded(
-                  child: Row(
-                    children: [
-                      if (itemCount != null)
-                        QueueInfoChip(
-                          icon: Icons.queue_music_rounded,
-                          label:
-                              '${itemCount ?? 0} ${l10n.queue_in_queue}',
-                        ),
-                      if (itemCount != null && statusLabel != null)
-                        SizedBox(width: context.spacing.sm),
-                      if (statusLabel != null)
-                        Flexible(
-                          child: QueueInfoChip(
-                            icon: Icons.sync_rounded,
-                            label: statusLabel,
-                            emphasized: true,
-                          ),
-                        ),
-                    ],
+                if (showCountChip)
+                  QueueInfoChip(
+                    icon: Icons.queue_music_rounded,
+                    label: '${itemCount ?? 0} ${l10n.queue_in_queue}',
                   ),
-                ),
-                IconButton(
-                  tooltip: l10n.refresh,
-                  onPressed: onRefresh,
-                  visualDensity: VisualDensity.compact,
-                  icon: const Icon(Icons.refresh),
-                ),
-                IconButton(
-                  tooltip: l10n.close,
-                  onPressed: () => Navigator.of(context).pop(),
-                  visualDensity: VisualDensity.compact,
-                  icon: const Icon(Icons.close),
-                ),
+                if (showCountChip && showStatusChip)
+                  SizedBox(width: context.spacing.sm),
+                if (showStatusChip)
+                  Flexible(
+                    child: QueueInfoChip(
+                      icon: Icons.sync_rounded,
+                      label: statusLabel,
+                      emphasized: true,
+                    ),
+                  ),
               ],
-            ),
-          ),
-        ],
-      ),
+            )
+          : null,
     );
   }
 }

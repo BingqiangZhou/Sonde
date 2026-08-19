@@ -22,8 +22,6 @@ class PodcastPlayerViewportSpec {
     required this.desktopPanelWidth,
     required this.desktopPanelGap,
     required this.desktopPanelInnerPadding,
-    required this.mobileDrawerMaxHeight,
-    required this.mobileDrawerBorderRadius,
     required this.fullScreenHorizontalPadding,
   });
 
@@ -38,8 +36,6 @@ class PodcastPlayerViewportSpec {
   final double desktopPanelWidth;
   final double desktopPanelGap;
   final double desktopPanelInnerPadding;
-  final double mobileDrawerMaxHeight;
-  final double mobileDrawerBorderRadius;
   final double fullScreenHorizontalPadding;
 
   double get leftInset => 0;
@@ -243,8 +239,6 @@ PodcastPlayerViewportSpec resolvePodcastPlayerViewportSpec(
   double desktopPanelInnerPadding = 20;
   final fullScreenHorizontalPadding =
       layoutMode == PodcastPlayerLayoutMode.mobile ? 16.0 : 24.0;
-  final mobileDrawerMaxHeight = MediaQuery.sizeOf(context).height * 0.88;
-  const double mobileDrawerBorderRadius = 30;
 
   switch (layoutMode) {
     case PodcastPlayerLayoutMode.mobile:
@@ -292,8 +286,6 @@ PodcastPlayerViewportSpec resolvePodcastPlayerViewportSpec(
     desktopPanelWidth: desktopPanelWidth,
     desktopPanelGap: desktopPanelGap,
     desktopPanelInnerPadding: desktopPanelInnerPadding,
-    mobileDrawerMaxHeight: mobileDrawerMaxHeight,
-    mobileDrawerBorderRadius: mobileDrawerBorderRadius,
     fullScreenHorizontalPadding: fullScreenHorizontalPadding,
   );
 }
