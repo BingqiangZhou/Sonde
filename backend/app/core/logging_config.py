@@ -80,7 +80,9 @@ def setup_logging(
     level = getattr(logging, log_level.upper(), logging.INFO)
 
     # 日志格式
-    log_format = "[%(asctime)s] [%(levelname)s] [%(name)s:%(lineno)d] %(message)s"
+    log_format = (
+        "[%(asctime)s] [%(levelname)s] [%(name)s:%(lineno)d] [req:%(request_id)s] %(message)s"
+    )
     date_format = "%Y-%m-%d %H:%M:%S"
 
     # 创建时区格式化器
@@ -95,6 +97,11 @@ def setup_logging(
     root_logger.handlers.clear()
     root_logger.setLevel(level)
 
+    # 每个 handler 注入 request-id 过滤器（handler 级过滤对透传记录同样生效）
+    from app.core.middleware import RequestIDFilter
+
+    request_id_filter = RequestIDFilter()
+
     # 1. 控制台处理器 (使用彩色输出，如果可用)
     # Ensure UTF-8 encoding for console output (critical in Docker / Windows containers)
     if hasattr(sys.stdout, "reconfigure"):
@@ -102,6 +109,7 @@ def setup_logging(
     console_handler = logging.StreamHandler(sys.stdout)
     console_handler.setLevel(level)
     console_handler.setFormatter(formatter)
+    console_handler.addFilter(request_id_filter)
     root_logger.addHandler(console_handler)
 
     # 2. 按日期分割的常规日志文件处理器
@@ -118,6 +126,7 @@ def setup_logging(
     file_handler.suffix = "%Y-%m-%d"
     file_handler.setLevel(level)
     file_handler.setFormatter(formatter)
+    file_handler.addFilter(request_id_filter)
     root_logger.addHandler(file_handler)
 
     # 3. 专用错误日志文件处理器
@@ -133,6 +142,7 @@ def setup_logging(
     error_handler.suffix = "%Y-%m-%d"
     error_handler.setLevel(logging.ERROR)
     error_handler.setFormatter(formatter)
+    error_handler.addFilter(request_id_filter)
     root_logger.addHandler(error_handler)
 
     # 配置第三方库的日志级别 (减少噪音)

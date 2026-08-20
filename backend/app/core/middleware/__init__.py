@@ -1,7 +1,10 @@
-"""Request logging middleware with slow-request detection."""
+"""Request logging and request-id middleware."""
 
 import logging
+import re
 import time
+import uuid
+from contextvars import ContextVar
 
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
@@ -18,6 +21,57 @@ SKIP_LOGGING_PATHS = {
     "/api/v1/redoc",
     "/api/v1/openapi.json",
 }
+
+# Per-request id: echoed from a trusted header or generated. Empty string
+# outside a request so log lines from background tasks stay valid.
+request_id_var: ContextVar[str] = ContextVar("request_id", default="")
+
+_REQUEST_ID_PATTERN = re.compile(r"^[A-Za-z0-9_-]{8,64}$")
+
+
+class RequestIDFilter(logging.Filter):
+    """Attach the current request id to every log record."""
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        record.request_id = request_id_var.get() or "-"
+        return True
+
+
+class RequestIDMiddleware:
+    """Assign a request id, expose it on the response, and bind it for logs.
+
+    A client-supplied ``X-Request-ID`` is echoed when it matches a safe
+    charset (so distributed traces can join); otherwise a fresh uuid is
+    generated per request.
+    """
+
+    def __init__(self, app: ASGIApp):
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        headers = {
+            key.decode("latin-1").lower(): value.decode("latin-1")
+            for key, value in scope.get("headers", [])
+        }
+        incoming = headers.get("x-request-id", "")
+        request_id = incoming if _REQUEST_ID_PATTERN.fullmatch(incoming) else uuid.uuid4().hex
+        token = request_id_var.set(request_id)
+
+        async def send_wrapper(message: Message) -> None:
+            if message["type"] == "http.response.start":
+                from starlette.datastructures import MutableHeaders
+
+                MutableHeaders(scope=message)["X-Request-ID"] = request_id
+            await send(message)
+
+        try:
+            await self.app(scope, receive, send_wrapper)
+        finally:
+            request_id_var.reset(token)
 
 
 class RequestLoggingMiddleware:

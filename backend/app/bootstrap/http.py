@@ -12,7 +12,7 @@ from slowapi.middleware import SlowAPIMiddleware
 from app.core.config import get_settings
 from app.core.database import check_db_readiness
 from app.core.exceptions import setup_exception_handlers
-from app.core.middleware import RequestLoggingMiddleware
+from app.core.middleware import RequestIDMiddleware, RequestLoggingMiddleware
 from app.core.rate_limit import limiter
 from app.core.redis import get_shared_redis
 from app.http.errors import register_admin_http_exception_handler
@@ -30,7 +30,10 @@ def configure_middlewares(app: FastAPI) -> None:
     app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
     app.add_middleware(SlowAPIMiddleware)
 
+    # Request-id wraps request logging (Starlette runs the last-added
+    # middleware outermost) so access/error log lines carry the same id.
     app.add_middleware(RequestLoggingMiddleware, slow_threshold=5.0)
+    app.add_middleware(RequestIDMiddleware)
     logger.debug("Request logging middleware enabled")
 
     app.add_middleware(
