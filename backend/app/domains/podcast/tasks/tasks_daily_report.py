@@ -36,7 +36,7 @@ def generate_daily_podcast_reports(self, report_date: str | None = None):
 
 
 async def _generate_daily_reports_async(target_date: date | None):
-    async with worker_session("celery-daily-report-worker") as session:
+    async with worker_session() as session:
         return await _generate_daily_reports_handler(
             session=session,
             target_date=target_date,

@@ -55,7 +55,7 @@ def cleanup_old_playback_states(self):
 
 
 async def _cleanup_old_playback_states_async():
-    async with worker_session("celery-playback-cleanup-worker") as session:
+    async with worker_session() as session:
         return await cleanup_old_playback_states_handler(session)
 
 
@@ -70,7 +70,7 @@ def cleanup_old_transcription_temp_files(self, days: int = 7):
 
 
 async def _cleanup_old_transcription_temp_files_async(days: int):
-    async with worker_session("celery-temp-cleanup-worker") as session:
+    async with worker_session() as session:
         return await cleanup_old_transcription_temp_files_handler(session, days=days)
 
 
@@ -80,7 +80,7 @@ def auto_cleanup_cache_files():
 
 
 async def _auto_cleanup_cache_files_async():
-    async with worker_session("celery-auto-cleanup-worker") as session:
+    async with worker_session() as session:
         return await auto_cleanup_cache_files_handler(session)
 
 
@@ -110,7 +110,7 @@ async def _process_opml_subscription_episodes_async(
     user_id: int,
     source_url: str,
 ):
-    async with worker_session("celery-opml-import-worker") as session:
+    async with worker_session() as session:
         return await process_opml_subscription_episodes_handler(
             session=session,
             subscription_id=subscription_id,

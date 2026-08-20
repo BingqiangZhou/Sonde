@@ -60,7 +60,7 @@ class PodcastSearchService:
             Tuple of (results list, total count)
 
         """
-        episodes, total = await self.repo.search_episodes(
+        scored, total = await self.repo.search_episodes(
             self.user_id,
             query=query,
             search_in=search_in,
@@ -69,18 +69,17 @@ class PodcastSearchService:
         )
 
         # Batch fetch playback states
-        episode_ids = [ep.id for ep in episodes]
+        episode_ids = [ep.id for ep, _ in scored]
         playback_states = await self.repo.get_playback_states_batch(
             self.user_id,
             episode_ids,
         )
 
         # Build response
-        results = self._build_episode_dicts(episodes, playback_states)
+        results = self._build_episode_dicts([ep for ep, _ in scored], playback_states)
 
-        # Add relevance scores
-        for i, ep in enumerate(episodes):
-            results[i]["relevance_score"] = getattr(ep, "relevance_score", 1.0)
+        for i, (_, score) in enumerate(scored):
+            results[i]["relevance_score"] = score
 
         return results, total
 

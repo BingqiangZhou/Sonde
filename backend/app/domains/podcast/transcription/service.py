@@ -1130,18 +1130,19 @@ class PodcastTranscriptionService:
 
             # Move audio file to permanent storage
             # Use shutil.move instead of os.replace to handle cross-device moves (e.g., Docker volumes)
-            #  shutil.move  os.replace?Docker
             import shutil
 
             try:
-                shutil.move(converted_file, final_audio_path)
+                await asyncio.to_thread(shutil.move, converted_file, final_audio_path)
             except OSError as e:
                 logger.warning(
                     f"[STEP 6 SAVE] shutil.move failed ({e}), trying copy + delete",
                 )
-                shutil.copy2(converted_file, final_audio_path)
+                await asyncio.to_thread(
+                    shutil.copy2, converted_file, final_audio_path
+                )
                 try:
-                    os.remove(converted_file)
+                    await asyncio.to_thread(os.remove, converted_file)
                 except OSError:
                     logger.warning(
                         f"[STEP 6 SAVE] Could not remove source file: {converted_file}",

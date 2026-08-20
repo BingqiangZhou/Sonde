@@ -32,5 +32,5 @@ def refresh_all_podcast_feeds(self):
 
 
 async def _refresh_all_podcast_feeds_async():
-    async with worker_session("celery-feed-refresh-worker") as session:
+    async with worker_session() as session:
         return await _refresh_all_podcast_feeds_handler(session)

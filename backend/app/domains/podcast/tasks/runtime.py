@@ -39,7 +39,7 @@ def ensure_orm_models_registered() -> None:
 
 
 @asynccontextmanager
-async def worker_session(application_name: str) -> AsyncIterator[AsyncSession]:
+async def worker_session() -> AsyncIterator[AsyncSession]:
     """Create an isolated worker DB session."""
     ensure_orm_models_registered()
     session_factory = get_async_session_factory()

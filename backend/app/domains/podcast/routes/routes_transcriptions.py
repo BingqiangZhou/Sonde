@@ -492,7 +492,7 @@ async def get_pending_transcriptions(
 ):
     try:
         result = await transcription_workflow.list_pending_transcriptions(
-            episode_lookup=episode_service.get_episode_by_id,
+            episodes_lookup=episode_service.get_episodes_by_ids,
         )
         return build_pending_transcriptions_response(result)
     except Exception as exc:

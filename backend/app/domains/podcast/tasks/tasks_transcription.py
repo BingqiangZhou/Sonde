@@ -64,7 +64,7 @@ def process_audio_transcription(self, task_id: int, config_db_id: int | None = N
 
 
 async def _process_audio_transcription_async(task_id: int, config_db_id: int | None):
-    async with worker_session("celery-transcription-worker") as session:
+    async with worker_session() as session:
         return await process_audio_transcription_handler(
             session=session,
             task_id=task_id,
@@ -89,7 +89,7 @@ def process_podcast_episode_with_transcription(self, episode_id: int, user_id: i
 
 
 async def _process_episode_with_transcription_async(episode_id: int, user_id: int):
-    async with worker_session("celery-episode-processor") as session:
+    async with worker_session() as session:
         return await process_podcast_episode_with_transcription_handler(
             session=session,
             episode_id=episode_id,
@@ -110,5 +110,5 @@ def process_pending_transcriptions(self):
 
 
 async def _process_pending_transcriptions_async():
-    async with worker_session("celery-transcription-backlog-worker") as session:
+    async with worker_session() as session:
         return await process_pending_transcriptions_handler(session)

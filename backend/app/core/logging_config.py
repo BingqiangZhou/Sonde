@@ -105,7 +105,7 @@ def setup_logging(
     root_logger.addHandler(console_handler)
 
     # 2. 按日期分割的常规日志文件处理器
-    # 文件名: logs/app-YYYY-MM-DD.log
+    # 文件名: logs/app.log (轮转为 app.log.YYYY-MM-DD)
     normal_log_file = log_path / f"{app_name}.log"
     file_handler = logging.handlers.TimedRotatingFileHandler(
         filename=str(normal_log_file),
@@ -121,7 +121,7 @@ def setup_logging(
     root_logger.addHandler(file_handler)
 
     # 3. 专用错误日志文件处理器
-    # 文件名: logs/app-YYYY-MM-DD_error.log
+    # 文件名: logs/app_error.log (轮转为 app_error.log.YYYY-MM-DD)
     error_log_file = log_path / f"{app_name}_error.log"
     error_handler = logging.handlers.TimedRotatingFileHandler(
         filename=str(error_log_file),
@@ -183,13 +183,11 @@ def get_log_files(log_dir: str = DEFAULT_LOG_DIR, app_name: str = "app") -> dict
     }
 
     if log_path.exists():
-        # 获取常规日志文件
-        for f in sorted(log_path.glob(f"{app_name}-*.log")):
-            if not f.name.endswith("_error.log"):
-                result["normal"].append(str(f))
+        # TimedRotatingFileHandler rotates to "<name>.log.YYYY-MM-DD"
+        for f in sorted(log_path.glob(f"{app_name}.log*")):
+            result["normal"].append(str(f))
 
-        # 获取错误日志文件
-        for f in sorted(log_path.glob(f"{app_name}_*-error.log")):
+        for f in sorted(log_path.glob(f"{app_name}_error.log*")):
             result["error"].append(str(f))
 
     return result

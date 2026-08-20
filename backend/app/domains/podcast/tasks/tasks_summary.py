@@ -29,7 +29,7 @@ def generate_pending_summaries(self):
 
 
 async def _generate_pending_summaries_async():
-    async with worker_session("celery-summary-worker") as session:
+    async with worker_session() as session:
         return await generate_pending_summaries_handler(session)
 
 
@@ -62,7 +62,7 @@ async def _generate_episode_summary_async(
     summary_model: str | None,
     custom_prompt: str | None,
 ):
-    async with worker_session("celery-summary-episode-worker") as session:
+    async with worker_session() as session:
         workflow = SummaryWorkflowService(session)
         return await workflow.execute_episode_summary_generation(
             episode_id,

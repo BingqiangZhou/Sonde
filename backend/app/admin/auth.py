@@ -7,7 +7,7 @@ import secrets
 
 from fastapi import Cookie, HTTPException, Request, status
 
-from app.core.auth import _extract_api_key
+from app.core.auth import extract_api_key
 from app.core.config import get_settings
 
 
@@ -34,7 +34,7 @@ class AdminAuthRequired:
             return 1
 
         # Header-based auth: compare API key directly
-        header_key = _extract_api_key(request)
+        header_key = extract_api_key(request)
         if header_key is not None:
             if secrets.compare_digest(header_key, settings.API_KEY):
                 return 1

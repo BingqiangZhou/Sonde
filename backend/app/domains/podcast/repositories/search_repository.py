@@ -164,14 +164,13 @@ class SearchRepository(BasePodcastRepository):
                     or 0,
                 )
 
-            episodes: list[PodcastEpisode] = []
+            scored: list[tuple[PodcastEpisode, float]] = []
             for episode, score, _ in rows:
                 try:
-                    episode.relevance_score = float(score or 0.0)
+                    scored.append((episode, float(score or 0.0)))
                 except Exception:
-                    episode.relevance_score = 0.0
-                episodes.append(episode)
-            return episodes, total
+                    scored.append((episode, 0.0))
+            return scored, total
 
         if is_postgresql:
             try:

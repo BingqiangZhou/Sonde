@@ -443,15 +443,15 @@ class TranscriptionWorkflowService:
     async def list_pending_transcriptions(
         self,
         *,
-        episode_lookup: Callable[[int], Awaitable[PodcastEpisode | None]],
+        episodes_lookup: Callable[[list[int]], Awaitable[dict[int, Any]]],
     ) -> dict[str, Any]:
         scheduler = self.scheduler_factory(self.db)
         tasks = await scheduler.get_pending_transcriptions()
-        user_tasks = []
-        for task in tasks:
-            episode = await episode_lookup(task["episode_id"])
-            if episode:
-                user_tasks.append(task)
+        if not tasks:
+            return {"total": 0, "tasks": []}
+        # One batched episode query instead of a per-task lookup.
+        found = await episodes_lookup([task["episode_id"] for task in tasks])
+        user_tasks = [task for task in tasks if task["episode_id"] in found]
         return {"total": len(user_tasks), "tasks": user_tasks}
 
     async def cleanup_old_temp_files(self, *, days: int = 7) -> dict[str, Any]:

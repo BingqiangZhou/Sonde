@@ -29,7 +29,7 @@ SINGLE_USER_ID = 1
 # ── Auth dependency ──────────────────────────────────────────────────────────
 
 
-def _extract_api_key(request: Request) -> str | None:
+def extract_api_key(request: Request) -> str | None:
     """Extract API key from Authorization: Bearer <key> or X-API-Key header."""
     authorization = request.headers.get("Authorization")
     if authorization:
@@ -44,17 +44,11 @@ def _extract_api_key(request: Request) -> str | None:
     return None
 
 
-async def _user_id_from_bearer(token: str) -> int | None:
+def _user_id_from_bearer(token: str) -> int | None:
     """Resolve a JWT access token to its user ID, or None if invalid."""
-    import jwt as pyjwt
+    from app.domains.auth.security import user_id_from_token
 
-    from app.domains.auth.security import decode_token
-
-    try:
-        payload = decode_token(token, "access")
-        return int(payload["sub"])
-    except (pyjwt.InvalidTokenError, KeyError, ValueError):
-        return None
+    return user_id_from_token(token, "access")
 
 
 async def require_api_key(request: Request) -> int:
@@ -68,7 +62,7 @@ async def require_api_key(request: Request) -> int:
 
     authorization = request.headers.get("Authorization", "")
     if authorization.startswith("Bearer "):
-        user_id = await _user_id_from_bearer(authorization[7:])
+        user_id = _user_id_from_bearer(authorization[7:])
         if user_id is not None:
             return user_id
 
@@ -76,7 +70,7 @@ async def require_api_key(request: Request) -> int:
         # If no API_KEY configured (development), allow all requests
         return SINGLE_USER_ID
 
-    api_key = _extract_api_key(request)
+    api_key = extract_api_key(request)
     if api_key is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

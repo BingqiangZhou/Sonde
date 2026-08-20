@@ -89,31 +89,31 @@ class TestApiKeyAuth:
             assert user_id == 1
 
     def test_extract_api_key_from_bearer(self):
-        """Test _extract_api_key extracts Bearer token correctly."""
-        from app.core.auth import _extract_api_key
+        """Test extract_api_key extracts Bearer token correctly."""
+        from app.core.auth import extract_api_key
 
         headers = [(b"authorization", b"Bearer test-key")]
         scope = {"type": "http", "headers": headers}
         request = Request(scope=scope)
 
-        assert _extract_api_key(request) == "test-key"
+        assert extract_api_key(request) == "test-key"
 
     def test_extract_api_key_from_x_api_key(self):
-        """Test _extract_api_key extracts X-API-Key correctly."""
-        from app.core.auth import _extract_api_key
+        """Test extract_api_key extracts X-API-Key correctly."""
+        from app.core.auth import extract_api_key
 
         headers = [(b"x-api-key", b"test-key")]
         scope = {"type": "http", "headers": headers}
         request = Request(scope=scope)
 
-        assert _extract_api_key(request) == "test-key"
+        assert extract_api_key(request) == "test-key"
 
     def test_extract_api_key_returns_none_when_missing(self):
-        """Test _extract_api_key returns None when no key present."""
-        from app.core.auth import _extract_api_key
+        """Test extract_api_key returns None when no key present."""
+        from app.core.auth import extract_api_key
 
         request = Request(scope={"type": "http", "headers": []})
-        assert _extract_api_key(request) is None
+        assert extract_api_key(request) is None
 
 
 class TestJwtDualModeAuth:

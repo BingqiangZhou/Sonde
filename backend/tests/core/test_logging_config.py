@@ -659,19 +659,19 @@ class TestGetLogFiles:
         assert result == {"normal": [], "error": []}
 
     def test_finds_normal_logs(self, tmp_path: Path):
-        """Finds and returns normal log files matching the app name pattern."""
-        (tmp_path / "app-2025-06-15.log").touch()
-        (tmp_path / "app-2025-06-16.log").touch()
-        (tmp_path / "other-2025-06-15.log").touch()
+        """Finds the live log plus its TimedRotating dated rotations."""
+        (tmp_path / "app.log").touch()
+        (tmp_path / "app.log.2025-06-15").touch()
+        (tmp_path / "other.log").touch()
 
         result = get_log_files(log_dir=str(tmp_path), app_name="app")
         assert len(result["normal"]) == 2
         assert len(result["error"]) == 0
 
     def test_finds_error_logs(self, tmp_path: Path):
-        """Finds and returns error log files matching the app error pattern."""
-        (tmp_path / "app_2025-06-15-error.log").touch()
-        (tmp_path / "app_2025-06-16-error.log").touch()
+        """Finds error log files and their dated rotations."""
+        (tmp_path / "app_error.log").touch()
+        (tmp_path / "app_error.log.2025-06-15").touch()
 
         result = get_log_files(log_dir=str(tmp_path), app_name="app")
         assert len(result["error"]) == 2
@@ -679,8 +679,8 @@ class TestGetLogFiles:
 
     def test_separates_normal_from_error(self, tmp_path: Path):
         """Normal and error log files are correctly separated."""
-        (tmp_path / "app-2025-06-15.log").touch()
-        (tmp_path / "app_2025-06-15-error.log").touch()
+        (tmp_path / "app.log").touch()
+        (tmp_path / "app_error.log").touch()
 
         result = get_log_files(log_dir=str(tmp_path), app_name="app")
         assert len(result["normal"]) == 1
@@ -688,12 +688,12 @@ class TestGetLogFiles:
 
     def test_custom_app_name(self, tmp_path: Path):
         """Uses the custom app_name to match log files."""
-        (tmp_path / "myapp-2025-06-15.log").touch()
-        (tmp_path / "app-2025-06-15.log").touch()
+        (tmp_path / "myapp.log").touch()
+        (tmp_path / "app.log").touch()
 
         result = get_log_files(log_dir=str(tmp_path), app_name="myapp")
         assert len(result["normal"]) == 1
-        assert "myapp-2025-06-15.log" in result["normal"][0]
+        assert "myapp.log" in result["normal"][0]
 
 
 # ===========================================================================

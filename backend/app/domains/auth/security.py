@@ -91,6 +91,19 @@ def issue_tokens(user_id: int) -> TokenBundle:
     )
 
 
+def user_id_from_token(token: str, expected_type: str = "access") -> int | None:
+    """Decode a JWT and return its user id, or None for any invalid token.
+
+    Single decode-and-extract point shared by HTTP dependencies; callers
+    decide how to reject unauthenticated requests.
+    """
+    try:
+        payload = decode_token(token, expected_type)
+        return int(payload["sub"])
+    except (jwt.InvalidTokenError, KeyError, ValueError):
+        return None
+
+
 def decode_token(token: str, expected_type: str) -> dict:
     """Decode a JWT and enforce its type; raises ``jwt.InvalidTokenError``.
 

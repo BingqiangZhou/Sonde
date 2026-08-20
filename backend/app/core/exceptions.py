@@ -135,6 +135,10 @@ async def custom_exception_handler(
         "detail": exc.message,
         "type": exc.error_code,
         "status_code": exc.status_code,
+        # Bilingual surface; a domain can override either side via
+        # details["message_en"] / details["message_zh"].
+        "message_en": (exc.details or {}).get("message_en", exc.message),
+        "message_zh": (exc.details or {}).get("message_zh", exc.message),
     }
     if exc.details:
         content["details"] = exc.details
