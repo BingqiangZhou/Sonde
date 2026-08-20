@@ -12,7 +12,9 @@ from typing import Any
 
 import aiohttp
 
+from app.core.http_client import get_shared_http_session
 from app.core.utils import filter_thinking_content, sanitize_html
+from app.domains.ai.invocation import build_chat_url
 from app.domains.ai.models import AIModelConfig, ModelType
 from app.domains.ai.schemas import APIKeyValidationResponse
 
@@ -56,74 +58,73 @@ async def test_transcription_model(
     try:
         headers = {"Authorization": f"Bearer {api_key}"}
 
-        timeout = aiohttp.ClientTimeout(total=60)  # 转录可能需要更长时间
+        session = await get_shared_http_session()
+        with open(example_mp3_path, "rb") as audio_file:
+            data = aiohttp.FormData()
+            data.add_field(
+                "file",
+                audio_file,
+                filename="example.mp3",
+                content_type="audio/mpeg",
+            )
+            data.add_field("model", model.model_id)
+            data.add_field("language", "zh")  # 中文
 
-        async with aiohttp.ClientSession(timeout=timeout) as session:
-            with open(example_mp3_path, "rb") as audio_file:
-                data = aiohttp.FormData()
-                data.add_field(
-                    "file",
-                    audio_file,
-                    filename="example.mp3",
-                    content_type="audio/mpeg",
-                )
-                data.add_field("model", model.model_id)
-                data.add_field("language", "zh")  # 中文
+            # 根据provider选择不同的API端点
+            if model.provider == "openai":
+                api_endpoint = "https://api.openai.com/v1/audio/transcriptions"
+            else:
+                # 对于其他提供商，使用数据库中存储的完整API URL
+                api_endpoint = model.api_url
 
-                # 根据provider选择不同的API端点
-                if model.provider == "openai":
-                    api_endpoint = "https://api.openai.com/v1/audio/transcriptions"
-                else:
-                    # 对于其他提供商，使用数据库中存储的完整API URL
-                    api_endpoint = model.api_url
+            async with session.post(
+                api_endpoint,
+                headers=headers,
+                data=data,
+                timeout=aiohttp.ClientTimeout(total=60),
+            ) as response:
+                if response.status != 200:
+                    error_text = await response.text()
+                    return (
+                        f"❌ API 调用失败: {response.status} - {error_text[:200]}"
+                    )
 
-                async with session.post(
-                    api_endpoint,
-                    headers=headers,
-                    data=data,
-                ) as response:
-                    if response.status != 200:
-                        error_text = await response.text()
-                        return (
-                            f"❌ API 调用失败: {response.status} - {error_text[:200]}"
-                        )
+                result = await response.json()
 
-                    result = await response.json()
+                if "text" not in result:
+                    return "❌ API 响应格式错误: 未包含 'text' 字段"
 
-                    if "text" not in result:
-                        return "❌ API 响应格式错误: 未包含 'text' 字段"
+                transcribed_text = result["text"].strip()
 
-                    transcribed_text = result["text"].strip()
+                # 清理文本：去除标点、空格、表情符号等
+                def clean_text(text):
+                    # 只保留中文字符、英文字母和数字
+                    cleaned = re.sub(r"[^\u4e00-\u9fa5a-zA-Z0-9]", "", text)
+                    return cleaned.lower()
 
-                    # 清理文本：去除标点、空格、表情符号等
-                    def clean_text(text):
-                        # 只保留中文字符、英文字母和数字
-                        cleaned = re.sub(r"[^\u4e00-\u9fa5a-zA-Z0-9]", "", text)
-                        return cleaned.lower()
+                expected_clean = clean_text(expected_text)
+                transcribed_clean = clean_text(transcribed_text)
 
-                    expected_clean = clean_text(expected_text)
-                    transcribed_clean = clean_text(transcribed_text)
+                # 计算相似度
+                similarity = SequenceMatcher(
+                    None,
+                    expected_clean,
+                    transcribed_clean,
+                ).ratio()
+                similarity_percent = similarity * 100
 
-                    # 计算相似度
-                    similarity = SequenceMatcher(
-                        None,
-                        expected_clean,
-                        transcribed_clean,
-                    ).ratio()
-                    similarity_percent = similarity * 100
+                # 判断是否通过测试
+                passed = similarity_percent >= 90
 
-                    # 判断是否通过测试
-                    passed = similarity_percent >= 90
+                result_parts = [
+                    f"{'✅' if passed else '❌'} 转录测试{'通过' if passed else '失败'}",
+                    f"\n期望文本: {expected_text}",
+                    f"\n转录结果: {transcribed_text}",
+                    f"\n相似度: {similarity_percent:.1f}%",
+                    "\n阈值: 90.0%",
+                ]
 
-                    result_parts = [
-                        f"{'✅' if passed else '❌'} 转录测试{'通过' if passed else '失败'}",
-                        f"\n期望文本: {expected_text}",
-                        f"\n转录结果: {transcribed_text}",
-                        f"\n相似度: {similarity_percent:.1f}%",
-                        "\n阈值: 90.0%",
-                    ]
-
-                    return "".join(result_parts)
+                return "".join(result_parts)
 
     except aiohttp.ClientError as e:
         return f"❌ 网络错误: {e!s}"
@@ -157,16 +158,13 @@ async def test_text_generation_model(
         "temperature": model.temperature or 0.7,
     }
 
-    timeout = aiohttp.ClientTimeout(total=model.timeout_seconds)
-
-    async with (
-        aiohttp.ClientSession(timeout=timeout) as session,
-        session.post(
-            f"{model.api_url}/chat/completions",
-            headers=headers,
-            json=data,
-        ) as response,
-    ):
+    session = await get_shared_http_session()
+    async with session.post(
+        build_chat_url(model.api_url),
+        headers=headers,
+        json=data,
+        timeout=aiohttp.ClientTimeout(total=model.timeout_seconds),
+    ) as response:
         if response.status != 200:
             error_text = await response.text()
             raise Exception(f"API error: {response.status} - {error_text}")
@@ -209,134 +207,128 @@ async def validate_api_key(
                 "Content-Type": "application/json",
             }
 
-            # 确保URL不以/结尾
-            base_url = api_url.rstrip("/")
-            # 如果URL已经包含 v1/chat/completions，则使用原URL，否则追加
-            if "chat/completions" in base_url:
-                target_url = base_url
-            else:
-                target_url = f"{base_url}/chat/completions"
+            target_url = build_chat_url(api_url)
 
             data = {
                 "model": model_id or "gpt-3.5-turbo",
                 "messages": [{"role": "user", "content": "Hello"}],
             }
 
-            timeout = aiohttp.ClientTimeout(total=600)
-
             logger.info(
                 f"Validating API key against URL: {target_url} with model: {model_id}",
             )
 
-            async with aiohttp.ClientSession(timeout=timeout) as session:
-                try:
-                    async with session.post(
-                        target_url,
-                        headers=headers,
-                        json=data,
-                    ) as response:
-                        logger.info(f"First request status: {response.status}")
-                        if response.status == 200:
-                            res_json = await response.json()
-                            if res_json.get("choices"):
-                                result = res_json["choices"][0]["message"]["content"]
-                                logger.info(
-                                    f"Validation successful, got result: {result}",
-                                )
-                            else:
-                                result = "Connection successful but no content returned"
-                                logger.info(
-                                    "Validation successful but no content returned",
-                                )
-                        elif response.status in [401, 403, 400, 404]:
-                            # 2. 失败则尝试 api-key header (Azure/MIMO style)
+            session = await get_shared_http_session()
+            try:
+                async with session.post(
+                    target_url,
+                    headers=headers,
+                    json=data,
+                    timeout=aiohttp.ClientTimeout(total=600),
+                ) as response:
+                    logger.info(f"First request status: {response.status}")
+                    if response.status == 200:
+                        res_json = await response.json()
+                        if res_json.get("choices"):
+                            result = res_json["choices"][0]["message"]["content"]
                             logger.info(
-                                f"Standard auth failed ({response.status}), retrying with api-key header",
+                                f"Validation successful, got result: {result}",
                             )
-                            headers = {
-                                "api-key": api_key,
-                                "Content-Type": "application/json",
-                            }
-                            async with session.post(
-                                target_url,
-                                headers=headers,
-                                json=data,
-                            ) as response2:
-                                logger.info(
-                                    f"Second request status: {response2.status}",
-                                )
-                                if response2.status == 200:
-                                    res_json = await response2.json()
-                                    if res_json.get("choices"):
-                                        result = res_json["choices"][0]["message"][
-                                            "content"
-                                        ]
-                                        logger.info(
-                                            f"Validation successful via api-key, got result: {result}",
-                                        )
-                                    else:
-                                        result = "Connection successful (via api-key) but no content returned"
-                                        logger.info(
-                                            "Validation successful via api-key but no content returned",
-                                        )
-                                else:
-                                    text = await response2.text()
-                                    error_message = f"Validation failed: {response.status} (Bearer) / {response2.status} (api-key) - {text}"
-                                    logger.error(
-                                        f"Validation failed with api-key: {error_message}",
-                                    )
                         else:
-                            text = await response.text()
-                            error_message = (
-                                f"Validation failed: {response.status} - {text}"
+                            result = "Connection successful but no content returned"
+                            logger.info(
+                                "Validation successful but no content returned",
                             )
-                            logger.error(
-                                f"Validation failed with Bearer: {error_message}",
+                    elif response.status in [401, 403, 400, 404]:
+                        # 2. 失败则尝试 api-key header (Azure/MIMO style)
+                        logger.info(
+                            f"Standard auth failed ({response.status}), retrying with api-key header",
+                        )
+                        headers = {
+                            "api-key": api_key,
+                            "Content-Type": "application/json",
+                        }
+                        async with session.post(
+                            target_url,
+                            headers=headers,
+                            json=data,
+                            timeout=aiohttp.ClientTimeout(total=600),
+                        ) as response2:
+                            logger.info(
+                                f"Second request status: {response2.status}",
                             )
-                except aiohttp.ClientConnectionError as e:
-                    # Specific connection errors (DNS, connection refused, etc.)
-                    error_message = f"Connection error: Unable to connect to {target_url}. Please check the URL and network connection. Details: {type(e).__name__}: {e!s}"
-                    logger.error(
-                        f"ClientConnectionError to {target_url}: {type(e).__name__}: {e!s}",
-                        exc_info=True,
-                    )
-                except aiohttp.ClientResponseError as e:
-                    # HTTP response errors
-                    error_message = f"HTTP error: {e.status} - {e.message}"
-                    logger.error(
-                        f"ClientResponseError to {target_url}: {e.status} - {e.message}",
-                        exc_info=True,
-                    )
-                except aiohttp.ClientPayloadError as e:
-                    # Payload encoding/decoding errors
-                    error_message = (
-                        f"Payload error: Invalid response data. Details: {e!s}"
-                    )
-                    logger.error(
-                        f"ClientPayloadError to {target_url}: {e!s}",
-                        exc_info=True,
-                    )
-                except TimeoutError:
-                    # Timeout errors
-                    error_message = f"Timeout error: Request to {target_url} timed out after 600 seconds"
-                    logger.error(
-                        f"TimeoutError connecting to {target_url}",
-                        exc_info=True,
-                    )
-                except aiohttp.ClientError as e:
-                    # Other aiohttp client errors
-                    error_message = f"Client error: {type(e).__name__}: {e!s}"
-                    logger.error(
-                        f"ClientError to {target_url}: {type(e).__name__}: {e!s}",
-                        exc_info=True,
-                    )
-                except Exception as e:
-                    # Catch-all for unexpected errors
-                    error_message = f"Unexpected error: {type(e).__name__}: {e!s}"
-                    logger.error(
-                        f"Unexpected error to {target_url}: {type(e).__name__}: {e!s}",
-                        exc_info=True,
-                    )
+                            if response2.status == 200:
+                                res_json = await response2.json()
+                                if res_json.get("choices"):
+                                    result = res_json["choices"][0]["message"][
+                                        "content"
+                                    ]
+                                    logger.info(
+                                        f"Validation successful via api-key, got result: {result}",
+                                    )
+                                else:
+                                    result = "Connection successful (via api-key) but no content returned"
+                                    logger.info(
+                                        "Validation successful via api-key but no content returned",
+                                    )
+                            else:
+                                text = await response2.text()
+                                error_message = f"Validation failed: {response.status} (Bearer) / {response2.status} (api-key) - {text}"
+                                logger.error(
+                                    f"Validation failed with api-key: {error_message}",
+                                )
+                    else:
+                        text = await response.text()
+                        error_message = (
+                            f"Validation failed: {response.status} - {text}"
+                        )
+                        logger.error(
+                            f"Validation failed with Bearer: {error_message}",
+                        )
+            except aiohttp.ClientConnectionError as e:
+                # Specific connection errors (DNS, connection refused, etc.)
+                error_message = f"Connection error: Unable to connect to {target_url}. Please check the URL and network connection. Details: {type(e).__name__}: {e!s}"
+                logger.error(
+                    f"ClientConnectionError to {target_url}: {type(e).__name__}: {e!s}",
+                    exc_info=True,
+                )
+            except aiohttp.ClientResponseError as e:
+                # HTTP response errors
+                error_message = f"HTTP error: {e.status} - {e.message}"
+                logger.error(
+                    f"ClientResponseError to {target_url}: {e.status} - {e.message}",
+                    exc_info=True,
+                )
+            except aiohttp.ClientPayloadError as e:
+                # Payload encoding/decoding errors
+                error_message = (
+                    f"Payload error: Invalid response data. Details: {e!s}"
+                )
+                logger.error(
+                    f"ClientPayloadError to {target_url}: {e!s}",
+                    exc_info=True,
+                )
+            except TimeoutError:
+                # Timeout errors
+                error_message = f"Timeout error: Request to {target_url} timed out after 600 seconds"
+                logger.error(
+                    f"TimeoutError connecting to {target_url}",
+                    exc_info=True,
+                )
+            except aiohttp.ClientError as e:
+                # Other aiohttp client errors
+                error_message = f"Client error: {type(e).__name__}: {e!s}"
+                logger.error(
+                    f"ClientError to {target_url}: {type(e).__name__}: {e!s}",
+                    exc_info=True,
+                )
+            except Exception as e:
+                # Catch-all for unexpected errors
+                error_message = f"Unexpected error: {type(e).__name__}: {e!s}"
+                logger.error(
+                    f"Unexpected error to {target_url}: {type(e).__name__}: {e!s}",
+                    exc_info=True,
+                )
 
     except Exception as e:
         error_message = f"System error: {e!s}"

@@ -82,6 +82,23 @@ def _extract_model_key(
     return key
 
 
+def extract_model_key(
+    model: Any,
+    logger: logging.Logger | None = None,
+) -> str | None:
+    """Extract a usable API key from one model config.
+
+    Public single-model entrypoint shared by text generation and
+    transcription: handles encrypted keys, placeholder rejection, and
+    provider-prefix warnings. Returns None when no usable key exists.
+    """
+    return _extract_model_key(
+        model=model,
+        logger=logger or logging.getLogger(__name__),
+        provider_key_prefix={},
+    )
+
+
 def resolve_api_key_with_fallback(
     *,
     primary_model: Any,

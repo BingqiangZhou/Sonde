@@ -1,6 +1,6 @@
 """Tests for retryable HTTP status classification across the codebase."""
 
-from app.core.ai_client import is_retryable_http_status as unified_retryable
+from app.domains.ai.invocation import is_retryable_http_status as unified_retryable
 
 
 def test_unified_retryable_status_classification() -> None:
@@ -18,7 +18,7 @@ def test_unified_retryable_status_classification() -> None:
 
 def test_summary_uses_unified_retryable() -> None:
     """Summary service delegates to unified is_retryable_http_status."""
-    from app.core.ai_client import is_retryable_http_status
+    from app.domains.ai.invocation import is_retryable_http_status
 
     assert is_retryable_http_status(503) is True
     assert is_retryable_http_status(425) is True

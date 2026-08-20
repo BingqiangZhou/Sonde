@@ -14,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.core.exceptions import ValidationError
+from app.domains.ai.key_resolver import extract_model_key
 from app.domains.ai.models import ModelType
 from app.domains.ai.repositories import AIModelConfigRepository
 from app.domains.podcast.models import (
@@ -34,6 +35,15 @@ from .utils import _ffmpeg_probe_async, build_chunk_info, log_with_timestamp
 
 
 logger = logging.getLogger(__name__)
+
+
+def _system_env_key(provider: str | None) -> str | None:
+    """Env override for system transcription models, by provider."""
+    if provider == "siliconflow":
+        return settings.TRANSCRIPTION_API_KEY
+    if provider == "openai":
+        return settings.OPENAI_API_KEY
+    return None
 
 
 class PodcastTranscriptionService:
@@ -514,38 +524,13 @@ class PodcastTranscriptionService:
                 model_config = await ai_repo.get_by_id(config_db_id)
                 if model_config and model_config.is_active:
                     api_url = model_config.api_url
-                    # API Key -
-                    if (
-                        model_config.is_system
-                        and model_config.provider == "siliconflow"
-                    ):
-                        api_key = (
-                            getattr(settings, "TRANSCRIPTION_API_KEY", None)
-                            or model_config.api_key
-                        )
-                    elif model_config.is_system and model_config.provider == "openai":
-                        api_key = (
-                            getattr(settings, "OPENAI_API_KEY", None)
-                            or model_config.api_key
-                        )
-                    # ?- ?
-                    elif model_config.api_key_encrypted and model_config.api_key:
-                        from app.core.security import decrypt_data
-
-                        try:
-                            api_key = decrypt_data(model_config.api_key)
-                            logger.debug(
-                                "API key decrypted for model %s", model_config.name
-                            )
-                        except Exception as e:
-                            logger.error(
-                                "Failed to decrypt API key for model %s: %s",
-                                model_config.name,
-                                e,
-                            )
-                            api_key = model_config.api_key
-                    else:
-                        api_key = model_config.api_key
+                    # System models prefer the matching env key; stored keys
+                    # (possibly encrypted) resolve through the shared resolver.
+                    api_key = (
+                        _system_env_key(model_config.provider)
+                        or extract_model_key(model_config)
+                        or model_config.api_key
+                    )
 
             if not api_key:
                 logger.error(

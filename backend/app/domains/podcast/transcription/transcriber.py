@@ -9,6 +9,7 @@ from typing import Any
 import aiofiles
 import aiohttp
 
+from app.core.config import settings
 from app.core.utils import calculate_backoff
 
 from .models import AudioChunk
@@ -92,8 +93,8 @@ class SiliconFlowTranscriber:
             if not self.session:
                 raise RuntimeError("Transcriber must be used as async context manager")
 
-            max_retries = 3
-            base_delay = 2
+            max_retries = settings.AI_CLIENT_MAX_RETRIES
+            base_delay = settings.AI_CLIENT_BASE_DELAY
 
             for attempt in range(max_retries):
                 chunk_start = time.time()
