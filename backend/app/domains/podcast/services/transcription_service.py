@@ -644,17 +644,36 @@ class TranscriptionModelManager:
             raise ValidationError(str(exc)) from exc
 
 
-class PodcastTranscriptionRuntimeService(PodcastTranscriptionService):
-    """Transcription runtime that resolves models from DB configuration."""
+class PodcastTranscriptionRuntimeService:
+    """Transcription runtime that resolves models from DB configuration.
+
+    Composes the engine (``PodcastTranscriptionService``) instead of
+    inheriting it: the engine owns task execution and file handling, the
+    runtime owns model resolution, reuse/redispatch policy and enqueueing.
+    """
 
     def __init__(
         self,
         db: AsyncSession,
         task_orchestration_service_factory=None,
+        *,
+        engine: PodcastTranscriptionService | None = None,
     ):
-        super().__init__(db)
+        self.db = db
+        self.engine = engine or PodcastTranscriptionService(db)
         self.model_manager = TranscriptionModelManager(db)
         self._task_orchestration_service_factory = task_orchestration_service_factory
+
+    async def execute_transcription_task(
+        self,
+        task_id: int,
+        session,
+        config_db_id: int | None = None,
+    ):
+        """Delegate task execution to the composed engine."""
+        return await self.engine.execute_transcription_task(
+            task_id, session, config_db_id
+        )
 
     def _task_orchestration_service(self):
         factory = self._task_orchestration_service_factory
@@ -707,7 +726,9 @@ class PodcastTranscriptionRuntimeService(PodcastTranscriptionService):
                 return {"task": existing_task, "action": "redispatched_pending"}
 
             if status_value in {"failed", "cancelled"}:
-                temp_episode_dir = os.path.join(self.temp_dir, f"episode_{episode_id}")
+                temp_episode_dir = os.path.join(
+                    self.engine.temp_dir, f"episode_{episode_id}"
+                )
                 has_temp_files = await asyncio.to_thread(
                     os.path.exists, temp_episode_dir
                 ) and await asyncio.to_thread(
@@ -741,7 +762,7 @@ class PodcastTranscriptionRuntimeService(PodcastTranscriptionService):
                     return {"task": existing_task, "action": "locked_by_other_task"}
 
         if force:
-            task, config_db_id = await super().create_transcription_task_record(
+            task, config_db_id = await self.engine.create_transcription_task_record(
                 episode_id,
                 model_name,
                 force,
