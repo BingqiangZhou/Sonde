@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from typing import Any
 
 from celery import Celery
 from celery.schedules import crontab
-from celery.signals import worker_process_shutdown
+from celery.signals import worker_process_init, worker_process_shutdown
 
 from app.core.config import get_settings
 
@@ -64,6 +65,10 @@ def create_celery_app() -> Celery:
         task_track_started=True,
         task_time_limit=30 * 60,
         task_soft_time_limit=25 * 60,
+        # Tasks are idempotent (redis dispatch claims + upserts): losing a
+        # worker mid-task must requeue instead of silently dropping the job.
+        task_acks_late=True,
+        task_reject_on_worker_lost=True,
         worker_prefetch_multiplier=settings.CELERY_WORKER_PREFETCH_MULTIPLIER,
         worker_max_tasks_per_child=settings.CELERY_WORKER_MAX_TASKS_PER_CHILD,
         beat_schedule=_build_beat_schedule(),
@@ -81,7 +86,51 @@ def create_celery_app() -> Celery:
 # Worker lifecycle hooks
 # ---------------------------------------------------------------------------
 
+async def _reset_stale_transcription_tasks_on_boot() -> None:
+    """Reset stale transcription tasks on a throwaway event loop.
+
+    The shared DB engine is loop-bound; this coroutine runs on its own loop
+    inside ``worker_process_init`` and must fully dispose that engine before
+    returning so the persistent worker loop recreates it lazily.
+    """
+    from app.core.database import close_db, get_async_session_factory
+    from app.core.redis import close_shared_redis, get_shared_redis
+    from app.domains.podcast.services.transcription_service import (
+        TranscriptionWorkflowService,
+    )
+
+    redis = get_shared_redis()
+    acquired = await redis.acquire_lock(
+        "startup:reset-stale-transcription-tasks", expire=300
+    )
+    if not acquired:
+        _logger.info("Skipped worker-boot stale reset; another holder owns the lock")
+        return
+    try:
+        factory = get_async_session_factory()
+        async with factory() as session:
+            async with asyncio.timeout(120):
+                await TranscriptionWorkflowService(session).reset_stale_tasks()
+        _logger.info("Reset stale transcription tasks during worker boot")
+    finally:
+        await redis.release_lock("startup:reset-stale-transcription-tasks")
+        await close_db()
+        await close_shared_redis()
+
+
 try:
+
+    @worker_process_init.connect
+    def _on_worker_process_init(**kwargs):  # type: ignore[misc]
+        """Mark transcription tasks orphaned by a crashed worker as failed.
+
+        The API-process lifespan covers deploys; this hook covers worker-only
+        restarts, so stale in-flight tasks don't wait for the next API boot.
+        """
+        try:
+            asyncio.run(_reset_stale_transcription_tasks_on_boot())
+        except Exception:
+            _logger.warning("Worker-boot stale task reset failed", exc_info=True)
 
     @worker_process_shutdown.connect
     def _on_worker_process_shutdown(**kwargs):  # type: ignore[misc]

@@ -9,6 +9,9 @@ wheels/
 # Virtual environments
 .venv
 
+# Secrets / environment
+.env
+
 # Local storage and temporary files
 storage/
 temp/

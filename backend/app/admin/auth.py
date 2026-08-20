@@ -43,6 +43,19 @@ class AdminAuthRequired:
                 detail="Invalid API key",
             )
 
+        # Cookie-based auth: CSRF defence — browsers always send Origin on
+        # cross-site POSTs; require it to match the request host when present.
+        # (Non-browser clients without a browser-issued cookie are unaffected.)
+        origin = request.headers.get("Origin")
+        if origin:
+            origin_host = origin.split("://", 1)[-1].split("/", 1)[0]
+            request_host = request.headers.get("Host", "")
+            if origin_host != request_host:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Cross-origin admin session usage is not allowed",
+                )
+
         # Cookie-based auth: compare HMAC hash
         if admin_session is not None:
             expected_hash = _compute_session_hash(settings.API_KEY)

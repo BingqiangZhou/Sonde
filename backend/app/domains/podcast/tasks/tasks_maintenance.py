@@ -48,7 +48,9 @@ async def process_opml_subscription_episodes_handler(
 def cleanup_old_playback_states(self):
     try:
         return run_async(_cleanup_old_playback_states_async())
-    except Exception:
+    except Exception as exc:
+        if self.request.retries < self.max_retries:
+            raise self.retry(countdown=60 * (2**self.request.retries)) from exc
         raise
 
 
@@ -61,7 +63,9 @@ async def _cleanup_old_playback_states_async():
 def cleanup_old_transcription_temp_files(self, days: int = 7):
     try:
         return run_async(_cleanup_old_transcription_temp_files_async(days=days))
-    except Exception:
+    except Exception as exc:
+        if self.request.retries < self.max_retries:
+            raise self.retry(countdown=60 * (2**self.request.retries)) from exc
         raise
 
 
@@ -72,10 +76,7 @@ async def _cleanup_old_transcription_temp_files_async(days: int):
 
 @celery_app.task
 def auto_cleanup_cache_files():
-    try:
-        return run_async(_auto_cleanup_cache_files_async())
-    except Exception:
-        raise
+    return run_async(_auto_cleanup_cache_files_async())
 
 
 async def _auto_cleanup_cache_files_async():

@@ -6,11 +6,13 @@
 #   2. 根据需要修.env 配置 / Modify .env as needed
 #   3. 启动服务 / Start services: docker compose up -d
 #
-# 启动的服/ Started Services (5):
+# 启动的服/ Started Services (7):
 #   - PostgreSQL (数据/ Database)
 #   - Redis (缓存 / Cache)
-#   - Backend API (后端服务)
-#   - Celery Worker + Beat (后台任务处理+调度 / Background tasks + scheduler)
+#   - Backend API (后端服务, 独占执行迁移 / owns schema migrations)
+#   - Celery Worker (后台任务处理 / Background tasks)
+#   - Celery Beat (调度器, 独立单实例 / standalone scheduler)
+#   - Postgres Backup (每日 pg_dump 侧车 / daily backup sidecar)
 #   - Nginx (反向代理 / Reverse proxy)
 
 # Shared logging configuration for all services
@@ -111,6 +113,8 @@ services:
       # Timezone for log timestamps / 日志时区
       - TZ=${TZ:-Asia/Shanghai}
       - PYTHONUTF8=1
+      # Only this container runs alembic migrations (avoids concurrent-upgrade races)
+      - RUN_MIGRATIONS=1
     ports:
       - "${BACKEND_PUBLISH_PORT:-127.0.0.1:8000}:8000"
     volumes:
@@ -147,7 +151,7 @@ services:
     logging: *default-logging
 
   # =============================================================================
-  # Celery Worker + Beat (merged: worker + scheduler)
+  # Celery Worker (background task execution; beat split out below)
   # =============================================================================
   celery_worker:
     build:
@@ -174,6 +178,9 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      # Migrations are owned by backend; wait for its health so the schema is settled
+      backend:
+        condition: service_healthy
     networks:
       - app_network
     restart: always
@@ -185,7 +192,97 @@ services:
         reservations:
           cpus: '0.25'
           memory: 128M
-    command: celery -A app.core.celery_app:celery_app worker -B --loglevel=${CELERY_LOG_LEVEL:-info} --concurrency=1 -Q default
+    command: celery -A app.core.celery_app:celery_app worker --loglevel=${CELERY_LOG_LEVEL:-info} --concurrency=1 -Q default
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A app.core.celery_app:celery_app inspect ping --destination celery@$$HOSTNAME | grep -q pong"]
+      interval: 60s
+      timeout: 15s
+      retries: 3
+      start_period: 90s
+    logging: *default-logging
+
+  # =============================================================================
+  # Celery Beat (standalone scheduler — single instance, safe to scale worker)
+  # =============================================================================
+  celery_beat:
+    build:
+      context: ${BACKEND_SRC_DIR:-../backend}
+      dockerfile: Dockerfile
+    container_name: ${PROJECT_NAME:-personal_ai}_celery_beat
+    env_file:
+      - ${BACKEND_ENV_FILE:-../backend/.env}
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-admin}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-personal_ai}
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379
+      - CELERY_BROKER_URL=redis://:${REDIS_PASSWORD}@redis:6379/1
+      - CELERY_RESULT_BACKEND=redis://:${REDIS_PASSWORD}@redis:6379/2
+      - TZ=${TZ:-Asia/Shanghai}
+      - PYTHONUTF8=1
+    volumes:
+      - backend_data:/app/data
+      - ${LOG_DIR:-./logs}:/app/logs
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+    networks:
+      - app_network
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '0.3'
+          memory: 192M
+        reservations:
+          cpus: '0.05'
+          memory: 64M
+    command: celery -A app.core.celery_app:celery_app beat --loglevel=${CELERY_LOG_LEVEL:-info}
+    logging: *default-logging
+
+  # =============================================================================
+  # Postgres Backup (daily pg_dump sidecar with retention)
+  # =============================================================================
+  postgres_backup:
+    image: postgres:15-alpine
+    container_name: ${PROJECT_NAME:-personal_ai}_postgres_backup
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-admin}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB:-personal_ai}
+      - PGPASSWORD=${POSTGRES_PASSWORD}
+      - BACKUP_RETENTION_DAYS=${BACKUP_RETENTION_DAYS:-7}
+    volumes:
+      - ${BACKUP_DIR:-./backups}:/backups
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - app_network
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '0.3'
+          memory: 128M
+        reservations:
+          cpus: '0.05'
+          memory: 32M
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        echo "=== Postgres backup sidecar: daily pg_dump, retention $${BACKUP_RETENTION_DAYS:-7}d ==="
+        while true; do
+          ts=$$(date +%Y%m%d_%H%M%S)
+          echo "[backup] dumping $${POSTGRES_DB} to /backups/db_$${ts}.dump"
+          pg_dump -h postgres -U "$${POSTGRES_USER:-admin}" -Fc -f "/backups/db_$${ts}.dump" "$${POSTGRES_DB}" \
+            || echo "[backup] pg_dump FAILED (will retry next cycle)"
+          find /backups -name 'db_*.dump' -mtime +"$${BACKUP_RETENTION_DAYS:-7}" -delete 2>/dev/null || true
+          sleep 86400
+        done
     logging: *default-logging
 
   # =============================================================================

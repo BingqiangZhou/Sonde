@@ -94,7 +94,9 @@ async def login(
 
 
 @router.post("/refresh", response_model=AuthResponse)
+@limiter.limit("10/minute")
 async def refresh(
+    request: Request,
     payload: RefreshRequest,
     service: AuthService = Depends(get_auth_service),
 ) -> AuthResponse:
@@ -103,8 +105,12 @@ async def refresh(
 
 
 @router.post("/logout")
-async def logout(payload: RefreshRequest | None = None) -> dict:
-    """Stateless JWTs: logout is client-side token clearing, nothing to revoke."""
+async def logout(
+    payload: RefreshRequest | None = None,
+    service: AuthService = Depends(get_auth_service),
+) -> dict:
+    """Revoke the presented refresh token; clearing the rest is client-side."""
+    await service.logout(payload.refresh_token if payload else None)
     return {"detail": "Logged out"}
 
 
