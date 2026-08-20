@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.auth import get_db_session_dependency, require_api_key
 from app.domains.podcast.repositories.content_repository import SubscriptionRepository
+from app.domains.podcast.repositories.podcast_repository import PodcastRepository
 from app.domains.podcast.services.daily_report_service import DailyReportService
 from app.domains.podcast.services.episode_service import (
     PodcastEpisodeService,
@@ -32,86 +33,56 @@ from app.domains.podcast.tasks.task_orchestration import (
 )
 
 
-# Cached repository classes (populated on first call)
-_cached_repos: dict | None = None
-
-
-def _get_repositories():
-    """Lazy import repositories to avoid circular dependencies.
-
-    Results are cached after the first call to avoid repeated imports.
-    """
-    global _cached_repos
-    if _cached_repos is not None:
-        return _cached_repos
-    from app.domains.podcast.repositories import PodcastRepository
-
-    _cached_repos = {
-        "episode": PodcastRepository,
-        "playback": PodcastRepository,
-        "queue": PodcastRepository,
-        "search": PodcastRepository,
-        "stats": PodcastRepository,
-        "subscription": PodcastRepository,
-        "summary": PodcastRepository,
-    }
-    return _cached_repos
-
-
+# Podcast services legitimately cross aggregates (episode listing reads
+# playback state, summary writes read episodes), so they share the composed
+# PodcastRepository rather than narrow per-aggregate instances.
 def get_podcast_subscription_repository(
     db: AsyncSession = Depends(get_db_session_dependency),
-):
-    """Provide the podcast subscription/feed repository."""
-    repos = _get_repositories()
-    return repos["subscription"](db)
+) -> PodcastRepository:
+    """Provide the composed podcast repository (subscription aggregate included)."""
+    return PodcastRepository(db)
 
 
 def get_podcast_episode_repository(
     db: AsyncSession = Depends(get_db_session_dependency),
-):
-    """Provide the podcast episode-query repository."""
-    repos = _get_repositories()
-    return repos["episode"](db)
+) -> PodcastRepository:
+    """Provide the composed podcast repository (episode aggregate included)."""
+    return PodcastRepository(db)
 
 
 def get_podcast_playback_repository(
     db: AsyncSession = Depends(get_db_session_dependency),
-):
-    """Provide the podcast playback repository."""
-    repos = _get_repositories()
-    return repos["playback"](db)
+) -> PodcastRepository:
+    """Provide the composed podcast repository (playback aggregate included)."""
+    return PodcastRepository(db)
 
 
 def get_podcast_queue_repository(
     db: AsyncSession = Depends(get_db_session_dependency),
-):
-    """Provide the podcast queue repository."""
-    repos = _get_repositories()
-    return repos["queue"](db)
+) -> PodcastRepository:
+    """Provide the composed podcast repository (queue aggregate included)."""
+    return PodcastRepository(db)
 
 
 def get_podcast_search_repository(
     db: AsyncSession = Depends(get_db_session_dependency),
-):
-    """Provide the podcast search repository."""
-    repos = _get_repositories()
-    return repos["search"](db)
+) -> PodcastRepository:
+    """Provide the composed podcast repository (search aggregate included)."""
+    return PodcastRepository(db)
 
 
 def get_podcast_stats_repository(
     db: AsyncSession = Depends(get_db_session_dependency),
-):
-    """Provide the podcast stats repository."""
-    repos = _get_repositories()
-    return repos["stats"](db)
+) -> PodcastRepository:
+    """Provide the composed podcast repository (stats aggregate included)."""
+    return PodcastRepository(db)
 
 
 def get_podcast_summary_repository(
     db: AsyncSession = Depends(get_db_session_dependency),
-):
-    """Provide the podcast summary/transcription repository."""
-    repos = _get_repositories()
-    return repos["summary"](db)
+) -> PodcastRepository:
+    """Provide the composed podcast repository (summary aggregate included)."""
+    return PodcastRepository(db)
 
 
 def get_podcast_parser(

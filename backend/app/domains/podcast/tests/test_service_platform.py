@@ -77,17 +77,19 @@ class TestPodcastSubscriptionPlatform:
 
         mock_parser.fetch_and_parse_feed.return_value = (True, mock_feed, None)
         mock_repo.get_user_subscriptions.return_value = []
-        mock_repo.create_or_update_episodes_batch.return_value = ([], [])
-
         mock_subscription = Mock()
         mock_subscription.id = 1
         mock_subscription.config = {"platform": PodcastPlatform.XIMALAYA}
-        mock_repo.create_or_update_subscription.return_value = mock_subscription
+        mock_repo.add_subscription_with_episodes.return_value = (
+            mock_subscription,
+            [],
+            [],
+        )
 
         subscription, episodes = await service.add_subscription(feed_url)
 
         # Verify platform was passed to repository
-        call_args = mock_repo.create_or_update_subscription.call_args
+        call_args = mock_repo.add_subscription_with_episodes.call_args
         metadata = call_args.kwargs.get("metadata") or call_args[0][5]
         assert metadata["platform"] == PodcastPlatform.XIMALAYA
 
@@ -104,17 +106,19 @@ class TestPodcastSubscriptionPlatform:
 
         mock_parser.fetch_and_parse_feed.return_value = (True, mock_feed, None)
         mock_repo.get_user_subscriptions.return_value = []
-        mock_repo.create_or_update_episodes_batch.return_value = ([], [])
-
         mock_subscription = Mock()
         mock_subscription.id = 1
         mock_subscription.config = {"platform": PodcastPlatform.XIAOYUZHOU}
-        mock_repo.create_or_update_subscription.return_value = mock_subscription
+        mock_repo.add_subscription_with_episodes.return_value = (
+            mock_subscription,
+            [],
+            [],
+        )
 
         subscription, episodes = await service.add_subscription(feed_url)
 
         # Verify platform was passed to repository
-        call_args = mock_repo.create_or_update_subscription.call_args
+        call_args = mock_repo.add_subscription_with_episodes.call_args
         metadata = call_args.kwargs.get("metadata") or call_args[0][5]
         assert metadata["platform"] == PodcastPlatform.XIAOYUZHOU
 
@@ -131,17 +135,19 @@ class TestPodcastSubscriptionPlatform:
 
         mock_parser.fetch_and_parse_feed.return_value = (True, mock_feed, None)
         mock_repo.get_user_subscriptions.return_value = []
-        mock_repo.create_or_update_episodes_batch.return_value = ([], [])
-
         mock_subscription = Mock()
         mock_subscription.id = 1
         mock_subscription.config = {"platform": PodcastPlatform.GENERIC}
-        mock_repo.create_or_update_subscription.return_value = mock_subscription
+        mock_repo.add_subscription_with_episodes.return_value = (
+            mock_subscription,
+            [],
+            [],
+        )
 
         subscription, episodes = await service.add_subscription(feed_url)
 
         # Verify platform was passed to repository
-        call_args = mock_repo.create_or_update_subscription.call_args
+        call_args = mock_repo.add_subscription_with_episodes.call_args
         metadata = call_args.kwargs.get("metadata") or call_args[0][5]
         assert metadata["platform"] == PodcastPlatform.GENERIC
 
@@ -158,15 +164,12 @@ class TestPodcastSubscriptionPlatform:
 
         mock_parser.fetch_and_parse_feed.return_value = (True, mock_feed, None)
         mock_repo.get_user_subscriptions.return_value = []
-        mock_repo.create_or_update_episodes_batch.return_value = ([], [])
-
-        mock_subscription = Mock()
-        mock_repo.create_or_update_subscription.return_value = mock_subscription
+        mock_repo.add_subscription_with_episodes.return_value = (Mock(), [], [])
 
         await service.add_subscription(feed_url)
 
         # Verify all metadata fields including platform
-        call_args = mock_repo.create_or_update_subscription.call_args
+        call_args = mock_repo.add_subscription_with_episodes.call_args
         metadata = call_args.kwargs.get("metadata") or call_args[0][5]
 
         assert "platform" in metadata

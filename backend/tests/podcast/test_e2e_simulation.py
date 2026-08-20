@@ -35,8 +35,7 @@ async def test_subscription_service_mocked_add_subscription() -> None:
         repo.get_user_subscriptions.return_value = []
         sub = MagicMock()
         sub.id = 1
-        repo.create_or_update_subscription.return_value = sub
-        repo.create_or_update_episodes_batch.return_value = ([], [])
+        repo.add_subscription_with_episodes.return_value = (sub, [], [])
         mock_repo_cls.return_value = repo
 
         parser = AsyncMock()

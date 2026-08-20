@@ -99,7 +99,7 @@ ignore = [
 [tool.ruff.lint.per-file-ignores]
 # ORM model aliases resolved at runtime via _get_subscription_models() to
 # maintain domain boundaries; CamelCase matches the SQLAlchemy model convention.
-"app/domains/podcast/repositories/podcast_repository.py" = ["N806"]
+"app/domains/podcast/repositories/*" = ["N806"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["app"]

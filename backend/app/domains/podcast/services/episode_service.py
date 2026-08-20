@@ -595,16 +595,7 @@ class PodcastSubscriptionService:
             "platform": feed.platform,
         }
 
-        subscription = await self.repo.create_or_update_subscription(
-            self.user_id,
-            feed_url,
-            feed.title,
-            feed.description,
-            None,  # custom_name
-            metadata=metadata,
-        )
-
-        # 4. Save episodes in one transaction.
+        # 3+4. Create subscription and episodes in one transaction.
         episodes_payload = [
             self._build_episode_payload(
                 episode=episode,
@@ -613,8 +604,12 @@ class PodcastSubscriptionService:
             )
             for episode in feed.episodes
         ]
-        _, new_episodes = await self.repo.create_or_update_episodes_batch(
-            subscription_id=subscription.id,
+        subscription, _, new_episodes = await self.repo.add_subscription_with_episodes(
+            user_id=self.user_id,
+            feed_url=feed_url,
+            title=feed.title,
+            description=feed.description,
+            metadata=metadata,
             episodes_data=episodes_payload,
         )
 
