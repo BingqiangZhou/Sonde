@@ -107,6 +107,9 @@ class EpisodeRepository(BasePodcastRepository):
         processed_episodes: list[PodcastEpisode] = []
         new_episodes: list[PodcastEpisode] = []
         now = datetime.now(UTC)
+        # item_link has a DB-level unique constraint; feeds sometimes repeat
+        # an item — keep only the first occurrence within one batch.
+        seen_item_links: set[str] = set()
 
         for data in episodes_data:
             title = data.get("title") or "Untitled"
@@ -118,6 +121,11 @@ class EpisodeRepository(BasePodcastRepository):
             metadata = data.get("metadata") or {}
             published_at_raw = data.get("published_at") or now
             published_at = sanitize_published_date(published_at_raw)
+
+            if item_link:
+                if item_link in seen_item_links:
+                    continue
+                seen_item_links.add(item_link)
 
             episode = existing_by_item_link.get(item_link) if item_link else None
             if episode:

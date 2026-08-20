@@ -69,6 +69,38 @@ async def verify_critical_services() -> dict[str, bool]:
     return checks
 
 
+async def ensure_single_user_identity() -> None:
+    """Guarantee the API-key operator identity (user id = SINGLE_USER_ID).
+
+    API-key/admin auth maps every request to the fixed single-user id; on a
+    fresh database (or one where that user was removed) foreign keys on
+    user-owned rows would reject all writes. Idempotently insert the system
+    user when missing.
+    """
+    from sqlalchemy import select
+
+    from app.core.auth import SINGLE_USER_ID
+    from app.core.database import get_async_session_factory
+    from app.domains.auth.models import User
+
+    session_factory = get_async_session_factory()
+    async with session_factory() as session:
+        existing = await session.scalar(select(User).where(User.id == SINGLE_USER_ID))
+        if existing is not None:
+            return
+        session.add(
+            User(
+                id=SINGLE_USER_ID,
+                email="system@sonde.local",
+                username="sonde_system",
+                hashed_password="!",
+                is_verified=True,
+            )
+        )
+        await session.commit()
+        logger.info("Created system user id=%s for API-key mode", SINGLE_USER_ID)
+
+
 @asynccontextmanager
 async def application_lifespan(app: FastAPI):
     """Manage startup and shutdown lifecycle hooks."""
@@ -103,6 +135,11 @@ async def application_lifespan(app: FastAPI):
 
     # Initialize database
     await init_db()
+
+    try:
+        await ensure_single_user_identity()
+    except Exception as exc:
+        logger.warning("Could not ensure single-user identity: %s", exc)
 
     # Verify critical services are healthy
     logger.info("Verifying critical services health...")

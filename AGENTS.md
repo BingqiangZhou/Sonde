@@ -9,7 +9,7 @@
 - `backend/alembic/`: database migrations (25 migrations).
 - `backend/tests/` and `backend/app/**/tests/`: backend test suites.
 - `frontend/`: Flutter app with feature modules in `frontend/lib/` and tests in `frontend/test/`.
-- `docker/`: Docker Compose files and deployment assets (5 services: postgres, redis, backend, celery_worker, nginx).
+- `docker/`: Docker Compose files and deployment assets (7 services: postgres, redis, backend, celery_worker, celery_beat, postgres_backup, nginx; only backend runs alembic migrations).
 - `docs/`: detailed design notes.
 
 ## Build, Test, and Development Commands
@@ -49,7 +49,7 @@
 - Use the health check once running: `curl http://localhost:8000/api/v1/health`.
 
 ## Configuration & Requirements Notes
-- All API routes live under `/api/v1/` (including `/api/v1/` root info and `/api/v1/docs` Swagger UI); errors are bilingual: `{message_en, message_zz}`.
+- All API routes live under `/api/v1/` (including `/api/v1/` root info and `/api/v1/docs` Swagger UI); errors carry bilingual fields `{message_en, message_zh}` on BaseCustomError responses (overridable via `details`).
 - Rate limiting: 60 req/min, 1000 req/hour.
 - Health: `GET /api/v1/health` (liveness), `GET /api/v1/health/ready` (readiness).
 
