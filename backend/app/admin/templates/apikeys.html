@@ -55,15 +55,6 @@
                                 <span class="ml-auto text-xs text-gray-500">推荐</span>
                             </button>
 
-                            <!-- Plaintext Export -->
-                            <button type="button" onclick="showPlaintextExportConfirm()"
-                                    class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center">
-                                <svg class="w-4 h-4 mr-3 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
-                                </svg>
-                                明文导出
-                                <span class="ml-auto text-xs text-red-500">不安全</span>
-                            </button>
                         </div>
                     </div>
                 </div>
@@ -665,67 +656,6 @@
     </div>
 </div>
 
-<!-- Plaintext Export Confirmation Modal -->
-<div id="plaintext-export-modal" class="hidden fixed z-10 inset-0 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" onclick="closePlaintextExportModal()"></div>
-        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-        <div class="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
-            <div>
-                <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">
-                    确认明文导出
-                </h3>
-                <div class="mt-4">
-                    <div class="bg-red-50 border-l-4 border-red-400 p-4">
-                        <div class="flex">
-                            <div class="flex-shrink-0">
-                                <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fill-rule="evenodd" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" clip-rule="evenodd"/>
-                                </svg>
-                            </div>
-                            <div class="ml-3">
-                                <h3 class="text-sm font-medium text-red-800">安全警告</h3>
-                                <div class="mt-2 text-sm text-red-700">
-                                    <p class="font-semibold">您即将以明文格式导出 API Keys！</p>
-                                    <ul class="list-disc list-inside mt-2 space-y-1">
-                                        <li>导出的 JSON 文件将包含未加密的 API Keys</li>
-                                        <li>任何人打开文件都能看到完整的 API Keys</li>
-                                        <li>仅在可信的内网环境使用此模式</li>
-                                        <li>导出后请妥善保管文件，不要通过不安全的渠道传输</li>
-                                    </ul>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="mt-4">
-                        <label class="flex items-center">
-                            <input type="checkbox" id="plaintext-confirm-checkbox"
-                                   class="rounded border-gray-300 text-red-600 shadow-sm focus:border-red-300 focus:ring focus:ring-red-200 focus:ring-opacity-50">
-                            <span class="ml-2 text-sm text-gray-700">我了解风险并确认要明文导出</span>
-                        </label>
-                    </div>
-
-                    <!-- Result Message -->
-                    <div id="export-plaintext-result" class="hidden rounded-md p-4"></div>
-                </div>
-                <div class="mt-5 sm:mt-6 sm:grid sm:grid-cols-2 sm:gap-3 sm:grid-flow-row-dense">
-                    <button type="button" onclick="submitPlaintextExport()"
-                            id="export-plaintext-btn"
-                            disabled
-                            class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:col-start-2 sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed">
-                        确认导出
-                    </button>
-                    <button type="button" onclick="closePlaintextExportModal()"
-                            class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:col-start-1 sm:col-start-2 sm:mt-0 sm:text-sm">
-                        取消
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
 <!-- Import Password Modal (for encrypted exports) -->
 <div id="import-password-modal" class="hidden fixed z-10 inset-0 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
     <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
@@ -1131,17 +1061,6 @@ function closeEncryptedExportModal() {
     document.getElementById('encrypted-export-modal').classList.add('hidden');
 }
 
-// Show plaintext export confirmation
-function showPlaintextExportConfirm() {
-    document.getElementById('export-dropdown').classList.add('hidden');
-    document.getElementById('plaintext-confirm-checkbox').checked = false;
-    document.getElementById('export-plaintext-btn').disabled = true;
-    document.getElementById('export-plaintext-result').classList.add('hidden');
-    document.getElementById('plaintext-export-modal').classList.remove('hidden');
-}
-
-function closePlaintextExportModal() {
-    document.getElementById('plaintext-export-modal').classList.add('hidden');
 }
 
 // Password strength checker and keyboard shortcuts
@@ -1153,29 +1072,10 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    const confirmCheckbox = document.getElementById('plaintext-confirm-checkbox');
-    if (confirmCheckbox) {
-        confirmCheckbox.addEventListener('change', function() {
-            document.getElementById('export-plaintext-btn').disabled = !this.checked;
-        });
-    }
-
     // Global keyboard shortcuts for modals
     document.addEventListener('keydown', function(event) {
         // Handle Enter key for various modals
         if (event.key === 'Enter') {
-            // Plaintext export modal - if checkbox is checked, trigger export
-            const plaintextModal = document.getElementById('plaintext-export-modal');
-            if (plaintextModal && !plaintextModal.classList.contains('hidden')) {
-                const checkbox = document.getElementById('plaintext-confirm-checkbox');
-                const btn = document.getElementById('export-plaintext-btn');
-                if (checkbox && checkbox.checked && btn && !btn.disabled) {
-                    event.preventDefault();
-                    submitPlaintextExport();
-                }
-                return;
-            }
-
             // Import password modal - trigger continue
             const importPasswordModal = document.getElementById('import-password-modal');
             if (importPasswordModal && !importPasswordModal.classList.contains('hidden')) {
@@ -1202,7 +1102,6 @@ document.addEventListener('DOMContentLoaded', function() {
         // Handle Escape key to close modals
         if (event.key === 'Escape') {
             closeEncryptedExportModal();
-            closePlaintextExportModal();
             closeImportPasswordModal();
         }
     });
@@ -1344,88 +1243,6 @@ async function submitEncryptedExport() {
 
 function showExportEncryptedResult(success, message) {
     const resultDiv = document.getElementById('export-encrypted-result');
-    resultDiv.classList.remove('hidden', 'bg-red-50', 'bg-green-50');
-
-    if (success) {
-        resultDiv.classList.add('bg-green-50');
-        resultDiv.innerHTML = `
-            <div class="flex">
-                <svg class="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-                </svg>
-                <p class="text-sm text-green-800 ml-3">${message}</p>
-            </div>
-        `;
-    } else {
-        resultDiv.classList.add('bg-red-50');
-        resultDiv.innerHTML = `
-            <div class="flex">
-                <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
-                </svg>
-                <p class="text-sm text-red-800 ml-3">${message}</p>
-            </div>
-        `;
-    }
-}
-
-// Submit plaintext export
-async function submitPlaintextExport() {
-    const btn = document.getElementById('export-plaintext-btn');
-    const originalText = btn.textContent;
-    btn.disabled = true;
-    btn.textContent = '导出中...';
-
-    try {
-        const response = await fetch('/api/v1/admin/api/apikeys/export/json', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                mode: 'plaintext'
-            })
-        });
-
-        if (response.ok) {
-            const contentDisposition = response.headers.get('Content-Disposition');
-            let filename = 'apikeys_export_PLAINTEXT.json';
-            if (contentDisposition) {
-                const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
-                if (filenameMatch && filenameMatch[1]) {
-                    filename = filenameMatch[1].replace(/['"]/g, '');
-                }
-            }
-
-            const blob = await response.blob();
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = filename;
-            document.body.appendChild(a);
-            a.click();
-            window.URL.revokeObjectURL(url);
-            document.body.removeChild(a);
-
-            showExportPlaintextResult(true, '导出成功！文件名包含 PLAINTEXT 标记，请妥善保管。');
-            setTimeout(() => {
-                closePlaintextExportModal();
-            }, 2000);
-        } else {
-            const error = await response.json();
-            showExportPlaintextResult(false, error.detail || '导出失败');
-        }
-    } catch (error) {
-        console.error('Export error:', error);
-        showExportPlaintextResult(false, '导出失败: ' + error.message);
-    } finally {
-        btn.disabled = false;
-        btn.textContent = originalText;
-    }
-}
-
-function showExportPlaintextResult(success, message) {
-    const resultDiv = document.getElementById('export-plaintext-result');
     resultDiv.classList.remove('hidden', 'bg-red-50', 'bg-green-50');
 
     if (success) {

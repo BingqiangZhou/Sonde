@@ -87,7 +87,7 @@ async def test_apikey(
     except Exception as exc:
         logger.error("API key test error: %s", exc)
         return json_payload(
-            {"success": False, "message": f"测试失败: {exc}"},
+            {"success": False, "message": "测试失败，请检查模型配置与网络后重试"},
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
 
@@ -263,9 +263,10 @@ async def export_apikeys_json(
         )
     except Exception as exc:
         logger.error("JSON export error: %s", exc)
+        logger.exception("JSON export failed")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to export JSON: {exc}",
+            detail="Failed to export JSON",
         ) from exc
 
 
@@ -286,7 +287,8 @@ async def import_apikeys_json(
         return json_payload(payload, status_code=status_code)
     except Exception as exc:
         logger.error("JSON import error: %s", exc)
+        logger.exception("JSON import failed")
         return json_payload(
-            {"success": False, "message": f"Import failed: {exc}"},
+            {"success": False, "message": "Import failed, see server logs"},
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )

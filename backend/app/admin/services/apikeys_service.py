@@ -1,9 +1,14 @@
 """Admin service helpers for API key management pages."""
 
+import base64
 import json
 import logging
+import os
 from datetime import UTC, datetime
 
+from cryptography.fernet import Fernet, InvalidToken
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -15,6 +20,22 @@ from app.domains.ai.models import AIModelConfig, ModelType
 
 
 logger = logging.getLogger(__name__)
+
+# Export-file passphrase KDF parameters (version 2.1 encrypted exports).
+_EXPORT_KDF_ITERATIONS = 200_000
+_EXPORT_MIN_PASSWORD_LENGTH = 8
+
+
+def _derive_export_fernet(password: str, salt: bytes) -> Fernet:
+    """Derive a Fernet cipher from the user's export passphrase."""
+    kdf = PBKDF2HMAC(
+        algorithm=hashes.SHA256(),
+        length=32,
+        salt=salt,
+        iterations=_EXPORT_KDF_ITERATIONS,
+    )
+    key = base64.urlsafe_b64encode(kdf.derive(password.encode("utf-8")))
+    return Fernet(key)
 
 
 class AdminApiKeysService:
@@ -314,10 +335,19 @@ class AdminApiKeysService:
     async def export_json(
         self, *, request, user_id, mode: str, export_password: str | None
     ):
-        if mode != "plaintext":
+        if mode != "encrypted":
             return {
                 "success": False,
-                "message": "Only plaintext export is supported",
+                "message": "Plaintext export is disabled; use encrypted export",
+            }, 400
+
+        password = (export_password or "").strip()
+        if len(password) < _EXPORT_MIN_PASSWORD_LENGTH:
+            return {
+                "success": False,
+                "message": (
+                    f"Export password must be at least {_EXPORT_MIN_PASSWORD_LENGTH} characters"
+                ),
             }, 400
 
         result = await self.db.execute(
@@ -328,9 +358,17 @@ class AdminApiKeysService:
         )
         apikeys = result.scalars().all()
 
+        salt = os.urandom(16)
+        export_cipher = _derive_export_fernet(password, salt)
+
         export_data = {
-            "version": "2.0",
-            "export_mode": mode,
+            "version": "2.1",
+            "export_mode": "encrypted",
+            "kdf": {
+                "algorithm": "pbkdf2_sha256",
+                "iterations": _EXPORT_KDF_ITERATIONS,
+                "salt": base64.urlsafe_b64encode(salt).decode("ascii"),
+            },
             "exported_at": datetime.now(UTC).isoformat(),
             "exported_by": "admin",
             "total_count": len(apikeys),
@@ -349,11 +387,18 @@ class AdminApiKeysService:
                 "created_at": key.created_at.isoformat() if key.created_at else None,
             }
             try:
-                if key.api_key_encrypted:
-                    key_data["api_key"] = decrypt_data(key.api_key)
-                    key_data["api_key_encrypted"] = False
+                raw_key = (
+                    decrypt_data(key.api_key)
+                    if key.api_key_encrypted and key.api_key
+                    else key.api_key
+                )
+                if raw_key:
+                    key_data["api_key"] = export_cipher.encrypt(
+                        raw_key.encode("utf-8")
+                    ).decode("ascii")
+                    key_data["api_key_encrypted"] = True
                 else:
-                    key_data["api_key"] = key.api_key
+                    key_data["api_key"] = ""
                     key_data["api_key_encrypted"] = False
             except Exception:  # noqa: BLE001
                 key_data["api_key"] = ""
@@ -383,6 +428,7 @@ class AdminApiKeysService:
 
         file_content = body.get("file")
         mode = body.get("mode", "skip")
+        import_password = (body.get("import_password") or "").strip()
         if not file_content:
             return {
                 "success": False,
@@ -408,16 +454,52 @@ class AdminApiKeysService:
 
         export_version = import_data.get("version")
         export_mode = import_data.get("export_mode", "plaintext")
-        if export_version != "2.0":
+        if export_version not in {"2.0", "2.1"}:
             return {
                 "success": False,
-                "message": "Unsupported export version. Please import version 2.0 data.",
+                "message": "Unsupported export version. Please import version 2.0/2.1 data.",
             }, 400
-        if export_mode != "plaintext":
+        if export_mode not in {"plaintext", "encrypted"}:
             return {
                 "success": False,
-                "message": "Only plaintext export mode is supported",
+                "message": "Unsupported export mode",
             }, 400
+
+        # Version 2.1 files carry api_key values encrypted with the export
+        # passphrase; decrypt rows back to plaintext before the shared
+        # insert/update path re-encrypts them with the server key.
+        row_cipher: Fernet | None = None
+        if export_mode == "encrypted":
+            kdf_meta = import_data.get("kdf") or {}
+            salt_b64 = kdf_meta.get("salt")
+            iterations = int(kdf_meta.get("iterations") or _EXPORT_KDF_ITERATIONS)
+            if not import_password:
+                return {
+                    "success": False,
+                    "message": "This file is encrypted; provide the export password",
+                }, 400
+            if not salt_b64:
+                return {
+                    "success": False,
+                    "message": "Invalid encrypted file: missing KDF salt",
+                }, 400
+            try:
+                salt = base64.urlsafe_b64decode(salt_b64)
+                kdf = PBKDF2HMAC(
+                    algorithm=hashes.SHA256(),
+                    length=32,
+                    salt=salt,
+                    iterations=iterations,
+                )
+                derived = base64.urlsafe_b64encode(
+                    kdf.derive(import_password.encode("utf-8"))
+                )
+                row_cipher = Fernet(derived)
+            except Exception:  # noqa: BLE001
+                return {
+                    "success": False,
+                    "message": "Invalid encrypted file: malformed KDF parameters",
+                }, 400
 
         success_count = 0
         updated_count = 0
@@ -447,6 +529,17 @@ class AdminApiKeysService:
 
                 name = key_data["name"]
                 api_key_plaintext = key_data.get("api_key")
+                if api_key_plaintext and row_cipher is not None:
+                    try:
+                        api_key_plaintext = row_cipher.decrypt(
+                            api_key_plaintext.encode("ascii")
+                        ).decode("utf-8")
+                    except (InvalidToken, ValueError):
+                        errors.append(
+                            f"Row {idx + 1}: Wrong export password or corrupted api_key",
+                        )
+                        error_count += 1
+                        continue
                 if not api_key_plaintext:
                     errors.append(
                         f"Row {idx + 1}: Missing api_key in export",
