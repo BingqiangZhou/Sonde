@@ -45,51 +45,25 @@ logger = logging.getLogger(__name__)
 
 
 class TranscriptionStateCoordinator:
-    """Coordinate redis state for route and worker transcription flows."""
+    """Coordinate redis locks for route and worker transcription flows."""
 
     def __init__(self, *, state_manager_factory: Callable[[], Awaitable[Any]]):
         self.state_manager_factory = state_manager_factory
-
-    async def mark_start_result(self, episode_id: int, task, action: str) -> None:
-        state_manager = await self.state_manager_factory()
-        await state_manager.set_episode_task(episode_id, task.id)
-        if action in {
-            "created",
-            "redispatched_pending",
-            "redispatched_failed_with_temp",
-        }:
-            await state_manager.set_task_progress(
-                task.id,
-                TranscriptionStatus.PENDING.value,
-                task.progress_percentage or 0,
-                "Transcription task queued",
-            )
-        elif action == "reused_in_progress":
-            await state_manager.set_task_progress(
-                task.id,
-                TranscriptionStatus.IN_PROGRESS.value,
-                task.progress_percentage or 0,
-                "Transcription task already in progress",
-            )
 
     async def cleanup_deleted_task(self, episode_id: int, task_id: int | None) -> None:
         state_manager = await self.state_manager_factory()
         if task_id:
             try:
-                await state_manager.clear_episode_task(episode_id)
                 await state_manager.release_task_lock(episode_id, task_id)
-                await state_manager.clear_task_progress(task_id)
                 return
             except Exception as redis_error:
                 logger.warning("[DELETE] Failed to cleanup redis: %s", redis_error)
                 return
 
         try:
-            await state_manager.clear_episode_task(episode_id)
             locked_task_id = await state_manager.is_episode_locked(episode_id)
             if locked_task_id:
                 await state_manager.release_task_lock(episode_id, locked_task_id)
-                await state_manager.clear_task_progress(locked_task_id)
         except Exception as redis_error:
             logger.warning("[DELETE] Failed to cleanup stale locks: %s", redis_error)
 
@@ -102,7 +76,6 @@ class TranscriptionStateCoordinator:
         transcription_service_factory,
         claim_dispatch: Callable[[int], Awaitable[bool]],
         clear_dispatch: Callable[[int], Awaitable[None]],
-        status_value: Callable[[object], str],
     ) -> dict[str, Any]:
         dispatch_claimed = await claim_dispatch(task_id)
         if not dispatch_claimed:
@@ -137,40 +110,8 @@ class TranscriptionStateCoordinator:
             )
 
         service = transcription_service_factory(db)
-        original_update = service._update_task_progress_with_session
-
-        async def redis_update_progress(
-            db_session,
-            internal_task_id,
-            status,
-            progress,
-            message,
-            error_message=None,
-        ):
-            await original_update(
-                db_session,
-                internal_task_id,
-                status,
-                progress,
-                message,
-                error_message,
-            )
-            await state_manager.set_task_progress(
-                internal_task_id,
-                status_value(status),
-                progress,
-                message,
-            )
-
-        service._update_task_progress_with_session = redis_update_progress
 
         try:
-            await state_manager.set_task_progress(
-                task_id,
-                "pending",
-                0,
-                "Worker starting transcription process...",
-            )
             await service.execute_transcription_task(task_id, db, config_db_id)
             await state_manager.clear_task_state(task_id, episode_id)
             return {
@@ -307,8 +248,6 @@ class TranscriptionWorkflowService:
         )
         task = start_result["task"]
         action = start_result["action"]
-
-        await self.state_coordinator.mark_start_result(episode_id, task, action)
 
         return {"task": task, "action": action, "episode": episode}
 
@@ -539,7 +478,6 @@ class TranscriptionWorkflowService:
             transcription_service_factory=self.transcription_service_factory,
             claim_dispatch=self._claim_dispatch,
             clear_dispatch=self._clear_dispatch,
-            status_value=status_value,
         )
 
     async def trigger_episode_pipeline(
@@ -750,13 +688,11 @@ class PodcastTranscriptionRuntimeService(PodcastTranscriptionService):
                 return {"task": existing_task, "action": "reused_completed"}
 
             if status_value == "in_progress":
-                await state_manager.set_episode_task(episode_id, existing_task.id)
                 return {"task": existing_task, "action": "reused_in_progress"}
 
             if status_value == "pending":
                 locked_task_id = await state_manager.is_episode_locked(episode_id)
                 if locked_task_id == existing_task.id:
-                    await state_manager.set_episode_task(episode_id, existing_task.id)
                     return {"task": existing_task, "action": "reused_pending"}
                 if locked_task_id is not None:
                     return {"task": existing_task, "action": "locked_by_other_task"}
@@ -827,7 +763,6 @@ class PodcastTranscriptionRuntimeService(PodcastTranscriptionService):
             if status_value == "completed":
                 return {"task": task, "action": "reused_completed"}
             if status_value in {"pending", "in_progress"}:
-                await state_manager.set_episode_task(episode_id, task.id)
                 action = (
                     "reused_in_progress"
                     if status_value == "in_progress"

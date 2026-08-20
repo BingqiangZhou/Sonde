@@ -116,13 +116,6 @@ async def test_transcription_workflow_updates_status_and_releases_lock():
 
     result = await workflow.execute_transcription_task(task_id=1, config_db_id=None)
     assert result["status"] == "success"
-    assert (
-        1,
-        "pending",
-        0,
-        "Worker starting transcription process...",
-    ) in state.progress_updates
-    assert (1, "in_progress", 50, "halfway") in state.progress_updates
     assert state.cleared == [(1, 2)]
     assert state.released == [(2, 1)]
 

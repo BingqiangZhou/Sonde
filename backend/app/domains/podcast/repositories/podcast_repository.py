@@ -643,7 +643,7 @@ class PodcastRepository:
             episode.status = "summary_failed"
             metadata = episode.metadata_json or {}
             metadata["summary_error"] = error
-            metadata["failed_at"] = datetime.now(UTC).isoformat()
+            metadata["summary_failed_at"] = datetime.now(UTC).isoformat()
             episode.metadata_json = metadata
             await self.db.commit()
 

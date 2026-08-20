@@ -31,13 +31,10 @@ class _FakeTaskOrchestrationService:
 
 class _FakeStateManager:
     def __init__(self):
-        self.episode_tasks = []
-
-    async def set_episode_task(self, episode_id: int, task_id: int):
-        self.episode_tasks.append((episode_id, task_id))
+        self.locked_episodes: list[int] = []
 
     async def is_episode_locked(self, episode_id: int):
-        return None
+        return self.locked_episodes[0] if self.locked_episodes else None
 
 
 @pytest.mark.asyncio
@@ -107,4 +104,3 @@ async def test_start_transcription_concurrent_calls_reuse_pending_task():
     assert fake_task_service.audio_transcription_calls == [
         {"task_id": 91, "config_db_id": 17},
     ]
-    assert state_manager.episode_tasks == [(12, 91)]

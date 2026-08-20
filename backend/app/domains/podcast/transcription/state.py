@@ -1,19 +1,19 @@
-"""Transcription State Manager - Redis-based caching and locking
+"""Transcription State Manager - Redis-based locking and dispatch guards.
 
-Provides fast state management for podcast transcription tasks:
-- Task locks to prevent duplicate processing
-- Progress caching for efficient polling
-- Ephemeral status storage with TTL
+Redis responsibilities for transcription are deliberately minimal:
+- Episode locks prevent duplicate processing of the same episode
+- Dispatch claims prevent double-enqueue of the same task
+
+Progress and status are read from the database (the single source of
+truth); no redis mirrors are maintained for them.
 """
 
 import logging
 import time
-from datetime import UTC, datetime
 
 import orjson
 import redis.exceptions
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.redis import RedisCache, get_shared_redis
 
@@ -68,63 +68,12 @@ class TranscriptionStateKeys:
     TASK_LOCK = "podcast:lock:transcription:episode:{episode_id}"
     LEGACY_TASK_LOCK_VALUE = "podcast:transcription:lock_value:{episode_id}"
 
-    # Task progress: cached progress for fast polling (1 hour TTL)
-    TASK_PROGRESS = "podcast:transcription:progress:{task_id}"
-
-    # Episode-to-task mapping: find active task by episode_id (5 min TTL)
-    EPISODE_TASK = "podcast:transcription:episode_task:{episode_id}"
-
-    # Task status summary: lightweight status for dashboard (15 min TTL)
-    TASK_STATUS = "podcast:transcription:status:{task_id}"
-    ACTIVE_TASK_INDEX = "podcast:transcription:active_tasks"
-    LOCK_INDEX = "podcast:transcription:lock_index"
-
 
 class TranscriptionStateManager:
-    """Redis-based state manager for transcription tasks
-
-    Provides:
-    1. Distributed locks to prevent duplicate processing
-    2. Fast progress caching for efficient polling
-    3. Episode-to-task mapping for quick lookups
-    4. Automatic cleanup with TTL
-    """
+    """Redis-based lock manager for transcription tasks."""
 
     def __init__(self):
         self.redis = get_shared_redis()
-
-    @staticmethod
-    def _active_task_index_key() -> str:
-        return TranscriptionStateKeys.ACTIVE_TASK_INDEX
-
-    @staticmethod
-    def _lock_index_key() -> str:
-        return TranscriptionStateKeys.LOCK_INDEX
-
-    # === Redis Cache Access (convenience methods) ===
-
-    async def get(self, key: str) -> str | None:
-        """Get value from Redis cache
-
-        Args:
-            key: Cache key
-
-        Returns:
-            Value if found, None otherwise
-
-        """
-        return await self.redis.get(key)
-
-    async def set(self, key: str, value: str, ttl: int = 3600) -> None:
-        """Set value in Redis cache
-
-        Args:
-            key: Cache key
-            value: Value to store
-            ttl: Time to live in seconds (default 1 hour)
-
-        """
-        await self.redis.set(key, value, ttl=ttl)
 
     @staticmethod
     def _build_lock_owner_value(task_id: int) -> str:
@@ -196,7 +145,6 @@ class TranscriptionStateManager:
         """
         lock_value = self._build_lock_owner_value(task_id)
         lock_name = self._task_lock_name(episode_id)
-        lock_key = self._task_lock_key(episode_id)
         legacy_key = self._legacy_task_lock_value_key(episode_id)
 
         try:
@@ -206,11 +154,6 @@ class TranscriptionStateManager:
                 value=lock_value,
             )
             if acquired:
-                await self.redis.sorted_set_add(
-                    self._lock_index_key(),
-                    str(episode_id),
-                    time.time(),
-                )
                 await self.redis.delete_keys(legacy_key)
                 logger.info(
                     "[LOCK] Acquired lock for episode %s, task %s",
@@ -250,7 +193,7 @@ class TranscriptionStateManager:
                 )
                 return False
 
-            await self.redis.delete_keys(lock_key, legacy_key)
+            await self.redis.delete_keys(self._task_lock_key(episode_id), legacy_key)
             logger.warning(
                 "[LOCK] Episode %s lock had unknown owner metadata, reclaimed and retrying once [owner_unknown_reclaimed]",
                 episode_id,
@@ -261,11 +204,6 @@ class TranscriptionStateManager:
                 value=lock_value,
             )
             if retry_acquired:
-                await self.redis.sorted_set_add(
-                    self._lock_index_key(),
-                    str(episode_id),
-                    time.time(),
-                )
                 logger.info(
                     "[LOCK] Re-acquired reclaimed lock for episode %s, task %s",
                     episode_id,
@@ -336,7 +274,6 @@ class TranscriptionStateManager:
                 )
 
             await self.redis.delete_keys(lock_key, legacy_key)
-            await self.redis.sorted_set_remove(self._lock_index_key(), str(episode_id))
             logger.info(
                 "[LOCK] Released lock for episode %s, task %s", episode_id, task_id
             )
@@ -373,177 +310,16 @@ class TranscriptionStateManager:
         ):
             return None
 
-    # === Episode-to-Task Mapping ===
-
-    async def set_episode_task(
-        self,
-        episode_id: int,
-        task_id: int,
-        ttl_seconds: int = 300,
-    ) -> None:
-        """Map an episode to its active task ID
-
-        Args:
-            episode_id: Episode ID
-            task_id: Active transcription task ID
-            ttl_seconds: Cache TTL (default 5 minutes)
-
-        """
-        key = TranscriptionStateKeys.EPISODE_TASK.format(episode_id=episode_id)
-        await self.redis.set(key, str(task_id), ttl=ttl_seconds)
-        logger.debug(f"Mapped episode {episode_id} to task {task_id}")
-
-    async def clear_episode_task(self, episode_id: int) -> None:
-        """Clear the episode-to-task mapping (e.g., when task completes or lock is stale)
-
-        Args:
-            episode_id: Episode ID to clear
-
-        """
-        key = TranscriptionStateKeys.EPISODE_TASK.format(episode_id=episode_id)
-        await self.redis.delete(key)
-        logger.debug(f"Cleared episode {episode_id} task mapping")
-
-    # === Progress Caching ===
-
-    async def set_task_progress(
-        self,
-        task_id: int,
-        status: str,
-        progress: float,
-        message: str,
-        current_chunk: int = 0,
-        total_chunks: int = 0,
-        ttl_seconds: int = 3600,
-    ) -> None:
-        """Cache task progress for fast polling
-
-        Args:
-            task_id: Task ID
-            status: Current status enum value
-            progress: Progress percentage (0-100)
-            message: Status message
-            current_chunk: Current chunk being processed
-            total_chunks: Total number of chunks
-            ttl_seconds: Cache TTL (default 1 hour)
-
-        """
-        key = TranscriptionStateKeys.TASK_PROGRESS.format(task_id=task_id)
-
-        progress_data = {
-            "task_id": task_id,
-            "status": status,
-            "progress": progress,
-            "message": message,
-            "current_chunk": current_chunk,
-            "total_chunks": total_chunks,
-            "updated_at": datetime.now(UTC).isoformat(),
-        }
-
-        await self.redis.set(
-            key, orjson.dumps(progress_data).decode("utf-8"), ttl=ttl_seconds
-        )
-        if status in {"pending", "in_progress"}:
-            await self.redis.sorted_set_add(
-                self._active_task_index_key(),
-                str(task_id),
-                time.time() + ttl_seconds,
-            )
-        else:
-            await self.redis.sorted_set_remove(
-                self._active_task_index_key(),
-                str(task_id),
-            )
-
-        # Also update lightweight status
-        await self.set_task_status(task_id, status, progress, ttl_seconds)
-
-        # Use throttle to reduce log frequency (log every 5% or every 5 seconds, whichever is longer)
-        if _progress_throttle.should_log(task_id, status, progress):
-            logger.info(
-                f"转录进度 [PROGRESS] Task {task_id}: {progress:.1f}% - {message}"
-            )
-
-    async def clear_task_progress(self, task_id: int) -> None:
-        """Clear cached task progress
-
-        Args:
-            task_id: Task ID to clear
-
-        """
-        # Clear progress data
-        progress_key = TranscriptionStateKeys.TASK_PROGRESS.format(task_id=task_id)
-        await self.redis.delete(progress_key)
-        await self.redis.sorted_set_remove(self._active_task_index_key(), str(task_id))
-
-        # Clear status data
-        status_key = TranscriptionStateKeys.TASK_STATUS.format(task_id=task_id)
-        await self.redis.delete(status_key)
-
-        logger.debug(f"Cleared progress cache for task {task_id}")
-
-    # === Status Summary ===
-
-    async def set_task_status(
-        self,
-        task_id: int,
-        status: str,
-        progress: float,
-        ttl_seconds: int = 900,
-    ) -> None:
-        """Set lightweight task status for dashboard queries
-
-        Args:
-            task_id: Task ID
-            status: Current status
-            progress: Progress percentage
-            ttl_seconds: Cache TTL (default 15 minutes)
-
-        """
-        key = TranscriptionStateKeys.TASK_STATUS.format(task_id=task_id)
-
-        status_data = {
-            "status": status,
-            "progress": progress,
-            "updated_at": datetime.now(UTC).isoformat(),
-        }
-
-        await self.redis.set(
-            key, orjson.dumps(status_data).decode("utf-8"), ttl=ttl_seconds
-        )
-
     # === Cleanup ===
 
     async def clear_task_state(self, task_id: int, episode_id: int) -> None:
-        """Clear all Redis state for a completed task
-
-        Args:
-            task_id: Task ID
-            episode_id: Episode ID
-
-        """
+        """Clear redis state for a completed task (lock + dispatch claim)."""
         try:
-            # Release lock
             await self.release_task_lock(episode_id, task_id)
-
-            # Clear episode mapping
-            episode_key = TranscriptionStateKeys.EPISODE_TASK.format(
-                episode_id=episode_id
-            )
-            progress_key = TranscriptionStateKeys.TASK_PROGRESS.format(task_id=task_id)
-            status_key = TranscriptionStateKeys.TASK_STATUS.format(task_id=task_id)
-            dispatched_key = f"podcast:transcription:dispatched:{task_id}"
-            await self.redis.delete_keys(
-                episode_key,
-                progress_key,
-                status_key,
-                dispatched_key,
-            )
-
+            await self.redis.delete_keys(_dispatch_key(task_id))
             logger.info(
                 f"[STATE] Cleared Redis state for task {task_id}, episode {episode_id}"
             )
-
         except (
             redis.exceptions.RedisError,
             orjson.JSONDecodeError,
@@ -559,33 +335,10 @@ class TranscriptionStateManager:
         episode_id: int,
         error_message: str,
     ) -> None:
-        """Mark task as failed and clear locks
-
-        Args:
-            task_id: Task ID
-            episode_id: Episode ID
-            error_message: Error message
-
-        """
-        # Update progress to failed state (short TTL)
-        await self.set_task_progress(
-            task_id,
-            "failed",
-            0,
-            error_message,
-            ttl_seconds=300,  # 5 minutes
-        )
-
-        # Clear locks immediately
+        """Release locks and the dispatch claim for a failed task."""
         await self.release_task_lock(episode_id, task_id)
-
-        # Clear dispatched flag to allow re-processing if needed
-        dispatched_key = f"podcast:transcription:dispatched:{task_id}"
-        await self.redis.delete_keys(dispatched_key)
-        logger.debug(f"Cleared dispatched flag for failed task {task_id}")
-
+        await self.redis.delete_keys(_dispatch_key(task_id))
         logger.error(f"[STATE] Task {task_id} failed: {error_message}")
-
 
 
 # Singleton instance
@@ -609,7 +362,7 @@ def _dispatch_key(task_id: int) -> str:
 
 async def claim_task_dispatch(
     redis: RedisCache,
-    db: AsyncSession,
+    db,
     task_id: int,
 ) -> bool:
     """Claim the dispatch right for a task.
