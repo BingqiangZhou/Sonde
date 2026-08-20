@@ -53,7 +53,7 @@ class TestAdminApiKeyAuth:
 
         with patch("app.admin.auth.get_settings") as mock_settings:
             mock_settings.return_value.API_KEY = "admin-key-123"
-            mock_settings.return_value.SECRET_KEY = "test-secret"
+            mock_settings.return_value.get_secret_key.return_value = "test-secret"
             session_hash = _compute_session_hash("admin-key-123")
             result = await admin_auth.__call__(mock_request, session_hash)
             assert result == 1

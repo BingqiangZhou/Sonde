@@ -15,7 +15,7 @@ import redis.exceptions
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.redis import CacheTTL, RedisCache, get_shared_redis
+from app.core.redis import RedisCache, get_shared_redis
 
 
 logger = logging.getLogger(__name__)
@@ -621,7 +621,7 @@ async def claim_task_dispatch(
     from app.domains.podcast.models import TranscriptionTask
     from app.domains.podcast.utils.status_helpers import status_value
 
-    if await redis.set_if_not_exists(_dispatch_key(task_id), "1", ttl=CacheTTL.hours(2)):
+    if await redis.set_if_not_exists(_dispatch_key(task_id), "1", ttl=2 * 3600):
         return True
 
     status_stmt = select(TranscriptionTask.status).where(TranscriptionTask.id == task_id)

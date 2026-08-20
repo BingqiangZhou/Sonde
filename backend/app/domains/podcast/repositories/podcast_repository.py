@@ -157,21 +157,6 @@ class PodcastRepository:
         states = result.scalars().all()
         return {state.episode_id: state for state in states}
 
-    async def _cache_episode_metadata(self, episode: PodcastEpisode):
-        """Cache lightweight episode metadata when Redis is available."""
-        if not self.redis:
-            return
-
-        metadata = {
-            "id": str(episode.id),
-            "title": episode.title,
-            "audio_url": episode.audio_url,
-            "duration": str(episode.audio_duration or 0),
-            "has_summary": "yes" if episode.ai_summary else "no",
-        }
-
-        await self.redis.set_episode_metadata(episode.id, metadata)
-
     """Subscription upsert, episode upsert, and summary state."""
 
     async def create_or_update_subscription(
@@ -412,8 +397,6 @@ class PodcastRepository:
 
         await self.db.commit()
         # episode.id auto-populated by SQLAlchemy after flush/commit
-        if is_new or episode.ai_summary:
-            await self._cache_episode_metadata(episode)
         return episode, is_new
 
     async def create_or_update_episodes_batch(
@@ -491,10 +474,6 @@ class PodcastRepository:
 
         await self.db.flush()
         await self.db.commit()
-
-        for episode in new_episodes:
-            if episode.id:
-                await self._cache_episode_metadata(episode)
 
         return processed_episodes, new_episodes
 
@@ -656,7 +635,6 @@ class PodcastRepository:
 
         await self.db.commit()
         # No refresh needed - episode is already in session with updated values
-        await self.redis.set_ai_summary(episode_id, summary, version)
         return episode
 
     async def mark_summary_failed(self, episode_id: int, error: str) -> None:
@@ -1851,9 +1829,6 @@ class PodcastRepository:
             await self.db.flush()
 
         await self.db.commit()
-
-        if self.redis:
-            await self.redis.set_user_progress(user_id, episode_id, position / 100)
 
         return state
 

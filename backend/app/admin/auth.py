@@ -18,7 +18,7 @@ def _compute_session_hash(api_key: str) -> str:
     """Compute HMAC hash of API key for cookie storage."""
     settings = get_settings()
     return hmac.new(
-        settings.SECRET_KEY.encode(), api_key.encode(), hashlib.sha256
+        settings.get_secret_key().encode(), api_key.encode(), hashlib.sha256
     ).hexdigest()
 
 

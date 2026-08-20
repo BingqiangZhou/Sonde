@@ -75,6 +75,10 @@ async def application_lifespan(app: FastAPI):
     setup_logging_from_env()
     settings = get_settings()
 
+    # Materialize the secret key early: lazy generation must never happen
+    # mid-request (e.g. first admin login) where failures are user-visible.
+    settings.get_secret_key()
+
     logger.info(
         "Starting %s v%s - environment: %s",
         settings.PROJECT_NAME,

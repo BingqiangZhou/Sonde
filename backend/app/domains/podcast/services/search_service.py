@@ -8,10 +8,6 @@ from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.redis import (
-    RedisCache,
-    get_shared_redis,
-)
 from app.domains.podcast.models import PodcastEpisode
 from app.domains.podcast.repositories import PodcastRepository
 from app.domains.podcast.services.episode_mapper import build_episode_dicts
@@ -33,7 +29,6 @@ class PodcastSearchService:
         user_id: int,
         *,
         repo: PodcastRepository | None = None,
-        redis: RedisCache | None = None,
     ):
         """Initialize search service.
 
@@ -45,7 +40,6 @@ class PodcastSearchService:
         self.db = db
         self.user_id = user_id
         self.repo = repo or PodcastRepository(db)
-        self.redis = redis or get_shared_redis()
 
     async def search_podcasts(
         self,
@@ -66,8 +60,6 @@ class PodcastSearchService:
             Tuple of (results list, total count)
 
         """
-        logger.info(f"Cache MISS for search: {query}, querying database")
-
         episodes, total = await self.repo.search_episodes(
             self.user_id,
             query=query,

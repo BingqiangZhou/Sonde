@@ -9,7 +9,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.core.exceptions import SubscriptionNotFoundError
-from app.core.redis import RedisCache, get_shared_redis
 from app.core.utils import filter_thinking_content
 from app.domains.podcast.integration.secure_rss_parser import SecureRSSParser
 from app.domains.podcast.models import PodcastEpisode, Subscription, TranscriptionTask
@@ -52,7 +51,6 @@ class PodcastEpisodeService:
         user_id: int,
         *,
         repo: PodcastRepository | None = None,
-        redis: RedisCache | None = None,
     ):
         """Initialize episode service.
 
@@ -64,7 +62,6 @@ class PodcastEpisodeService:
         self.db = db
         self.user_id = user_id
         self.repo = repo or PodcastRepository(db)
-        self.redis = redis or get_shared_redis()
         self._feed_description_max_length = 320
 
     async def list_episodes(
@@ -84,31 +81,6 @@ class PodcastEpisodeService:
             Tuple of (episodes list, total count)
 
         """
-        # Handle both dict and Pydantic model inputs
-        if filters is None:
-            subscription_id = None
-        elif isinstance(filters, dict):
-            subscription_id = filters.get("subscription_id")
-        else:
-            # Pydantic model - access attributes directly
-            subscription_id = getattr(filters, "subscription_id", None)
-
-        # Try cache first
-        if subscription_id:
-            cached = await self.redis.get_episode_list(subscription_id, page, size)
-            if cached:
-                logger.info(
-                    f"Cache HIT for episode list: sub_id={subscription_id}, page={page}",
-                )
-                return (
-                    list(cached["results"]),
-                    cached["total"],
-                )
-
-            logger.info(
-                f"Cache MISS for episode list: sub_id={subscription_id}, page={page}",
-            )
-
         episodes, total = await self.repo.get_episodes_paginated(
             self.user_id,
             page=page,
@@ -125,18 +97,6 @@ class PodcastEpisodeService:
 
         # Build response
         results = self._build_episode_dicts(episodes, playback_states)
-
-        # Cache if filtering by subscription
-        if subscription_id:
-            await self.redis.set_episode_list(
-                subscription_id,
-                page,
-                size,
-                {
-                    "results": results,
-                    "total": total,
-                },
-            )
 
         return results, total
 
@@ -411,7 +371,7 @@ class PodcastEpisodeService:
                 "related_episodes": [],
             }
 
-        return await self.redis.get_episode_detail(episode_id, _load_from_db)
+        return await _load_from_db()
 
     async def _get_transcription_task(
         self,
@@ -575,7 +535,6 @@ class PodcastSubscriptionService:
         user_id: int,
         *,
         repo: PodcastRepository | None = None,
-        redis: RedisCache | None = None,
         parser: SecureRSSParser | None = None,
         subscription_repo: SubscriptionRepository | None = None,
     ):
@@ -589,7 +548,6 @@ class PodcastSubscriptionService:
         self.db = db
         self.user_id = user_id
         self.repo = repo or PodcastRepository(db)
-        self.redis = redis or get_shared_redis()
         self.parser = parser or SecureRSSParser(user_id)
         self.subscription_repo = subscription_repo or SubscriptionRepository(db)
 
@@ -916,12 +874,6 @@ class PodcastSubscriptionService:
             feed.last_fetched,
         )
 
-        # Invalidate related caches in best-effort mode.
-        await self._invalidate_subscription_related_caches(
-            subscription_id,
-            operation="refresh_subscription",
-        )
-
         if len(new_episodes) > 0:
             logger.info(
                 f"User {self.user_id} refreshed subscription: {sub.title}, found {len(new_episodes)} new episodes",
@@ -1017,12 +969,6 @@ class PodcastSubscriptionService:
             feed.last_fetched,
         )
 
-        # Invalidate related caches in best-effort mode.
-        await self._invalidate_subscription_related_caches(
-            subscription_id,
-            operation="reparse_subscription",
-        )
-
         result = {
             "subscription_id": subscription_id,
             "subscription_title": sub.title,
@@ -1062,10 +1008,6 @@ class PodcastSubscriptionService:
             if not removed:
                 return False
 
-            await self._invalidate_subscription_related_caches(
-                subscription_id,
-                operation="remove_subscription",
-            )
             logger.info(
                 f"User {self.user_id} unsubscribed from subscription {subscription_id}",
             )
@@ -1150,13 +1092,6 @@ class PodcastSubscriptionService:
 
         await self.db.commit()
 
-        # Invalidate caches for all deleted subscriptions
-        for subscription_id in valid_ids:
-            await self._invalidate_subscription_related_caches(
-                subscription_id,
-                operation="remove_subscription",
-            )
-
         logger.info(
             f"User {self.user_id} bulk removed {len(valid_ids)} subscriptions",
         )
@@ -1228,21 +1163,3 @@ class PodcastSubscriptionService:
 
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
-
-    async def _invalidate_subscription_related_caches(
-        self,
-        subscription_id: int,
-        *,
-        operation: str,
-    ) -> None:
-        """Invalidate caches without failing the business operation."""
-        try:
-            await self.redis.delete_pattern(
-                f"podcast:episodes:list:{subscription_id}:*"
-            )
-        except Exception as e:
-            logger.warning(
-                f"Cache invalidation skipped: "
-                f"op={operation} cache=episode_list user_id={self.user_id} "
-                f"subscription_id={subscription_id}: {e}"
-            )

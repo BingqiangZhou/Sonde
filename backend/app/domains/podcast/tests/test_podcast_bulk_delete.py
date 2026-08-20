@@ -20,14 +20,9 @@ def mock_db() -> AsyncMock:
 
 
 @pytest.fixture
-def mock_redis() -> AsyncMock:
-    return AsyncMock()
-
-
-@pytest.fixture
-def service(mock_db: AsyncMock, mock_redis: AsyncMock) -> PodcastSubscriptionService:
-    """Create service with mocked redis cache operations."""
-    return PodcastSubscriptionService(mock_db, user_id=1, redis=mock_redis)
+def service(mock_db: AsyncMock) -> PodcastSubscriptionService:
+    """Create service with mocked database session."""
+    return PodcastSubscriptionService(mock_db, user_id=1)
 
 
 def _subscription(subscription_id: int = 1) -> Subscription:
@@ -130,28 +125,10 @@ async def test_remove_subscription_returns_false_when_delete_fails(
 
 
 @pytest.mark.asyncio
-async def test_remove_subscription_succeeds_and_invalidates_cache(
+async def test_remove_subscription_succeeds(
     service: PodcastSubscriptionService,
-    mock_redis: AsyncMock,
 ):
     service._validate_and_get_subscription = AsyncMock(return_value=_subscription(1))
-    delete_mock = AsyncMock(return_value=True)
-
-    with pytest.MonkeyPatch.context() as mp:
-        mp.setattr(SubscriptionRepository, "delete_subscription", delete_mock)
-        removed = await service.remove_subscription(1)
-
-    assert removed is True
-    mock_redis.delete_pattern.assert_awaited_once_with("podcast:episodes:list:1:*")
-
-
-@pytest.mark.asyncio
-async def test_remove_subscription_succeeds_when_redis_unavailable(
-    service: PodcastSubscriptionService,
-    mock_redis: AsyncMock,
-):
-    service._validate_and_get_subscription = AsyncMock(return_value=_subscription(1))
-    mock_redis.delete_pattern.side_effect = RuntimeError("redis unavailable")
     delete_mock = AsyncMock(return_value=True)
 
     with pytest.MonkeyPatch.context() as mp:
@@ -162,10 +139,9 @@ async def test_remove_subscription_succeeds_when_redis_unavailable(
 
 
 @pytest.mark.asyncio
-async def test_bulk_delete_succeeds_when_redis_unavailable(
+async def test_bulk_delete_succeeds(
     service: PodcastSubscriptionService,
     mock_db: AsyncMock,
-    mock_redis: AsyncMock,
 ):
     mock_db.execute.side_effect = [
         _result_with_rows(
@@ -175,7 +151,6 @@ async def test_bulk_delete_succeeds_when_redis_unavailable(
         _result_with_rows([]),
         MagicMock(),
     ]
-    mock_redis.delete_pattern.side_effect = RuntimeError("redis unavailable")
 
     result = await service.remove_subscriptions_bulk([1, 2, 3])
 

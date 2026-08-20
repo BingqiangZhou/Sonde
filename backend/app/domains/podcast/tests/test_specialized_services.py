@@ -58,15 +58,6 @@ class TestPodcastSubscriptionService:
             yield repo_instance
 
     @pytest.fixture
-    def mock_redis(self):
-        with patch(
-            "app.domains.podcast.services.episode_service.get_shared_redis",
-        ) as mock:
-            redis_instance = AsyncMock()
-            mock.return_value = redis_instance
-            yield redis_instance
-
-    @pytest.fixture
     def mock_parser(self):
         with patch(
             "app.domains.podcast.services.episode_service.SecureRSSParser",
@@ -76,7 +67,7 @@ class TestPodcastSubscriptionService:
             yield parser_instance
 
     @pytest.fixture
-    def service(self, mock_db, mock_repo, mock_redis, mock_parser):
+    def service(self, mock_db, mock_repo, mock_parser):
         return PodcastSubscriptionService(mock_db, user_id=1)
 
     @pytest.mark.asyncio
@@ -85,7 +76,6 @@ class TestPodcastSubscriptionService:
         assert service.user_id == 1
         assert service.db is not None
         assert service.repo is not None
-        assert service.redis is not None
         assert service.parser is not None
 
     @pytest.mark.asyncio
@@ -130,16 +120,7 @@ class TestPodcastEpisodeService:
             yield repo_instance
 
     @pytest.fixture
-    def mock_redis(self):
-        with patch(
-            "app.domains.podcast.services.episode_service.get_shared_redis",
-        ) as mock:
-            redis_instance = AsyncMock()
-            mock.return_value = redis_instance
-            yield redis_instance
-
-    @pytest.fixture
-    def service(self, mock_db, mock_repo, mock_redis):
+    def service(self, mock_db, mock_repo):
         return PodcastEpisodeService(mock_db, user_id=1)
 
     @pytest.mark.asyncio
@@ -148,7 +129,6 @@ class TestPodcastEpisodeService:
         assert service.user_id == 1
         assert service.db is not None
         assert service.repo is not None
-        assert service.redis is not None
 
     @pytest.mark.asyncio
     async def test_get_episode_by_id(self, service, mock_repo):
@@ -346,8 +326,6 @@ class TestPodcastPlaybackService:
         )
         mock_repo.get_episode_by_id.return_value = episode
         mock_repo.update_playback_progress.return_value = playback
-        service.redis.invalidate_user_stats = AsyncMock()
-        service.redis.invalidate_profile_stats = AsyncMock()
 
         result = await service.update_playback_progress(1, 50, True, 1.25)
 
@@ -426,16 +404,7 @@ class TestPodcastSearchService:
             yield repo_instance
 
     @pytest.fixture
-    def mock_redis(self):
-        with patch(
-            "app.domains.podcast.services.search_service.get_shared_redis",
-        ) as mock:
-            redis_instance = AsyncMock()
-            mock.return_value = redis_instance
-            yield redis_instance
-
-    @pytest.fixture
-    def service(self, mock_db, mock_repo, mock_redis):
+    def service(self, mock_db, mock_repo):
         return PodcastSearchService(mock_db, user_id=1)
 
     @pytest.mark.asyncio
@@ -444,13 +413,11 @@ class TestPodcastSearchService:
         assert service.user_id == 1
         assert service.db is not None
         assert service.repo is not None
-        assert service.redis is not None
 
     @pytest.mark.asyncio
-    async def test_search_podcasts_empty(self, service, mock_repo, mock_redis):
+    async def test_search_podcasts_empty(self, service, mock_repo):
         """测试空搜索结果"""
         mock_repo.search_episodes.return_value = ([], 0)
-        mock_redis.get_search_results.return_value = None
         mock_repo.get_playback_states_batch.return_value = {}
 
         results, total = await service.search_podcasts("test query")

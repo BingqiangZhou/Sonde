@@ -8,7 +8,6 @@ from typing import Any
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import EpisodeNotFoundError
-from app.core.redis import RedisCache, get_shared_redis
 from app.domains.podcast.models import PodcastEpisode, PodcastPlaybackState
 from app.domains.podcast.repositories import PodcastRepository
 
@@ -32,7 +31,6 @@ class PodcastPlaybackService:
         user_id: int,
         *,
         repo: PodcastRepository | None = None,
-        redis: RedisCache | None = None,
     ):
         """Initialize playback service.
 
@@ -44,7 +42,6 @@ class PodcastPlaybackService:
         self.db = db
         self.user_id = user_id
         self.repo = repo or PodcastRepository(db)
-        self.redis = redis or get_shared_redis()
 
     async def update_playback_progress(
         self,
@@ -80,7 +77,6 @@ class PodcastPlaybackService:
             is_playing,
             playback_rate,
         )
-        await self._invalidate_stats_cache()
 
         progress_percentage = 0
         remaining_time = 0
@@ -101,37 +97,15 @@ class PodcastPlaybackService:
             "remaining_time": remaining_time,
         }
 
-    async def _invalidate_stats_cache(self) -> None:
-        """Invalidate derived stats caches after playback mutation."""
-        try:
-            await self.redis.invalidate_user_stats(self.user_id)
-            await self.redis.invalidate_profile_stats(self.user_id)
-        except Exception as exc:
-            logger.warning(
-                "Failed to invalidate playback-related stats cache for user %s: %s",
-                self.user_id,
-                exc,
-            )
-
     async def get_effective_playback_rate(
         self,
         subscription_id: int | None = None,
     ) -> dict[str, Any]:
-        """Resolve effective playback-rate preference (cached)."""
-
-        async def _loader() -> dict[str, Any]:
-            return await self.repo.get_effective_playback_rate(
-                user_id=self.user_id,
-                subscription_id=subscription_id,
-            )
-
-        try:
-            result = await self.redis.get_effective_playback_rate(
-                self.user_id, subscription_id, _loader
-            )
-            return result if result is not None else await _loader()
-        except Exception:
-            return await _loader()
+        """Resolve effective playback-rate preference."""
+        return await self.repo.get_effective_playback_rate(
+            user_id=self.user_id,
+            subscription_id=subscription_id,
+        )
 
     async def apply_playback_rate_preference(
         self,
@@ -140,23 +114,12 @@ class PodcastPlaybackService:
         subscription_id: int | None = None,
     ) -> dict[str, Any]:
         """Persist playback-rate preference and return effective values."""
-        result = await self.repo.apply_playback_rate_preference(
+        return await self.repo.apply_playback_rate_preference(
             user_id=self.user_id,
             playback_rate=playback_rate,
             apply_to_subscription=apply_to_subscription,
             subscription_id=subscription_id,
         )
-
-        # Invalidate playback rate cache after preference change
-        try:
-            await self.redis.invalidate_playback_rate(self.user_id, subscription_id)
-            # Also invalidate the global cache if subscription-specific change
-            if apply_to_subscription:
-                await self.redis.invalidate_playback_rate(self.user_id, None)
-        except Exception:
-            pass  # Cache invalidation is best-effort
-
-        return result
 
     async def get_playback_state(
         self,

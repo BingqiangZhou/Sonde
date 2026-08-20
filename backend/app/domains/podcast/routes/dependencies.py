@@ -9,8 +9,7 @@ from __future__ import annotations
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.auth import get_db_session_dependency, get_redis_client, require_api_key
-from app.core.redis import RedisCache
+from app.core.auth import get_db_session_dependency, require_api_key
 from app.domains.podcast.repositories.content_repository import SubscriptionRepository
 from app.domains.podcast.services.daily_report_service import DailyReportService
 from app.domains.podcast.services.episode_service import (
@@ -136,7 +135,6 @@ def get_podcast_subscription_service(
     user_id: int = Depends(require_api_key),
     repo=Depends(get_podcast_subscription_repository),
     subscription_repo=Depends(get_subscription_repository),
-    redis: RedisCache = Depends(get_redis_client),
     parser=Depends(get_podcast_parser),
 ) -> PodcastSubscriptionService:
     """Provide request-scoped podcast subscription service."""
@@ -145,7 +143,6 @@ def get_podcast_subscription_service(
         user_id,
         repo=repo,
         subscription_repo=subscription_repo,
-        redis=redis,
         parser=parser,
     )
 
@@ -154,20 +151,18 @@ def get_podcast_episode_service(
     db: AsyncSession = Depends(get_db_session_dependency),
     user_id: int = Depends(require_api_key),
     repo=Depends(get_podcast_episode_repository),
-    redis: RedisCache = Depends(get_redis_client),
 ) -> PodcastEpisodeService:
     """Provide request-scoped podcast episode service."""
-    return PodcastEpisodeService(db, user_id, repo=repo, redis=redis)
+    return PodcastEpisodeService(db, user_id, repo=repo)
 
 
 def get_podcast_playback_service(
     db: AsyncSession = Depends(get_db_session_dependency),
     user_id: int = Depends(require_api_key),
     repo=Depends(get_podcast_playback_repository),
-    redis: RedisCache = Depends(get_redis_client),
 ) -> PodcastPlaybackService:
-    """Provide request-scoped podcast playback service."""
-    return PodcastPlaybackService(db, user_id, repo=repo, redis=redis)
+    """Provide request-scoped playback service."""
+    return PodcastPlaybackService(db, user_id, repo=repo)
 
 
 def get_podcast_queue_service(
@@ -191,25 +186,22 @@ def get_podcast_search_service(
     db: AsyncSession = Depends(get_db_session_dependency),
     user_id: int = Depends(require_api_key),
     repo=Depends(get_podcast_search_repository),
-    redis: RedisCache = Depends(get_redis_client),
 ) -> PodcastSearchService:
     """Provide request-scoped podcast search service."""
-    return PodcastSearchService(db, user_id, repo=repo, redis=redis)
+    return PodcastSearchService(db, user_id, repo=repo)
 
 
 def get_podcast_stats_service(
     db: AsyncSession = Depends(get_db_session_dependency),
     user_id: int = Depends(require_api_key),
     repo=Depends(get_podcast_stats_repository),
-    redis: RedisCache = Depends(get_redis_client),
     playback_service: PodcastPlaybackService = Depends(get_podcast_playback_service),
 ) -> PodcastStatsService:
-    """Provide request-scoped podcast stats service."""
+    """Provide request-scoped stats service."""
     return PodcastStatsService(
         db,
         user_id,
         repo=repo,
-        redis=redis,
         playback_service=playback_service,
     )
 
