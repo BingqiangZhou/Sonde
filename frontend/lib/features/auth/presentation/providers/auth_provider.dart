@@ -1,159 +1,76 @@
-import 'dart:async';
+/// Pairing session state (server-pipeline phase 4).
+///
+/// The JWT multi-user flow was removed together with the backend auth
+/// domain: the app authenticates exclusively via the deployment API key
+/// stored by the QR pairing flow. This notifier tracks whether a pairing
+/// exists and clears it on disconnect.
+library;
 
-import 'package:equatable/equatable.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:sonde/core/network/exceptions/network_exceptions.dart';
-import 'package:sonde/core/network/token_refresh_service.dart';
 import 'package:sonde/core/providers/core_providers.dart';
-import 'package:sonde/core/storage/local_storage_service.dart';
 import 'package:sonde/core/storage/secure_storage_service.dart';
 import 'package:sonde/core/utils/app_logger.dart' as logger;
-import 'package:sonde/features/auth/data/events/auth_event.dart';
-import 'package:sonde/features/auth/data/repositories/auth_repository_impl.dart';
-import 'package:sonde/features/auth/domain/models/auth_request.dart';
 import 'package:sonde/features/auth/domain/models/user.dart';
-import 'package:sonde/features/auth/domain/repositories/auth_repository.dart';
-import 'package:sonde/shared/constants/storage_keys.dart';
 
-// Token refresh constants
-const int _tokenRefreshBufferMinutes = 5; // Refresh 5 minutes before expiry
-const int _tokenCheckIntervalSeconds = 180; // Check every 3 minutes
-
-@visibleForTesting
-List<String> playbackSnapshotKeysToClearOnLogout(String? userId) {
-  final keys = <String>[kLastPlaybackSnapshotStorageKeyPrefix];
-  if (userId != null && userId.isNotEmpty) {
-    keys.add('${kLastPlaybackSnapshotStorageKeyPrefix}_$userId');
-  }
-  return keys;
-}
-
-// Storage provider
-final secureStorageProvider = Provider<SecureStorageService>((ref) {
-  return SecureStorageServiceImpl(const FlutterSecureStorage());
-});
-
-// Repository provider
-final authRepositoryProvider = Provider<AuthRepository>((ref) {
-  final dioClient = ref.read(dioClientProvider);
-  final secureStorage = ref.read(secureStorageProvider);
-  return AuthRepositoryImpl(dioClient, secureStorage);
-});
-
-// Auth state notifier provider
-final authProvider = NotifierProvider<AuthNotifier, AuthState>(
-  AuthNotifier.new,
-);
-
-class AuthState extends Equatable { // For validation errors
-
+class AuthState {
   const AuthState({
-    this.user,
-    this.isLoading = false,
     this.isAuthenticated = false,
+    this.isLoading = false,
     this.error,
-    this.isRefreshingToken = false,
-    this.currentOperation,
-    this.fieldErrors,
+    this.user,
   });
-  final User? user;
-  final bool isLoading;
+
   final bool isAuthenticated;
+  final bool isLoading;
   final String? error;
-  final bool isRefreshingToken;
-  final AuthOperation? currentOperation;
-  final Map<String, String>? fieldErrors;
+
+  /// Always null in pairing mode; kept so list/detail UI keeps compiling
+  /// and renders its guest fallbacks.
+  final User? user;
 
   AuthState copyWith({
-    User? user,
-    bool? isLoading,
     bool? isAuthenticated,
+    bool? isLoading,
     String? error,
-    bool? isRefreshingToken,
-    AuthOperation? currentOperation,
-    Map<String, String>? fieldErrors,
     bool clearError = false,
-    bool clearFieldErrors = false,
+    User? user,
+    bool clearUser = false,
   }) {
     return AuthState(
-      user: user ?? this.user,
-      isLoading: isLoading ?? this.isLoading,
       isAuthenticated: isAuthenticated ?? this.isAuthenticated,
+      isLoading: isLoading ?? this.isLoading,
       error: clearError ? null : (error ?? this.error),
-      isRefreshingToken: isRefreshingToken ?? this.isRefreshingToken,
-      currentOperation: currentOperation ?? this.currentOperation,
-      fieldErrors: clearFieldErrors ? null : (fieldErrors ?? this.fieldErrors),
+      user: clearUser ? null : (user ?? this.user),
     );
   }
-
-  @override
-  List<Object?> get props => [
-        user,
-        isLoading,
-        isAuthenticated,
-        error,
-        isRefreshingToken,
-        currentOperation,
-        fieldErrors,
-      ];
 }
 
 enum AuthOperation {
-  login,
-  register,
-  logout,
-  refreshToken,
   checkAuth,
-  forgotPassword,
-  resetPassword,
-  verifyEmail,
+  disconnect,
 }
 
 class AuthNotifier extends Notifier<AuthState> {
-  AuthRepository get _authRepository => ref.read(authRepositoryProvider);
   SecureStorageService get _secureStorage => ref.read(secureStorageProvider);
-  Timer? _tokenRefreshTimer;
-  StreamSubscription<AuthEvent>? _authEventSubscription;
-  AppLifecycleListener? _lifecycleListener;
+
+  static const String _apiKeyStorageKey = 'api_key';
 
   @override
   AuthState build() {
-
-    // Listen to auth events from DioClient
-    _authEventSubscription = AuthEventNotifier.instance.authEventStream.listen((
-      event,
-    ) {
-      if (event.type == AuthEventType.tokenCleared) {
-        // Sync auth state when tokens are cleared by DioClient
-        if (state.isAuthenticated) {
-          logger.AppLogger.debug(
-            '🔔 [AuthProvider] Received tokenCleared event, clearing auth state',
-          );
-          state = state.copyWith(isAuthenticated: false);
-        }
-        ref.read(dioClientProvider).clearETagCache();
-      }
-    });
-
-    // Listen to app lifecycle state changes
-    _lifecycleListener = AppLifecycleListener(
-      onStateChange: _onAppLifecycleStateChanged,
-    );
-
-    // Don't check auth status here to avoid circular dependency
-    // Let the UI call checkAuthStatus when needed
-    ref.onDispose(() {
-      _lifecycleListener?.dispose();
-      _stopTokenRefreshTimer();
-      _authEventSubscription?.cancel();
-    });
     return const AuthState();
   }
 
-  /// API-key pairing mode: authenticated without a user profile or
-  /// refreshable tokens (every request carries X-API-Key instead).
+  /// A stored deployment API key (QR pairing) authenticates the session.
+  Future<void> checkAuthStatus() async {
+    state = state.copyWith(isLoading: true);
+    final apiKey = await _secureStorage.get(_apiKeyStorageKey);
+    state = state.copyWith(
+      isAuthenticated: apiKey != null && apiKey.isNotEmpty,
+      isLoading: false,
+    );
+  }
+
+  /// API-key pairing mode: authenticated without a user profile.
   void markPaired() {
     state = state.copyWith(
       isAuthenticated: true,
@@ -162,509 +79,32 @@ class AuthNotifier extends Notifier<AuthState> {
     );
   }
 
-  void _onAppLifecycleStateChanged(AppLifecycleState state) {    // Only handle lifecycle events if user is authenticated
-    if (!this.state.isAuthenticated) return;
-
-    switch (state) {
-      case AppLifecycleState.resumed:
-        // App returned to foreground - check token immediately and restart timer
-        logger.AppLogger.debug('📱 [Auth] App resumed, checking token...');
-        _checkAndRefreshToken();
-        _startTokenRefreshTimer();
-      case AppLifecycleState.paused:
-      case AppLifecycleState.inactive:
-      case AppLifecycleState.detached:
-      case AppLifecycleState.hidden:
-        // App went to background - stop timer to save resources
-        logger.AppLogger.debug('📱 [Auth] App paused, stopping token refresh timer');
-        _stopTokenRefreshTimer();
-    }
-  }
-
-  Future<void> _checkAuthStatus() async {
-    state = state.copyWith(
-      isLoading: true,
-      currentOperation: AuthOperation.checkAuth,
-    );
-
-    try {
-      final token = await _secureStorage.getAccessToken();
-      if (token != null) {
-        // Check if token is expired (if we have expiry info)
-        final tokenExpiry = await _secureStorage.getTokenExpiry();
-        // Use UTC time for comparison to avoid timezone issues
-        if (tokenExpiry != null && DateTime.now().toUtc().isAfter(tokenExpiry.toUtc())) {
-          // Token expired, try refresh
-          final refreshResult = await _attemptTokenRefresh();
-          if (!refreshResult.success && refreshResult.isInvalidSessionFailure) {
-            await _clearAuthState();
-            state = state.copyWith(
-              isLoading: false,
-              isAuthenticated: false,
-              error: 'Session expired. Please login again.',
-            );
-            return;
-          }
-          if (!refreshResult.success) {
-            state = state.copyWith(isLoading: false);
-            return;
-          }
-        }
-
-        try {
-          final user = await _authRepository.getCurrentUser();
-          state = state.copyWith(
-            user: user,
-            isAuthenticated: true,
-            isLoading: false,
-          );
-        } on AuthException {
-          // For authentication errors, clear state and let router handle redirect
-          // Don't show error message, just navigate to login
-          _handleAuthError();
-          state = state.copyWith(
-            isLoading: false,
-          );
-        } on AppException catch (error) {
-          // For other errors, show error message
-          final userMessage = _getErrorMessage(error);
-          state = state.copyWith(
-            isLoading: false,
-            error: userMessage,
-          );
-        }
-        // Enable auto-refresh on successful auth check
-        _enableAutoRefresh();
-      } else {
-        // No JWT tokens: fall back to API-key pairing mode. A stored
-        // deployment key authenticates every request via X-API-Key, so
-        // the session is valid without a user profile or token refresh.
-        final apiKey = await _secureStorage.get('api_key');
-        if (apiKey != null && apiKey.isNotEmpty) {
-          state = state.copyWith(isAuthenticated: true, isLoading: false);
-        } else {
-          state = state.copyWith(isLoading: false);
-        }
-      }
-    } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        error: 'Authentication check failed: $e',
-      );
-    }
-  }
-
-  Future<void> login({
-    required String email, // Can be email or username
-    required String password,
-    bool rememberMe = false,
-  }) async {
-    state = state.copyWith(
-      isLoading: true,
-      clearFieldErrors: true,
-      currentOperation: AuthOperation.login,
-    );
-
-    final request = LoginRequest(
-      username: email, // Backend expects username field
-      password: password,
-      rememberMe: rememberMe,
-    );
-
-    try {
-      final authResponse = await _authRepository.login(request);
-
-      await _saveTokenExpiry(
-        expiresAt: authResponse.expiresAt,
-        expiresIn: authResponse.expiresIn,
-      );
-
-      // Populate in-memory token cache to avoid SecureStorage round-trips
-      ref.read(dioClientProvider).setToken(authResponse.accessToken);
-
-      // Fetch user info after successful login
-      try {
-        final user = await _authRepository.getCurrentUser();
-        state = state.copyWith(
-          user: user,
-          isAuthenticated: true,
-          isLoading: false,
-        );
-      } catch (e) {
-        // Even if user fetch fails, login was successful
-        logger.AppLogger.debug('[Auth] User fetch after login failed: $e');
-        state = state.copyWith(
-          isAuthenticated: true,
-          isLoading: false,
-        );
-      }
-      // Enable auto-refresh
-      _enableAutoRefresh();
-    } on AppException catch (error) {
-      final userMessage = _getErrorMessage(error);
-      final fieldErrors = _getFieldErrors(error);
-
-      state = state.copyWith(
-        isLoading: false,
-        error: userMessage,
-        fieldErrors: fieldErrors,
-      );
-    } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        error: e.toString(),
-      );
-    }
-  }
-
-  Future<void> register({
-    required String email,
-    required String password,
-    bool rememberMe = false,
-  }) async {
-    state = state.copyWith(
-      isLoading: true,
-      clearFieldErrors: true,
-      currentOperation: AuthOperation.register,
-    );
-
-    final request = RegisterRequest(
-      email: email,
-      password: password,
-      rememberMe: rememberMe,
-    );
-
-    try {
-      final authResponse = await _authRepository.register(request);
-
-      // Populate in-memory token cache to avoid SecureStorage round-trips
-      ref.read(dioClientProvider).setToken(authResponse.accessToken);
-
-      await _saveTokenExpiry(
-        expiresAt: authResponse.expiresAt,
-        expiresIn: authResponse.expiresIn,
-      );
-
-      // Fetch user info after successful registration
-      try {
-        final user = await _authRepository.getCurrentUser();
-        state = state.copyWith(
-          user: user,
-          isAuthenticated: true,
-          isLoading: false,
-        );
-      } catch (e) {
-        // Even if user fetch fails, registration was successful
-        logger.AppLogger.debug('[Auth] User fetch after register failed: $e');
-        state = state.copyWith(
-          isAuthenticated: true,
-          isLoading: false,
-        );
-      }
-      // Enable auto-refresh
-      _enableAutoRefresh();
-    } on AppException catch (error) {
-      // Debug logging
-      logger.AppLogger.debug('=== Register Error Debug ===');
-      logger.AppLogger.debug('Error type: ${error.runtimeType}');
-      logger.AppLogger.debug('Error message: ${error.message}');
-      logger.AppLogger.debug('Error statusCode: ${error.statusCode}');
-
-      if (error is ServerException && error.fieldErrors != null) {
-        logger.AppLogger.debug('Field errors: ${error.fieldErrors}');
-        logger.AppLogger.debug('Error details: ${error.details}');
-      }
-
-      final userMessage = _getErrorMessage(error);
-      final fieldErrors = _getFieldErrors(error);
-
-      logger.AppLogger.debug('User message: $userMessage');
-      logger.AppLogger.debug('Field errors: $fieldErrors');
-      logger.AppLogger.debug('========================');
-
-      state = state.copyWith(
-        isLoading: false,
-        error: userMessage,
-        fieldErrors: fieldErrors,
-      );
-    } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        error: e.toString(),
-      );
-    }
-  }
-
-  /// Renames the current user (PATCH /auth/me) and refreshes [AuthState.user].
-  ///
-  /// AppExceptions propagate to the caller: a [ServerException] with
-  /// statusCode 409 means the name is already taken.
-  Future<void> updateUsername(String username) async {
-    final user = await _authRepository.updateProfile(username);
-    state = state.copyWith(user: user);
-  }
-
-  Future<void> logout() async {
-    state = state.copyWith(
-      isLoading: true,
-      currentOperation: AuthOperation.logout,
-    );
-
-    // Stop auto-refresh timer
-    _disableAutoRefresh();
-
-    final currentUserId = state.user?.id;
-    final refreshToken = await _secureStorage.getRefreshToken();
-    try {
-      await _authRepository.logout(refreshToken);
-    } catch (e) {
-      // Even if logout API fails, clear local state
-      logger.AppLogger.debug('[Auth] Logout API call failed: $e');
-    }
-    await _clearAuthState();
-    await _clearPlaybackSnapshot(currentUserId);
-    ref.read(dioClientProvider).clearETagCache();
-    state = const AuthState();
-  }
-
-  Future<void> refreshToken() async {
-    if (state.isRefreshingToken) return;
-
-    state = state.copyWith(
-      isRefreshingToken: true,
-      currentOperation: AuthOperation.refreshToken,
-    );
-
-    final refreshResult = await ref
-        .read(dioClientProvider)
-        .refreshSessionToken();
-    if (!refreshResult.success) {
-      if (refreshResult.isInvalidSessionFailure) {
-        // Clear auth state and let router handle redirect automatically
-        await _handleAuthError();
-      }
-
-      state = state.copyWith(
-        isRefreshingToken: false,
-      );
-      return;
-    }
-
-    state = state.copyWith(
-      isRefreshingToken: false,
-    );
-  }
-
-  // Helper methods
-  String _getErrorMessage(AppException error) {
-    return error.userMessage;
-  }
-
-  Map<String, String>? _getFieldErrors(AppException error) {
-    if (error is ServerException) {
-      final fieldErrors = error.fieldErrors;
-      if (fieldErrors != null && fieldErrors.isNotEmpty) {
-        return Map<String, String>.from(fieldErrors);
-      }
-    }
-    return null;
-  }
-
-  Future<void> _handleAuthError() async {
-    await _clearAuthState();
-    state = state.copyWith(isAuthenticated: false);
-  }
-
-  /// Saves token expiry from auth response.
-  /// Prioritizes server's UTC expires_at, falls back to relative expiresIn.
-  Future<void> _saveTokenExpiry({
-    required int expiresIn, DateTime? expiresAt,
-  }) async {
-    if (expiresAt != null) {
-      await _secureStorage.saveTokenExpiry(expiresAt);
-      logger.AppLogger.debug('✅ [Auth] Saved server UTC expiry: $expiresAt');
-    } else if (expiresIn > 0) {
-      final expiryUtc = DateTime.now().toUtc().add(Duration(seconds: expiresIn));
-      await _secureStorage.saveTokenExpiry(expiryUtc);
-      logger.AppLogger.debug('✅ [Auth] Saved local UTC expiry: $expiryUtc');
-    }
-  }
-
-  Future<void> _clearAuthState() async {
-    await _secureStorage.clearTokens();
-    await _secureStorage.clearTokenExpiry();
-  }
-
-  Future<void> _clearPlaybackSnapshot(String? userId) async {
-    final storage = ref.read(localStorageServiceProvider);
-    final keys = playbackSnapshotKeysToClearOnLogout(userId);
-    for (final key in keys) {
-      await storage.remove(key);
-    }
-  }
-
-  Future<TokenRefreshResult> _attemptTokenRefresh() async {
-    return ref.read(dioClientProvider).refreshSessionToken();
+  void resetLoadingState() {
+    state = state.copyWith(isLoading: false);
   }
 
   void clearError() {
     state = state.copyWith(clearError: true);
   }
 
-  void clearFieldErrors() {
-    state = state.copyWith(clearFieldErrors: true);
+  /// Drop the local pairing (called by the profile disconnect dialog and
+  /// by server switching); the router then redirects to /pairing.
+  Future<void> logout() async {
+    await clearLocalAuthState();
+    state = state.copyWith(isAuthenticated: false, clearUser: true);
   }
 
-  /// Reset loading state (called when auth check times out or is cancelled)
-  void resetLoadingState() {
-    if (state.isLoading) {
-      state = state.copyWith(isLoading: false);
-    }
-  }
-
-  /// Clear local auth state without calling logout API
-  /// Used when switching servers to reset auth state cleanly
+  /// Clear every stored credential without touching navigation state.
   Future<void> clearLocalAuthState() async {
-    _disableAutoRefresh();
-    final currentUserId = state.user?.id;
-    await _clearAuthState();
-    await _clearPlaybackSnapshot(currentUserId);
-    state = const AuthState();
-  }
-
-  Future<void> checkAuthStatus() async {
-    await _checkAuthStatus();
-  }
-
-  Future<void> forgotPassword(String email) async {
-    state = state.copyWith(
-      isLoading: true,
-      clearFieldErrors: true,
-      currentOperation: AuthOperation.forgotPassword,
-    );
-
-    final request = ForgotPasswordRequest(email: email);
-
     try {
-      await _authRepository.forgotPassword(request);
-      state = state.copyWith(
-        isLoading: false,
-      );
-    } on AppException catch (error) {
-      final userMessage = _getErrorMessage(error);
-      state = state.copyWith(
-        isLoading: false,
-        error: userMessage,
-      );
+      await _secureStorage.clearTokens();
+      await _secureStorage.remove(_apiKeyStorageKey);
     } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        error: e.toString(),
-      );
+      logger.AppLogger.debug('[Auth] Failed to clear local auth state: $e');
     }
-  }
-
-  Future<void> resetPassword({
-    required String token,
-    required String newPassword,
-  }) async {
-    state = state.copyWith(
-      isLoading: true,
-      clearFieldErrors: true,
-      currentOperation: AuthOperation.resetPassword,
-    );
-
-    final request = ResetPasswordRequest(
-      token: token,
-      newPassword: newPassword,
-    );
-
-    try {
-      await _authRepository.resetPassword(request);
-      state = state.copyWith(
-        isLoading: false,
-      );
-    } on AppException catch (error) {
-      final userMessage = _getErrorMessage(error);
-      final fieldErrors = _getFieldErrors(error);
-
-      state = state.copyWith(
-        isLoading: false,
-        error: userMessage,
-        fieldErrors: fieldErrors,
-      );
-    } catch (e) {
-      state = state.copyWith(
-        isLoading: false,
-        error: e.toString(),
-      );
-    }
-  }
-
-  // === Auto Token Refresh Methods ===
-
-  /// Start automatic token refresh timer
-  /// Checks token expiry every minute and refreshes 5 minutes before expiry
-  void _startTokenRefreshTimer() {
-    _stopTokenRefreshTimer(); // Clear any existing timer
-
-    _tokenRefreshTimer = Timer.periodic(
-      const Duration(seconds: _tokenCheckIntervalSeconds),
-      (_) => _checkAndRefreshToken(),
-    );
-
-    logger.AppLogger.debug('✅ [Auth] Token refresh timer started');
-  }
-
-  /// Stop automatic token refresh timer
-  void _stopTokenRefreshTimer() {
-    _tokenRefreshTimer?.cancel();
-    _tokenRefreshTimer = null;
-    logger.AppLogger.debug('⏹️ [Auth] Token refresh timer stopped');
-  }
-
-  /// Check if token needs refresh and refresh if necessary
-  Future<void> _checkAndRefreshToken() async {
-    // Only proceed if authenticated and not already refreshing
-    if (!state.isAuthenticated || state.isRefreshingToken) {
-      return;
-    }
-
-    try {
-      final tokenExpiry = await _secureStorage.getTokenExpiry();
-      if (tokenExpiry == null) {
-        return; // No expiry info, skip
-      }
-
-      final now = DateTime.now().toUtc();
-      final tokenExpiryUtc = tokenExpiry.toUtc();
-      final timeUntilExpiry = tokenExpiryUtc.difference(now);
-
-      // Add 2 minute safety margin to prevent clock skew issues
-      const safetyMargin = Duration(minutes: 2);
-      final effectiveBuffer = const Duration(minutes: _tokenRefreshBufferMinutes) + safetyMargin;
-
-      // Refresh if token expires in less than buffer time + safety margin
-      if (timeUntilExpiry <= effectiveBuffer) {
-        logger.AppLogger.debug(
-          '🔄 [Auth] Token expiring in ${timeUntilExpiry.inMinutes}m ${timeUntilExpiry.inSeconds}s, auto-refreshing...',
-        );
-        await refreshToken();
-      }
-    } catch (e) {
-      logger.AppLogger.debug('⚠️ [Auth] Error checking token expiry: $e');
-    }
-  }
-
-  /// Start auto-refresh for authenticated user
-  /// Call this after successful login or authentication check
-  void _enableAutoRefresh() {
-    _startTokenRefreshTimer();
-  }
-
-  /// Stop auto-refresh for logout
-  /// Call this after logout
-  void _disableAutoRefresh() {
-    _stopTokenRefreshTimer();
   }
 }
+
+final authProvider = NotifierProvider<AuthNotifier, AuthState>(
+  AuthNotifier.new,
+);

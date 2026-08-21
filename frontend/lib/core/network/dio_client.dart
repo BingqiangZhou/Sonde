@@ -4,7 +4,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:sonde/core/app/config/app_config.dart' as config;
 import 'package:sonde/core/network/exceptions/network_exceptions.dart';
-import 'package:sonde/core/network/token_refresh_service.dart';
 import 'package:sonde/core/storage/secure_storage_service.dart';
 import 'package:sonde/core/utils/app_logger.dart' as logger;
 import 'package:sonde/core/utils/url_normalizer.dart';
@@ -28,10 +27,6 @@ class DioClient {
       receiveTimeout: config.AppConfig.receiveTimeout,
       sendTimeout: config.AppConfig.sendTimeout,
     ));
-    _tokenRefreshService = TokenRefreshService(
-      dio: _dio,
-      secureStorage: _secureStorage,
-    );
     _cacheOptions = CacheOptions(
       store: MemCacheStore(),
       policy: CachePolicy.refreshForceCache,
@@ -47,10 +42,8 @@ class DioClient {
   static const int _maxRetries = 3;
 
   late final Dio _dio;
-  late final TokenRefreshService _tokenRefreshService;
   late final CacheOptions _cacheOptions;
   final SecureStorageService _secureStorage;
-  String? _cachedAccessToken;
   String? _cachedApiKey;
   static const String _apiKeyStorageKey = 'api_key';
 
@@ -85,15 +78,9 @@ class DioClient {
     _log('All caches cleared');
   }
   void clearETagCache() => clearCache();
-  Future<TokenRefreshResult> refreshSessionToken() =>
-      _tokenRefreshService.refreshToken();
-  void setToken(String? token) {
-    _cachedAccessToken = token;
-    _log('Token cache ${token != null ? "updated" : "cleared"}');
-  }
 
   void dispose() {
-    _cachedAccessToken = null;
+    _cachedApiKey = null;
     _dio.close(force: true);
     logger.AppLogger.debug('[DioClient] Disposed');
   }
@@ -102,23 +89,11 @@ class DioClient {
 
   Future<void> _onRequest(RequestOptions options, RequestInterceptorHandler handler) async {
     _log('${options.method} ${options.baseUrl}${options.path}');
-    if (options.headers.containsKey('Authorization') ||
-        options.headers.containsKey('X-API-Key')) {
+    if (options.headers.containsKey('X-API-Key')) {
       handler.next(options);
       return;
     }
-    var token = _cachedAccessToken;
-    if (token == null) {
-      token = await _secureStorage.getAccessToken();
-      if (token != null) _cachedAccessToken = token;
-    }
-    if (token != null) {
-      options.headers['Authorization'] = 'Bearer $token';
-      handler.next(options);
-      return;
-    }
-    // API-key pairing mode: no JWT tokens, fall back to the stored
-    // deployment key (QR pairing writes it via SecureStorage).
+    // Pairing mode: every request carries the stored deployment API key.
     var apiKey = _cachedApiKey;
     if (apiKey == null) {
       apiKey = await _secureStorage.get(_apiKeyStorageKey);
@@ -155,7 +130,12 @@ class DioClient {
       case DioExceptionType.badResponse:
         final status = err.response?.statusCode;
         if (status == 401) {
-          await _handle401(err, handler);
+          handler.reject(DioException(
+            requestOptions: err.requestOptions,
+            response: err.response,
+            type: DioExceptionType.badResponse,
+            error: AuthException.fromDioError(err),
+          ));
         } else if (status == 403) {
           handler.reject(DioException(
             requestOptions: err.requestOptions,
@@ -179,39 +159,6 @@ class DioClient {
     }
   }
 
-  Future<void> _handle401(DioException err, ErrorInterceptorHandler handler) async {
-    // API-key pairing mode (or logged out): no refresh token to rotate.
-    final refreshToken = await _secureStorage.getRefreshToken();
-    if (refreshToken == null) {
-      handler.reject(DioException(
-        requestOptions: err.requestOptions,
-        response: err.response,
-        type: DioExceptionType.badResponse,
-        error: AuthException.fromDioError(err),
-      ));
-      return;
-    }
-    try {
-      final response = await _tokenRefreshService.handle401(
-        err.requestOptions,
-        onTokenUpdated: (t) => _cachedAccessToken = t,
-      );
-      handler.resolve(response);
-    } on DioException catch (e) {
-      handler.reject(DioException(
-        requestOptions: e.requestOptions,
-        response: e.response ?? err.response,
-        type: DioExceptionType.badResponse,
-        error: AuthException.fromDioError(err),
-      ));
-    } catch (_) {
-      handler.reject(DioException(
-        requestOptions: err.requestOptions,
-        response: err.response,
-        error: const NetworkException('Session refresh temporarily unavailable.'),
-      ));
-    }
-  }
 
   // --- Private helpers ----------------------------------------------------
 

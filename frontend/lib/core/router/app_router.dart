@@ -5,11 +5,6 @@ import 'package:material_ui/material_ui.dart';
 import 'package:sonde/core/localization/app_localizations_extension.dart';
 import 'package:sonde/core/platform/adaptive_page_route.dart';
 import 'package:sonde/core/widgets/app_shells.dart';
-import 'package:sonde/features/auth/presentation/pages/auth_verify_page.dart';
-import 'package:sonde/features/auth/presentation/pages/forgot_password_page.dart';
-import 'package:sonde/features/auth/presentation/pages/login_page.dart';
-import 'package:sonde/features/auth/presentation/pages/register_page.dart';
-import 'package:sonde/features/auth/presentation/pages/reset_password_page.dart';
 import 'package:sonde/features/auth/presentation/providers/auth_provider.dart';
 import 'package:sonde/features/home/presentation/pages/home_page.dart';
 import 'package:sonde/features/pairing/presentation/pages/pairing_page.dart';
@@ -80,52 +75,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           child: const PairingPage(),
         ),
       ),
-      GoRoute(
-        path: '/login',
-        name: 'login',
-        pageBuilder: (context, state) => _buildPageWithTransition(
-          state: state,
-          child: const LoginPage(),
-        ),
-      ),
-      GoRoute(
-        path: '/register',
-        name: 'register',
-        pageBuilder: (context, state) => _buildPageWithTransition(
-          state: state,
-          child: const RegisterPage(),
-        ),
-      ),
       // Dev-only API test harness; excluded from release builds.
       if (kDebugMode) ...[
-        GoRoute(
-          path: '/auth-verify',
-          name: 'auth-verify',
-          pageBuilder: (context, state) => _buildPageWithTransition(
-            state: state,
-            child: const AuthVerifyPage(),
-          ),
-        ),
       ],
-      GoRoute(
-        path: '/forgot-password',
-        name: 'forgot-password',
-        pageBuilder: (context, state) => _buildPageWithTransition(
-          state: state,
-          child: const ForgotPasswordPage(),
-        ),
-      ),
-      GoRoute(
-        path: '/reset-password',
-        name: 'reset-password',
-        pageBuilder: (context, state) {
-          final token = state.uri.queryParameters['token'];
-          return _buildPageWithTransition(
-            state: state,
-            child: ResetPasswordPage(token: token),
-          );
-        },
-      ),
 
       // Main app shell with persistent tab navigation
       StatefulShellRoute.indexedStack(
@@ -319,15 +271,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final authState = ref.read(authProvider);
       final isAuthenticated = authState.isAuthenticated;
       final isPairing = state.matchedLocation == '/pairing';
-      final isLoggingIn = state.matchedLocation == '/login';
-      final isRegistering = state.matchedLocation == '/register';
       final isSplash = state.matchedLocation == '/splash';
-      final isForgotPassword = state.matchedLocation.startsWith(
-        '/forgot-password',
-      );
-      final isResetPassword = state.matchedLocation.startsWith(
-        '/reset-password',
-      );
 
       // Redirect legacy /home to /feed
       if (state.matchedLocation == '/home') {
@@ -337,19 +281,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       // Allow Splash
       if (isSplash) return null;
 
-      // Allow password reset pages
-      if (isForgotPassword || isResetPassword) {
-        return null;
-      }
-
       if (!isAuthenticated) {
-        if (isPairing || isLoggingIn || isRegistering) {
+        if (isPairing) {
           return null;
         }
         return '/pairing';
       } else {
         // Authenticated user checks
-        if (isPairing || isLoggingIn || isRegistering) {
+        if (isPairing) {
           return '/feed';
         }
 

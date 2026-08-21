@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sonde/core/app/config/app_config.dart';
 import 'package:sonde/core/database/database_provider.dart';
@@ -6,6 +7,7 @@ import 'package:sonde/core/network/dio_client.dart';
 import 'package:sonde/core/network/server_health_service.dart';
 import 'package:sonde/core/services/app_cache_service.dart';
 import 'package:sonde/core/storage/local_storage_service.dart';
+import 'package:sonde/core/storage/secure_storage_service.dart';
 import 'package:sonde/core/utils/url_normalizer.dart';
 import 'package:sonde/features/auth/presentation/providers/auth_provider.dart';
 import 'package:sonde/features/podcast/presentation/providers/podcast_daily_report_providers.dart';
@@ -19,6 +21,12 @@ import 'package:sonde/features/podcast/presentation/providers/podcast_search_pro
 final bootstrapServerUrlProvider = Provider<String>(
   (ref) => AppConfig.defaultServerBaseUrl,
 );
+
+/// Shared secure-storage provider (moved from the deleted auth feature;
+/// anchors the pairing API key and legacy token helpers).
+final secureStorageProvider = Provider<SecureStorageService>((ref) {
+  return SecureStorageServiceImpl(const FlutterSecureStorage());
+});
 
 // Dio Client Provider
 final dioClientProvider = Provider<DioClient>((ref) {

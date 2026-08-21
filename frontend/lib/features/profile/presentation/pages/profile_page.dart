@@ -358,11 +358,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       message: Text(user?.email ?? l10n.profile_please_login),
       actions: [
         AdaptiveActionSheetAction(
-          key: const Key('profile_user_menu_item_edit'),
-          onPressed: () => showEditProfileDialog(context),
-          child: Text(l10n.profile_edit_profile),
-        ),
-        AdaptiveActionSheetAction(
           key: const Key('profile_user_menu_item_logout'),
           onPressed: () => showLogoutDialog(context, ref),
           isDestructive: true,

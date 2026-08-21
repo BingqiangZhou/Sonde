@@ -15,7 +15,6 @@ import 'package:sonde/core/services/episode_sync_service.dart';
 import 'package:sonde/core/theme/app_theme.dart';
 import 'package:sonde/core/theme/theme_provider.dart';
 import 'package:sonde/core/utils/app_logger.dart' as logger;
-import 'package:sonde/features/auth/data/events/auth_event.dart';
 import 'package:sonde/features/auth/presentation/providers/auth_provider.dart';
 import 'package:sonde/features/podcast/presentation/providers/podcast_playback_providers.dart';
 import 'package:sonde/features/podcast/presentation/providers/podcast_providers.dart';
@@ -142,9 +141,6 @@ class _PersonalAIAssistantAppState
     // CRITICAL: Release audio resources when app is disposed
     // This ensures the audio player and (on mobile) the AudioService foreground service are properly cleaned up
     _cleanupAudioService();
-    // CRITICAL: Dispose AuthEventNotifier to clean up the broadcast stream
-    // This prevents memory leaks and ensures proper cleanup on app shutdown
-    AuthEventNotifier.instance.dispose();
     super.dispose();
   }
 
