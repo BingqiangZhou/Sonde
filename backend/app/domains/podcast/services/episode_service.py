@@ -100,6 +100,35 @@ class PodcastEpisodeService:
 
         return results, total
 
+    async def list_sync(
+        self,
+        size: int = 50,
+        cursor_updated_at: datetime | None = None,
+        cursor_episode_id: int | None = None,
+    ) -> tuple[list[dict[str, Any]], bool, tuple[datetime, int] | None]:
+        """Incremental sync for client caches, oldest-first by updated_at.
+
+        Same projection as the feed, except ``ai_summary`` is preserved so
+        offline caches can render summary previews without extra requests.
+        """
+        items, has_more, next_cursor_values = await self.repo.get_feed_sync_paginated(
+            self.user_id,
+            size=size,
+            cursor_updated_at=cursor_updated_at,
+            cursor_episode_id=cursor_episode_id,
+        )
+        return (
+            [self._normalize_sync_item(item) for item in items],
+            has_more,
+            next_cursor_values,
+        )
+
+    def _normalize_sync_item(self, item: dict[str, Any]) -> dict[str, Any]:
+        """Collapse the description like the feed but keep the AI summary."""
+        normalized = self._normalize_feed_item(item)
+        normalized["ai_summary"] = item.get("ai_summary")
+        return normalized
+
     async def list_playback_history(
         self,
         page: int = 1,

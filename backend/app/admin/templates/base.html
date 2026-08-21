@@ -37,6 +37,9 @@
                         <a href="/api/v1/admin/apikeys" class="{% if '/apikeys' in request.url.path %}border-indigo-500 text-gray-900{% else %}border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700{% endif %} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
                             API Keys
                         </a>
+                        <a href="/api/v1/admin/pair" class="{% if '/pair' in request.url.path %}border-indigo-500 text-gray-900{% else %}border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700{% endif %} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            App 接入
+                        </a>
                         <a href="/api/v1/admin/subscriptions" class="{% if '/subscriptions' in request.url.path %}border-indigo-500 text-gray-900{% else %}border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700{% endif %} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
                             RSS订阅
                         </a>

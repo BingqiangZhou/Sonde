@@ -14,6 +14,7 @@ def test_admin_routes_snapshot() -> None:
         "/api/v1/admin/",
         "/api/v1/admin/login",
         "/api/v1/admin/logout",
+        "/api/v1/admin/pair",
         "/api/v1/admin/apikeys",
         "/api/v1/admin/apikeys/test",
         "/api/v1/admin/apikeys/create",

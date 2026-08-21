@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Mapping
+from datetime import UTC, datetime
 from typing import Any
 
 from sqlalchemy import and_, desc, func, or_, select
@@ -21,6 +22,18 @@ from app.shared.repository_helpers import resolve_window_total
 
 
 logger = logging.getLogger(__name__)
+
+
+def _as_utc(value: Any) -> Any:
+    """Coerce naive cursor timestamps to UTC.
+
+    asyncpg mis-encodes naive datetimes bound against timestamptz columns
+    (microsecond truncation), silently breaking keyset boundaries. Cursor
+    tokens carry naive ISO strings, so reattach UTC before querying.
+    """
+    if isinstance(value, datetime) and value.tzinfo is None:
+        return value.replace(tzinfo=UTC)
+    return value
 
 
 class FeedQueryRepository(BasePodcastRepository):
@@ -169,11 +182,12 @@ class FeedQueryRepository(BasePodcastRepository):
         query = self._build_feed_lightweight_base_query(user_id)
 
         if cursor_published_at is not None and cursor_episode_id is not None:
+            boundary = _as_utc(cursor_published_at)
             query = query.where(
                 or_(
-                    PodcastEpisode.published_at < cursor_published_at,
+                    PodcastEpisode.published_at < boundary,
                     and_(
-                        PodcastEpisode.published_at == cursor_published_at,
+                        PodcastEpisode.published_at == boundary,
                         PodcastEpisode.id < cursor_episode_id,
                     ),
                 ),
@@ -196,6 +210,55 @@ class FeedQueryRepository(BasePodcastRepository):
             next_cursor_values = (tail["published_at"], tail["id"])
 
         return items, total, has_more, next_cursor_values
+
+    async def get_feed_sync_paginated(
+        self,
+        user_id: int,
+        size: int = 50,
+        cursor_updated_at: Any = None,
+        cursor_episode_id: int | None = None,
+    ) -> tuple[list[dict[str, Any]], bool, tuple[Any, int] | None]:
+        """Episodes changed since a keyset cursor, oldest-first.
+
+        Client-cache hydration endpoint: unlike the feed query this walks
+        ``updated_at`` ascending so a client can page from the beginning,
+        persist the tail cursor as its sync watermark, and reuse it for
+        later incremental pulls.
+        """
+        query = self._build_feed_lightweight_base_query(user_id)
+
+        if cursor_updated_at is not None and cursor_episode_id is not None:
+            boundary = _as_utc(cursor_updated_at)
+            query = query.where(
+                or_(
+                    PodcastEpisode.updated_at > boundary,
+                    and_(
+                        PodcastEpisode.updated_at == boundary,
+                        PodcastEpisode.id > cursor_episode_id,
+                    ),
+                ),
+            )
+
+        query = query.order_by(
+            PodcastEpisode.updated_at.asc(),
+            PodcastEpisode.id.asc(),
+        ).limit(size + 1)
+
+        result = await self.db.execute(query)
+        rows = result.mappings().all()
+
+        has_more = len(rows) > size
+        trimmed_rows = rows[:size]
+        items = [self._build_feed_lightweight_item(row) for row in trimmed_rows]
+        # Always report the tail cursor: when has_more is false it doubles as
+        # the watermark the client should persist for its next incremental
+        # sync (only an empty batch keeps the client's previous watermark).
+        next_cursor_values: tuple[Any, int] | None = None
+        if trimmed_rows:
+            tail = trimmed_rows[-1]
+            next_cursor_values = (tail["updated_at"], tail["id"])
+
+        return items, has_more, next_cursor_values
 
     async def get_playback_history_paginated(
         self,

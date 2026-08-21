@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}App 接入{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="bg-white shadow rounded-lg">
+        <div class="px-6 py-5 border-b border-gray-200">
+            <h1 class="text-lg font-medium text-gray-900">App 扫码接入</h1>
+            <p class="mt-1 text-sm text-gray-500">
+                在 App 首次启动的接入页扫描此二维码。二维码包含后端地址与 API Key，等同于部署密钥，请勿外传。
+            </p>
+        </div>
+
+        <div class="px-6 py-5 space-y-6">
+            {% if not has_api_key %}
+            <div class="rounded-md bg-red-50 p-4">
+                <div class="text-sm text-red-700">
+                    当前未配置 API_KEY（backend/.env），接入串不包含密钥，App 将无法通过认证。请先配置并重启。
+                </div>
+            </div>
+            {% endif %}
+
+            <form method="get" action="/api/v1/admin/pair" class="flex items-end gap-3">
+                <div class="flex-1">
+                    <label for="host" class="block text-sm font-medium text-gray-700">后端地址（App 可访问）</label>
+                    <input type="text" id="host" name="host" value="{{ host }}"
+                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-5 sm:text-sm"
+                           placeholder="http://192.168.1.5:8000">
+                </div>
+                <button type="submit"
+                        class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    重新生成
+                </button>
+            </form>
+
+            <div class="flex flex-col items-center gap-4">
+                <div class="p-4 bg-white border border-gray-200 rounded-lg inline-block">{{ qr_svg | safe }}</div>
+                <div class="w-full">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">接入串（手动输入用）</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="connect-uri" readonly value="{{ connect_uri }}"
+                               class="flex-1 block w-full rounded-md border-gray-300 bg-gray-50 font-mono text-xs shadow-sm sm:text-xs">
+                        <button type="button" onclick="navigator.clipboard.writeText(document.getElementById('connect-uri').value).then(()=>this.textContent='已复制')"
+                                class="inline-flex items-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            复制
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

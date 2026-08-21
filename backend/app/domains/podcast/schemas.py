@@ -258,6 +258,19 @@ class PodcastFeedResponse(BaseSchema):
     total: int
 
 
+class PodcastEpisodeSyncResponse(BaseSchema):
+    """剧集增量同步响应（客户端缓存用）
+
+    与 feed 同构但按 ``updated_at`` 升序；``ai_summary`` 保留原文供离线
+    缓存渲染。``next_cursor`` 在有数据时始终返回——``has_more=false`` 时
+    它就是客户端应持久化的同步水位。
+    """
+
+    items: list[PodcastEpisodeResponse]
+    has_more: bool
+    next_cursor: str | None = None
+
+
 # === Daily Report相关 ===
 
 

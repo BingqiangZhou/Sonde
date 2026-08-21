@@ -34,6 +34,7 @@ from app.domains.podcast.schemas import (
     PodcastEpisodeDetailResponse,
     PodcastEpisodeFilter,
     PodcastEpisodeListResponse,
+    PodcastEpisodeSyncResponse,
     PodcastFeedResponse,
     PodcastPlaybackHistoryListResponse,
     PodcastPlaybackStateResponse,
@@ -168,6 +169,39 @@ async def list_playback_history_lite(
         total=total,
         page=page,
         size=size,
+    )
+
+
+@router.get(
+    "/episodes/sync",
+    response_model=PodcastEpisodeSyncResponse,
+    summary="Incremental episode sync for client caches",
+)
+async def sync_episodes(
+    cursor: str | None = Query(None, description="Cursor token from previous sync"),
+    limit: int = Query(50, ge=1, le=200, description="Batch size"),
+    service: PodcastEpisodeService = Depends(get_podcast_episode_service),
+):
+    """Return episodes ordered by updated_at ascending (oldest first).
+
+    Client-cache hydration: call without a cursor for the initial pull, page
+    until ``has_more`` is false, persist ``next_cursor`` as the sync
+    watermark, and pass it back on later incremental syncs. Unlike the feed
+    endpoint the AI summary text is kept for offline rendering.
+    """
+    decoded = decode_cursor(cursor) if cursor else None
+    items, has_more, next_values = await service.list_sync(
+        size=limit,
+        cursor_updated_at=decoded["ts"] if decoded else None,
+        cursor_episode_id=decoded["id"] if decoded else None,
+    )
+    next_cursor = (
+        encode_keyset_cursor(next_values[0], next_values[1]) if next_values else None
+    )
+    return PodcastEpisodeSyncResponse(
+        items=items,
+        has_more=has_more,
+        next_cursor=next_cursor,
     )
 
 
