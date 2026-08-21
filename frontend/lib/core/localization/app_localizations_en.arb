@@ -2560,5 +2560,9 @@
     "pairingLoginInstead":  "Sign in with an account instead",
     "@pairingLoginInstead":  {
                                  "description":  "Legacy account login link"
-                             }
+                             },
+    "pairingCameraUnavailable":  "Camera unavailable — enter the server address and API key manually below.",
+    "@pairingCameraUnavailable":  {
+                                      "description":  "Shown in place of the QR scanner when the camera fails"
+                                  }
 }

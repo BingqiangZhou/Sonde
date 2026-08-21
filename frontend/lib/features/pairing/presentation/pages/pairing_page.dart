@@ -92,7 +92,27 @@ class _PairingPageState extends ConsumerState<PairingPage> {
                       borderRadius: AppRadius.lgRadius,
                       child: SizedBox(
                         height: 260,
-                        child: MobileScanner(onDetect: _onScan),
+                        child: MobileScanner(
+                          onDetect: _onScan,
+                          errorBuilder: (context, error) {
+                            // Camera unavailable (permission denied, busy,
+                            // hardware failure): fall back to the manual
+                            // form below instead of showing a black box.
+                            return Container(
+                              alignment: Alignment.center,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .surfaceContainerHighest,
+                              padding: EdgeInsets.all(context.spacing.md),
+                              child: Text(
+                                l10n.pairingCameraUnavailable,
+                                textAlign: TextAlign.center,
+                                style:
+                                    Theme.of(context).textTheme.bodyMedium,
+                              ),
+                            );
+                          },
+                        ),
                       ),
                     ),
                     SizedBox(height: context.spacing.md),

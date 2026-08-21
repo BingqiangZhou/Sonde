@@ -1884,4 +1884,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get pairingLoginInstead => '使用账号登录';
+
+  @override
+  String get pairingCameraUnavailable => '摄像头不可用——请在下方手动输入服务器地址与 API Key。';
 }

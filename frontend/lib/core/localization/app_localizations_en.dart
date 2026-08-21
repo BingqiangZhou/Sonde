@@ -1958,4 +1958,8 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pairingLoginInstead => 'Sign in with an account instead';
+
+  @override
+  String get pairingCameraUnavailable =>
+      'Camera unavailable — enter the server address and API key manually below.';
 }

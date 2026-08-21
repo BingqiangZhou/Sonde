@@ -3631,6 +3631,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Sign in with an account instead'**
   String get pairingLoginInstead;
+
+  /// Shown in place of the QR scanner when the camera fails
+  ///
+  /// In en, this message translates to:
+  /// **'Camera unavailable — enter the server address and API key manually below.'**
+  String get pairingCameraUnavailable;
 }
 
 class _AppLocalizationsDelegate

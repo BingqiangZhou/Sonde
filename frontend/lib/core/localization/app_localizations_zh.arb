@@ -2560,5 +2560,9 @@
     "pairingLoginInstead":  "使用账号登录",
     "@pairingLoginInstead":  {
                                  "description":  "Legacy account login link"
-                             }
+                             },
+    "pairingCameraUnavailable":  "摄像头不可用——请在下方手动输入服务器地址与 API Key。",
+    "@pairingCameraUnavailable":  {
+                                      "description":  "Shown in place of the QR scanner when the camera fails"
+                                  }
 }
