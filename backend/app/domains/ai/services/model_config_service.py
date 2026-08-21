@@ -1,24 +1,34 @@
-"""AI model configuration, catalog management, and security services.
+"""AI model configuration service.
 
-Consolidates the former model_config_service, model_management_service,
-and model_security_service into a single module.
+Single service covering the model-config lifecycle, API-key encryption,
+catalog queries, usage stats, and model testing/validation. Formerly split
+across model_config/model_management/model_security services.
 """
 
 from __future__ import annotations
 
 import logging
+import time
 from typing import Any
 
 from sqlalchemy import update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import ValidationError
+from app.domains.ai.model_testing import (
+    test_text_generation_model,
+    test_transcription_model,
+)
+from app.domains.ai.model_testing import (
+    validate_api_key as _validate_api_key_impl,
+)
 from app.domains.ai.models import AIModelConfig, ModelType
 from app.domains.ai.repositories import AIModelConfigRepository
 from app.domains.ai.schemas import (
     AIModelConfigCreate,
     AIModelConfigUpdate,
     APIKeyValidationResponse,
+    ModelTestResponse,
     ModelUsageStats,
 )
 
@@ -26,13 +36,16 @@ from app.domains.ai.schemas import (
 logger = logging.getLogger(__name__)
 
 
-class AIModelSecurityService:
-    """Handle API-key encryption, decryption, and default-model state."""
+class AIModelConfigService:
+    """Manage AI model configurations and their API keys."""
 
     def __init__(self, db: AsyncSession):
         self.db = db
+        self.repo = AIModelConfigRepository(db)
 
-    def encrypt_api_key(self, api_key: str) -> str:
+    # ── API key security ──────────────────────────────────────────────────────
+
+    def _encrypt_api_key(self, api_key: str) -> str:
         """Encrypt a user-provided API key for storage."""
         from app.core.security import encrypt_data
 
@@ -55,7 +68,7 @@ class AIModelSecurityService:
                 f"Failed to decrypt API key for model {model.name}",
             ) from exc
 
-    async def clear_default_models(self, model_type: ModelType) -> None:
+    async def _clear_default_models(self, model_type: ModelType) -> None:
         """Unset existing default models for a model type."""
         stmt = (
             update(AIModelConfig)
@@ -65,17 +78,7 @@ class AIModelSecurityService:
         await self.db.execute(stmt)
         await self.db.commit()
 
-
-class AIModelManagementService:
-    """Manage AI model configuration lifecycle and catalog queries."""
-
-    def __init__(
-        self,
-        repo: AIModelConfigRepository,
-        security_service: AIModelSecurityService,
-    ):
-        self.repo = repo
-        self.security_service = security_service
+    # ── Lifecycle ──────────────────────────────────────────────────────────────
 
     async def create_model(self, model_data: AIModelConfigCreate) -> AIModelConfig:
         """Create a new model configuration."""
@@ -84,11 +87,11 @@ class AIModelManagementService:
             raise ValidationError(f"Model with name '{model_data.name}' already exists")
 
         if model_data.is_default:
-            await self.security_service.clear_default_models(model_data.model_type)
+            await self._clear_default_models(model_data.model_type)
 
         encrypted_key = None
         if model_data.api_key:
-            encrypted_key = self.security_service.encrypt_api_key(model_data.api_key)
+            encrypted_key = self._encrypt_api_key(model_data.api_key)
             logger.debug("API key processed for model %s", model_data.name)
 
         model_config = AIModelConfig(
@@ -116,6 +119,49 @@ class AIModelManagementService:
             is_system=False,
         )
         return await self.repo.create(model_config)
+
+    async def update_model(
+        self,
+        model_id: int,
+        model_data: AIModelConfigUpdate,
+    ) -> AIModelConfig | None:
+        existing_model = await self.repo.get_by_id(model_id)
+        if not existing_model:
+            return None
+
+        if model_data.is_default:
+            await self._clear_default_models(existing_model.model_type)
+
+        update_data = model_data.dict(exclude_unset=True)
+        if "api_key" in update_data:
+            if update_data["api_key"]:
+                update_data["api_key"] = self._encrypt_api_key(update_data["api_key"])
+                update_data["api_key_encrypted"] = True
+                logger.debug("API key updated for model %s", model_id)
+            else:
+                update_data["api_key"] = ""
+                update_data["api_key_encrypted"] = False
+
+        return await self.repo.update(model_id, update_data)
+
+    async def delete_model(self, model_id: int) -> bool:
+        return await self.repo.delete(model_id)
+
+    async def set_default_model(
+        self,
+        model_id: int,
+        model_type: ModelType,
+    ) -> AIModelConfig | None:
+        success = await self.repo.set_default_model(model_id, model_type)
+        if success:
+            return await self.repo.get_by_id(model_id)
+        return None
+
+    async def init_default_models(self) -> list[AIModelConfig]:
+        """Default bootstrap remains disabled until presets are reintroduced."""
+        return []
+
+    # ── Catalog queries ────────────────────────────────────────────────────────
 
     async def get_model_by_id(self, model_id: int) -> AIModelConfig | None:
         return await self.repo.get_by_id(model_id)
@@ -150,45 +196,6 @@ class AIModelManagementService:
             size=size,
         )
 
-    async def update_model(
-        self,
-        model_id: int,
-        model_data: AIModelConfigUpdate,
-    ) -> AIModelConfig | None:
-        existing_model = await self.repo.get_by_id(model_id)
-        if not existing_model:
-            return None
-
-        if model_data.is_default:
-            await self.security_service.clear_default_models(existing_model.model_type)
-
-        update_data = model_data.dict(exclude_unset=True)
-        if "api_key" in update_data:
-            if update_data["api_key"]:
-                update_data["api_key"] = self.security_service.encrypt_api_key(
-                    update_data["api_key"],
-                )
-                update_data["api_key_encrypted"] = True
-                logger.debug("API key updated for model %s", model_id)
-            else:
-                update_data["api_key"] = ""
-                update_data["api_key_encrypted"] = False
-
-        return await self.repo.update(model_id, update_data)
-
-    async def delete_model(self, model_id: int) -> bool:
-        return await self.repo.delete(model_id)
-
-    async def set_default_model(
-        self,
-        model_id: int,
-        model_type: ModelType,
-    ) -> AIModelConfig | None:
-        success = await self.repo.set_default_model(model_id, model_type)
-        if success:
-            return await self.repo.get_by_id(model_id)
-        return None
-
     async def get_default_model(self, model_type: ModelType) -> AIModelConfig | None:
         return await self.repo.get_default_model(model_type)
 
@@ -197,6 +204,8 @@ class AIModelManagementService:
         model_type: ModelType | None = None,
     ) -> list[AIModelConfig]:
         return await self.repo.get_active_models(model_type)
+
+    # ── Usage stats ────────────────────────────────────────────────────────────
 
     async def get_model_stats(self, model_id: int) -> ModelUsageStats | None:
         model = await self.repo.get_by_id(model_id)
@@ -227,114 +236,45 @@ class AIModelManagementService:
         stats_data = await self.repo.get_usage_stats(model_type, limit)
         return [ModelUsageStats(**stat) for stat in stats_data]
 
-    async def init_default_models(self) -> list[AIModelConfig]:
-        """Default bootstrap remains disabled until presets are reintroduced."""
-        return []
-
-
-class AIModelConfigService:
-    """Thin orchestration facade preserving the historical public service API."""
-
-    def __init__(self, db: AsyncSession):
-        self.db = db
-        self.repo = AIModelConfigRepository(db)
-        self.security_service = AIModelSecurityService(db)
-        self.management_service = AIModelManagementService(
-            repo=self.repo,
-            security_service=self.security_service,
-        )
-
-    async def create_model(self, model_data: AIModelConfigCreate) -> AIModelConfig:
-        return await self.management_service.create_model(model_data)
-
-    async def get_model_by_id(self, model_id: int) -> AIModelConfig | None:
-        return await self.management_service.get_model_by_id(model_id)
-
-    async def get_models(
-        self,
-        model_type: ModelType | None = None,
-        is_active: bool | None = None,
-        provider: str | None = None,
-        page: int = 1,
-        size: int = 20,
-    ) -> tuple[list[AIModelConfig], int]:
-        return await self.management_service.get_models(
-            model_type=model_type,
-            is_active=is_active,
-            provider=provider,
-            page=page,
-            size=size,
-        )
-
-    async def search_models(
-        self,
-        query: str,
-        model_type: ModelType | None = None,
-        page: int = 1,
-        size: int = 20,
-    ) -> tuple[list[AIModelConfig], int]:
-        return await self.management_service.search_models(
-            query=query,
-            model_type=model_type,
-            page=page,
-            size=size,
-        )
-
-    async def update_model(
-        self,
-        model_id: int,
-        model_data: AIModelConfigUpdate,
-    ) -> AIModelConfig | None:
-        return await self.management_service.update_model(model_id, model_data)
-
-    async def delete_model(self, model_id: int) -> bool:
-        return await self.management_service.delete_model(model_id)
-
-    async def set_default_model(
-        self,
-        model_id: int,
-        model_type: ModelType,
-    ) -> AIModelConfig | None:
-        return await self.management_service.set_default_model(model_id, model_type)
-
-    async def get_default_model(self, model_type: ModelType) -> AIModelConfig | None:
-        return await self.management_service.get_default_model(model_type)
-
-    async def get_active_models(
-        self,
-        model_type: ModelType | None = None,
-    ) -> list[AIModelConfig]:
-        return await self.management_service.get_active_models(model_type)
+    # ── Testing / validation ───────────────────────────────────────────────────
 
     async def test_model(
         self,
         model_id: int,
         test_data: dict[str, Any] | None = None,
-    ) -> Any:
-        # Lazy import to avoid circular dependency with text_generation_service
-        from .text_generation_service import AIModelRuntimeService
+    ) -> ModelTestResponse:
+        if test_data is None:
+            test_data = {}
 
-        runtime_service = AIModelRuntimeService(
-            repo=self.repo,
-            security_service=self.security_service,
-        )
-        return await runtime_service.test_model(model_id, test_data)
+        model = await self.repo.get_by_id(model_id)
+        if not model:
+            raise ValidationError(f"Model {model_id} not found")
+        if not model.is_active:
+            raise ValidationError(f"Model {model_id} is not active")
 
-    async def get_model_stats(self, model_id: int) -> ModelUsageStats | None:
-        return await self.management_service.get_model_stats(model_id)
+        api_key = await self.get_decrypted_api_key(model)
+        started_at = time.time()
 
-    async def get_type_stats(
-        self,
-        model_type: ModelType,
-        limit: int = 20,
-    ) -> list[ModelUsageStats]:
-        return await self.management_service.get_type_stats(model_type, limit)
+        try:
+            if model.model_type == ModelType.TRANSCRIPTION:
+                result = await test_transcription_model(model, api_key, test_data)
+            else:
+                result = await test_text_generation_model(model, api_key, test_data)
 
-    async def init_default_models(self) -> list[AIModelConfig]:
-        return await self.management_service.init_default_models()
-
-    async def get_decrypted_api_key(self, model: AIModelConfig) -> str:
-        return await self.security_service.get_decrypted_api_key(model)
+            await self.repo.increment_usage(model_id, success=True)
+            return ModelTestResponse(
+                success=True,
+                response_time_ms=(time.time() - started_at) * 1000,
+                result=result,
+            )
+        except (ValueError, RuntimeError, OSError) as exc:
+            await self.repo.increment_usage(model_id, success=False)
+            logger.error("Model test failed: %s", exc)
+            return ModelTestResponse(
+                success=False,
+                response_time_ms=(time.time() - started_at) * 1000,
+                error_message=str(exc),
+            )
 
     async def validate_api_key(
         self,
@@ -343,16 +283,4 @@ class AIModelConfigService:
         model_id: str | None,
         model_type: ModelType,
     ) -> APIKeyValidationResponse:
-        # Lazy import to avoid circular dependency with text_generation_service
-        from .text_generation_service import AIModelRuntimeService
-
-        runtime_service = AIModelRuntimeService(
-            repo=self.repo,
-            security_service=self.security_service,
-        )
-        return await runtime_service.validate_api_key(
-            api_url=api_url,
-            api_key=api_key,
-            model_id=model_id,
-            model_type=model_type,
-        )
+        return await _validate_api_key_impl(api_url, api_key, model_id, model_type)

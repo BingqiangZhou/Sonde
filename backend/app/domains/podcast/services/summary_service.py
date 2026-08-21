@@ -17,7 +17,7 @@ from app.core.redis import get_shared_redis
 from app.core.utils import filter_thinking_content
 from app.domains.ai.invocation import call_ai_api_with_retry
 from app.domains.ai.models import ModelType
-from app.domains.ai.services.text_generation_service import BaseModelManager
+from app.domains.ai.services.model_manager import BaseModelManager
 from app.domains.podcast.models import (
     PodcastEpisode,
     PodcastEpisodeTranscript,
