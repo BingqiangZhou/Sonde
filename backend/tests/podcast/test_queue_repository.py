@@ -175,6 +175,67 @@ async def test_complete_current_falls_back_to_head_when_current_missing() -> Non
 
 
 @pytest.mark.asyncio
+async def test_remove_item_advances_to_following_episode_when_current_removed() -> None:
+    db = _mock_db()
+    repo = PodcastRepository(db=db, redis=AsyncMock())
+    first = _queue_item(item_id=1, episode_id=10, position=0)
+    second = _queue_item(item_id=2, episode_id=11, position=repo._queue_position_step)
+    third = _queue_item(item_id=3, episode_id=12, position=repo._queue_position_step * 2)
+    queue = _queue_with_items([first, second, third], current_episode_id=10)
+    db.delete = AsyncMock(side_effect=lambda item: queue.items.remove(item))
+
+    repo.get_queue_with_items = AsyncMock(side_effect=[queue, queue])
+    repo._rewrite_queue_positions = AsyncMock()
+    repo._refresh_queue_with_items = AsyncMock(return_value=queue)
+
+    result = await repo.remove_item(user_id=1, episode_id=10)
+
+    db.delete.assert_awaited_once_with(first)
+    assert result.current_episode_id == 11
+    db.commit.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_remove_item_clears_current_when_last_item_removed() -> None:
+    db = _mock_db()
+    repo = PodcastRepository(db=db, redis=AsyncMock())
+    only = _queue_item(item_id=1, episode_id=10, position=0)
+    queue = _queue_with_items([only], current_episode_id=10)
+    db.delete = AsyncMock(side_effect=lambda item: queue.items.remove(item))
+
+    repo.get_queue_with_items = AsyncMock(side_effect=[queue, queue])
+    repo._rewrite_queue_positions = AsyncMock()
+    repo._refresh_queue_with_items = AsyncMock(return_value=queue)
+
+    result = await repo.remove_item(user_id=1, episode_id=10)
+
+    db.delete.assert_awaited_once_with(only)
+    assert result.current_episode_id is None
+    db.commit.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_remove_item_keeps_current_when_non_current_item_removed() -> None:
+    db = _mock_db()
+    repo = PodcastRepository(db=db, redis=AsyncMock())
+    first = _queue_item(item_id=1, episode_id=10, position=0)
+    second = _queue_item(item_id=2, episode_id=11, position=repo._queue_position_step)
+    third = _queue_item(item_id=3, episode_id=12, position=repo._queue_position_step * 2)
+    queue = _queue_with_items([first, second, third], current_episode_id=10)
+    db.delete = AsyncMock(side_effect=lambda item: queue.items.remove(item))
+
+    repo.get_queue_with_items = AsyncMock(side_effect=[queue, queue])
+    repo._rewrite_queue_positions = AsyncMock()
+    repo._refresh_queue_with_items = AsyncMock(return_value=queue)
+
+    result = await repo.remove_item(user_id=1, episode_id=12)
+
+    db.delete.assert_awaited_once_with(third)
+    assert result.current_episode_id == 10
+    db.commit.assert_awaited_once()
+
+
+@pytest.mark.asyncio
 async def test_add_or_move_to_tail_compacts_positions_when_threshold_reached() -> None:
     db = _mock_db()
     repo = PodcastRepository(db=db, redis=AsyncMock())

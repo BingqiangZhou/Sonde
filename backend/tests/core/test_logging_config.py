@@ -245,25 +245,19 @@ class TestSetupLogging:
         setup_logging(log_dir=str(nested))
         assert nested.exists()
 
-    def test_root_logger_level_info(self, log_dir: Path):
-        """Root logger is set to INFO level."""
-        setup_logging(log_level="INFO", log_dir=str(log_dir))
-        assert logging.getLogger().level == logging.INFO
-
-    def test_root_logger_level_debug(self, log_dir: Path):
-        """Root logger is set to DEBUG level."""
-        setup_logging(log_level="DEBUG", log_dir=str(log_dir))
-        assert logging.getLogger().level == logging.DEBUG
-
-    def test_root_logger_level_warning(self, log_dir: Path):
-        """Root logger is set to WARNING level."""
-        setup_logging(log_level="WARNING", log_dir=str(log_dir))
-        assert logging.getLogger().level == logging.WARNING
-
-    def test_root_logger_level_error(self, log_dir: Path):
-        """Root logger is set to ERROR level."""
-        setup_logging(log_level="ERROR", log_dir=str(log_dir))
-        assert logging.getLogger().level == logging.ERROR
+    @pytest.mark.parametrize(
+        ("level_name", "expected_level"),
+        [
+            ("INFO", logging.INFO),
+            ("DEBUG", logging.DEBUG),
+            ("WARNING", logging.WARNING),
+            ("ERROR", logging.ERROR),
+        ],
+    )
+    def test_root_logger_level(self, log_dir: Path, level_name: str, expected_level):
+        """Root logger is set to the configured level."""
+        setup_logging(log_level=level_name, log_dir=str(log_dir))
+        assert logging.getLogger().level == expected_level
 
     def test_root_logger_level_case_insensitive(self, log_dir: Path):
         """Log level string is case-insensitive."""
@@ -416,15 +410,15 @@ class TestSetupLogging:
 class TestThirdPartyNoiseSuppression:
     """Tests that third-party library loggers are quieted."""
 
-    NOISY_LOGGERS = [
-        "uvicorn.access",
-        "uvicorn.error",
-        "gunicorn.access",
-        "gunicorn.error",
-        "sqlalchemy.engine",
-        "celery",
-        "httpx",
-        "httpcore",
+    EXPECTED_LEVELS = [
+        ("uvicorn.access", logging.WARNING),
+        ("uvicorn.error", logging.ERROR),
+        ("gunicorn.access", logging.WARNING),
+        ("gunicorn.error", logging.ERROR),
+        ("sqlalchemy.engine", logging.WARNING),
+        ("celery", logging.WARNING),
+        ("httpx", logging.WARNING),
+        ("httpcore", logging.WARNING),
     ]
 
     @pytest.fixture(autouse=True)
@@ -432,37 +426,14 @@ class TestThirdPartyNoiseSuppression:
         """Run setup_logging before each test."""
         setup_logging(log_dir=str(tmp_path / "logs"))
 
-    @pytest.mark.parametrize("logger_name", NOISY_LOGGERS)
-    def test_noisy_logger_suppressed(self, logger_name: str):
-        """Third-party loggers are set to WARNING or ERROR."""
-        level = logging.getLogger(logger_name).level
-        assert level >= logging.WARNING, (
-            f"{logger_name} level {level} should be >= WARNING ({logging.WARNING})"
-        )
-
-    def test_uvicorn_access_is_warning(self):
-        """uvicorn.access is set to WARNING."""
-        assert logging.getLogger("uvicorn.access").level == logging.WARNING
-
-    def test_uvicorn_error_is_error(self):
-        """uvicorn.error is set to ERROR."""
-        assert logging.getLogger("uvicorn.error").level == logging.ERROR
-
-    def test_sqlalchemy_is_warning(self):
-        """sqlalchemy.engine is set to WARNING."""
-        assert logging.getLogger("sqlalchemy.engine").level == logging.WARNING
-
-    def test_celery_is_warning(self):
-        """celery is set to WARNING."""
-        assert logging.getLogger("celery").level == logging.WARNING
-
-    def test_httpx_is_warning(self):
-        """httpx is set to WARNING."""
-        assert logging.getLogger("httpx").level == logging.WARNING
-
-    def test_httpcore_is_warning(self):
-        """httpcore is set to WARNING."""
-        assert logging.getLogger("httpcore").level == logging.WARNING
+    @pytest.mark.parametrize(("logger_name", "expected_level"), EXPECTED_LEVELS)
+    def test_noisy_logger_suppressed_to_expected_level(
+        self,
+        logger_name: str,
+        expected_level: int,
+    ):
+        """Third-party loggers are quieted to their exact configured level."""
+        assert logging.getLogger(logger_name).level == expected_level
 
 
 # ===========================================================================

@@ -30,4 +30,16 @@ def test_beat_schedule_references_registered_tasks() -> None:
         assert task_name in registered_names, (
             f"{beat_name} references unregistered task"
         )
-        assert "options" in beat_item and "queue" in beat_item["options"]
+        # Single-queue mode: every beat entry targets the default queue.
+        assert beat_item["options"]["queue"] == "default", (
+            f"{beat_name} should use default queue in single-user mode"
+        )
+
+
+def test_beat_schedule_snapshot() -> None:
+    beat_schedule = celery_app.conf.beat_schedule
+
+    assert "refresh-podcast-feeds" in beat_schedule
+    assert "generate-pending-summaries" in beat_schedule
+    assert "auto-cleanup-cache" in beat_schedule
+    assert "generate-daily-podcast-reports" in beat_schedule

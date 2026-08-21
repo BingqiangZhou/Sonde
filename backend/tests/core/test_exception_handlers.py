@@ -223,180 +223,70 @@ def app_general() -> FastAPI:
 # ---------------------------------------------------------------------------
 
 
+_CUSTOM_ERROR_CASES = [
+    # (path, status_code, detail, type)
+    ("/not-found", 404, "Item not found", "NotFoundError"),
+    ("/bad-request", 400, "Invalid payload", "BadRequestError"),
+    ("/unauthorized", 401, "Invalid credentials", "UnauthorizedError"),
+    ("/forbidden", 403, "Access denied", "ForbiddenError"),
+    ("/conflict", 409, "Duplicate entry", "CONFLICT"),
+    ("/validation", 400, "Field is required", "VALIDATION_ERROR"),
+    ("/database", 500, "Query failed", "DATABASE_ERROR"),
+    ("/external-service", 502, "Upstream timeout", "EXTERNAL_SERVICE_ERROR"),
+]
+
+
+@pytest.mark.parametrize(
+    ("path", "status_code", "detail", "error_type"),
+    _CUSTOM_ERROR_CASES,
+)
 @pytest.mark.asyncio
-async def test_not_found_error(app_custom_exceptions: FastAPI):
+async def test_custom_exception_response(
+    app_custom_exceptions: FastAPI,
+    path: str,
+    status_code: int,
+    detail: str,
+    error_type: str,
+):
     transport = ASGITransport(app=app_custom_exceptions)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
-        response = await client.get("/not-found")
-    assert response.status_code == 404
+        response = await client.get(path)
+    assert response.status_code == status_code
     data = response.json()
-    assert data["detail"] == "Item not found"
-    assert data["type"] == "NotFoundError"
-    assert data["status_code"] == 404
+    assert data["detail"] == detail
+    assert data["type"] == error_type
+    assert data["status_code"] == status_code
 
 
+_CUSTOM_ERROR_DEFAULT_CASES = [
+    ("/not-found-default", 404, "Resource not found"),
+    ("/bad-request-default", 400, "Bad request"),
+    ("/unauthorized-default", 401, "Unauthorized"),
+    ("/forbidden-default", 403, "Forbidden"),
+    ("/conflict-default", 409, "Resource already exists"),
+    ("/validation-default", 400, "Validation failed"),
+    ("/database-default", 500, "Database error"),
+    ("/external-service-default", 502, "External service error"),
+]
+
+
+@pytest.mark.parametrize(
+    ("path", "status_code", "detail"),
+    _CUSTOM_ERROR_DEFAULT_CASES,
+)
 @pytest.mark.asyncio
-async def test_not_found_error_default_message(app_custom_exceptions: FastAPI):
+async def test_custom_exception_default_message(
+    app_custom_exceptions: FastAPI,
+    path: str,
+    status_code: int,
+    detail: str,
+):
     transport = ASGITransport(app=app_custom_exceptions)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
-        response = await client.get("/not-found-default")
-    assert response.status_code == 404
+        response = await client.get(path)
+    assert response.status_code == status_code
     data = response.json()
-    assert data["detail"] == "Resource not found"
-
-
-@pytest.mark.asyncio
-async def test_bad_request_error(app_custom_exceptions: FastAPI):
-    transport = ASGITransport(app=app_custom_exceptions)
-    async with AsyncClient(transport=transport, base_url="http://test") as client:
-        response = await client.get("/bad-request")
-    assert response.status_code == 400
-    data = response.json()
-    assert data["detail"] == "Invalid payload"
-    assert data["type"] == "BadRequestError"
-    assert data["status_code"] == 400
-
-
-@pytest.mark.asyncio
-async def test_bad_request_error_default_message(app_custom_exceptions: FastAPI):
-    transport = ASGITransport(app=app_custom_exceptions)
-    async with AsyncClient(transport=transport, base_url="http://test") as client:
-        response = await client.get("/bad-request-default")
-    assert response.status_code == 400
-    data = response.json()
-    assert data["detail"] == "Bad request"
-
-
-@pytest.mark.asyncio
-async def test_unauthorized_error(app_custom_exceptions: FastAPI):
-    transport = ASGITransport(app=app_custom_exceptions)
-    async with AsyncClient(transport=transport, base_url="http://test") as client:
-        response = await client.get("/unauthorized")
-    assert response.status_code == 401
-    data = response.json()
-    assert data["detail"] == "Invalid credentials"
-    assert data["type"] == "UnauthorizedError"
-    assert data["status_code"] == 401
-
-
-@pytest.mark.asyncio
-async def test_unauthorized_error_default_message(app_custom_exceptions: FastAPI):
-    transport = ASGITransport(app=app_custom_exceptions)
-    async with AsyncClient(transport=transport, base_url="http://test") as client:
-        response = await client.get("/unauthorized-default")
-    assert response.status_code == 401
-    data = response.json()
-    assert data["detail"] == "Unauthorized"
-
-
-@pytest.mark.asyncio
-async def test_forbidden_error(app_custom_exceptions: FastAPI):
-    transport = ASGITransport(app=app_custom_exceptions)
-    async with AsyncClient(transport=transport, base_url="http://test") as client:
-        response = await client.get("/forbidden")
-    assert response.status_code == 403
-    data = response.json()
-    assert data["detail"] == "Access denied"
-    assert data["type"] == "ForbiddenError"
-    assert data["status_code"] == 403
-
-
-@pytest.mark.asyncio
-async def test_forbidden_error_default_message(app_custom_exceptions: FastAPI):
-    transport = ASGITransport(app=app_custom_exceptions)
-    async with AsyncClient(transport=transport, base_url="http://test") as client:
-        response = await client.get("/forbidden-default")
-    assert response.status_code == 403
-    data = response.json()
-    assert data["detail"] == "Forbidden"
-
-
-@pytest.mark.asyncio
-async def test_conflict_error(app_custom_exceptions: FastAPI):
-    transport = ASGITransport(app=app_custom_exceptions)
-    async with AsyncClient(transport=transport, base_url="http://test") as client:
-        response = await client.get("/conflict")
-    assert response.status_code == 409
-    data = response.json()
-    assert data["detail"] == "Duplicate entry"
-    assert data["type"] == "CONFLICT"
-    assert data["status_code"] == 409
-
-
-@pytest.mark.asyncio
-async def test_conflict_error_default_message(app_custom_exceptions: FastAPI):
-    transport = ASGITransport(app=app_custom_exceptions)
-    async with AsyncClient(transport=transport, base_url="http://test") as client:
-        response = await client.get("/conflict-default")
-    assert response.status_code == 409
-    data = response.json()
-    assert data["detail"] == "Resource already exists"
-
-
-@pytest.mark.asyncio
-async def test_custom_validation_error(app_custom_exceptions: FastAPI):
-    transport = ASGITransport(app=app_custom_exceptions)
-    async with AsyncClient(transport=transport, base_url="http://test") as client:
-        response = await client.get("/validation")
-    assert response.status_code == 400
-    data = response.json()
-    assert data["detail"] == "Field is required"
-    assert data["type"] == "VALIDATION_ERROR"
-    assert data["status_code"] == 400
-
-
-@pytest.mark.asyncio
-async def test_custom_validation_error_default_message(app_custom_exceptions: FastAPI):
-    transport = ASGITransport(app=app_custom_exceptions)
-    async with AsyncClient(transport=transport, base_url="http://test") as client:
-        response = await client.get("/validation-default")
-    assert response.status_code == 400
-    data = response.json()
-    assert data["detail"] == "Validation failed"
-
-
-@pytest.mark.asyncio
-async def test_database_error(app_custom_exceptions: FastAPI):
-    transport = ASGITransport(app=app_custom_exceptions)
-    async with AsyncClient(transport=transport, base_url="http://test") as client:
-        response = await client.get("/database")
-    assert response.status_code == 500
-    data = response.json()
-    assert data["detail"] == "Query failed"
-    assert data["type"] == "DATABASE_ERROR"
-    assert data["status_code"] == 500
-
-
-@pytest.mark.asyncio
-async def test_database_error_default_message(app_custom_exceptions: FastAPI):
-    transport = ASGITransport(app=app_custom_exceptions)
-    async with AsyncClient(transport=transport, base_url="http://test") as client:
-        response = await client.get("/database-default")
-    assert response.status_code == 500
-    data = response.json()
-    assert data["detail"] == "Database error"
-
-
-@pytest.mark.asyncio
-async def test_external_service_error(app_custom_exceptions: FastAPI):
-    transport = ASGITransport(app=app_custom_exceptions)
-    async with AsyncClient(transport=transport, base_url="http://test") as client:
-        response = await client.get("/external-service")
-    assert response.status_code == 502
-    data = response.json()
-    assert data["detail"] == "Upstream timeout"
-    assert data["type"] == "EXTERNAL_SERVICE_ERROR"
-    assert data["status_code"] == 502
-
-
-@pytest.mark.asyncio
-async def test_external_service_error_default_message(app_custom_exceptions: FastAPI):
-    transport = ASGITransport(app=app_custom_exceptions)
-    async with AsyncClient(transport=transport, base_url="http://test") as client:
-        response = await client.get("/external-service-default")
-    assert response.status_code == 502
-    data = response.json()
-    assert data["detail"] == "External service error"
+    assert data["detail"] == detail
 
 
 @pytest.mark.asyncio
@@ -415,36 +305,29 @@ async def test_custom_error_with_details(app_custom_exceptions: FastAPI):
 # ---------------------------------------------------------------------------
 
 
+@pytest.mark.parametrize(
+    ("path", "status_code", "detail"),
+    [
+        ("/http-404", 404, "Page gone"),
+        ("/http-403", 403, "Forbidden page"),
+        ("/http-500", 500, "Server blew up"),
+    ],
+)
 @pytest.mark.asyncio
-async def test_http_exception_404(app_http_exceptions: FastAPI):
+async def test_http_exception_response(
+    app_http_exceptions: FastAPI,
+    path: str,
+    status_code: int,
+    detail: str,
+):
     transport = ASGITransport(app=app_http_exceptions)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
-        response = await client.get("/http-404")
-    assert response.status_code == 404
+        response = await client.get(path)
+    assert response.status_code == status_code
     data = response.json()
-    assert data["detail"] == "Page gone"
+    assert data["detail"] == detail
     assert data["type"] == "HTTPException"
-    assert data["status_code"] == 404
-
-
-@pytest.mark.asyncio
-async def test_http_exception_403(app_http_exceptions: FastAPI):
-    transport = ASGITransport(app=app_http_exceptions)
-    async with AsyncClient(transport=transport, base_url="http://test") as client:
-        response = await client.get("/http-403")
-    assert response.status_code == 403
-    data = response.json()
-    assert data["detail"] == "Forbidden page"
-
-
-@pytest.mark.asyncio
-async def test_http_exception_500(app_http_exceptions: FastAPI):
-    transport = ASGITransport(app=app_http_exceptions)
-    async with AsyncClient(transport=transport, base_url="http://test") as client:
-        response = await client.get("/http-500")
-    assert response.status_code == 500
-    data = response.json()
-    assert data["detail"] == "Server blew up"
+    assert data["status_code"] == status_code
 
 
 @pytest.mark.asyncio
