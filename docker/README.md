@@ -2,7 +2,7 @@
 
 Sonde（声读）的 Docker 部署配置。Compose 项目名固定为 `sonde`（容器 `sonde-*`、卷 `sonde_*`、网络 `sonde_network`），与目录名无关。
 
-7 个服务：postgres (PostgreSQL 15)、redis (Redis 7)、backend (FastAPI，独占执行 alembic 迁移)、worker (Celery 异步任务)、beat (独立调度器)、backup (每日 pg_dump 侧车，输出到 `./backups`)、nginx (反向代理 + SSL)。
+6 个服务：postgres (PostgreSQL 15)、redis (Redis 7)、backend (FastAPI，独占执行 alembic 迁移)、worker (Celery 异步任务)、beat (独立调度器)、nginx (反向代理 + SSL)。
 
 ---
 
