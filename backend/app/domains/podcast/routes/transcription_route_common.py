@@ -22,8 +22,18 @@ async def validate_episode_and_permission(
     return episode
 
 
-def build_transcription_response(task, episode) -> PodcastTranscriptionResponse:
-    """Build standard transcription response."""
+def build_transcription_response(
+    task,
+    episode,
+    *,
+    transcript_content: str | None = None,
+) -> PodcastTranscriptionResponse:
+    """Build standard transcription response.
+
+    Content fields come from the canonical stores: the transcript body from
+    the dedicated transcript table (passed in by the caller), the summary
+    from episode.ai_summary. The task row only carries execution state.
+    """
     return PodcastTranscriptionResponse(
         id=task.id,
         episode_id=task.episode_id,
@@ -33,7 +43,7 @@ def build_transcription_response(task, episode) -> PodcastTranscriptionResponse:
         original_file_size=task.original_file_size,
         transcript_word_count=task.transcript_word_count,
         transcript_duration=task.transcript_duration,
-        transcript_content=task.transcript_content,
+        transcript_content=transcript_content,
         error_message=task.error_message,
         error_code=task.error_code,
         download_time=task.download_time,
@@ -47,7 +57,7 @@ def build_transcription_response(task, episode) -> PodcastTranscriptionResponse:
         updated_at=task.updated_at,
         duration_seconds=task.duration_seconds,
         total_processing_time=task.total_processing_time,
-        summary_content=task.summary_content,
+        summary_content=episode.ai_summary,
         summary_model_used=task.summary_model_used,
         summary_word_count=task.summary_word_count,
         summary_processing_time=task.summary_processing_time,

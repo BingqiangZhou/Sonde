@@ -76,6 +76,11 @@ async def start_transcription(
         return build_transcription_response(
             start_result["task"],
             start_result["episode"],
+            transcript_content=(
+                await transcription_workflow.get_episode_transcript_content(
+                    episode_id,
+                )
+            ),
         )
     except EpisodeNotFoundError:
         raise HTTPException(
@@ -159,7 +164,11 @@ async def get_transcription(
         }
 
         if include_content:
-            response_data["transcript_content"] = task.transcript_content
+            response_data[
+                "transcript_content"
+            ] = await transcription_workflow.get_episode_transcript_content(
+                episode_id,
+            )
         if task.duration_seconds:
             hours = task.duration_seconds // 3600
             minutes = (task.duration_seconds % 3600) // 60

@@ -540,6 +540,18 @@ class TranscriptionWorkflowService:
     ) -> TranscriptionTask | None:
         return await self.engine.get_episode_transcription(episode_id)
 
+    async def get_episode_transcript_content(self, episode_id: int) -> str | None:
+        """Read the transcript body from the dedicated transcript table.
+
+        The transcript table is the canonical content store; the task row
+        only tracks execution state.
+        """
+        stmt = select(PodcastEpisodeTranscript.transcript_content).where(
+            PodcastEpisodeTranscript.episode_id == episode_id,
+        )
+        result = await self.db.execute(stmt)
+        return result.scalar_one_or_none()
+
     async def get_transcription_models(self):
         return await self.model_manager.list_available_models()
 
@@ -723,14 +735,13 @@ class TranscriptionWorkflowService:
         action = start_result["action"]
 
         if action == "reused_completed":
+            transcript = await self.get_episode_transcript_content(episode_id)
             return {
                 "status": "skipped",
                 "message": "Transcription already exists",
                 "task_id": task.id,
                 "transcript_content": (
-                    task.transcript_content[:100] + "..."
-                    if task.transcript_content
-                    else None
+                    transcript[:100] + "..." if transcript else None
                 ),
                 "reason": "Already transcribed, use force=true to regenerate",
                 "action": action,
@@ -914,6 +925,8 @@ class TranscriptionWorkflowService:
                 ),
             }
 
+        transcript_content = await self.get_episode_transcript_content(episode_id)
+
         return {
             "episode_id": episode_id,
             "episode_title": episode.title,
@@ -923,15 +936,15 @@ class TranscriptionWorkflowService:
             "created_at": task.created_at,
             "updated_at": task.updated_at,
             "completed_at": task.completed_at,
-            "has_transcript": task.transcript_content is not None,
+            "has_transcript": transcript_content is not None,
             "transcript_preview": (
-                task.transcript_content[:100] + "..."
+                transcript_content[:100] + "..."
                 if status_value(task.status) == TranscriptionStatus.COMPLETED.value
-                and task.transcript_content
+                and transcript_content
                 else None
             ),
             "transcript_word_count": task.transcript_word_count,
-            "has_summary": task.summary_content is not None,
+            "has_summary": episode.ai_summary is not None,
             "summary_word_count": task.summary_word_count,
             "error_message": task.error_message,
         }
