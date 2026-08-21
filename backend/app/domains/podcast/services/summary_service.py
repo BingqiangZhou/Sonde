@@ -14,7 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_async_session_factory
 from app.core.exceptions import ValidationError
 from app.core.redis import get_shared_redis
-from app.core.utils import filter_thinking_content
+from app.core.utils import filter_thinking_content, strip_html_tags
 from app.domains.ai.invocation import call_ai_api_with_retry
 from app.domains.ai.models import ModelType
 from app.domains.ai.services.model_manager import BaseModelManager
@@ -23,7 +23,6 @@ from app.domains.podcast.models import (
     PodcastEpisodeTranscript,
     TranscriptionTask,
 )
-from app.domains.podcast.parsers.feed_parser import strip_html_tags
 from app.domains.podcast.repositories import PodcastRepository
 
 

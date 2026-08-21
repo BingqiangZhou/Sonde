@@ -106,3 +106,29 @@ def calculate_backoff(attempt: int, base_delay: float = 1.0) -> float:
     backoff = base_delay * (2**attempt)
     jitter = random.uniform(0, 0.5 * backoff)
     return backoff + jitter
+
+
+# HTML tag pattern for stripping
+_HTML_TAG_PATTERN = re.compile(r"<[^>]+>")
+
+
+def strip_html_tags(text: str) -> str:
+    """Strip HTML tags and decode entities / 去除 HTML 标签并解码实体."""
+    if not text:
+        return ""
+
+    # Remove script and style content first
+    text = re.sub(
+        r"<(script|style)[^>]*>.*?</\1>", "", text, flags=re.DOTALL | re.IGNORECASE
+    )
+
+    # Strip tags
+    text = _HTML_TAG_PATTERN.sub(" ", text)
+
+    # Decode HTML entities
+    text = html.unescape(text)
+
+    # Normalize whitespace
+    text = re.sub(r"\s+", " ", text)
+
+    return text.strip()

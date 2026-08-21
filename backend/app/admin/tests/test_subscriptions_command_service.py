@@ -7,11 +7,6 @@ from app.admin.services.subscriptions_service import (
     SUBSCRIPTION_TEST_PREVIEW_LIMIT,
     AdminSubscriptionsService,
 )
-from app.domains.podcast.parsers.feed_schemas import (
-    FeedEntry,
-    FeedInfo,
-    FeedParseResult,
-)
 
 
 class _ScalarOneOrNoneResult:
@@ -54,22 +49,21 @@ async def test_update_frequency_uses_bulk_update(monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_test_subscription_url_returns_preview_and_total_counts(monkeypatch):
-    result = FeedParseResult(
-        feed_info=FeedInfo(title="Test Feed", description="Example"),
-        entries=[
-            FeedEntry(id=str(index), title=f"Entry {index}", content="Preview")
+async def test_test_subscription_url_returns_preview_counts(monkeypatch):
+    fake_feed = SimpleNamespace(
+        title="Test Feed",
+        description="Example",
+        episodes=[
+            SimpleNamespace(title=f"Entry {index}")
             for index in range(SUBSCRIPTION_TEST_PREVIEW_LIMIT)
         ],
     )
-    result.total_entries = 100
-
-    parse_feed = AsyncMock(return_value=result)
-    close = AsyncMock(return_value=None)
-    fake_parser = SimpleNamespace(parse_feed=parse_feed, close=close)
+    fetch_and_parse_feed = AsyncMock(return_value=(True, fake_feed, None))
     monkeypatch.setattr(
-        "app.domains.podcast.parsers.feed_parser.FeedParser",
-        lambda config: fake_parser,
+        "app.domains.podcast.integration.secure_rss_parser.SecureRSSParser",
+        lambda user_id: SimpleNamespace(
+            fetch_and_parse_feed=fetch_and_parse_feed,
+        ),
     )
 
     service = AdminSubscriptionsService(AsyncMock())
@@ -80,4 +74,8 @@ async def test_test_subscription_url_returns_preview_and_total_counts(monkeypatc
 
     assert status_code == 200
     assert payload["entry_count"] == SUBSCRIPTION_TEST_PREVIEW_LIMIT
-    assert payload["total_entry_count"] == 100
+    assert payload["total_entry_count"] == SUBSCRIPTION_TEST_PREVIEW_LIMIT
+    fetch_and_parse_feed.assert_awaited_once()
+    assert fetch_and_parse_feed.await_args.kwargs["max_episodes"] == (
+        SUBSCRIPTION_TEST_PREVIEW_LIMIT
+    )

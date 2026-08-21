@@ -16,6 +16,7 @@ from fastapi import HTTPException
 from sqlalchemy import delete, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.auth import SINGLE_USER_ID
 from app.domains.podcast.models import (
     Subscription,
     SubscriptionStatus,
@@ -256,29 +257,22 @@ class AdminSubscriptionsService:
         if source_url is not None:
             subscription.source_url = source_url
 
-        from app.domains.podcast.parsers.feed_parser import (
-            FeedParserConfig,
-            parse_feed_url,
-        )
-
-        config = FeedParserConfig(
-            max_entries=10,
-            strip_html=True,
-            strict_mode=False,
-            log_raw_feed=False,
-        )
+        from app.domains.podcast.integration.secure_rss_parser import SecureRSSParser
 
         try:
-            test_result = await parse_feed_url(subscription.source_url, config=config)
-            if test_result and test_result.success and test_result.entries:
+            success, feed, error = await SecureRSSParser(
+                user_id,
+            ).fetch_and_parse_feed(
+                subscription.source_url,
+                max_episodes=10,
+            )
+            if success and feed and feed.episodes:
                 subscription.status = SubscriptionStatus.ACTIVE
                 subscription.error_message = None
             else:
                 subscription.status = SubscriptionStatus.ERROR
                 subscription.error_message = (
-                    test_result.errors[0]
-                    if test_result and test_result.errors
-                    else "No entries found or invalid feed"
+                    error or "No entries found or invalid feed"
                 )
         except Exception as exc:  # noqa: BLE001
             subscription.status = SubscriptionStatus.ERROR
@@ -297,61 +291,42 @@ class AdminSubscriptionsService:
         source_url: str,
         username: str,
     ) -> tuple[dict, int]:
-        from app.domains.podcast.parsers.feed_parser import (
-            FeedParseOptions,
-            FeedParser,
-            FeedParserConfig,
-        )
+        from app.domains.podcast.integration.secure_rss_parser import SecureRSSParser
 
-        config = FeedParserConfig(
-            max_entries=SUBSCRIPTION_TEST_PREVIEW_LIMIT,
-            strip_html=True,
-            strict_mode=False,
-            log_raw_feed=False,
-        )
-        options = FeedParseOptions(strip_html_content=True, include_raw_metadata=False)
-        parser = FeedParser(config)
         start_time = time.time()
-        try:
-            result = await parser.parse_feed(source_url, options=options)
-            response_time_ms = int((time.time() - start_time) * 1000)
-            if not result.success or result.has_errors():
-                error_messages = (
-                    [err.message for err in result.errors] if result.errors else []
-                )
-                return {
-                    "success": False,
-                    "message": (
-                        "RSS feed test failed: "
-                        f"{error_messages[0] if error_messages else 'Failed to parse feed'}"
-                    ),
-                    "error_message": error_messages[0]
-                    if error_messages
-                    else "Failed to parse feed",
-                }, 400
+        success, feed, error = await SecureRSSParser(
+            SINGLE_USER_ID,
+        ).fetch_and_parse_feed(
+            source_url,
+            max_episodes=SUBSCRIPTION_TEST_PREVIEW_LIMIT,
+        )
+        response_time_ms = int((time.time() - start_time) * 1000)
 
-            logger.info(
-                "RSS feed test successful for %s by user %s",
-                source_url,
-                username,
-            )
+        if not success or not feed or not feed.episodes:
+            error_message = error or "Failed to parse feed"
             return {
-                "success": True,
-                "message": "RSS feed test successful",
-                "feed_title": result.feed_info.title or "Untitled",
-                "feed_description": result.feed_info.description or "",
-                "entry_count": len(result.entries),
-                "total_entry_count": result.total_entries,
-                "response_time_ms": response_time_ms,
-            }, 200
-        finally:
-            await parser.close()
+                "success": False,
+                "message": f"RSS feed test failed: {error_message}",
+                "error_message": error_message,
+            }, 400
+
+        logger.info(
+            "RSS feed test successful for %s by user %s",
+            source_url,
+            username,
+        )
+        return {
+            "success": True,
+            "message": "RSS feed test successful",
+            "feed_title": feed.title or "Untitled",
+            "feed_description": feed.description or "",
+            "entry_count": len(feed.episodes),
+            "total_entry_count": len(feed.episodes),
+            "response_time_ms": response_time_ms,
+        }, 200
 
     async def test_all_subscriptions(self, *, request, user_id) -> dict:
-        from app.domains.podcast.parsers.feed_parser import (
-            FeedParserConfig,
-            parse_feed_url,
-        )
+        from app.domains.podcast.integration.secure_rss_parser import SecureRSSParser
 
         result = await self.db.execute(
             select(Subscription).order_by(Subscription.created_at.desc()),
@@ -368,25 +343,21 @@ class AdminSubscriptionsService:
                 "failed_items": [],
             }
 
-        config = FeedParserConfig(
-            max_entries=10,
-            strip_html=True,
-            strict_mode=False,
-            log_raw_feed=False,
-        )
-
         async def test_single_subscription(
             subscription: Subscription,
             timeout: int = 15,
         ) -> dict[str, Any]:
             try:
                 start_time = time.time()
-                result = await asyncio.wait_for(
-                    parse_feed_url(subscription.source_url, config=config),
+                success, feed, error = await asyncio.wait_for(
+                    SecureRSSParser(user_id).fetch_and_parse_feed(
+                        subscription.source_url,
+                        max_episodes=10,
+                    ),
                     timeout=timeout,
                 )
                 response_time_ms = int((time.time() - start_time) * 1000)
-                if result and result.success and result.entries:
+                if success and feed and feed.episodes:
                     return {
                         "id": subscription.id,
                         "title": subscription.title,
@@ -394,11 +365,7 @@ class AdminSubscriptionsService:
                         "success": True,
                         "response_time_ms": response_time_ms,
                     }
-                error_msg = (
-                    result.errors[0]
-                    if result and result.errors
-                    else "No entries found or invalid feed"
-                )
+                error_msg = error or "No entries found or invalid feed"
                 return {
                     "id": subscription.id,
                     "title": subscription.title,
