@@ -49,23 +49,21 @@ class BaseModelManager:
         error_message: str | None = None,
     ) -> Any:
         """Get active model by name or highest priority."""
-        if model_name:
-            model = await self.ai_model_repo.get_by_name(model_name)
-            if not model or not model.is_active or model.model_type != self.model_type:
-                raise ValidationError(
-                    f"{self.operation_name} model '{model_name}' not found or not active",
-                )
-            return model
+        from app.domains.ai.model_resolution import resolve_active_model_config
 
-        active_models = await self.ai_model_repo.get_active_models_by_priority(
-            self.model_type,
-        )
-        if not active_models:
-            msg = (
-                error_message or f"No active {self.operation_name.lower()} model found"
+        try:
+            return await resolve_active_model_config(
+                self.ai_model_repo,
+                model_type=self.model_type,
+                model_name=model_name,
+                operation_name=self.operation_name,
             )
-            raise ValidationError(msg)
-        return active_models[0]
+        except ValidationError:
+            # Callers may only override the no-active-models message; named
+            # lookups always report the standard not-found wording.
+            if model_name is None and error_message is not None:
+                raise ValidationError(error_message) from None
+            raise
 
     async def get_models_to_try(
         self,

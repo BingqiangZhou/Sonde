@@ -26,7 +26,7 @@ from app.core.exceptions import ValidationError
 from app.core.redis import RedisCache, get_shared_redis
 from app.domains.ai.key_resolver import resolve_api_key_with_fallback
 from app.domains.ai.models import ModelType
-from app.domains.ai.repositories import AIModelConfigRepository
+from app.domains.ai.services.model_manager import BaseModelManager
 from app.domains.podcast.models import (
     PodcastEpisode,
     PodcastEpisodeTranscript,
@@ -109,84 +109,39 @@ async def _rmtree_async(path: str) -> None:
     await asyncio.to_thread(shutil.rmtree, path)
 
 
-class TranscriptionModelManager:
-    """Resolve transcription model configs and transcribers."""
+class TranscriptionModelManager(BaseModelManager):
+    """Resolve transcription model configs.
+
+    Model lookup, priority fallback, key resolution with fallback and model
+    listing all come from BaseModelManager; only the SiliconFlow provider
+    key-prefix hint is transcription-specific.
+    """
 
     def __init__(self, db: AsyncSession):
-        self.db = db
-        self.ai_model_repo = AIModelConfigRepository(db)
-
-    async def get_active_transcription_model(self, model_name: str | None = None):
-        if model_name:
-            model = await self.ai_model_repo.get_by_name(model_name)
-            if (
-                not model
-                or not model.is_active
-                or model.model_type != ModelType.TRANSCRIPTION
-            ):
-                raise ValidationError(
-                    f"Transcription model '{model_name}' not found or not active",
-                )
-            return model
-
-        active_models = await self.ai_model_repo.get_active_models_by_priority(
-            ModelType.TRANSCRIPTION,
-        )
-        if not active_models:
-            raise ValidationError("No active transcription model found")
-        return active_models[0]
-
-    async def create_transcriber(self, model_name: str | None = None):
-        model_config = await self.get_active_transcription_model(model_name)
-        api_key = await self._get_api_key(model_config)
-
-        api_url = model_config.api_url
-        if not api_url or api_url.strip() == "":
-            api_url = getattr(
-                settings,
-                "TRANSCRIPTION_API_URL",
-                "https://api.siliconflow.cn/v1/audio/transcriptions",
-            )
-
-        from app.domains.podcast.transcription import SiliconFlowTranscriber
-
-        return SiliconFlowTranscriber(
-            api_key=api_key,
-            api_url=api_url,
-            max_concurrent=model_config.max_concurrent_requests,
+        super().__init__(
+            db=db,
+            model_type=ModelType.TRANSCRIPTION,
+            operation_name="Transcription",
         )
 
-    async def list_available_models(self):
+    async def resolve_api_key(self, model_config, *, invalid_message=None) -> str:
         active_models = await self.ai_model_repo.get_active_models(
             ModelType.TRANSCRIPTION,
         )
-        return [
-            {
-                "id": model.id,
-                "name": model.name,
-                "display_name": model.display_name,
-                "provider": model.provider,
-                "model_id": model.model_id,
-                "is_default": model.is_default,
-            }
-            for model in active_models
-        ]
 
-    async def _get_api_key(self, model_config) -> str:
-        active_models = await self.ai_model_repo.get_active_models(
-            ModelType.TRANSCRIPTION,
+        msg = invalid_message or (
+            f"No valid API key found. Model '{model_config.name}' has a "
+            "placeholder/invalid API key, and no alternative models with "
+            "valid API keys were found. Please configure a valid API key "
+            "for at least one TRANSCRIPTION model."
         )
+
         try:
             return resolve_api_key_with_fallback(
                 primary_model=model_config,
                 fallback_models=active_models,
                 logger=logger,
-                invalid_message=(
-                    f"No valid API key found. Model '{model_config.name}' has a "
-                    "placeholder/invalid API key, and no alternative models with "
-                    "valid API keys were found. Please configure a valid API key "
-                    "for at least one TRANSCRIPTION model."
-                ),
+                invalid_message=msg,
                 provider_key_prefix={"siliconflow": "sk-"},
             )
         except ValueError as exc:
@@ -257,7 +212,7 @@ class TranscriptionWorkflowService:
         force: bool = False,
     ) -> dict[str, Any]:
         if model_name:
-            await self.model_manager.get_active_transcription_model(model_name)
+            await self.model_manager.get_active_model(model_name)
 
         state_manager = await self.state_manager_factory()
         existing_task = await self._load_existing_task(episode_id)
@@ -372,9 +327,7 @@ class TranscriptionWorkflowService:
         model_name: str | None,
     ) -> tuple[TranscriptionTask, int | None, bool]:
         episode = await self._load_episode_for_task_creation(episode_id)
-        model_config = await self.model_manager.get_active_transcription_model(
-            model_name
-        )
+        model_config = await self.model_manager.get_active_model(model_name)
         task_values = {
             "episode_id": episode_id,
             "original_audio_url": episode.audio_url,
@@ -440,16 +393,13 @@ class TranscriptionWorkflowService:
         self,
         model_name: str | None,
     ) -> int | None:
-        ai_repo = AIModelConfigRepository(self.db)
-        model_config = None
-        if model_name:
-            model_config = await ai_repo.get_by_name(model_name)
-        if not model_config:
-            active_models = await ai_repo.get_active_models_by_priority(
-                ModelType.TRANSCRIPTION,
-            )
-            model_config = active_models[0] if active_models else None
-        return model_config.id if model_config else None
+        try:
+            model_config = await self.model_manager.get_active_model(model_name)
+        except ValidationError:
+            # Redispatch paths tolerate a missing config: enqueueing with
+            # config_db_id=None lets the engine fail explicitly instead.
+            return None
+        return model_config.id
 
     # ── Route facades (episode/subscription scoped) ──
 

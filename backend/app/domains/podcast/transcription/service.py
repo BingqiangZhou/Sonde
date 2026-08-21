@@ -15,6 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings
 from app.core.exceptions import ValidationError
 from app.domains.ai.key_resolver import extract_model_key
+from app.domains.ai.model_resolution import resolve_active_model_config
 from app.domains.ai.models import ModelType
 from app.domains.ai.repositories import AIModelConfigRepository
 from app.domains.podcast.models import (
@@ -364,48 +365,26 @@ class PodcastTranscriptionService:
             f"[TRANSCRIPTION] Episode found: title='{episode.title}', audio_url='{episode.audio_url}'",
         )
 
-        # ?
-        ai_repo = AIModelConfigRepository(self.db)
+        # Resolve the transcription model by name (validated) or priority.
+        model_config = await resolve_active_model_config(
+            AIModelConfigRepository(self.db),
+            model_type=ModelType.TRANSCRIPTION,
+            model_name=model,
+            operation_name="Transcription",
+        )
+        logger.info(
+            f"[TRANSCRIPTION] Using model: {model_config.model_id} "
+            f"(priority={model_config.priority})",
+        )
 
-        # 1.
-        model_config = None
-        if model:
-            model_config = await ai_repo.get_by_name(model)
-            logger.info(
-                f"[TRANSCRIPTION] Looking for model by name '{model}': {model_config is not None}",
-            )
-            if (
-                not model_config
-                or not model_config.is_active
-                or model_config.model_type != ModelType.TRANSCRIPTION
-            ):
-                raise ValidationError(
-                    f"Transcription model '{model}' not found or not active",
-                )
-
-        # 2.
-        if not model_config:
-            active_models = await ai_repo.get_active_models_by_priority(
-                ModelType.TRANSCRIPTION,
-            )
-            if active_models:
-                model_config = active_models[0]
-                logger.info(
-                    f"[TRANSCRIPTION] Using highest priority model: {model_config.model_id} (priority={model_config.priority})",
-                )
-            else:
-                raise ValidationError("No active transcription model found")
-
-        # ID?(APIodel)
         transcription_model = model_config.model_id
-        logger.info(f"[TRANSCRIPTION] Final model to use: '{transcription_model}'")
 
         logger.info("[TRANSCRIPTION] Creating TranscriptionTask in database...")
         task = TranscriptionTask(
             episode_id=episode_id,
             original_audio_url=episode.audio_url,
             chunk_size_mb=self.chunk_size_mb,
-            model_used=transcription_model,  # APIID (?whisper-1)ID
+            model_used=transcription_model,  # Provider model id, e.g. whisper-1
         )
 
         self.db.add(task)
@@ -416,7 +395,7 @@ class PodcastTranscriptionService:
             f"[TRANSCRIPTION] Task created in DB: id={task.id}, status={task.status}",
         )
 
-        config_db_id = model_config.id if model_config else None
+        config_db_id = model_config.id
         return task, config_db_id
 
     async def execute_transcription_task(
