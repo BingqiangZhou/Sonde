@@ -114,7 +114,6 @@ class Settings(BaseSettings):
     # Pagination and Batch Processing
     PODCAST_EPISODE_BATCH_SIZE: int = 50
     PODCAST_RECENT_EPISODES_LIMIT: int = 3
-    PODCAST_FEED_LIGHTWEIGHT_ENABLED: bool = True
     RSS_REFRESH_CONCURRENCY: int = 5
 
     # AI Client Configuration

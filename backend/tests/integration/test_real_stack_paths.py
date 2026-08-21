@@ -153,11 +153,11 @@ async def test_feed_count_cache_roundtrip_on_real_redis(
         episodes_data=_episodes_payload(2),
     )
 
-    page1, total1 = await repo.get_feed_lightweight_page_paginated(
-        seeded_user, page=1, size=1
+    page1, total1, _, _ = await repo.get_feed_lightweight_cursor_paginated(
+        seeded_user, size=1
     )
-    page2, total2 = await repo.get_feed_lightweight_page_paginated(
-        seeded_user, page=1, size=1
+    page2, total2, _, _ = await repo.get_feed_lightweight_cursor_paginated(
+        seeded_user, size=1
     )
 
     assert total1 == total2 == 2

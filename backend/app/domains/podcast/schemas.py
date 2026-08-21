@@ -8,11 +8,6 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 from app.shared.schemas import BaseSchema, TimestampedSchema
 
 
-# Backward-compatible aliases
-PodcastBaseSchema = BaseSchema
-PodcastTimestampedSchema = TimestampedSchema
-
-
 # === Generic Subscription schemas (moved from shared/) ===
 
 
@@ -42,7 +37,7 @@ class SubscriptionUpdate(BaseSchema):
 # === Subscription相关 ===
 
 
-class PodcastSubscriptionCreate(PodcastBaseSchema):
+class PodcastSubscriptionCreate(BaseSchema):
     """创建播客订阅请求"""
 
     feed_url: str = Field(
@@ -64,7 +59,7 @@ class PodcastSubscriptionCreate(PodcastBaseSchema):
         return v
 
 
-class PodcastSubscriptionResponse(PodcastTimestampedSchema):
+class PodcastSubscriptionResponse(TimestampedSchema):
     """播客订阅响应"""
 
     id: int
@@ -134,7 +129,7 @@ class PodcastSubscriptionResponse(PodcastTimestampedSchema):
         return data
 
 
-class PodcastSubscriptionListResponse(PodcastBaseSchema):
+class PodcastSubscriptionListResponse(BaseSchema):
     """播客订阅列表响应"""
 
     items: list[PodcastSubscriptionResponse]
@@ -170,7 +165,7 @@ class SubscriptionReparseResponse(BaseSchema):
 # === Episode相关 ===
 
 
-class PodcastEpisodeResponse(PodcastTimestampedSchema):
+class PodcastEpisodeResponse(TimestampedSchema):
     """播客单集响应"""
 
     id: int
@@ -205,7 +200,7 @@ class PodcastEpisodeResponse(PodcastTimestampedSchema):
     is_played: bool | None = None
 
 
-class PodcastEpisodeListResponse(PodcastBaseSchema):
+class PodcastEpisodeListResponse(BaseSchema):
     """播客单集列表响应"""
 
     items: list[PodcastEpisodeResponse]
@@ -217,7 +212,7 @@ class PodcastEpisodeListResponse(PodcastBaseSchema):
     next_cursor: str | None = None
 
 
-class PodcastPlaybackHistoryItemResponse(PodcastBaseSchema):
+class PodcastPlaybackHistoryItemResponse(BaseSchema):
     """Lightweight playback history item for profile history page."""
 
     id: int
@@ -232,7 +227,7 @@ class PodcastPlaybackHistoryItemResponse(PodcastBaseSchema):
     published_at: datetime
 
 
-class PodcastPlaybackHistoryListResponse(PodcastBaseSchema):
+class PodcastPlaybackHistoryListResponse(BaseSchema):
     """Lightweight playback history list response"""
 
     items: list[PodcastPlaybackHistoryItemResponse]
@@ -254,7 +249,7 @@ class PodcastEpisodeDetailResponse(PodcastEpisodeResponse):
     related_episodes: list[dict[str, Any]] | None = []
 
 
-class PodcastFeedResponse(PodcastBaseSchema):
+class PodcastFeedResponse(BaseSchema):
     """播客信息流响应"""
 
     items: list[PodcastEpisodeResponse]
@@ -267,7 +262,7 @@ class PodcastFeedResponse(PodcastBaseSchema):
 # === Daily Report相关 ===
 
 
-class DailyReportItem(PodcastBaseSchema):
+class DailyReportItem(BaseSchema):
     """Daily report item snapshot."""
 
     episode_id: int
@@ -280,7 +275,7 @@ class DailyReportItem(PodcastBaseSchema):
     episode_published_at: datetime | None = None
 
 
-class PodcastDailyReportResponse(PodcastBaseSchema):
+class PodcastDailyReportResponse(BaseSchema):
     """Daily report response."""
 
     available: bool
@@ -292,7 +287,7 @@ class PodcastDailyReportResponse(PodcastBaseSchema):
     items: list[DailyReportItem] = Field(default_factory=list)
 
 
-class DailyReportDateItem(PodcastBaseSchema):
+class DailyReportDateItem(BaseSchema):
     """Available report date item."""
 
     report_date: date
@@ -300,7 +295,7 @@ class DailyReportDateItem(PodcastBaseSchema):
     generated_at: datetime | None = None
 
 
-class PodcastDailyReportDatesResponse(PodcastBaseSchema):
+class PodcastDailyReportDatesResponse(BaseSchema):
     """Paginated report date list response"""
 
     items: list[DailyReportDateItem] = Field(default_factory=list)
@@ -313,7 +308,7 @@ class PodcastDailyReportDatesResponse(PodcastBaseSchema):
 # === Playback相关 ===
 
 
-class PodcastPlaybackUpdate(PodcastBaseSchema):
+class PodcastPlaybackUpdate(BaseSchema):
     """播放进度更新请求"""
 
     position: int = Field(..., ge=0, description="当前播放位置(秒)")
@@ -321,7 +316,7 @@ class PodcastPlaybackUpdate(PodcastBaseSchema):
     playback_rate: float = Field(default=1.0, ge=0.5, le=3.0, description="播放倍速")
 
 
-class PodcastPlaybackStateResponse(PodcastBaseSchema):
+class PodcastPlaybackStateResponse(BaseSchema):
     """播放状态响应"""
 
     episode_id: int
@@ -339,7 +334,7 @@ class PodcastPlaybackStateResponse(PodcastBaseSchema):
 # === Category相关 ===
 
 
-class PlaybackRateApplyRequest(PodcastBaseSchema):
+class PlaybackRateApplyRequest(BaseSchema):
     """Apply global/subscription playback rate preference."""
 
     playback_rate: float = Field(..., ge=0.5, le=3.0, description="播放倍速")
@@ -354,7 +349,7 @@ class PlaybackRateApplyRequest(PodcastBaseSchema):
     )
 
 
-class PlaybackRateEffectiveResponse(PodcastBaseSchema):
+class PlaybackRateEffectiveResponse(BaseSchema):
     """Effective playback-rate response."""
 
     global_playback_rate: float
@@ -363,35 +358,35 @@ class PlaybackRateEffectiveResponse(PodcastBaseSchema):
     source: Literal["subscription", "global", "default"]
 
 
-class PodcastQueueItemAddRequest(PodcastBaseSchema):
+class PodcastQueueItemAddRequest(BaseSchema):
     """Add one episode to queue."""
 
     episode_id: int = Field(..., ge=1)
 
 
-class PodcastQueueReorderRequest(PodcastBaseSchema):
+class PodcastQueueReorderRequest(BaseSchema):
     """Reorder queue by full episode id list."""
 
     episode_ids: list[int] = Field(..., min_length=0, max_length=500)
 
 
-class PodcastQueueSetCurrentRequest(PodcastBaseSchema):
+class PodcastQueueSetCurrentRequest(BaseSchema):
     """Set current queue episode."""
 
     episode_id: int = Field(..., ge=1)
 
 
-class PodcastQueueActivateRequest(PodcastBaseSchema):
+class PodcastQueueActivateRequest(BaseSchema):
     """Ensure episode exists in queue, move to head, and set as current."""
 
     episode_id: int = Field(..., ge=1)
 
 
-class PodcastQueueCurrentCompleteRequest(PodcastBaseSchema):
+class PodcastQueueCurrentCompleteRequest(BaseSchema):
     """Complete current queue episode."""
 
 
-class PodcastQueueItemResponse(PodcastBaseSchema):
+class PodcastQueueItemResponse(BaseSchema):
     """Queue item response."""
 
     episode_id: int
@@ -407,7 +402,7 @@ class PodcastQueueItemResponse(PodcastBaseSchema):
     subscription_image_url: str | None = None
 
 
-class PodcastQueueResponse(PodcastBaseSchema):
+class PodcastQueueResponse(BaseSchema):
     """Queue snapshot response."""
 
     current_episode_id: int | None = None
@@ -419,7 +414,7 @@ class PodcastQueueResponse(PodcastBaseSchema):
 # === Summary相关 ===
 
 
-class PodcastSummaryRequest(PodcastBaseSchema):
+class PodcastSummaryRequest(BaseSchema):
     """生成AI总结请求"""
 
     force_regenerate: bool = Field(default=False, description="是否强制重新生成")
@@ -428,7 +423,7 @@ class PodcastSummaryRequest(PodcastBaseSchema):
     custom_prompt: str | None = Field(None, description="自定义提示词")
 
 
-class PodcastSummaryStartResponse(PodcastBaseSchema):
+class PodcastSummaryStartResponse(BaseSchema):
     """AI summary task acceptance response"""
 
     episode_id: int
@@ -437,7 +432,7 @@ class PodcastSummaryStartResponse(PodcastBaseSchema):
     message: str
 
 
-class PodcastSummaryResponse(PodcastBaseSchema):
+class PodcastSummaryResponse(BaseSchema):
     """AI总结响应"""
 
     episode_id: int
@@ -451,7 +446,7 @@ class PodcastSummaryResponse(PodcastBaseSchema):
     processing_time: float | None = None  # 处理时间（秒）
 
 
-class SummaryModelInfo(PodcastBaseSchema):
+class SummaryModelInfo(BaseSchema):
     """AI总结模型信息"""
 
     id: int
@@ -462,14 +457,14 @@ class SummaryModelInfo(PodcastBaseSchema):
     is_default: bool
 
 
-class SummaryModelsResponse(PodcastBaseSchema):
+class SummaryModelsResponse(BaseSchema):
     """可用总结模型列表响应"""
 
     models: list[SummaryModelInfo]
     total: int
 
 
-class PodcastSummaryPendingResponse(PodcastBaseSchema):
+class PodcastSummaryPendingResponse(BaseSchema):
     """待总结列表响应"""
 
     count: int
@@ -479,7 +474,7 @@ class PodcastSummaryPendingResponse(PodcastBaseSchema):
 # === Search/Filter相关 ===
 
 
-class PodcastSearchFilter(PodcastBaseSchema):
+class PodcastSearchFilter(BaseSchema):
     """播客搜索过滤器"""
 
     query: str | None = Field(None, description="搜索关键词")
@@ -502,7 +497,7 @@ class PodcastEpisodeFilter(PodcastSearchFilter):
 # === Statistics相关 ===
 
 
-class PodcastStatsResponse(PodcastBaseSchema):
+class PodcastStatsResponse(BaseSchema):
     """播客统计响应"""
 
     total_subscriptions: int
@@ -518,7 +513,7 @@ class PodcastStatsResponse(PodcastBaseSchema):
 # === Import/Export相关 ===
 
 
-class PodcastProfileStatsResponse(PodcastBaseSchema):
+class PodcastProfileStatsResponse(BaseSchema):
     """Lightweight profile stats response."""
 
     total_subscriptions: int
@@ -532,7 +527,7 @@ class PodcastProfileStatsResponse(PodcastBaseSchema):
 # === Transcription相关 ===
 
 
-class PodcastTranscriptionRequest(PodcastBaseSchema):
+class PodcastTranscriptionRequest(BaseSchema):
     """启动转录请求"""
 
     force_regenerate: bool = Field(default=False, description="是否强制重新转录")
@@ -540,7 +535,7 @@ class PodcastTranscriptionRequest(PodcastBaseSchema):
     transcription_model: str | None = Field(None, description="转录模型名称")
 
 
-class PodcastTranscriptionResponse(PodcastBaseSchema):
+class PodcastTranscriptionResponse(BaseSchema):
     """转录任务响应"""
 
     id: int
@@ -605,7 +600,7 @@ class PodcastTranscriptionDetailResponse(PodcastTranscriptionResponse):
     formatted_completed_at: str | None = None
 
 
-class PodcastTranscriptionStatusResponse(PodcastBaseSchema):
+class PodcastTranscriptionStatusResponse(BaseSchema):
     """转录状态响应"""
 
     task_id: int
@@ -625,7 +620,7 @@ class PodcastTranscriptionStatusResponse(PodcastBaseSchema):
         return str(v) if v else None
 
 
-class PodcastTranscriptionScheduleResponse(PodcastBaseSchema):
+class PodcastTranscriptionScheduleResponse(BaseSchema):
     """单集转录调度响应"""
 
     status: str
@@ -640,7 +635,7 @@ class PodcastTranscriptionScheduleResponse(PodcastBaseSchema):
     scheduled_at: datetime | None = None
 
 
-class PodcastEpisodeTranscriptResponse(PodcastBaseSchema):
+class PodcastEpisodeTranscriptResponse(BaseSchema):
     """已存在转录文本响应"""
 
     episode_id: int
@@ -650,7 +645,7 @@ class PodcastEpisodeTranscriptResponse(PodcastBaseSchema):
     status: str
 
 
-class PodcastBatchTranscriptionDetailResponse(PodcastBaseSchema):
+class PodcastBatchTranscriptionDetailResponse(BaseSchema):
     """批量转录明细响应"""
 
     episode_id: int
@@ -667,7 +662,7 @@ class PodcastBatchTranscriptionDetailResponse(PodcastBaseSchema):
     scheduled_at: datetime | None = None
 
 
-class PodcastBatchTranscriptionResponse(PodcastBaseSchema):
+class PodcastBatchTranscriptionResponse(BaseSchema):
     """批量转录响应"""
 
     subscription_id: int
@@ -678,7 +673,7 @@ class PodcastBatchTranscriptionResponse(PodcastBaseSchema):
     details: list[PodcastBatchTranscriptionDetailResponse] = Field(default_factory=list)
 
 
-class PodcastTranscriptionScheduleStatusResponse(PodcastBaseSchema):
+class PodcastTranscriptionScheduleStatusResponse(BaseSchema):
     """转录调度状态响应"""
 
     episode_id: int
@@ -697,14 +692,14 @@ class PodcastTranscriptionScheduleStatusResponse(PodcastBaseSchema):
     error_message: str | None = None
 
 
-class PodcastTranscriptionCancelResponse(PodcastBaseSchema):
+class PodcastTranscriptionCancelResponse(BaseSchema):
     """取消转录响应"""
 
     success: bool
     message: str
 
 
-class PodcastCheckNewEpisodesDetailResponse(PodcastBaseSchema):
+class PodcastCheckNewEpisodesDetailResponse(BaseSchema):
     """检查新节目明细响应"""
 
     episode_id: int
@@ -713,7 +708,7 @@ class PodcastCheckNewEpisodesDetailResponse(PodcastBaseSchema):
     error: str | None = None
 
 
-class PodcastCheckNewEpisodesResponse(PodcastBaseSchema):
+class PodcastCheckNewEpisodesResponse(BaseSchema):
     """检查新节目并调度转录响应"""
 
     status: str
@@ -725,7 +720,7 @@ class PodcastCheckNewEpisodesResponse(PodcastBaseSchema):
     details: list[PodcastCheckNewEpisodesDetailResponse] = Field(default_factory=list)
 
 
-class PodcastPendingTranscriptionTaskResponse(PodcastBaseSchema):
+class PodcastPendingTranscriptionTaskResponse(BaseSchema):
     """待处理转录任务响应"""
 
     task_id: int
@@ -736,7 +731,7 @@ class PodcastPendingTranscriptionTaskResponse(PodcastBaseSchema):
     updated_at: datetime | None = None
 
 
-class PodcastPendingTranscriptionsResponse(PodcastBaseSchema):
+class PodcastPendingTranscriptionsResponse(BaseSchema):
     """待处理转录任务列表响应"""
 
     items: list[PodcastPendingTranscriptionTaskResponse] = Field(default_factory=list)
@@ -809,7 +804,7 @@ class ScheduleConfigUpdate(BaseModel):
         return self
 
 
-class ScheduleConfigResponse(PodcastBaseSchema):
+class ScheduleConfigResponse(BaseSchema):
     """Schedule configuration response"""
 
     id: int
@@ -825,7 +820,7 @@ class ScheduleConfigResponse(PodcastBaseSchema):
 # === Bulk Delete Schemas ===
 
 
-class PodcastSubscriptionBulkDelete(PodcastBaseSchema):
+class PodcastSubscriptionBulkDelete(BaseSchema):
     """批量删除播客订阅请求"""
 
     subscription_ids: list[int] = Field(
@@ -851,7 +846,7 @@ class PodcastSubscriptionBulkDelete(PodcastBaseSchema):
         return unique_ids
 
 
-class PodcastSubscriptionBulkDeleteResponse(PodcastBaseSchema):
+class PodcastSubscriptionBulkDeleteResponse(BaseSchema):
     """批量删除播客订阅响应"""
 
     success_count: int = Field(..., description="成功删除的订阅数量")

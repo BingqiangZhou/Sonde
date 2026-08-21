@@ -33,6 +33,17 @@ class _ScalarRowsResult:
         return self._values
 
 
+class _MappingRowsResult:
+    def __init__(self, rows):
+        self._rows = rows
+
+    def mappings(self):
+        return self
+
+    def all(self):
+        return self._rows
+
+
 @pytest.mark.asyncio
 async def test_subscription_episodes_batch_uses_topn_window_query():
     db = AsyncMock()
@@ -95,22 +106,24 @@ async def test_user_subscriptions_paginated_uses_fallback_on_empty_page():
 
 
 @pytest.mark.asyncio
-async def test_feed_cursor_paginated_reuses_feed_total_cache_path():
+async def test_feed_lightweight_cursor_reuses_feed_total_cache_path():
     db = AsyncMock()
     redis = AsyncMock()
-    db.execute.return_value = _ScalarRowsResult([])
+    db.execute.return_value = _MappingRowsResult([])
 
     repo = PodcastRepository(db=db, redis=redis)
     repo._get_feed_total_count = AsyncMock(return_value=9)
 
-    episodes, total, has_more, next_cursor = await repo.get_feed_cursor_paginated(
-        user_id=1,
-        size=20,
-        cursor_published_at=datetime.now(UTC),
-        cursor_episode_id=999,
+    items, total, has_more, next_cursor = (
+        await repo.get_feed_lightweight_cursor_paginated(
+            user_id=1,
+            size=20,
+            cursor_published_at=datetime.now(UTC),
+            cursor_episode_id=999,
+        )
     )
 
-    assert episodes == []
+    assert items == []
     assert total == 9
     assert has_more is False
     assert next_cursor is None
@@ -119,28 +132,21 @@ async def test_feed_cursor_paginated_reuses_feed_total_cache_path():
 
 
 @pytest.mark.asyncio
-async def test_playback_history_cursor_paginated_uses_window_total():
+async def test_playback_history_paginated_uses_window_total():
     db = AsyncMock()
     redis = AsyncMock()
     episode = MagicMock()
-    now = datetime.now(UTC)
-    db.execute.return_value = _RowsResult([(episode, now, 4)])
+    db.execute.return_value = _RowsResult([(episode, 4)])
 
     repo = PodcastRepository(db=db, redis=redis)
-    (
-        items,
-        total,
-        has_more,
-        next_cursor,
-    ) = await repo.get_playback_history_cursor_paginated(
+    items, total = await repo.get_playback_history_paginated(
         user_id=1,
+        page=1,
         size=20,
     )
 
     assert items == [episode]
     assert total == 4
-    assert has_more is False
-    assert next_cursor is None
     assert db.scalar.await_count == 0
 
     executed_query = db.execute.await_args.args[0]
@@ -149,25 +155,19 @@ async def test_playback_history_cursor_paginated_uses_window_total():
 
 
 @pytest.mark.asyncio
-async def test_playback_history_cursor_paginated_uses_fallback_on_empty_result():
+async def test_playback_history_paginated_uses_fallback_on_empty_result():
     db = AsyncMock()
     redis = AsyncMock()
     db.execute.return_value = _RowsResult([])
     db.scalar.return_value = 6
 
     repo = PodcastRepository(db=db, redis=redis)
-    (
-        items,
-        total,
-        has_more,
-        next_cursor,
-    ) = await repo.get_playback_history_cursor_paginated(
+    items, total = await repo.get_playback_history_paginated(
         user_id=1,
+        page=3,
         size=20,
     )
 
     assert items == []
     assert total == 6
-    assert has_more is False
-    assert next_cursor is None
     assert db.scalar.await_count == 1

@@ -36,52 +36,10 @@ from app.domains.podcast.tasks.task_orchestration import (
 # Podcast services legitimately cross aggregates (episode listing reads
 # playback state, summary writes read episodes), so they share the composed
 # PodcastRepository rather than narrow per-aggregate instances.
-def get_podcast_subscription_repository(
+def get_podcast_repository(
     db: AsyncSession = Depends(get_db_session_dependency),
 ) -> PodcastRepository:
-    """Provide the composed podcast repository (subscription aggregate included)."""
-    return PodcastRepository(db)
-
-
-def get_podcast_episode_repository(
-    db: AsyncSession = Depends(get_db_session_dependency),
-) -> PodcastRepository:
-    """Provide the composed podcast repository (episode aggregate included)."""
-    return PodcastRepository(db)
-
-
-def get_podcast_playback_repository(
-    db: AsyncSession = Depends(get_db_session_dependency),
-) -> PodcastRepository:
-    """Provide the composed podcast repository (playback aggregate included)."""
-    return PodcastRepository(db)
-
-
-def get_podcast_queue_repository(
-    db: AsyncSession = Depends(get_db_session_dependency),
-) -> PodcastRepository:
-    """Provide the composed podcast repository (queue aggregate included)."""
-    return PodcastRepository(db)
-
-
-def get_podcast_search_repository(
-    db: AsyncSession = Depends(get_db_session_dependency),
-) -> PodcastRepository:
-    """Provide the composed podcast repository (search aggregate included)."""
-    return PodcastRepository(db)
-
-
-def get_podcast_stats_repository(
-    db: AsyncSession = Depends(get_db_session_dependency),
-) -> PodcastRepository:
-    """Provide the composed podcast repository (stats aggregate included)."""
-    return PodcastRepository(db)
-
-
-def get_podcast_summary_repository(
-    db: AsyncSession = Depends(get_db_session_dependency),
-) -> PodcastRepository:
-    """Provide the composed podcast repository (summary aggregate included)."""
+    """Provide the composed podcast repository."""
     return PodcastRepository(db)
 
 
@@ -104,7 +62,7 @@ def get_subscription_repository(
 def get_podcast_subscription_service(
     db: AsyncSession = Depends(get_db_session_dependency),
     user_id: int = Depends(require_api_key),
-    repo=Depends(get_podcast_subscription_repository),
+    repo=Depends(get_podcast_repository),
     subscription_repo=Depends(get_subscription_repository),
     parser=Depends(get_podcast_parser),
 ) -> PodcastSubscriptionService:
@@ -121,7 +79,7 @@ def get_podcast_subscription_service(
 def get_podcast_episode_service(
     db: AsyncSession = Depends(get_db_session_dependency),
     user_id: int = Depends(require_api_key),
-    repo=Depends(get_podcast_episode_repository),
+    repo=Depends(get_podcast_repository),
 ) -> PodcastEpisodeService:
     """Provide request-scoped podcast episode service."""
     return PodcastEpisodeService(db, user_id, repo=repo)
@@ -130,7 +88,7 @@ def get_podcast_episode_service(
 def get_podcast_playback_service(
     db: AsyncSession = Depends(get_db_session_dependency),
     user_id: int = Depends(require_api_key),
-    repo=Depends(get_podcast_playback_repository),
+    repo=Depends(get_podcast_repository),
 ) -> PodcastPlaybackService:
     """Provide request-scoped playback service."""
     return PodcastPlaybackService(db, user_id, repo=repo)
@@ -139,7 +97,7 @@ def get_podcast_playback_service(
 def get_podcast_queue_service(
     db: AsyncSession = Depends(get_db_session_dependency),
     user_id: int = Depends(require_api_key),
-    repo=Depends(get_podcast_queue_repository),
+    repo=Depends(get_podcast_repository),
 ) -> PodcastQueueService:
     """Provide request-scoped podcast queue service."""
     return PodcastQueueService(db, user_id, repo=repo)
@@ -156,7 +114,7 @@ def get_podcast_schedule_service(
 def get_podcast_search_service(
     db: AsyncSession = Depends(get_db_session_dependency),
     user_id: int = Depends(require_api_key),
-    repo=Depends(get_podcast_search_repository),
+    repo=Depends(get_podcast_repository),
 ) -> PodcastSearchService:
     """Provide request-scoped podcast search service."""
     return PodcastSearchService(db, user_id, repo=repo)
@@ -165,7 +123,7 @@ def get_podcast_search_service(
 def get_podcast_stats_service(
     db: AsyncSession = Depends(get_db_session_dependency),
     user_id: int = Depends(require_api_key),
-    repo=Depends(get_podcast_stats_repository),
+    repo=Depends(get_podcast_repository),
     playback_service: PodcastPlaybackService = Depends(get_podcast_playback_service),
 ) -> PodcastStatsService:
     """Provide request-scoped stats service."""
@@ -208,22 +166,17 @@ def get_podcast_task_orchestration_service(
 
 __all__ = [
     "get_daily_report_service",
-    "get_podcast_episode_repository",
     "get_podcast_episode_service",
     "get_podcast_parser",
-    "get_podcast_playback_repository",
     "get_podcast_playback_service",
-    "get_podcast_queue_repository",
     "get_podcast_queue_service",
+    "get_podcast_repository",
     "get_podcast_schedule_service",
-    "get_podcast_search_repository",
     "get_podcast_search_service",
-    "get_podcast_stats_repository",
     "get_podcast_stats_service",
-    "get_podcast_subscription_repository",
     "get_podcast_subscription_service",
-    "get_podcast_summary_repository",
     "get_podcast_task_orchestration_service",
+    "get_subscription_repository",
     "get_summary_workflow_service",
     "require_api_key",
     "get_transcription_workflow_service",

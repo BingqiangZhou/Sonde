@@ -3,7 +3,6 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from app.core.config import settings
 from app.domains.podcast.services.episode_service import PodcastEpisodeService
 
 
@@ -43,7 +42,7 @@ def _feed_item(now: datetime, description: str) -> dict:
 
 
 @pytest.mark.asyncio
-async def test_list_feed_by_cursor_lightweight_normalizes_payload(monkeypatch):
+async def test_list_feed_normalizes_payload():
     now = datetime.now(UTC)
     long_description = f"  line1  \n\n line2\t{('x' * 400)}  "
 
@@ -56,8 +55,7 @@ async def test_list_feed_by_cursor_lightweight_normalizes_payload(monkeypatch):
         None,
     )
 
-    monkeypatch.setattr(settings, "PODCAST_FEED_LIGHTWEIGHT_ENABLED", True)
-    items, total, has_more, next_cursor = await service.list_feed_by_cursor(size=20)
+    items, total, has_more, next_cursor = await service.list_feed(size=20)
 
     assert total == 1
     assert has_more is False
@@ -76,22 +74,22 @@ async def test_list_feed_by_cursor_lightweight_normalizes_payload(monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_list_feed_by_page_uses_lightweight_repo(monkeypatch):
+async def test_list_feed_forwards_cursor_values():
     now = datetime.now(UTC)
     service = PodcastEpisodeService(db=AsyncMock(), user_id=7)
     service.repo = AsyncMock()
-    service.repo.get_feed_lightweight_page_paginated.return_value = (
-        [_feed_item(now, "desc")],
-        5,
+    service.repo.get_feed_lightweight_cursor_paginated.return_value = (
+        [],
+        0,
+        False,
+        None,
     )
 
-    monkeypatch.setattr(settings, "PODCAST_FEED_LIGHTWEIGHT_ENABLED", True)
-    items, total = await service.list_feed_by_page(page=2, size=11)
+    await service.list_feed(size=5, cursor_published_at=now, cursor_episode_id=9)
 
-    assert total == 5
-    assert len(items) == 1
-    service.repo.get_feed_lightweight_page_paginated.assert_awaited_once_with(
+    service.repo.get_feed_lightweight_cursor_paginated.assert_awaited_once_with(
         7,
-        page=2,
-        size=11,
+        size=5,
+        cursor_published_at=now,
+        cursor_episode_id=9,
     )

@@ -1,10 +1,8 @@
-import base64
 from datetime import UTC, datetime
 from unittest.mock import AsyncMock
 
 from fastapi.testclient import TestClient
 
-from app.core.config import settings
 from app.domains.podcast.routes.dependencies import (
     get_podcast_episode_service,
     get_podcast_search_service,
@@ -32,50 +30,32 @@ def _sample_episode(now: datetime) -> dict:
     }
 
 
-def test_feed_rejects_legacy_page_cursor(monkeypatch):
-    monkeypatch.setattr(settings, "PODCAST_FEED_LIGHTWEIGHT_ENABLED", True)
+def test_feed_rejects_malformed_cursor():
     service = AsyncMock()
     app.dependency_overrides[get_podcast_episode_service] = lambda: service
     client = TestClient(app)
 
-    page_cursor = base64.urlsafe_b64encode(b"2").decode("utf-8").rstrip("=")
+    import base64
+
+    bogus_cursor = base64.urlsafe_b64encode(b"not-json").decode("utf-8").rstrip("=")
 
     response = client.get(
-        f"/api/v1/podcasts/episodes/feed?cursor={page_cursor}&page_size=10",
+        f"/api/v1/podcasts/episodes/feed?cursor={bogus_cursor}&page_size=10",
     )
 
     assert response.status_code == 400
-    service.list_feed_by_page.assert_not_called()
-    service.list_feed_by_cursor.assert_not_called()
+    service.list_feed.assert_not_called()
 
     app.dependency_overrides.pop(get_podcast_episode_service, None)
 
 
-def test_feed_accepts_size_alias(monkeypatch):
-    monkeypatch.setattr(settings, "PODCAST_FEED_LIGHTWEIGHT_ENABLED", True)
+def test_feed_first_page_uses_keyset_path():
     service = AsyncMock()
     app.dependency_overrides[get_podcast_episode_service] = lambda: service
     client = TestClient(app)
 
     now = datetime.now(UTC)
-    service.list_feed_by_page.return_value = ([_sample_episode(now)], 25)
-
-    response = client.get("/api/v1/podcasts/episodes/feed?page=2&size=11")
-
-    assert response.status_code == 200
-    service.list_feed_by_page.assert_awaited_once_with(page=2, size=11)
-
-    app.dependency_overrides.pop(get_podcast_episode_service, None)
-
-
-def test_feed_first_page_prefers_keyset_path(monkeypatch):
-    monkeypatch.setattr(settings, "PODCAST_FEED_LIGHTWEIGHT_ENABLED", True)
-    service = AsyncMock()
-    app.dependency_overrides[get_podcast_episode_service] = lambda: service
-    client = TestClient(app)
-
-    now = datetime.now(UTC)
-    service.list_feed_by_cursor.return_value = (
+    service.list_feed.return_value = (
         [_sample_episode(now)],
         25,
         True,
@@ -88,8 +68,36 @@ def test_feed_first_page_prefers_keyset_path(monkeypatch):
     payload = response.json()
     assert payload["next_page"] is None
     assert payload["next_cursor"]
-    service.list_feed_by_cursor.assert_awaited_once_with(size=10)
-    service.list_feed_by_page.assert_not_called()
+    service.list_feed.assert_awaited_once_with(
+        size=10,
+        cursor_published_at=None,
+        cursor_episode_id=None,
+    )
+
+    app.dependency_overrides.pop(get_podcast_episode_service, None)
+
+
+def test_feed_accepts_size_alias():
+    service = AsyncMock()
+    app.dependency_overrides[get_podcast_episode_service] = lambda: service
+    client = TestClient(app)
+
+    now = datetime.now(UTC)
+    service.list_feed.return_value = (
+        [_sample_episode(now)],
+        25,
+        False,
+        None,
+    )
+
+    response = client.get("/api/v1/podcasts/episodes/feed?size=11")
+
+    assert response.status_code == 200
+    service.list_feed.assert_awaited_once_with(
+        size=11,
+        cursor_published_at=None,
+        cursor_episode_id=None,
+    )
 
     app.dependency_overrides.pop(get_podcast_episode_service, None)
 
@@ -100,13 +108,13 @@ def test_feed_keyset_cursor_path():
     client = TestClient(app)
 
     now = datetime.now(UTC)
-    service.list_feed_by_cursor.return_value = (
+    service.list_feed.return_value = (
         [_sample_episode(now)],
         100,
         True,
         (now, 1),
     )
-    keyset_cursor = encode_keyset_cursor("feed", now, 999)
+    keyset_cursor = encode_keyset_cursor(now, 999)
 
     response = client.get(
         f"/api/v1/podcasts/episodes/feed?cursor={keyset_cursor}&page_size=10",
@@ -116,33 +124,30 @@ def test_feed_keyset_cursor_path():
     payload = response.json()
     assert payload["has_more"] is True
     assert payload["next_cursor"]
-    service.list_feed_by_cursor.assert_awaited_once()
+    service.list_feed.assert_awaited_once()
+    call_kwargs = service.list_feed.await_args.kwargs
+    assert call_kwargs["cursor_episode_id"] == 999
+    assert call_kwargs["cursor_published_at"] == now.astimezone(UTC).replace(
+        tzinfo=None,
+    )
 
     app.dependency_overrides.pop(get_podcast_episode_service, None)
 
 
-def test_history_keyset_cursor_path():
+def test_history_uses_page_pagination():
     service = AsyncMock()
     app.dependency_overrides[get_podcast_episode_service] = lambda: service
     client = TestClient(app)
 
     now = datetime.now(UTC)
-    service.list_playback_history_by_cursor.return_value = (
-        [_sample_episode(now)],
-        20,
-        True,
-        (now, 1),
-    )
-    keyset_cursor = encode_keyset_cursor("history", now, 888)
+    service.list_playback_history.return_value = ([_sample_episode(now)], 20)
 
-    response = client.get(
-        f"/api/v1/podcasts/episodes/history?cursor={keyset_cursor}&size=10",
-    )
+    response = client.get("/api/v1/podcasts/episodes/history?page=1&size=10")
 
     assert response.status_code == 200
     payload = response.json()
-    assert payload["next_cursor"]
-    service.list_playback_history_by_cursor.assert_awaited_once()
+    assert payload["next_cursor"] is None
+    service.list_playback_history.assert_awaited_once_with(page=1, size=10)
 
     app.dependency_overrides.pop(get_podcast_episode_service, None)
 

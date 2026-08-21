@@ -6,7 +6,6 @@ from datetime import UTC, datetime
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from app.core.auth import require_api_key
-from app.core.config import settings
 from app.core.exceptions import (
     EpisodeNotFoundError,
     SubscriptionNotFoundError,
@@ -66,7 +65,6 @@ logger = logging.getLogger(__name__)
     summary="Get podcast feed",
 )
 async def get_podcast_feed(
-    page: int = Query(1, ge=1, description="Page number"),
     cursor: str | None = Query(None, description="Cursor token for pagination"),
     page_size: int = Query(10, ge=1, le=50, description="Page size"),
     size: int | None = Query(
@@ -79,63 +77,31 @@ async def get_podcast_feed(
 ):
     """Return all subscribed episodes ordered by publish date desc."""
     resolved_size = size or page_size
-    decoded_cursor = decode_cursor(cursor) if cursor else None
+    decoded = decode_cursor(cursor) if cursor else None
 
-    should_use_first_page_keyset = (
-        settings.PODCAST_FEED_LIGHTWEIGHT_ENABLED and cursor is None and page == 1
+    (
+        episodes,
+        total,
+        has_more,
+        next_cursor_values,
+    ) = await service.list_feed(
+        size=resolved_size,
+        cursor_published_at=decoded["ts"] if decoded else None,
+        cursor_episode_id=decoded["id"] if decoded else None,
     )
-    if should_use_first_page_keyset:
-        (
-            episodes,
-            total,
-            has_more,
-            next_cursor_values,
-        ) = await service.list_feed_by_cursor(
-            size=resolved_size,
-        )
-        next_page = None
-        next_cursor = (
-            encode_keyset_cursor("feed", next_cursor_values[0], next_cursor_values[1])
-            if next_cursor_values
-            else None
-        )
-    elif decoded_cursor:
-        if decoded_cursor["type"] != "feed":
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Cursor is not valid for this endpoint",
-            )
+    next_cursor = (
+        encode_keyset_cursor(next_cursor_values[0], next_cursor_values[1])
+        if next_cursor_values
+        else None
+    )
 
-        (
-            episodes,
-            total,
-            has_more,
-            next_cursor_values,
-        ) = await service.list_feed_by_cursor(
-            size=resolved_size,
-            cursor_published_at=decoded_cursor["ts"],
-            cursor_episode_id=decoded_cursor["id"],
-        )
-        next_page = None
-        next_cursor = (
-            encode_keyset_cursor("feed", next_cursor_values[0], next_cursor_values[1])
-            if next_cursor_values
-            else None
-        )
-    else:
-        episodes, total = await service.list_feed_by_page(page=page, size=resolved_size)
-        has_more = (page * resolved_size) < total
-        next_page = page + 1 if has_more else None
-        next_cursor = None
-
-    response_data = build_feed_response(
+    return build_feed_response(
         episodes,
         has_more=has_more,
-        next_page=next_page,
+        next_page=None,
         next_cursor=next_cursor,
         total=total,
     )
-    return response_data
 
 
 @router.get(
@@ -173,51 +139,17 @@ async def list_episodes(
 )
 async def list_playback_history(
     page: int = Query(1, ge=1, description="Page number"),
-    cursor: str | None = Query(None, description="Cursor token for pagination"),
     size: int = Query(20, ge=1, le=100, description="Page size"),
     service: PodcastEpisodeService = Depends(get_podcast_episode_service),
 ):
-    decoded_cursor = decode_cursor(cursor) if cursor else None
-
-    if decoded_cursor:
-        if decoded_cursor["type"] != "history":
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Cursor is not valid for this endpoint",
-            )
-
-        (
-            episodes,
-            total,
-            _,
-            next_cursor_values,
-        ) = await service.list_playback_history_by_cursor(
-            size=size,
-            cursor_last_updated_at=decoded_cursor["ts"],
-            cursor_episode_id=decoded_cursor["id"],
-        )
-        resolved_page = page
-        next_cursor = (
-            encode_keyset_cursor(
-                "history", next_cursor_values[0], next_cursor_values[1]
-            )
-            if next_cursor_values
-            else None
-        )
-    else:
-        episodes, total = await service.list_playback_history(page=page, size=size)
-        resolved_page = page
-        next_cursor = None
-
-    response_data = build_episode_list_response(
+    episodes, total = await service.list_playback_history(page=page, size=size)
+    return build_episode_list_response(
         episodes,
         total=total,
-        page=resolved_page,
+        page=page,
         size=size,
         subscription_id=0,
-        next_cursor=next_cursor,
     )
-    return response_data
 
 
 @router.get(

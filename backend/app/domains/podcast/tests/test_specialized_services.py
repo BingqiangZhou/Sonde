@@ -8,7 +8,6 @@ from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 
-from app.core.config import settings
 from app.domains.podcast.services import (
     PodcastEpisodeService,
     PodcastPlaybackService,
@@ -143,15 +142,13 @@ class TestPodcastEpisodeService:
         mock_repo.get_episode_by_id.assert_called_once_with(1, 1)
 
     @pytest.mark.asyncio
-    async def test_feed_page_lightweight_prefers_one_line_summary(
+    async def test_feed_prefers_one_line_summary(
         self,
         service,
         mock_repo,
-        monkeypatch,
     ):
-        monkeypatch.setattr(settings, "PODCAST_FEED_LIGHTWEIGHT_ENABLED", True)
         now = datetime.now(UTC)
-        mock_repo.get_feed_lightweight_page_paginated.return_value = (
+        mock_repo.get_feed_lightweight_cursor_paginated.return_value = (
             [
                 _build_lightweight_feed_row(
                     now=now,
@@ -166,23 +163,24 @@ class TestPodcastEpisodeService:
                 ),
             ],
             1,
+            False,
+            None,
         )
 
-        results, total = await service.list_feed_by_page(page=1, size=20)
+        results, total, has_more, _ = await service.list_feed(size=20)
 
         assert total == 1
+        assert has_more is False
         assert results[0]["description"] == "A concise summary sentence."
         assert results[0]["ai_summary"] is None
         assert results[0]["transcript_content"] is None
 
     @pytest.mark.asyncio
-    async def test_feed_cursor_lightweight_falls_back_to_collapsed_description(
+    async def test_feed_falls_back_to_collapsed_description(
         self,
         service,
         mock_repo,
-        monkeypatch,
     ):
-        monkeypatch.setattr(settings, "PODCAST_FEED_LIGHTWEIGHT_ENABLED", True)
         now = datetime.now(UTC)
         raw_description = "   Fallback   text \n with   extra   spaces   "
         mock_repo.get_feed_lightweight_cursor_paginated.return_value = (
@@ -199,7 +197,7 @@ class TestPodcastEpisodeService:
             None,
         )
 
-        results, total, has_more, next_cursor = await service.list_feed_by_cursor(
+        results, total, has_more, next_cursor = await service.list_feed(
             size=20,
         )
 
@@ -209,35 +207,6 @@ class TestPodcastEpisodeService:
         assert results[0]["description"] == "Fallback text with extra spaces"
         assert results[0]["ai_summary"] is None
         assert results[0]["transcript_content"] is None
-
-    @pytest.mark.asyncio
-    async def test_feed_page_non_lightweight_rewrites_description_only_for_feed(
-        self,
-        service,
-        mock_repo,
-        monkeypatch,
-    ):
-        monkeypatch.setattr(settings, "PODCAST_FEED_LIGHTWEIGHT_ENABLED", False)
-        now = datetime.now(UTC)
-        episode = _build_mock_episode(
-            description="Original fallback description",
-            ai_summary=(
-                "## Executive Summary\n"
-                "Feed summary line.\n\n"
-                "## Key Insights\n"
-                "More details."
-            ),
-            created_at=now,
-            published_at=now,
-        )
-        mock_repo.get_episodes_paginated.return_value = ([episode], 1)
-        mock_repo.get_playback_states_batch.return_value = {}
-
-        results, total = await service.list_feed_by_page(page=1, size=20)
-
-        assert total == 1
-        assert results[0]["description"] == "Feed summary line."
-        assert "Executive Summary" in (results[0]["ai_summary"] or "")
 
     @pytest.mark.asyncio
     async def test_list_episodes_keeps_original_description(self, service, mock_repo):

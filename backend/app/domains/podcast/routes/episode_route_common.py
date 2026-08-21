@@ -9,7 +9,7 @@ from typing import Any
 from fastapi import HTTPException, status
 
 
-def encode_keyset_cursor(cursor_type: str, timestamp: datetime, episode_id: int) -> str:
+def encode_keyset_cursor(timestamp: datetime, episode_id: int) -> str:
     """Encode stable keyset cursor payload."""
     normalized = timestamp
     if normalized.tzinfo is not None:
@@ -17,7 +17,6 @@ def encode_keyset_cursor(cursor_type: str, timestamp: datetime, episode_id: int)
 
     payload = {
         "v": 2,
-        "type": cursor_type,
         "ts": normalized.isoformat(),
         "id": episode_id,
     }
@@ -26,7 +25,7 @@ def encode_keyset_cursor(cursor_type: str, timestamp: datetime, episode_id: int)
 
 
 def decode_cursor(cursor: str) -> dict[str, Any]:
-    """Decode a keyset cursor token used by feed/history endpoints."""
+    """Decode a keyset cursor token used by the feed endpoint."""
     padding = "=" * (-len(cursor) % 4)
     try:
         decoded = base64.urlsafe_b64decode(f"{cursor}{padding}").decode("utf-8")
@@ -41,11 +40,8 @@ def decode_cursor(cursor: str) -> dict[str, Any]:
         if not isinstance(payload, dict):
             raise ValueError("payload must be object")
 
-        cursor_type = payload.get("type")
         timestamp_raw = payload.get("ts")
         episode_id = payload.get("id")
-        if cursor_type not in {"feed", "history"}:
-            raise ValueError("unsupported cursor type")
         if not isinstance(timestamp_raw, str):
             raise ValueError("timestamp missing")
         if not isinstance(episode_id, int) or episode_id <= 0:
@@ -56,7 +52,6 @@ def decode_cursor(cursor: str) -> dict[str, Any]:
             timestamp = timestamp.astimezone(UTC).replace(tzinfo=None)
 
         return {
-            "type": cursor_type,
             "ts": timestamp,
             "id": episode_id,
         }

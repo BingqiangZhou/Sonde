@@ -159,24 +159,6 @@ class FeedQueryRepository(BasePodcastRepository):
             "updated_at": row_data.get("updated_at"),
         }
 
-    async def get_feed_lightweight_page_paginated(
-        self,
-        user_id: int,
-        page: int = 1,
-        size: int = 20,
-    ) -> tuple[list[dict[str, Any]], int]:
-        total = await self._get_feed_total_count(user_id)
-        query = self._build_feed_lightweight_base_query(user_id).order_by(
-            desc(PodcastEpisode.published_at),
-            desc(PodcastEpisode.id),
-        )
-        query = query.offset((page - 1) * size).limit(size)
-
-        result = await self.db.execute(query)
-        rows = result.mappings().all()
-        items = [self._build_feed_lightweight_item(row) for row in rows]
-        return items, total
-
     async def get_feed_lightweight_cursor_paginated(
         self,
         user_id: int,
@@ -215,59 +197,6 @@ class FeedQueryRepository(BasePodcastRepository):
             next_cursor_values = (tail["published_at"], tail["id"])
 
         return items, total, has_more, next_cursor_values
-
-    async def get_feed_cursor_paginated(
-        self,
-        user_id: int,
-        size: int = 20,
-        cursor_published_at: Any = None,
-        cursor_episode_id: int | None = None,
-    ) -> tuple[list[PodcastEpisode], int, bool, tuple[Any, int] | None]:
-        """Get cursor-paginated feed.
-
-        Uses lazy imports to maintain domain boundary separation.
-        """
-        Subscription, UserSubscription = _get_subscription_models()
-
-        query = (
-            select(PodcastEpisode)
-            .join(Subscription, PodcastEpisode.subscription_id == Subscription.id)
-            .join(UserSubscription, UserSubscription.subscription_id == Subscription.id)
-            .options(
-                joinedload(PodcastEpisode.subscription),
-                joinedload(PodcastEpisode.transcript),
-            )
-            .where(and_(*self._active_user_subscription_filters(user_id)))
-        )
-        total = await self._get_feed_total_count(user_id)
-
-        if cursor_published_at is not None and cursor_episode_id is not None:
-            query = query.where(
-                or_(
-                    PodcastEpisode.published_at < cursor_published_at,
-                    and_(
-                        PodcastEpisode.published_at == cursor_published_at,
-                        PodcastEpisode.id < cursor_episode_id,
-                    ),
-                ),
-            )
-
-        query = query.order_by(
-            desc(PodcastEpisode.published_at),
-            desc(PodcastEpisode.id),
-        ).limit(size + 1)
-
-        result = await self.db.execute(query)
-        rows = list(result.unique().scalars().all())
-
-        has_more = len(rows) > size
-        episodes = rows[:size]
-        next_cursor_values: tuple[Any, int] | None = None
-        if has_more and episodes:
-            tail = episodes[-1]
-            next_cursor_values = (tail.published_at, tail.id)
-
-        return episodes, total, has_more, next_cursor_values
 
     async def get_playback_history_paginated(
         self,
@@ -321,83 +250,6 @@ class FeedQueryRepository(BasePodcastRepository):
             ),
         )
         return [row[0] for row in rows], total
-
-    async def get_playback_history_cursor_paginated(
-        self,
-        user_id: int,
-        size: int = 20,
-        cursor_last_updated_at: Any = None,
-        cursor_episode_id: int | None = None,
-    ) -> tuple[list[PodcastEpisode], int, bool, tuple[Any, int] | None]:
-        """Get cursor-paginated playback history.
-
-        Uses lazy imports to maintain domain boundary separation.
-        """
-        Subscription, UserSubscription = _get_subscription_models()
-
-        base_query = (
-            select(
-                PodcastEpisode,
-                PodcastPlaybackState.last_updated_at.label("last_updated_at"),
-            )
-            .join(
-                PodcastPlaybackState,
-                and_(
-                    PodcastPlaybackState.episode_id == PodcastEpisode.id,
-                    PodcastPlaybackState.user_id == user_id,
-                ),
-            )
-            .join(Subscription, PodcastEpisode.subscription_id == Subscription.id)
-            .join(UserSubscription, UserSubscription.subscription_id == Subscription.id)
-            .options(
-                joinedload(PodcastEpisode.subscription),
-                joinedload(PodcastEpisode.transcript),
-            )
-            .where(and_(*self._active_user_subscription_filters(user_id)))
-        )
-        query = base_query
-
-        if cursor_last_updated_at is not None and cursor_episode_id is not None:
-            query = query.where(
-                or_(
-                    PodcastPlaybackState.last_updated_at < cursor_last_updated_at,
-                    and_(
-                        PodcastPlaybackState.last_updated_at == cursor_last_updated_at,
-                        PodcastEpisode.id < cursor_episode_id,
-                    ),
-                ),
-            )
-
-        query = (
-            query.add_columns(func.count(PodcastEpisode.id).over().label("total_count"))
-            .order_by(
-                desc(PodcastPlaybackState.last_updated_at),
-                desc(PodcastEpisode.id),
-            )
-            .limit(size + 1)
-        )
-
-        result = await self.db.execute(query)
-        rows = list(result.all())
-        total = await resolve_window_total(
-            self.db,
-            rows,
-            total_index=2,
-            fallback_count_query=select(func.count()).select_from(
-                base_query.subquery(),
-            ),
-        )
-
-        has_more = len(rows) > size
-        trimmed_rows = rows[:size]
-        episodes = [row[0] for row in trimmed_rows]
-
-        next_cursor_values: tuple[Any, int] | None = None
-        if has_more and trimmed_rows:
-            tail_episode, tail_last_updated_at, _ = trimmed_rows[-1]
-            next_cursor_values = (tail_last_updated_at, tail_episode.id)
-
-        return episodes, total, has_more, next_cursor_values
 
     async def get_playback_history_lite_paginated(
         self,

@@ -120,114 +120,30 @@ class PodcastEpisodeService:
         results = self._build_episode_dicts(episodes, playback_states)
         return results, total
 
-    async def list_feed_by_cursor(
+    async def list_feed(
         self,
         size: int = 20,
         cursor_published_at: datetime | None = None,
         cursor_episode_id: int | None = None,
     ) -> tuple[list[dict[str, Any]], int, bool, tuple[datetime, int] | None]:
-        """List feed via keyset cursor pagination."""
-        if settings.PODCAST_FEED_LIGHTWEIGHT_ENABLED:
-            (
-                items,
-                total,
-                has_more,
-                next_cursor_values,
-            ) = await self.repo.get_feed_lightweight_cursor_paginated(
-                self.user_id,
-                size=size,
-                cursor_published_at=cursor_published_at,
-                cursor_episode_id=cursor_episode_id,
-            )
-            return (
-                [self._normalize_feed_item(item) for item in items],
-                total,
-                has_more,
-                next_cursor_values,
-            )
-
+        """List feed via keyset cursor pagination (lightweight projection)."""
         (
-            episodes,
+            items,
             total,
             has_more,
             next_cursor_values,
-        ) = await self.repo.get_feed_cursor_paginated(
+        ) = await self.repo.get_feed_lightweight_cursor_paginated(
             self.user_id,
             size=size,
             cursor_published_at=cursor_published_at,
             cursor_episode_id=cursor_episode_id,
         )
-
-        episode_ids = [ep.id for ep in episodes]
-        playback_states = await self.repo.get_playback_states_batch(
-            self.user_id,
-            episode_ids,
-        )
-        results = self._build_episode_dicts(episodes, playback_states)
-        results = [
-            self._rewrite_feed_item_description(item, hide_ai_summary=False)
-            for item in results
-        ]
-        return results, total, has_more, next_cursor_values
-
-    async def list_feed_by_page(
-        self,
-        page: int = 1,
-        size: int = 20,
-    ) -> tuple[list[dict[str, Any]], int]:
-        """List feed via legacy page-based pagination for backward compatibility."""
-        if settings.PODCAST_FEED_LIGHTWEIGHT_ENABLED:
-            items, total = await self.repo.get_feed_lightweight_page_paginated(
-                self.user_id,
-                page=page,
-                size=size,
-            )
-            return [self._normalize_feed_item(item) for item in items], total
-
-        episodes, total = await self.repo.get_episodes_paginated(
-            self.user_id,
-            page=page,
-            size=size,
-            filters=None,
-        )
-        episode_ids = [ep.id for ep in episodes]
-        playback_states = await self.repo.get_playback_states_batch(
-            self.user_id,
-            episode_ids,
-        )
-        results = self._build_episode_dicts(episodes, playback_states)
-        results = [
-            self._rewrite_feed_item_description(item, hide_ai_summary=False)
-            for item in results
-        ]
-        return results, total
-
-    async def list_playback_history_by_cursor(
-        self,
-        size: int = 20,
-        cursor_last_updated_at: datetime | None = None,
-        cursor_episode_id: int | None = None,
-    ) -> tuple[list[dict[str, Any]], int, bool, tuple[datetime, int] | None]:
-        """List playback history via keyset cursor pagination."""
-        (
-            episodes,
+        return (
+            [self._normalize_feed_item(item) for item in items],
             total,
             has_more,
             next_cursor_values,
-        ) = await self.repo.get_playback_history_cursor_paginated(
-            self.user_id,
-            size=size,
-            cursor_last_updated_at=cursor_last_updated_at,
-            cursor_episode_id=cursor_episode_id,
         )
-
-        episode_ids = [ep.id for ep in episodes]
-        playback_states = await self.repo.get_playback_states_batch(
-            self.user_id,
-            episode_ids,
-        )
-        results = self._build_episode_dicts(episodes, playback_states)
-        return results, total, has_more, next_cursor_values
 
     async def list_playback_history_lite(
         self,
@@ -431,22 +347,15 @@ class PodcastEpisodeService:
 
     def _normalize_feed_item(self, item: dict[str, Any]) -> dict[str, Any]:
         """Normalize lightweight feed payload fields for stable frontend semantics."""
-        return self._rewrite_feed_item_description(item, hide_ai_summary=True)
-
-    def _rewrite_feed_item_description(
-        self,
-        item: dict[str, Any],
-        *,
-        hide_ai_summary: bool,
-    ) -> dict[str, Any]:
         normalized = dict(item)
         normalized["description"] = self._resolve_feed_description(
             ai_summary=normalized.get("ai_summary"),
             fallback_description=normalized.get("description"),
         )
+        # Full summary/transcript belong to the detail page; the feed keeps
+        # payloads small.
         normalized["transcript_content"] = None
-        if hide_ai_summary:
-            normalized["ai_summary"] = None
+        normalized["ai_summary"] = None
         return normalized
 
     def _resolve_feed_description(

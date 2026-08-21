@@ -85,6 +85,11 @@ class SummaryRepository(BasePodcastRepository):
             )
         return results
 
+    async def _get_episode(self, episode_id: int) -> PodcastEpisode | None:
+        stmt = select(PodcastEpisode).where(PodcastEpisode.id == episode_id)
+        result = await self.db.execute(stmt)
+        return result.scalar_one_or_none()
+
     async def update_ai_summary(
         self,
         episode_id: int,
@@ -93,7 +98,7 @@ class SummaryRepository(BasePodcastRepository):
         confidence: float | None = None,
         transcript_used: bool = False,
     ) -> PodcastEpisode:
-        episode = await self.get_episode_by_id(episode_id)
+        episode = await self._get_episode(episode_id)
         if not episode:
             raise ValueError(f"Episode {episode_id} not found")
 
@@ -115,7 +120,7 @@ class SummaryRepository(BasePodcastRepository):
         return episode
 
     async def mark_summary_failed(self, episode_id: int, error: str) -> None:
-        episode = await self.get_episode_by_id(episode_id)
+        episode = await self._get_episode(episode_id)
         if episode:
             episode.status = "summary_failed"
             metadata = episode.metadata_json or {}
