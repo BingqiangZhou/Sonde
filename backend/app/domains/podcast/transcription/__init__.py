@@ -4,7 +4,7 @@ from .models import AudioChunk
 from .service import PodcastTranscriptionService
 from .splitter import AudioSplitter
 from .transcriber import SiliconFlowTranscriber
-from .utils import build_chunk_info, log_with_timestamp
+from .utils import build_chunk_info
 
 
 __all__ = [
@@ -15,5 +15,4 @@ __all__ = [
     "AudioSplitter",
     "SiliconFlowTranscriber",
     "build_chunk_info",
-    "log_with_timestamp",
 ]

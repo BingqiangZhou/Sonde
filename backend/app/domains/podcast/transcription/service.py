@@ -31,14 +31,18 @@ from .downloader import AudioDownloader
 from .models import AudioChunk
 from .splitter import AudioSplitter
 from .transcriber import SiliconFlowTranscriber
-from .utils import _ffmpeg_probe_async, build_chunk_info, log_with_timestamp
+from .utils import _ffmpeg_probe_async, build_chunk_info
 
 
 logger = logging.getLogger(__name__)
 
 
 class PodcastTranscriptionService:
-    """?"""
+    """Pipeline engine: download, convert, split, transcribe and persist.
+
+    Every step checks for artifacts left by an interrupted run and resumes
+    from them; temp files are only removed after the task completes.
+    """
 
     def __init__(self, db: AsyncSession):
         self.db = db
@@ -109,14 +113,18 @@ class PodcastTranscriptionService:
         self,
         session: AsyncSession,
         task_id: int,
-        step: TranscriptionStep,  # ?????step ?????status
+        step: TranscriptionStep,
         progress: float,
         message: str,
         error_message: str | None = None,
     ):
-        """?????????????????????????????"""
-        from app.domains.podcast.models import TranscriptionStatus
+        """Persist step/progress with write throttling.
 
+        DB writes are skipped until the progress delta or the minimum
+        interval is exceeded (100% always writes). The first write flips
+        the task to IN_PROGRESS and stamps started_at; changed messages
+        are folded into chunk_info.debug_message.
+        """
         cache_key = f"{task_id}_{step}"
         if cache_key not in self._progress_cache:
             self._progress_cache[cache_key] = {
@@ -194,19 +202,19 @@ class PodcastTranscriptionService:
         log_delta = abs(progress - cached["last_log"])
         if log_delta >= 5.0 or int(progress) == 100:
             if int(progress) == 100:
-                logger.info(f"??[PROGRESS] Task {task_id}: {step} - COMPLETED")
+                logger.info("[PROGRESS] Task %s: %s - COMPLETED", task_id, step)
             else:
-                logger.info(f"?? [PROGRESS] Task {task_id}: {step} - {progress:.1f}%")
+                logger.info("[PROGRESS] Task %s: %s - %.1f%%", task_id, step, progress)
             cached["last_log"] = progress
 
     async def _set_task_final_status(
         self,
         session: AsyncSession,
         task_id: int,
-        status: TranscriptionStatus,  # COMPLETED ??FAILED
+        status: TranscriptionStatus,
         error_message: str | None = None,
     ):
-        """???????????????COMPLETED ??FAILED??"""
+        """Write the terminal status and clear per-task progress caches."""
         update_data = {"status": status, "updated_at": datetime.now(UTC)}
 
         if status in [
@@ -242,11 +250,14 @@ class PodcastTranscriptionService:
         model: str | None = None,
         force: bool = False,
     ) -> tuple[TranscriptionTask, int | None]:
-        """?
+        """Create (or replace) the task row for an episode.
+
+        An existing non-failed task blocks creation unless force=True;
+        failed/cancelled tasks are deleted first so the unique episode
+        constraint is released.
 
         Returns:
-            Tuple[TranscriptionTask, Optional[int]]: (, DB ID)
-
+            The new task and the resolved model config DB id.
         """
         logger.info(
             f"[TRANSCRIPTION PREPARE] episode_id={episode_id}, model={model}, force={force}",
@@ -348,63 +359,30 @@ class PodcastTranscriptionService:
         session,
         config_db_id: int | None = None,
     ):
-        """"""
-        log_with_timestamp(
-            "INFO",
-            "[EXECUTE START] Transcription task starting...",
-            task_id,
-        )
-        log_with_timestamp(
-            "INFO",
-            f"[EXECUTE] config_db_id={config_db_id}",
-            task_id,
-        )
-        log_with_timestamp(
-            "INFO",
-            f"[EXECUTE] asyncio event loop running: {asyncio.get_event_loop().is_running()}",
-            task_id,
-        )
-
+        """Run the pipeline for one task, resuming from existing artifacts."""
         task: TranscriptionTask | None = None
         try:
-            logger.info(
-                f"[EXECUTE] Using provided database session for task {task_id}",
-            )
-
-            # ?AI
             ai_repo = AIModelConfigRepository(session)
             stmt = select(TranscriptionTask).where(TranscriptionTask.id == task_id)
             result = await session.execute(stmt)
             task = result.scalar_one_or_none()
 
             if not task:
-                logger.error(
-                    f"[EXECUTE] Transcription task {task_id} not found in database",
-                )
                 raise RuntimeError(f"Transcription task {task_id} not found")
 
             if task.status == TranscriptionStatus.COMPLETED:
-                log_with_timestamp(
-                    "INFO",
-                    f"[SKIP] Task {task_id} already completed, skipping execution",
+                logger.info(
+                    "[SKIP] Task %s already completed (%s words)",
                     task_id,
-                )
-                log_with_timestamp(
-                    "INFO",
-                    f"[SKIP] Transcript has {task.transcript_word_count or 0} words",
-                    task_id,
+                    task.transcript_word_count or 0,
                 )
                 return
 
             if task.status == TranscriptionStatus.CANCELLED:
-                log_with_timestamp(
-                    "WARNING",
-                    f"[SKIP] Task {task_id} was cancelled, skipping execution",
-                    task_id,
-                )
+                logger.warning("[SKIP] Task %s was cancelled", task_id)
                 return
 
-            #  (ubscriptionazy load)
+            # selectinload: the storage path needs episode.subscription.title
             from sqlalchemy.orm import selectinload
 
             stmt = (
@@ -417,7 +395,7 @@ class PodcastTranscriptionService:
 
             if not episode:
                 logger.error(
-                    f"transcription._execute_transcription: Episode {task.episode_id} not found for task {task_id}",
+                    "Episode %s not found for task %s", task.episode_id, task_id
                 )
                 await self._set_task_final_status(
                     session,
@@ -431,9 +409,6 @@ class PodcastTranscriptionService:
             api_key = None
 
             if config_db_id:
-                logger.info(
-                    f"transcription._execute_transcription: Using custom model config {config_db_id}",
-                )
                 model_config = await ai_repo.get_by_id(config_db_id)
                 if model_config and model_config.is_active:
                     api_url = model_config.api_url
@@ -442,9 +417,7 @@ class PodcastTranscriptionService:
                     api_key = extract_model_key(model_config) or model_config.api_key
 
             if not api_key:
-                logger.error(
-                    f"transcription._execute_transcription: API Key missing for task {task_id}",
-                )
+                logger.error("Transcription API key missing for task %s", task_id)
                 await self._set_task_final_status(
                     session,
                     task_id,
@@ -456,21 +429,13 @@ class PodcastTranscriptionService:
             temp_episode_dir = os.path.join(self.temp_dir, f"episode_{task.episode_id}")
             os.makedirs(temp_episode_dir, exist_ok=True)
             logger.info(
-                f"transcription._execute_transcription: Created temp dir {temp_episode_dir}",
-            )
-
-            # === ?current_step ?===
-            start_step = task.current_step
-            log_with_timestamp(
-                "INFO",
-                f"[RESUME] Current step: {start_step}, will resume from this step",
+                "[EXECUTE] Task %s starting (config_db_id=%s, resume_step=%s)",
                 task_id,
+                config_db_id,
+                task.current_step,
             )
 
-            # OWNLOADING -> CONVERTING -> SPLITTING -> TRANSCRIBING -> MERGING
-            #  current_step ?
-
-            # === 1?===
+            # === 1/6 Download ===
             download_start = time.time()
             download_time = 0
             original_file = os.path.join(
@@ -481,26 +446,14 @@ class PodcastTranscriptionService:
 
             if os.path.exists(original_file) and os.path.getsize(original_file) > 0:
                 file_size = os.path.getsize(original_file)
-                log_with_timestamp(
-                    "INFO",
-                    f"[STEP 1/6 DOWNLOAD] Skip! File already exists: {original_file} ({file_size / 1024 / 1024:.2f} MB)",
-                    task_id,
-                )
-                log_with_timestamp(
-                    "INFO",
-                    "[STEP 1/6 DOWNLOAD] Using existing downloaded file",
-                    task_id,
+                logger.info(
+                    "[STEP 1/6 DOWNLOAD] Reusing existing file (%.2f MB)",
+                    file_size / 1024 / 1024,
                 )
             else:
-                log_with_timestamp(
-                    "INFO",
-                    "[STEP 1/6 DOWNLOAD] Starting audio download with fallback...",
-                    task_id,
-                )
-                log_with_timestamp(
-                    "INFO",
-                    f"[STEP 1/6 DOWNLOAD] Source URL: {task.original_audio_url[:100]}...",
-                    task_id,
+                logger.info(
+                    "[STEP 1/6 DOWNLOAD] Downloading %s...",
+                    task.original_audio_url[:100],
                 )
                 await self._update_task_progress_with_session(
                     session,
@@ -510,22 +463,9 @@ class PodcastTranscriptionService:
                     "Downloading audio file...",
                 )
 
-                logger.info(f"[STEP 1 DOWNLOAD] Target path: {original_file}")
-
                 async with AudioDownloader() as downloader:
-                    # ?
-                    last_dl_progress = 0.0
 
                     async def download_progress(progress):
-                        nonlocal last_dl_progress
-
-                        # ?0%?
-                        if int(progress) // 10 > int(last_dl_progress) // 10:
-                            logger.info(
-                                f"[STEP 1 DOWNLOAD] Progress: {progress:.1f}%",
-                            )
-                            last_dl_progress = progress
-
                         await self._update_task_progress_with_session(
                             session,
                             task_id,
@@ -534,106 +474,61 @@ class PodcastTranscriptionService:
                             f"Downloading... {progress:.1f}%",
                         )
 
-                    # ?
                     file_path, file_size = await downloader.download_file_with_fallback(
                         task.original_audio_url,
                         original_file,
                         download_progress,
                     )
 
-                log_with_timestamp(
-                    "INFO",
-                    f"[STEP 1/6 DOWNLOAD] Download complete! Size: {file_size} bytes ({file_size / 1024 / 1024:.2f} MB)",
-                    task_id,
-                )
                 download_time = time.time() - download_start
-                log_with_timestamp(
-                    "INFO",
-                    f"[STEP 1/6 DOWNLOAD] Time taken: {download_time:.2f}s",
-                    task_id,
+                logger.info(
+                    "[STEP 1/6 DOWNLOAD] Complete: %.2f MB in %.2fs",
+                    file_size / 1024 / 1024,
+                    download_time,
                 )
 
-            file_path = original_file  # file_path?
+            file_path = original_file
 
-            # === 2MP3 ===
+            # === 2/6 Convert to MP3 ===
             conversion_time = 0
             converted_file = os.path.join(temp_episode_dir, "converted.mp3")
-
-            log_with_timestamp(
-                "INFO",
-                f"[STEP 2/6 CONVERT] Checking conversion status: {converted_file}",
-                task_id,
-            )
-            log_with_timestamp(
-                "INFO",
-                f"[STEP 2/6 CONVERT] File exists: {os.path.exists(converted_file)}",
-                task_id,
-            )
 
             skip_conversion = False
             if os.path.exists(converted_file):
                 converted_size = os.path.getsize(converted_file)
-                log_with_timestamp(
-                    "INFO",
-                    f"[STEP 2/6 CONVERT] Found existing file: {converted_size} bytes",
-                    task_id,
-                )
-                # ?0KB
-                if converted_size > 10240:  # 10KB
-                    # fmpegMP3
+                if converted_size > 10240:  # ignore tiny leftover files
                     try:
                         probe = await _ffmpeg_probe_async(converted_file)
-                        log_with_timestamp(
-                            "INFO",
-                            f"[STEP 2/6 CONVERT] FFmpeg probe result: {probe}",
-                            task_id,
-                        )
                         duration = (
                             probe.get("format", {}).get("duration") if probe else None
                         )
                         if duration:
                             skip_conversion = True
-                            log_with_timestamp(
-                                "INFO",
-                                f"[STEP 2/6 CONVERT] Skip! Valid MP3 file already exists: {converted_file} ({converted_size / 1024 / 1024:.2f} MB, {duration}s)",
-                                task_id,
-                            )
-                            log_with_timestamp(
-                                "INFO",
-                                "[STEP 2/6 CONVERT] Using existing converted file",
-                                task_id,
+                            logger.info(
+                                "[STEP 2/6 CONVERT] Reusing valid MP3 (%.2f MB, %ss)",
+                                converted_size / 1024 / 1024,
+                                duration,
                             )
                         else:
-                            log_with_timestamp(
-                                "WARNING",
-                                f"[STEP 2/6 CONVERT] File exists but invalid (no duration), re-converting: {converted_file}",
-                                task_id,
+                            logger.warning(
+                                "[STEP 2/6 CONVERT] Existing file has no duration, "
+                                "re-converting"
                             )
                     except Exception as e:
-                        log_with_timestamp(
-                            "WARNING",
-                            f"[STEP 2/6 CONVERT] File exists but validation failed ({e!s}), re-converting",
-                            task_id,
-                        )
-                    else:
-                        log_with_timestamp(
-                            "WARNING",
-                            f"[STEP 2/6 CONVERT] File exists but too small ({converted_size} bytes), re-converting",
-                            task_id,
+                        logger.warning(
+                            "[STEP 2/6 CONVERT] Existing file failed validation "
+                            "(%s), re-converting",
+                            e,
                         )
                 else:
-                    log_with_timestamp(
-                        "INFO",
-                        "[STEP 2/6 CONVERT] File does not exist, will convert",
-                        task_id,
+                    logger.warning(
+                        "[STEP 2/6 CONVERT] Existing file too small (%s bytes), "
+                        "re-converting",
+                        converted_size,
                     )
 
             if not skip_conversion:
-                log_with_timestamp(
-                    "INFO",
-                    "[STEP 2/6 CONVERT] Starting MP3 conversion...",
-                    task_id,
-                )
+                logger.info("[STEP 2/6 CONVERT] Converting to MP3...")
                 await self._update_task_progress_with_session(
                     session,
                     task_id,
@@ -659,10 +554,11 @@ class PodcastTranscriptionService:
 
                 # Verify the converted file was actually created
                 if not os.path.exists(converted_file):
-                    error_msg = f"Conversion completed but output file not found: {converted_file}"
-                    logger.error(f"[STEP 2/6 CONVERT] {error_msg}")
                     logger.error(
-                        f"[STEP 2/6 CONVERT] Input file: {file_path}, exists: {os.path.exists(file_path)}",
+                        "[STEP 2/6 CONVERT] Output missing after conversion: %s "
+                        "(input exists: %s)",
+                        converted_file,
+                        os.path.exists(file_path),
                     )
                     await self._set_task_final_status(
                         session,
@@ -674,38 +570,17 @@ class PodcastTranscriptionService:
                         "MP3 conversion failed - output file not created",
                     )
 
-                converted_size = os.path.getsize(converted_file)
-                log_with_timestamp(
-                    "INFO",
-                    f"[STEP 2/6 CONVERT] Conversion complete! Output: {converted_file} ({converted_size / 1024 / 1024:.2f} MB), Time: {conversion_time:.2f}s",
-                    task_id,
+                logger.info(
+                    "[STEP 2/6 CONVERT] Complete: %.2f MB in %.2fs",
+                    os.path.getsize(converted_file) / 1024 / 1024,
+                    conversion_time,
                 )
 
-            # Final verification before moving to STEP 3
-            log_with_timestamp(
-                "INFO",
-                f"[STEP 2->3] Final check: converted_file exists = {os.path.exists(converted_file)}, size = {os.path.getsize(converted_file) if os.path.exists(converted_file) else 0}",
-                task_id,
-            )
-
-            # === 3?===
-            # converted_file?
-            log_with_timestamp(
-                "INFO",
-                "[STEP 3/6 SPLIT] Starting split verification...",
-                task_id,
-            )
-
+            # === 3/6 Split ===
             if not os.path.exists(converted_file):
-                error_msg = f"Converted file not found: {converted_file}. Cannot proceed with split."
-                logger.error(f"[STEP 3/6 SPLIT] {error_msg}")
-                logger.error(f"[STEP 3/6 SPLIT] Working directory: {os.getcwd()}")
                 logger.error(
-                    f"[STEP 3/6 SPLIT] Temp dir exists: {os.path.exists(temp_episode_dir)}",
+                    "[STEP 3/6 SPLIT] Converted file missing: %s", converted_file
                 )
-                if os.path.exists(temp_episode_dir):
-                    files = os.listdir(temp_episode_dir)
-                    logger.error(f"[STEP 3/6 SPLIT] Files in temp dir: {files}")
                 await self._set_task_final_status(
                     session,
                     task_id,
@@ -714,10 +589,10 @@ class PodcastTranscriptionService:
                 )
                 raise RuntimeError("Converted audio file missing, cannot split")
 
-            converted_file_size = os.path.getsize(converted_file)
-            if converted_file_size == 0:
-                error_msg = f"Converted file is empty: {converted_file}. Cannot proceed with split."
-                logger.error(f"[STEP 3/6 SPLIT] {error_msg}")
+            if os.path.getsize(converted_file) == 0:
+                logger.error(
+                    "[STEP 3/6 SPLIT] Converted file is empty: %s", converted_file
+                )
                 await self._set_task_final_status(
                     session,
                     task_id,
@@ -726,93 +601,36 @@ class PodcastTranscriptionService:
                 )
                 raise RuntimeError("Converted audio file is empty, cannot split")
 
-            log_with_timestamp(
-                "INFO",
-                f"[STEP 3/6 SPLIT] Verified converted file exists: {converted_file} ({converted_file_size / 1024 / 1024:.2f} MB)",
-                task_id,
-            )
-
             split_dir = os.path.join(temp_episode_dir, "chunks")
-
-            if os.path.exists(split_dir) and os.path.isdir(split_dir):
-                # chunk
-                chunk_file_pattern = re.compile(r".+_chunk_(\d+)\.mp3$")
-                existing_chunks: list[tuple[int, str]] = []
+            chunk_file_pattern = re.compile(r".+_chunk_(\d+)\.mp3$")
+            existing_chunks: list[tuple[int, str]] = []
+            if os.path.isdir(split_dir):
                 for file_name in os.listdir(split_dir):
                     match = chunk_file_pattern.fullmatch(file_name)
                     if match:
                         existing_chunks.append((int(match.group(1)), file_name))
 
-                if existing_chunks:
-                    log_with_timestamp(
-                        "INFO",
-                        f"[STEP 3/6 SPLIT] Skip! Chunks already exist: {len(existing_chunks)} files found",
-                        task_id,
+            if existing_chunks:
+                # Resumed chunks carry no timing offsets; only file order
+                # matters for merging.
+                chunks = [
+                    AudioChunk(
+                        index=index,
+                        file_path=os.path.join(split_dir, chunk_file),
+                        start_time=0,
+                        duration=0,
+                        file_size=os.path.getsize(os.path.join(split_dir, chunk_file)),
+                        transcript=None,
                     )
-                    log_with_timestamp(
-                        "INFO",
-                        "[STEP 3/6 SPLIT] Using existing chunks",
-                        task_id,
-                    )
-                    # chunks
-                    chunks = []
                     for index, chunk_file in sorted(
-                        existing_chunks,
-                        key=lambda item: item[0],
-                    ):
-                        chunk_path = os.path.join(split_dir, chunk_file)
-                        file_size = os.path.getsize(chunk_path)
-                        chunks.append(
-                            AudioChunk(
-                                index=index,
-                                file_path=chunk_path,
-                                start_time=0,  # ?
-                                duration=0,
-                                file_size=file_size,
-                                transcript=None,
-                            ),
-                        )
-                else:
-                    # ?
-                    log_with_timestamp(
-                        "INFO",
-                        f"[STEP 3/6 SPLIT] Starting audio split with chunk_size_mb={task.chunk_size_mb}...",
-                        task_id,
+                        existing_chunks, key=lambda item: item[0]
                     )
-                    await self._update_task_progress_with_session(
-                        session,
-                        task_id,
-                        "splitting",
-                        35,
-                        "Splitting audio file...",
-                    )
-
-                    async def split_progress(progress):
-                        await self._update_task_progress_with_session(
-                            session,
-                            task_id,
-                            "splitting",
-                            35 + (progress * 0.10),  # 35-45%
-                            f"Splitting... {progress:.1f}%",
-                        )
-
-                    chunks = await AudioSplitter.split_mp3(
-                        converted_file,
-                        split_dir,
-                        task.chunk_size_mb,
-                        split_progress,
-                    )
-                    log_with_timestamp(
-                        "INFO",
-                        f"[STEP 3/6 SPLIT] Split complete! Created {len(chunks)} chunks",
-                        task_id,
-                    )
+                ]
+                logger.info("[STEP 3/6 SPLIT] Reusing %d existing chunks", len(chunks))
             else:
-                # ?
-                log_with_timestamp(
-                    "INFO",
-                    f"[STEP 3/6 SPLIT] Starting audio split with chunk_size_mb={task.chunk_size_mb}...",
-                    task_id,
+                logger.info(
+                    "[STEP 3/6 SPLIT] Splitting into %dMB chunks...",
+                    task.chunk_size_mb,
                 )
                 await self._update_task_progress_with_session(
                     session,
@@ -837,14 +655,9 @@ class PodcastTranscriptionService:
                     task.chunk_size_mb,
                     split_progress,
                 )
-                log_with_timestamp(
-                    "INFO",
-                    f"[STEP 3/6 SPLIT] Split complete! Created {len(chunks)} chunks",
-                    task_id,
-                )
+                logger.info("[STEP 3/6 SPLIT] Created %d chunks", len(chunks))
 
-            # === 4?===
-            #
+            # === 4/6 Transcribe ===
             chunks_to_transcribe = []
             already_transcribed = []
             for chunk in chunks:
@@ -853,31 +666,20 @@ class PodcastTranscriptionService:
                     os.path.exists(transcript_file)
                     and os.path.getsize(transcript_file) > 0
                 ):
-                    # ?
                     async with aiofiles.open(transcript_file, encoding="utf-8") as f:
                         content = await f.read()
                     if content.strip():
                         chunk.transcript = content
                         already_transcribed.append(chunk)
-                else:
-                    chunks_to_transcribe.append(chunk)
+                        continue
+                chunks_to_transcribe.append(chunk)
 
-            if already_transcribed:
-                log_with_timestamp(
-                    "INFO",
-                    f"[STEP 4/6 TRANSCRIBE] Found {len(already_transcribed)} already transcribed chunks, skipping",
-                    task_id,
-                )
-
-            log_with_timestamp(
-                "INFO",
-                f"[STEP 4/6 TRANSCRIBE] Starting transcription of {len(chunks_to_transcribe)} remaining chunks...",
-                task_id,
-            )
-            log_with_timestamp(
-                "INFO",
-                f"[STEP 4/6 TRANSCRIBE] Model: {task.model_used}",
-                task_id,
+            logger.info(
+                "[STEP 4/6 TRANSCRIBE] %d chunks to transcribe, %d already done "
+                "(model=%s)",
+                len(chunks_to_transcribe),
+                len(already_transcribed),
+                task.model_used,
             )
 
             if chunks_to_transcribe:
@@ -891,19 +693,7 @@ class PodcastTranscriptionService:
 
                 transcription_start = time.time()
 
-                # ?
-                last_trans_progress = 0.0
-
                 async def transcribe_progress(progress):
-                    nonlocal last_trans_progress
-
-                    # ?0%?
-                    if int(progress) // 10 > int(last_trans_progress) // 10:
-                        logger.info(
-                            f"[STEP 4 TRANSCRIBE] Progress: {progress:.1f}%",
-                        )
-                        last_trans_progress = progress
-
                     await self._update_task_progress_with_session(
                         session,
                         task_id,
@@ -927,35 +717,18 @@ class PodcastTranscriptionService:
 
                 all_chunks = already_transcribed + transcribed_chunks
 
-                log_with_timestamp(
-                    "INFO",
-                    "[STEP 4/6 TRANSCRIBE] Transcription chunks finished!",
-                    task_id,
-                )
-
-                # Log transcription results summary
                 success_count = sum(1 for c in all_chunks if c.transcript)
                 failed_count = len(all_chunks) - success_count
-                log_with_timestamp(
-                    "INFO",
-                    f"[STEP 4/6 TRANSCRIBE] Results: {success_count} succeeded, {failed_count} failed out of {len(all_chunks)} total",
-                    task_id,
-                )
-
                 transcription_time = time.time() - transcription_start
-                log_with_timestamp(
-                    "INFO",
-                    f"[STEP 4/6 TRANSCRIBE] Time taken: {transcription_time:.2f}s",
-                    task_id,
+                logger.info(
+                    "[STEP 4/6 TRANSCRIBE] %d/%d chunks succeeded in %.2fs",
+                    success_count,
+                    len(all_chunks),
+                    transcription_time,
                 )
             else:
-                # ?
                 all_chunks = already_transcribed
-                log_with_timestamp(
-                    "INFO",
-                    "[STEP 4/6 TRANSCRIBE] All chunks already transcribed! Skipping transcription",
-                    task_id,
-                )
+                logger.info("[STEP 4/6 TRANSCRIBE] All chunks already transcribed")
                 success_count = len(all_chunks)
                 failed_count = 0
                 transcription_time = 0
@@ -978,12 +751,7 @@ class PodcastTranscriptionService:
                 )
                 raise RuntimeError(error_message)
 
-            # 5?
-            log_with_timestamp(
-                "INFO",
-                "[STEP 5/6 MERGE] Merging transcription results...",
-                task_id,
-            )
+            # === 5/6 Merge ===
             await self._update_task_progress_with_session(
                 session,
                 task_id,
@@ -992,78 +760,60 @@ class PodcastTranscriptionService:
                 "Merging transcription results...",
             )
 
-            # ?
             sorted_chunks = sorted(all_chunks, key=lambda x: x.index)
             full_transcript = "\n\n".join(
-                [
-                    chunk.transcript.strip()
-                    for chunk in sorted_chunks
-                    if chunk.transcript and chunk.transcript.strip()
-                ],
+                chunk.transcript.strip()
+                for chunk in sorted_chunks
+                if chunk.transcript and chunk.transcript.strip()
+            )
+            logger.info(
+                "[STEP 5/6 MERGE] Transcript: %d chars, %d words",
+                len(full_transcript),
+                len(full_transcript.split()),
             )
 
-            log_with_timestamp(
-                "INFO",
-                f"[STEP 5/6 MERGE] Merged transcript: {len(full_transcript)} chars, {len(full_transcript.split())} words",
-                task_id,
-            )
-            log_with_timestamp(
-                "INFO",
-                f"[STEP 5/6 MERGE] Preview: {full_transcript[:150]}...",
-                task_id,
-            )
-
-            # 6
+            # === 6/6 Persist ===
             storage_path = self._get_episode_storage_path(episode)
             os.makedirs(storage_path, exist_ok=True)
 
             final_audio_path = os.path.join(storage_path, "original.mp3")
 
-            # Verify converted file exists before copying
             if not os.path.exists(converted_file):
-                error_msg = f"Converted audio file not found: {converted_file}"
-                logger.error(f"[STEP 6 SAVE] {error_msg}")
-                logger.error(f"[STEP 6 SAVE] Working directory: {os.getcwd()}")
                 logger.error(
-                    f"[STEP 6 SAVE] Absolute path: {os.path.abspath(converted_file)}",
+                    "[STEP 6/6 SAVE] Converted file vanished before persist: %s "
+                    "(temp dir files: %s)",
+                    converted_file,
+                    os.listdir(temp_episode_dir)
+                    if os.path.isdir(temp_episode_dir)
+                    else None,
                 )
-                # List files in temp directory for debugging
-                if os.path.exists(temp_episode_dir):
-                    files = os.listdir(temp_episode_dir)
-                    logger.error(f"[STEP 6 SAVE] Files in temp dir: {files}")
-                else:
-                    logger.error(
-                        f"[STEP 6 SAVE] Temp directory does not exist: {temp_episode_dir}",
-                    )
-                raise FileNotFoundError(error_msg)
+                raise FileNotFoundError(
+                    f"Converted audio file not found: {converted_file}"
+                )
 
-            # Move audio file to permanent storage
-            # Use shutil.move instead of os.replace to handle cross-device moves (e.g., Docker volumes)
+            # Move audio to permanent storage; shutil.move handles
+            # cross-device moves (e.g. Docker volumes).
             import shutil
 
             try:
                 await asyncio.to_thread(shutil.move, converted_file, final_audio_path)
             except OSError as e:
                 logger.warning(
-                    f"[STEP 6 SAVE] shutil.move failed ({e}), trying copy + delete",
+                    "[STEP 6/6 SAVE] move failed (%s), falling back to copy + delete",
+                    e,
                 )
                 await asyncio.to_thread(shutil.copy2, converted_file, final_audio_path)
                 try:
                     await asyncio.to_thread(os.remove, converted_file)
                 except OSError:
                     logger.warning(
-                        f"[STEP 6 SAVE] Could not remove source file: {converted_file}",
+                        "[STEP 6/6 SAVE] Could not remove source file: %s",
+                        converted_file,
                     )
 
             transcript_path = os.path.join(storage_path, "transcript.txt")
             async with aiofiles.open(transcript_path, "w", encoding="utf-8") as f:
                 await f.write(full_transcript)
-
-            log_with_timestamp(
-                "INFO",
-                f"[STEP 6/6 SAVE] Transcript saved to: {transcript_path}",
-                task_id,
-            )
 
             task_update = {
                 "status": TranscriptionStatus.COMPLETED,
@@ -1087,8 +837,7 @@ class PodcastTranscriptionService:
             )
             await session.execute(stmt)
 
-            # ?
-            # Create or update transcript record in dedicated table
+            # Create or update the dedicated transcript record
             transcript_stmt = select(PodcastEpisodeTranscript).where(
                 PodcastEpisodeTranscript.episode_id == task.episode_id
             )
@@ -1121,21 +870,15 @@ class PodcastTranscriptionService:
 
             await session.commit()
 
-            total_time = time.time() - download_start
-            log_with_timestamp(
-                "INFO",
-                f"[TRANSCRIPTION COMPLETE] Successfully completed transcription for episode {task.episode_id}",
-                task_id,
-            )
-            log_with_timestamp(
-                "INFO",
-                f"[TRANSCRIPTION COMPLETE] Total time: {total_time:.2f}s (download:{download_time:.2f}s, convert:{conversion_time:.2f}s, transcribe:{transcription_time:.2f}s)",
-                task_id,
-            )
-            log_with_timestamp(
-                "INFO",
-                f"[TRANSCRIPTION COMPLETE] Transcript: {len(full_transcript)} chars, {len(full_transcript.split())} words",
-                task_id,
+            logger.info(
+                "[TRANSCRIPTION COMPLETE] episode=%s words=%d total=%.2fs "
+                "(download=%.2fs convert=%.2fs transcribe=%.2fs)",
+                task.episode_id,
+                len(full_transcript.split()),
+                time.time() - download_start,
+                download_time,
+                conversion_time,
+                transcription_time,
             )
 
             # Summary generation runs in its own Celery task so the
@@ -1155,13 +898,7 @@ class PodcastTranscriptionService:
                     enqueue_error,
                 )
         except Exception as e:
-            import traceback
-
-            error_trace = traceback.format_exc()
-            logger.error(
-                f"[EXECUTE ERROR] Transcription failed for task {task_id}: {e!s}",
-            )
-            logger.error(f"[EXECUTE ERROR] Traceback:\n{error_trace}")
+            logger.exception("Transcription failed for task %s", task_id)
             status_stmt = select(TranscriptionTask.status).where(
                 TranscriptionTask.id == task_id,
             )
@@ -1183,42 +920,39 @@ class PodcastTranscriptionService:
                 )
             raise
         finally:
-            # Only clean up temporary files if the task completed successfully
-            # Failed or interrupted tasks should keep their temp files for incremental recovery
+            # Only completed tasks clean up temp files; failed or interrupted
+            # runs keep them for incremental recovery.
             try:
-                # Re-fetch task status to see if it completed successfully
                 stmt_check = select(TranscriptionTask.status).where(
                     TranscriptionTask.id == task_id,
                 )
                 result_check = await session.execute(stmt_check)
                 final_status = result_check.scalar()
 
-                if final_status == TranscriptionStatus.COMPLETED and task is not None:
-                    import shutil
+                if task is not None:
+                    temp_episode_dir = os.path.join(
+                        self.temp_dir,
+                        f"episode_{task.episode_id}",
+                    )
+                    if final_status == TranscriptionStatus.COMPLETED:
+                        import shutil
 
-                    temp_episode_dir = os.path.join(
-                        self.temp_dir,
-                        f"episode_{task.episode_id}",
-                    )
-                    if os.path.exists(temp_episode_dir):
-                        shutil.rmtree(temp_episode_dir)
+                        if os.path.exists(temp_episode_dir):
+                            shutil.rmtree(temp_episode_dir)
+                            logger.info(
+                                "[CLEANUP] Removed temp dir for task %s", task_id
+                            )
+                    elif os.path.exists(temp_episode_dir):
                         logger.info(
-                            f"[CLEANUP] Cleaned up temporary directory for successful task {task_id}: {temp_episode_dir}",
-                        )
-                elif task is not None:
-                    temp_episode_dir = os.path.join(
-                        self.temp_dir,
-                        f"episode_{task.episode_id}",
-                    )
-                    if os.path.exists(temp_episode_dir):
-                        logger.info(
-                            f"[CLEANUP] Preserving temporary directory for task {task_id} (status={final_status}): {temp_episode_dir}",
+                            "[CLEANUP] Preserved temp dir for task %s (status=%s)",
+                            task_id,
+                            final_status,
                         )
             except Exception as e:
-                logger.error(f"[CLEANUP] Error during cleanup: {e!s}")
+                logger.error("[CLEANUP] Error during cleanup: %s", e)
 
     async def get_transcription_status(self, task_id: int) -> TranscriptionTask | None:
-        """?"""
+        """Load one task row by id."""
         stmt = select(TranscriptionTask).where(TranscriptionTask.id == task_id)
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
@@ -1227,7 +961,7 @@ class PodcastTranscriptionService:
         self,
         episode_id: int,
     ) -> TranscriptionTask | None:
-        """?"""
+        """Load the task row for one episode."""
         stmt = select(TranscriptionTask).where(
             TranscriptionTask.episode_id == episode_id,
         )

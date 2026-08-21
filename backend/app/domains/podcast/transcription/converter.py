@@ -67,7 +67,7 @@ class AudioConverter:
                 .output(
                     output_path,
                     acodec="mp3",
-                    ac=1,  # ?
+                    ac=1,  # mono
                     ar="16000",  # 16kHz?
                     ab="64k",  # 64kbps?
                     f="mp3",

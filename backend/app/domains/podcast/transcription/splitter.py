@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 class AudioSplitter:
-    """?"""
+    """Split an MP3 into roughly equal-size chunks by time."""
 
     @staticmethod
     async def split_mp3(
@@ -24,17 +24,10 @@ class AudioSplitter:
         chunk_size_mb: int = 10,
         progress_callback=None,
     ) -> list[AudioChunk]:
-        """P3
+        """Split input_path into N chunks of about chunk_size_mb each.
 
-        Args:
-            input_path: MP3
-            output_dir:
-            chunk_size_mb: MB?
-            progress_callback:
-
-        Returns:
-            List[AudioChunk]:
-
+        The chunk count is derived from file size; ffmpeg then cuts equal
+        time segments with stream copy (no re-encode).
         """
         try:
             if not os.path.exists(input_path):
@@ -117,7 +110,7 @@ class AudioSplitter:
                     logger.error(f"[SPLIT] Failed to create chunk {i + 1}: {e}")
                     raise
 
-                # ?
+                # ffmpeg can return success without writing output
                 if not os.path.exists(output_path):
                     raise RuntimeError(
                         f"FFmpeg completed but output file not created: {output_path}",
