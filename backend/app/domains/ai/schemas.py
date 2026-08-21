@@ -23,11 +23,7 @@ class AIModelConfigBase(BaseModel):
     max_tokens: int | None = Field(None, gt=0, description="最大令牌数")
     temperature: str | None = Field(None, description="温度参数")
     timeout_seconds: int = Field(default=300, gt=0, description="请求超时时间（秒）")
-    max_retries: int = Field(default=3, ge=0, description="最大重试次数")
     max_concurrent_requests: int = Field(default=1, gt=0, description="最大并发请求数")
-    rate_limit_per_minute: int = Field(default=60, gt=0, description="每分钟请求限制")
-    cost_per_input_token: str | None = Field(None, description="每输入令牌成本")
-    cost_per_output_token: str | None = Field(None, description="每输出令牌成本")
     extra_config: dict[str, Any] | None = Field(
         default_factory=dict, description="额外配置参数"
     )
@@ -44,18 +40,6 @@ class AIModelConfigBase(BaseModel):
                     raise ValueError("温度参数必须在0-2之间")
             except ValueError as err:
                 raise ValueError("温度参数必须是数字") from err
-        return v
-
-    @field_validator("cost_per_input_token", "cost_per_output_token")
-    @classmethod
-    def validate_cost(cls, v):
-        if v is not None:
-            try:
-                float(v)
-                if float(v) < 0:
-                    raise ValueError("成本不能为负数")
-            except ValueError as err:
-                raise ValueError("成本必须是数字") from err
         return v
 
 
@@ -75,11 +59,7 @@ class AIModelConfigUpdate(BaseModel):
     max_tokens: int | None = Field(None, gt=0)
     temperature: str | None = None
     timeout_seconds: int | None = Field(None, gt=0)
-    max_retries: int | None = Field(None, ge=0)
     max_concurrent_requests: int | None = Field(None, gt=0)
-    rate_limit_per_minute: int | None = Field(None, gt=0)
-    cost_per_input_token: str | None = None
-    cost_per_output_token: str | None = None
     extra_config: dict[str, Any] | None = None
     is_active: bool | None = None
     is_default: bool | None = None
@@ -94,18 +74,6 @@ class AIModelConfigUpdate(BaseModel):
                     raise ValueError("温度参数必须在0-2之间")
             except ValueError as err:
                 raise ValueError("温度参数必须是数字") from err
-        return v
-
-    @field_validator("cost_per_input_token", "cost_per_output_token")
-    @classmethod
-    def validate_cost(cls, v):
-        if v is not None:
-            try:
-                float(v)
-                if float(v) < 0:
-                    raise ValueError("成本不能为负数")
-            except ValueError as err:
-                raise ValueError("成本必须是数字") from err
         return v
 
 
@@ -123,7 +91,6 @@ class AIModelConfigResponse(AIModelConfigBase):
     created_at: datetime
     updated_at: datetime
     last_used_at: datetime | None = None
-    is_system: bool = False
 
     model_config = ConfigDict(from_attributes=True)
 

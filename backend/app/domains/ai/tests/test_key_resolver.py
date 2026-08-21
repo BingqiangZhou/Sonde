@@ -12,7 +12,9 @@ from app.domains.ai.key_resolver import (
 )
 
 
-def _model(model_id=1, api_key="sk-valid-key", encrypted=False, provider="custom", **extra):
+def _model(
+    model_id=1, api_key="sk-valid-key", encrypted=False, provider="custom", **extra
+):
     return SimpleNamespace(
         id=model_id,
         name=f"model-{model_id}",
@@ -64,7 +66,6 @@ def test_system_model_without_env_key_uses_stored_or_fallback_keys():
         model_id=1,
         api_key="",
         provider="siliconflow",
-        is_system=True,
     )
     fallback = _model(model_id=2, api_key="sk-fallback")
 

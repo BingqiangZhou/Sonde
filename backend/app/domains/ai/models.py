@@ -60,15 +60,9 @@ class AIModelConfig(Base):
     max_tokens = Column(Integer, nullable=True, comment="最大令牌数")
     temperature = Column(Float, nullable=True, comment="温度参数")
     timeout_seconds = Column(Integer, default=300, comment="请求超时时间（秒）")
-    max_retries = Column(Integer, default=3, comment="最大重试次数")
 
     # 并发配置
     max_concurrent_requests = Column(Integer, default=1, comment="最大并发请求数")
-    rate_limit_per_minute = Column(Integer, default=60, comment="每分钟请求限制")
-
-    # 成本配置
-    cost_per_input_token = Column(Float, nullable=True, comment="每输入令牌成本")
-    cost_per_output_token = Column(Float, nullable=True, comment="每输出令牌成本")
 
     # 额外配置（JSON格式）
     extra_config = Column(JSON, default=dict, comment="额外配置参数")
@@ -76,7 +70,6 @@ class AIModelConfig(Base):
     # 状态管理
     is_active = Column(Boolean, default=True, comment="是否启用")
     is_default = Column(Boolean, default=False, comment="是否为默认模型")
-    is_system = Column(Boolean, default=False, comment="是否为系统预设模型")
     priority = Column(Integer, default=1, comment="优先级（数字越小优先级越高）")
 
     # 使用统计

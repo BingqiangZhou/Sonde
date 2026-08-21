@@ -107,16 +107,11 @@ class AIModelConfigService:
             max_tokens=model_data.max_tokens,
             temperature=model_data.temperature,
             timeout_seconds=model_data.timeout_seconds,
-            max_retries=model_data.max_retries,
             max_concurrent_requests=model_data.max_concurrent_requests,
-            rate_limit_per_minute=model_data.rate_limit_per_minute,
-            cost_per_input_token=model_data.cost_per_input_token,
-            cost_per_output_token=model_data.cost_per_output_token,
             extra_config=model_data.extra_config or {},
             is_active=model_data.is_active,
             is_default=model_data.is_default,
             priority=model_data.priority,
-            is_system=False,
         )
         return await self.repo.create(model_config)
 
