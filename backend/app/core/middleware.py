@@ -1,4 +1,4 @@
-"""Request logging and request-id middleware."""
+"""Request-id and request-logging middleware."""
 
 import logging
 import re
