@@ -13,13 +13,11 @@ import pytest_asyncio
 from sqlalchemy import select
 
 from app.core.redis import RedisCache
-from app.domains.auth.models import User
 from app.domains.podcast.models import (
     PodcastEpisode,
     TranscriptionTask,
 )
 from app.domains.podcast.repositories.podcast_repository import PodcastRepository
-from app.domains.podcast.services.playback_service import PodcastPlaybackService
 from app.domains.podcast.transcription.state import (
     claim_task_dispatch,
     clear_task_dispatch,
@@ -44,14 +42,22 @@ def _episodes_payload(n: int) -> list[dict]:
 
 @pytest_asyncio.fixture
 async def seeded_user(db_session) -> int:
-    user = User(
-        email="integration@example.com",
-        username="integration_user",
-        hashed_password="x",
+    """Seed the operator row; the users table has no ORM model anymore."""
+    from sqlalchemy import text
+
+    await db_session.execute(
+        text(
+            "INSERT INTO users (email, username, hashed_password, created_at, updated_at) "
+            "VALUES ('integration@example.com', 'integration_user', 'x', "
+            "CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) "
+            "ON CONFLICT (email) DO NOTHING"
+        )
     )
-    db_session.add(user)
     await db_session.commit()
-    return user.id
+    result = await db_session.execute(
+        text("SELECT id FROM users WHERE email = 'integration@example.com'")
+    )
+    return int(result.scalar_one())
 
 
 @pytest.mark.integration
@@ -70,40 +76,17 @@ async def test_atomic_ingest_on_real_postgres(db_session, seeded_user):
     assert subscription.id is not None
     assert len(new) == 3
     persisted = (
-        await db_session.execute(
-            select(PodcastEpisode).where(
-                PodcastEpisode.subscription_id == subscription.id
+        (
+            await db_session.execute(
+                select(PodcastEpisode).where(
+                    PodcastEpisode.subscription_id == subscription.id
+                )
             )
         )
-    ).scalars().all()
+        .scalars()
+        .all()
+    )
     assert len(persisted) == 3
-
-
-@pytest.mark.integration
-async def test_playback_upsert_twice_with_row_locks(db_session, seeded_user):
-    repo = PodcastRepository(db_session)
-    subscription, _, new = await repo.add_subscription_with_episodes(
-        user_id=seeded_user,
-        feed_url="https://example.com/int-feed-2.xml",
-        title="Playback Cast",
-        description="d",
-        metadata={},
-        episodes_data=_episodes_payload(1),
-    )
-    episode = new[0]
-    service = PodcastPlaybackService(db_session, seeded_user)
-
-    first = await service.update_playback_progress(
-        episode.id, progress_seconds=30, is_playing=True, playback_rate=1.0
-    )
-    second = await service.update_playback_progress(
-        episode.id, progress_seconds=90, is_playing=False, playback_rate=1.5
-    )
-
-    assert first["current_position"] == 30
-    assert second["current_position"] == 90
-    assert second["playback_rate"] == 1.5
-    assert second["play_count"] == 1  # is_playing=False doesn't bump count
 
 
 @pytest.mark.integration
@@ -163,33 +146,8 @@ async def test_feed_count_cache_roundtrip_on_real_redis(
     assert total1 == total2 == 2
     assert len(page1) == len(page2) == 1
     # The count cache key for this user must now exist in redis.
-    exists = await real_redis.exists(
-        f"podcast:feed:count:{seeded_user}"
-    )
+    exists = await real_redis.exists(f"podcast:feed:count:{seeded_user}")
     assert exists is True
-
-
-@pytest.mark.integration
-async def test_search_returns_scored_rows_on_postgres(db_session, seeded_user):
-    repo = PodcastRepository(db_session)
-    payload = _episodes_payload(2)
-    payload[0]["title"] = "Integration searchable episode about postgres"
-    payload[0]["item_link"] = "https://example.com/int/searchable"
-    await repo.add_subscription_with_episodes(
-        user_id=seeded_user,
-        feed_url="https://example.com/int-feed-4.xml",
-        title="Search Cast",
-        description="d",
-        metadata={},
-        episodes_data=payload,
-    )
-
-    scored, total = await repo.search_episodes(
-        seeded_user, query="postgres", search_in="title", page=1, size=10
-    )
-
-    assert total >= 1
-    assert all(isinstance(score, float) for _, score in scored)
 
 
 @pytest.mark.integration

@@ -6,7 +6,7 @@ import logging
 from datetime import UTC, datetime
 from typing import Any
 
-from sqlalchemy import and_, desc, func, or_, select
+from sqlalchemy import and_, desc, func, select
 from sqlalchemy.orm import joinedload
 
 from app.core.datetime_utils import (
@@ -14,7 +14,6 @@ from app.core.datetime_utils import (
 )
 from app.domains.podcast.models import (
     PodcastEpisode,
-    PodcastPlaybackState,
 )
 from app.domains.podcast.repositories.base import (
     BasePodcastRepository,
@@ -23,6 +22,7 @@ from app.domains.podcast.repositories.base import (
 
 
 logger = logging.getLogger(__name__)
+
 
 class EpisodeRepository(BasePodcastRepository):
     """Episode aggregate: feed-item upserts and lookups."""
@@ -314,20 +314,6 @@ class EpisodeRepository(BasePodcastRepository):
                     base_query = base_query.where(PodcastEpisode.ai_summary.isnot(None))
                 else:
                     base_query = base_query.where(PodcastEpisode.ai_summary.is_(None))
-            if filters.is_played is not None:
-                if filters.is_played:
-                    base_query = base_query.join(PodcastPlaybackState).where(
-                        PodcastPlaybackState.current_position
-                        >= PodcastEpisode.audio_duration * 0.9,
-                    )
-                else:
-                    base_query = base_query.outerjoin(PodcastPlaybackState).where(
-                        or_(
-                            PodcastPlaybackState.id.is_(None),
-                            PodcastPlaybackState.current_position
-                            < PodcastEpisode.audio_duration * 0.9,
-                        ),
-                    )
 
         total_result = await self.db.execute(
             select(func.count()).select_from(base_query.subquery()),

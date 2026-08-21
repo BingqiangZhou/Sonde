@@ -21,9 +21,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 
 class MinimalSettings(BaseSettings):
-    DATABASE_URL: str = (
-        "postgresql+asyncpg://user:password@localhost:5432/personal_ai"
-    )
+    DATABASE_URL: str = "postgresql+asyncpg://user:password@localhost:5432/personal_ai"
 
     class Config:
         env_file = ".env"

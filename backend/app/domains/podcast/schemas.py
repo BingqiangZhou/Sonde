@@ -1,7 +1,7 @@
 """播客相关的Pydantic schemas - API请求和响应模型"""
 
 from datetime import date, datetime
-from typing import Any, Literal
+from typing import Any
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
@@ -211,32 +211,6 @@ class PodcastEpisodeListResponse(BaseSchema):
     next_cursor: str | None = None
 
 
-class PodcastPlaybackHistoryItemResponse(BaseSchema):
-    """Lightweight playback history item for profile history page."""
-
-    id: int
-    subscription_id: int
-    subscription_title: str | None = None
-    subscription_image_url: str | None = None
-    title: str
-    image_url: str | None = None
-    audio_duration: int | None = None
-    playback_position: int | None = None
-    last_played_at: datetime | None = None
-    published_at: datetime
-
-
-class PodcastPlaybackHistoryListResponse(BaseSchema):
-    """Lightweight playback history list response"""
-
-    items: list[PodcastPlaybackHistoryItemResponse]
-    total: int
-    page: int
-    size: int
-    pages: int
-    next_cursor: str | None = None
-
-
 class PodcastEpisodeDetailResponse(PodcastEpisodeResponse):
     """播客单集详情响应（包含更多信息）"""
 
@@ -320,54 +294,7 @@ class PodcastDailyReportDatesResponse(BaseSchema):
 # === Playback相关 ===
 
 
-class PodcastPlaybackUpdate(BaseSchema):
-    """播放进度更新请求"""
-
-    position: int = Field(..., ge=0, description="当前播放位置(秒)")
-    is_playing: bool = Field(default=False, description="是否正在播放")
-    playback_rate: float = Field(default=1.0, ge=0.5, le=3.0, description="播放倍速")
-
-
-class PodcastPlaybackStateResponse(BaseSchema):
-    """播放状态响应"""
-
-    episode_id: int
-    current_position: int
-    is_playing: bool
-    playback_rate: float
-    play_count: int
-    last_updated_at: datetime
-
-    # 计算字段
-    progress_percentage: float = Field(description="播放进度百分比")
-    remaining_time: int = Field(description="剩余时间(秒)")
-
-
 # === Category相关 ===
-
-
-class PlaybackRateApplyRequest(BaseSchema):
-    """Apply global/subscription playback rate preference."""
-
-    playback_rate: float = Field(..., ge=0.5, le=3.0, description="播放倍速")
-    subscription_id: int | None = Field(
-        default=None,
-        ge=1,
-        description="订阅ID，仅按订阅设置时使用",
-    )
-    apply_to_subscription: bool = Field(
-        default=False,
-        description="是否仅应用到当前订阅",
-    )
-
-
-class PlaybackRateEffectiveResponse(BaseSchema):
-    """Effective playback-rate response."""
-
-    global_playback_rate: float
-    subscription_playback_rate: float | None = None
-    effective_playback_rate: float
-    source: Literal["subscription", "global", "default"]
 
 
 class PodcastQueueItemAddRequest(BaseSchema):
@@ -396,31 +323,6 @@ class PodcastQueueActivateRequest(BaseSchema):
 
 class PodcastQueueCurrentCompleteRequest(BaseSchema):
     """Complete current queue episode."""
-
-
-class PodcastQueueItemResponse(BaseSchema):
-    """Queue item response."""
-
-    episode_id: int
-    position: int
-    playback_position: int | None = None
-    title: str
-    podcast_id: int
-    audio_url: str
-    duration: int | None = None
-    published_at: datetime | None = None
-    image_url: str | None = None
-    subscription_title: str | None = None
-    subscription_image_url: str | None = None
-
-
-class PodcastQueueResponse(BaseSchema):
-    """Queue snapshot response."""
-
-    current_episode_id: int | None = None
-    revision: int
-    updated_at: datetime | None = None
-    items: list[PodcastQueueItemResponse] = Field(default_factory=list)
 
 
 # === Summary相关 ===

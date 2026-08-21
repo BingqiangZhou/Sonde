@@ -2,7 +2,6 @@
 
 import asyncio
 import logging
-from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
@@ -77,31 +76,29 @@ async def ensure_single_user_identity() -> None:
     user-owned rows would reject all writes. Idempotently insert the system
     user when missing.
     """
-    from sqlalchemy import select
+    from sqlalchemy import text
 
     from app.core.auth import SINGLE_USER_ID
     from app.core.database import get_async_session_factory
-    from app.domains.auth.models import User
 
     session_factory = get_async_session_factory()
     async with session_factory() as session:
-        existing = await session.scalar(select(User).where(User.id == SINGLE_USER_ID))
-        if existing is not None:
-            return
-        session.add(
-            User(
-                id=SINGLE_USER_ID,
-                email="system@sonde.local",
-                username="sonde_system",
-                hashed_password="!",
-                is_verified=True,
-            )
+        # The users table outlives the deleted auth domain: it anchors
+        # user_id foreign keys (subscriptions, daily reports). Seed the
+        # fixed operator row with raw SQL; no ORM model exists anymore.
+        await session.execute(
+            text(
+                "INSERT INTO users (id, email, username, hashed_password, "
+                "status, is_superuser, is_verified, created_at, updated_at) "
+                "VALUES (:uid, 'system@sonde.local', 'sonde_system', '', "
+                "'active', false, false, now(), now()) "
+                "ON CONFLICT (id) DO NOTHING"
+            ),
+            {"uid": SINGLE_USER_ID},
         )
         await session.commit()
-        logger.info("Created system user id=%s for API-key mode", SINGLE_USER_ID)
 
 
-@asynccontextmanager
 async def application_lifespan(app: FastAPI):
     """Manage startup and shutdown lifecycle hooks."""
     setup_logging_from_env()

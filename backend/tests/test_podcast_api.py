@@ -95,7 +95,6 @@ class TestPodcastAPI:
 
         # Check for required imports (even if unused)
         assert "class PodcastEpisode" in content
-        assert "class PodcastPlaybackState" in content
 
         # Check for key fields (string match, not import)
         expected_fields = [
@@ -103,9 +102,6 @@ class TestPodcastAPI:
             "ai_summary",
             "item_link",
             "subscription_id",
-            "current_position",
-            "user_id",
-            "episode_id",
         ]
 
         for field in expected_fields:

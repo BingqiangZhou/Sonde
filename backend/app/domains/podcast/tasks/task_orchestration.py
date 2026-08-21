@@ -14,11 +14,11 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 from typing import Any
 
 import aiohttp
-from sqlalchemy import and_, delete, exists, func, or_, select
+from sqlalchemy import and_, exists, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
@@ -32,7 +32,6 @@ from app.domains.podcast.integration.secure_rss_parser import (
 from app.domains.podcast.models import (
     PodcastEpisode,
     PodcastEpisodeTranscript,
-    PodcastPlaybackState,
     Subscription,
     SubscriptionStatus,
     TranscriptionTask,
@@ -708,19 +707,6 @@ class MaintenanceOrchestrator(BaseOrchestrator):
             "status": "success",
             "stats": stats,
             "logged_at": datetime.now(UTC).isoformat(),
-        }
-
-    async def cleanup_old_playback_states(self) -> dict:
-        cutoff_date = datetime.now(UTC) - timedelta(days=90)
-        stmt = delete(PodcastPlaybackState).where(
-            PodcastPlaybackState.last_updated_at < cutoff_date,
-        )
-        result = await self.session.execute(stmt)
-        await self.session.commit()
-        return {
-            "status": "success",
-            "deleted_count": result.rowcount or 0,
-            "processed_at": datetime.now(UTC).isoformat(),
         }
 
     async def cleanup_old_transcription_temp_files(self, *, days: int = 7) -> dict:

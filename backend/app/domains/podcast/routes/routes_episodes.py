@@ -8,13 +8,10 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from app.core.auth import require_api_key
 from app.core.exceptions import (
     EpisodeNotFoundError,
-    SubscriptionNotFoundError,
     ValidationError,
 )
 from app.domains.podcast.routes.dependencies import (
     get_podcast_episode_service,
-    get_podcast_playback_service,
-    get_podcast_search_service,
     get_summary_workflow_service,
 )
 from app.domains.podcast.routes.episode_route_common import (
@@ -24,29 +21,20 @@ from app.domains.podcast.routes.episode_route_common import (
 from app.domains.podcast.routes.response_assemblers import (
     build_episode_list_response,
     build_feed_response,
-    build_playback_history_list_response,
-    build_playback_state_response,
     build_summary_models_response,
 )
 from app.domains.podcast.schemas import (
-    PlaybackRateApplyRequest,
-    PlaybackRateEffectiveResponse,
     PodcastEpisodeDetailResponse,
     PodcastEpisodeFilter,
     PodcastEpisodeListResponse,
     PodcastEpisodeSyncResponse,
     PodcastFeedResponse,
-    PodcastPlaybackHistoryListResponse,
-    PodcastPlaybackStateResponse,
-    PodcastPlaybackUpdate,
     PodcastSummaryPendingResponse,
     PodcastSummaryRequest,
     PodcastSummaryStartResponse,
     SummaryModelsResponse,
 )
 from app.domains.podcast.services.episode_service import PodcastEpisodeService
-from app.domains.podcast.services.playback_service import PodcastPlaybackService
-from app.domains.podcast.services.search_service import PodcastSearchService
 from app.domains.podcast.services.summary_service import SummaryWorkflowService
 from app.domains.podcast.tasks.tasks_summary import (
     generate_episode_summary as generate_episode_summary_task,
@@ -130,45 +118,6 @@ async def list_episodes(
         page=page,
         size=size,
         subscription_id=subscription_id or 0,
-    )
-
-
-@router.get(
-    "/episodes/history",
-    response_model=PodcastEpisodeListResponse,
-    summary="List playback history",
-)
-async def list_playback_history(
-    page: int = Query(1, ge=1, description="Page number"),
-    size: int = Query(20, ge=1, le=100, description="Page size"),
-    service: PodcastEpisodeService = Depends(get_podcast_episode_service),
-):
-    episodes, total = await service.list_playback_history(page=page, size=size)
-    return build_episode_list_response(
-        episodes,
-        total=total,
-        page=page,
-        size=size,
-        subscription_id=0,
-    )
-
-
-@router.get(
-    "/episodes/history-lite",
-    response_model=PodcastPlaybackHistoryListResponse,
-    summary="List lightweight playback history",
-)
-async def list_playback_history_lite(
-    page: int = Query(1, ge=1, description="Page number"),
-    size: int = Query(20, ge=1, le=100, description="Page size"),
-    service: PodcastEpisodeService = Depends(get_podcast_episode_service),
-):
-    episodes, total = await service.list_playback_history_lite(page=page, size=size)
-    return build_playback_history_list_response(
-        episodes,
-        total=total,
-        page=page,
-        size=size,
     )
 
 
@@ -285,113 +234,6 @@ async def generate_summary(
         ) from exc
 
 
-@router.put(
-    "/episodes/{episode_id}/playback",
-    response_model=PodcastPlaybackStateResponse,
-    summary="Update playback progress",
-)
-async def update_playback_progress(
-    episode_id: int,
-    playback_data: PodcastPlaybackUpdate,
-    service: PodcastPlaybackService = Depends(get_podcast_playback_service),
-):
-    try:
-        result = await service.update_playback_progress(
-            episode_id,
-            playback_data.position,
-            playback_data.is_playing,
-            playback_data.playback_rate,
-        )
-        return build_playback_state_response(
-            payload=result,
-        )
-    except EpisodeNotFoundError:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Episode not found",
-        ) from None
-    except Exception as exc:
-        logger.error(
-            "Failed to update playback progress for episode %s: %s",
-            episode_id,
-            exc,
-            exc_info=True,
-        )
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to update playback progress",
-        ) from exc
-
-
-@router.get(
-    "/episodes/{episode_id}/playback",
-    response_model=PodcastPlaybackStateResponse,
-    summary="Get playback state",
-)
-async def get_playback_state(
-    episode_id: int,
-    service: PodcastPlaybackService = Depends(get_podcast_playback_service),
-):
-    try:
-        playback = await service.get_playback_state(episode_id)
-        if not playback:
-            raise HTTPException(status_code=404, detail="Playback record not found")
-        return PodcastPlaybackStateResponse(**playback)
-    except EpisodeNotFoundError:
-        raise HTTPException(status_code=404, detail="Episode not found") from None
-
-
-@router.get(
-    "/playback/rate/effective",
-    response_model=PlaybackRateEffectiveResponse,
-    summary="Get effective playback rate preference",
-)
-async def get_effective_playback_rate(
-    subscription_id: int | None = Query(
-        None,
-        ge=1,
-        description="Subscription ID (optional)",
-    ),
-    service: PodcastPlaybackService = Depends(get_podcast_playback_service),
-):
-    result = await service.get_effective_playback_rate(subscription_id=subscription_id)
-    return PlaybackRateEffectiveResponse(**result)
-
-
-@router.put(
-    "/playback/rate/apply",
-    response_model=PlaybackRateEffectiveResponse,
-    summary="Apply playback rate preference",
-)
-async def apply_playback_rate_preference(
-    request: PlaybackRateApplyRequest,
-    service: PodcastPlaybackService = Depends(get_podcast_playback_service),
-):
-    try:
-        result = await service.apply_playback_rate_preference(
-            playback_rate=request.playback_rate,
-            apply_to_subscription=request.apply_to_subscription,
-            subscription_id=request.subscription_id,
-        )
-        return PlaybackRateEffectiveResponse(**result)
-    except SubscriptionNotFoundError:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Subscription not found",
-        ) from None
-    except ValueError:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Failed to apply playback preference",
-        ) from None
-    except Exception as exc:
-        logger.error("Failed to apply playback rate preference: %s", exc)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to apply playback preference",
-        ) from exc
-
-
 @router.get(
     "/summaries/pending",
     response_model=PodcastSummaryPendingResponse,
@@ -422,43 +264,3 @@ async def get_summary_models(
 
 
 # ── Search ──────────────────────────────────────────────────────────────────
-
-
-@router.get(
-    "/search",
-    response_model=PodcastEpisodeListResponse,
-    summary="Search podcast content",
-)
-async def search_podcasts(
-    q: str | None = Query(None, min_length=1, description="Search keyword"),
-    search_in: str | None = Query(
-        "all",
-        description="Search scope: title, description, summary, all",
-    ),
-    page: int = Query(1, ge=1, description="Page number"),
-    size: int = Query(20, ge=1, le=100, description="Page size"),
-    service: PodcastSearchService = Depends(get_podcast_search_service),
-):
-    keyword = (q or "").strip()
-    if not keyword:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="q is required",
-        )
-
-    episodes, total = await service.search_podcasts(
-        query=keyword,
-        search_in=search_in,
-        page=page,
-        size=size,
-    )
-    return build_episode_list_response(
-        episodes,
-        total=total,
-        page=page,
-        size=size,
-        subscription_id=0,
-    )
-
-
-__all__ = ["generate_summary", "router"]

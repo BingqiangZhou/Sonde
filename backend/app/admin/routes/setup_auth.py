@@ -41,7 +41,7 @@ async def login(
 
     if not settings.API_KEY:
         response = RedirectResponse(
-            url="/api/v1/admin", status_code=status.HTTP_303_SEE_OTHER
+            url="/api/v1/admin/apikeys", status_code=status.HTTP_303_SEE_OTHER
         )
         return response
 
@@ -55,7 +55,7 @@ async def login(
         )
 
     response = RedirectResponse(
-        url="/api/v1/admin", status_code=status.HTTP_303_SEE_OTHER
+        url="/api/v1/admin/apikeys", status_code=status.HTTP_303_SEE_OTHER
     )
     response.set_cookie(
         key="admin_session",

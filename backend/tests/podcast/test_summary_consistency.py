@@ -10,7 +10,6 @@ from app.domains.ai.invocation import looks_like_html_error_page
 from app.domains.podcast.routes.routes_episodes import generate_summary
 from app.domains.podcast.schemas import PodcastSummaryRequest
 from app.domains.podcast.services.episode_service import PodcastEpisodeService
-from app.domains.podcast.services.search_service import PodcastSearchService
 from app.domains.podcast.services.summary_service import (
     PodcastSummaryGenerationService,
     SummaryWorkflowService,
@@ -163,15 +162,6 @@ async def test_episode_service_filters_summary_on_detail_response() -> None:
 
     assert result is not None
     assert result["ai_summary"] == "clean summary"
-
-
-def test_search_service_filters_summary_in_list_response() -> None:
-    service = PodcastSearchService(db=AsyncMock(), user_id=1)
-    episode = _make_episode(ai_summary="<think>internal</think>search summary")
-
-    result = service._build_episode_dicts([episode], playback_states={})
-
-    assert result[0]["ai_summary"] == "search summary"
 
 
 def test_html_timeout_page_is_detected_as_invalid_summary_content() -> None:

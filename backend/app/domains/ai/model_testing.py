@@ -85,9 +85,7 @@ async def test_transcription_model(
             ) as response:
                 if response.status != 200:
                     error_text = await response.text()
-                    return (
-                        f"❌ API 调用失败: {response.status} - {error_text[:200]}"
-                    )
+                    return f"❌ API 调用失败: {response.status} - {error_text[:200]}"
 
                 result = await response.json()
 
@@ -279,9 +277,7 @@ async def validate_api_key(
                                 )
                     else:
                         text = await response.text()
-                        error_message = (
-                            f"Validation failed: {response.status} - {text}"
-                        )
+                        error_message = f"Validation failed: {response.status} - {text}"
                         logger.error(
                             f"Validation failed with Bearer: {error_message}",
                         )
@@ -301,9 +297,7 @@ async def validate_api_key(
                 )
             except aiohttp.ClientPayloadError as e:
                 # Payload encoding/decoding errors
-                error_message = (
-                    f"Payload error: Invalid response data. Details: {e!s}"
-                )
+                error_message = f"Payload error: Invalid response data. Details: {e!s}"
                 logger.error(
                     f"ClientPayloadError to {target_url}: {e!s}",
                     exc_info=True,

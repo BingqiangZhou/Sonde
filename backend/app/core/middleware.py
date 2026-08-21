@@ -58,7 +58,9 @@ class RequestIDMiddleware:
             for key, value in scope.get("headers", [])
         }
         incoming = headers.get("x-request-id", "")
-        request_id = incoming if _REQUEST_ID_PATTERN.fullmatch(incoming) else uuid.uuid4().hex
+        request_id = (
+            incoming if _REQUEST_ID_PATTERN.fullmatch(incoming) else uuid.uuid4().hex
+        )
         token = request_id_var.set(request_id)
 
         async def send_wrapper(message: Message) -> None:

@@ -1,10 +1,9 @@
 """Authentication and request-level FastAPI dependencies.
 
-Dual mode:
-- Single-user API key: Authorization: Bearer <API key> or X-API-Key header.
-  User ID is hardcoded to 1.
-- Multi-user JWT: Authorization: Bearer <access token> issued by
-  /api/v1/auth/* resolves to the real user ID.
+Single API-key mode: Authorization: Bearer <API key> or X-API-Key header.
+Every authenticated request acts as the fixed single operator user
+(SINGLE_USER_ID). The JWT multi-user flow was removed with the auth domain
+in the server-pipeline restructure.
 """
 
 from __future__ import annotations
@@ -22,7 +21,7 @@ from app.core.database import get_db_session
 
 logger = logging.getLogger(__name__)
 
-# Hardcoded single-user ID
+# Fixed operator user id; the users table row is seeded at startup.
 SINGLE_USER_ID = 1
 
 
@@ -44,27 +43,14 @@ def extract_api_key(request: Request) -> str | None:
     return None
 
 
-def _user_id_from_bearer(token: str) -> int | None:
-    """Resolve a JWT access token to its user ID, or None if invalid."""
-    from app.domains.auth.security import user_id_from_token
-
-    return user_id_from_token(token, "access")
-
-
 async def require_api_key(request: Request) -> int:
     """Authenticate the request and return the acting user ID.
 
-    Resolution order: valid JWT access token first (real multi-user ID),
-    then the configured API key (single-user ID 1), then the dev bypass when
-    no API key is configured. Raises HTTPException 401 otherwise.
+    Resolution order: the configured API key (single operator user), then
+    the dev bypass when no API key is configured. Raises HTTPException 401
+    otherwise.
     """
     settings = get_settings()
-
-    authorization = request.headers.get("Authorization", "")
-    if authorization.startswith("Bearer "):
-        user_id = _user_id_from_bearer(authorization[7:])
-        if user_id is not None:
-            return user_id
 
     if not settings.API_KEY:
         # If no API_KEY configured (development), allow all requests

@@ -114,8 +114,8 @@ def register_orm_models() -> None:
 
     for module in (
         "app.shared.system_settings",
+        "app.shared.users_table",
         "app.domains.ai.models",
-        "app.domains.auth.models",
         "app.domains.podcast.models",
     ):
         import_module(module)

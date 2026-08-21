@@ -5,7 +5,6 @@ from fastapi.testclient import TestClient
 
 from app.domains.podcast.routes.dependencies import (
     get_podcast_episode_service,
-    get_podcast_search_service,
 )
 from app.domains.podcast.routes.episode_route_common import encode_keyset_cursor
 from app.main import app
@@ -132,46 +131,3 @@ def test_feed_keyset_cursor_path():
     )
 
     app.dependency_overrides.pop(get_podcast_episode_service, None)
-
-
-def test_history_uses_page_pagination():
-    service = AsyncMock()
-    app.dependency_overrides[get_podcast_episode_service] = lambda: service
-    client = TestClient(app)
-
-    now = datetime.now(UTC)
-    service.list_playback_history.return_value = ([_sample_episode(now)], 20)
-
-    response = client.get("/api/v1/podcasts/episodes/history?page=1&size=10")
-
-    assert response.status_code == 200
-    payload = response.json()
-    assert payload["next_cursor"] is None
-    service.list_playback_history.assert_awaited_once_with(page=1, size=10)
-
-    app.dependency_overrides.pop(get_podcast_episode_service, None)
-
-
-def test_search_rejects_query_alias():
-    service = AsyncMock()
-    app.dependency_overrides[get_podcast_search_service] = lambda: service
-    client = TestClient(app)
-
-    response = client.get("/api/v1/podcasts/search?query=slow")
-
-    assert response.status_code == 422
-    service.search_podcasts.assert_not_awaited()
-    app.dependency_overrides.pop(get_podcast_search_service, None)
-
-
-def test_search_requires_q():
-    service = AsyncMock()
-    app.dependency_overrides[get_podcast_search_service] = lambda: service
-    client = TestClient(app)
-
-    response = client.get("/api/v1/podcasts/search")
-
-    assert response.status_code == 422
-    service.search_podcasts.assert_not_awaited()
-
-    app.dependency_overrides.pop(get_podcast_search_service, None)

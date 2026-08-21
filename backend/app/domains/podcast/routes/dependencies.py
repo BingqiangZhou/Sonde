@@ -17,13 +17,7 @@ from app.domains.podcast.services.episode_service import (
     PodcastEpisodeService,
     PodcastSubscriptionService,
 )
-from app.domains.podcast.services.playback_service import (
-    PodcastPlaybackService,
-    PodcastQueueService,
-)
 from app.domains.podcast.services.schedule_service import PodcastScheduleService
-from app.domains.podcast.services.search_service import PodcastSearchService
-from app.domains.podcast.services.stats_service import PodcastStatsService
 from app.domains.podcast.services.summary_service import SummaryWorkflowService
 from app.domains.podcast.services.transcription_service import (
     TranscriptionWorkflowService,
@@ -85,54 +79,12 @@ def get_podcast_episode_service(
     return PodcastEpisodeService(db, user_id, repo=repo)
 
 
-def get_podcast_playback_service(
-    db: AsyncSession = Depends(get_db_session_dependency),
-    user_id: int = Depends(require_api_key),
-    repo=Depends(get_podcast_repository),
-) -> PodcastPlaybackService:
-    """Provide request-scoped playback service."""
-    return PodcastPlaybackService(db, user_id, repo=repo)
-
-
-def get_podcast_queue_service(
-    db: AsyncSession = Depends(get_db_session_dependency),
-    user_id: int = Depends(require_api_key),
-    repo=Depends(get_podcast_repository),
-) -> PodcastQueueService:
-    """Provide request-scoped podcast queue service."""
-    return PodcastQueueService(db, user_id, repo=repo)
-
-
 def get_podcast_schedule_service(
     db: AsyncSession = Depends(get_db_session_dependency),
     user_id: int = Depends(require_api_key),
 ) -> PodcastScheduleService:
     """Provide request-scoped podcast schedule service."""
     return PodcastScheduleService(db, user_id)
-
-
-def get_podcast_search_service(
-    db: AsyncSession = Depends(get_db_session_dependency),
-    user_id: int = Depends(require_api_key),
-    repo=Depends(get_podcast_repository),
-) -> PodcastSearchService:
-    """Provide request-scoped podcast search service."""
-    return PodcastSearchService(db, user_id, repo=repo)
-
-
-def get_podcast_stats_service(
-    db: AsyncSession = Depends(get_db_session_dependency),
-    user_id: int = Depends(require_api_key),
-    repo=Depends(get_podcast_repository),
-    playback_service: PodcastPlaybackService = Depends(get_podcast_playback_service),
-) -> PodcastStatsService:
-    """Provide request-scoped stats service."""
-    return PodcastStatsService(
-        db,
-        user_id,
-        repo=repo,
-        playback_service=playback_service,
-    )
 
 
 def get_daily_report_service(
@@ -168,12 +120,8 @@ __all__ = [
     "get_daily_report_service",
     "get_podcast_episode_service",
     "get_podcast_parser",
-    "get_podcast_playback_service",
-    "get_podcast_queue_service",
     "get_podcast_repository",
     "get_podcast_schedule_service",
-    "get_podcast_search_service",
-    "get_podcast_stats_service",
     "get_podcast_subscription_service",
     "get_podcast_task_orchestration_service",
     "get_subscription_repository",

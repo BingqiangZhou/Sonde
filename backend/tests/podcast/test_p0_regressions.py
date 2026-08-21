@@ -12,7 +12,6 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from app.domains.auth.models import User
 from app.domains.podcast.models import (
     PodcastEpisode,
     Subscription,
@@ -20,20 +19,24 @@ from app.domains.podcast.models import (
 )
 from app.domains.podcast.repositories import PodcastRepository
 from app.domains.podcast.services.episode_service import PodcastEpisodeService
-from app.domains.podcast.services.playback_service import PodcastPlaybackService
-from app.domains.podcast.services.stats_service import PodcastStatsService
 from app.domains.podcast.transcription.state import claim_task_dispatch
 
 
 async def _seed_subscription_with_episode(db_session) -> tuple[int, int]:
     """Create user + subscription + one episode; return (user_id, episode_id)."""
-    user = User(
-        email="regression@example.com",
-        username="regression_user",
-        hashed_password="x",
+    from sqlalchemy import text
+
+    await db_session.execute(
+        text(
+            "INSERT INTO users (email, username, hashed_password, created_at, updated_at) "
+            "VALUES ('regression@example.com', 'regression_user', 'x', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)"
+        )
     )
-    db_session.add(user)
     await db_session.flush()
+    user_id_row = await db_session.execute(
+        text("SELECT id FROM users WHERE email = 'regression@example.com'")
+    )
+    user_id = user_id_row.scalar_one()
 
     subscription = Subscription(
         title="Regression Cast",
@@ -43,7 +46,7 @@ async def _seed_subscription_with_episode(db_session) -> tuple[int, int]:
     db_session.add(subscription)
     await db_session.flush()
 
-    db_session.add(UserSubscription(user_id=user.id, subscription_id=subscription.id))
+    db_session.add(UserSubscription(user_id=user_id, subscription_id=subscription.id))
     episode = PodcastEpisode(
         subscription_id=subscription.id,
         title="Episode 1",
@@ -55,7 +58,7 @@ async def _seed_subscription_with_episode(db_session) -> tuple[int, int]:
     )
     db_session.add(episode)
     await db_session.commit()
-    return user.id, episode.id
+    return user_id, episode.id
 
 
 @pytest.mark.asyncio
@@ -84,24 +87,6 @@ async def test_get_episode_with_summary_direct_load(db_session) -> None:
     assert result is not None
     assert result["id"] == episode_id
     assert result["title"] == "Episode 1"
-
-
-@pytest.mark.asyncio
-async def test_update_playback_progress_completes_after_commit(db_session) -> None:
-    """Regression: progress update 500'd after committing (redis.set_user_progress)."""
-    user_id, episode_id = await _seed_subscription_with_episode(db_session)
-    service = PodcastPlaybackService(db_session, user_id)
-
-    result = await service.update_playback_progress(
-        episode_id, progress_seconds=42, is_playing=True, playback_rate=1.0
-    )
-
-    assert result["current_position"] == 42
-    # Second sync must also succeed (previously every sync 500'd post-commit).
-    result2 = await service.update_playback_progress(
-        episode_id, progress_seconds=60, is_playing=False, playback_rate=1.0
-    )
-    assert result2["current_position"] == 60
 
 
 @pytest.mark.asyncio
@@ -143,28 +128,6 @@ async def test_claim_task_dispatch_first_claim_wins(db_session) -> None:
     redis.set_if_not_exists.assert_awaited_once()
     # TTL must be the 2h dispatch window expressed in seconds.
     assert redis.set_if_not_exists.await_args.kwargs["ttl"] == 7200
-
-
-@pytest.mark.asyncio
-async def test_stats_service_returns_defaults_when_aggregation_fails(
-    db_session,
-) -> None:
-    """Stats must degrade per-query (sequentially) instead of one shared-session gather."""
-    user_id, _ = await _seed_subscription_with_episode(db_session)
-    repo = AsyncMock()
-    repo.get_user_stats_aggregated.side_effect = RuntimeError("db boom")
-    playback = PodcastPlaybackService(db_session, user_id)
-    service = PodcastStatsService(
-        db_session, user_id, repo=repo, playback_service=playback
-    )
-
-    stats = await service.get_user_stats()
-
-    assert stats["recently_played"] == []
-    assert stats["listening_streak"] == 0
-    assert "total_listening_seconds" not in stats or isinstance(
-        stats.get("total_listening_seconds", 0), int
-    )
 
 
 def test_admin_session_hash_resolves_secret_key_lazily() -> None:

@@ -48,8 +48,13 @@ def test_request_id_filter_injects_record_field():
     request_id_var.set("filter-test-1234")
     try:
         record = logging.LogRecord(
-            name="x", level=logging.INFO, pathname=__file__, lineno=1,
-            msg="hello", args=(), exc_info=None,
+            name="x",
+            level=logging.INFO,
+            pathname=__file__,
+            lineno=1,
+            msg="hello",
+            args=(),
+            exc_info=None,
         )
         assert RequestIDFilter().filter(record) is True
         assert record.request_id == "filter-test-1234"
@@ -60,8 +65,13 @@ def test_request_id_filter_injects_record_field():
 def test_request_id_filter_defaults_outside_request():
     request_id_var.set("")
     record = logging.LogRecord(
-        name="x", level=logging.INFO, pathname=__file__, lineno=1,
-        msg="bg task", args=(), exc_info=None,
+        name="x",
+        level=logging.INFO,
+        pathname=__file__,
+        lineno=1,
+        msg="bg task",
+        args=(),
+        exc_info=None,
     )
     RequestIDFilter().filter(record)
     assert record.request_id == "-"

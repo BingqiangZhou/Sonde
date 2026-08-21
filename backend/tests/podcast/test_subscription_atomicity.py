@@ -69,12 +69,16 @@ async def test_add_subscription_rolls_back_when_episodes_fail(db_session) -> Non
     await db_session.rollback()
 
     subs = (
-        await db_session.execute(
-            select(Subscription).where(Subscription.source_url == "https://example.com/broken.xml")
+        (
+            await db_session.execute(
+                select(Subscription).where(
+                    Subscription.source_url == "https://example.com/broken.xml"
+                )
+            )
         )
-    ).scalars().all()
+        .scalars()
+        .all()
+    )
     assert subs == [], "subscription must not persist when episode ingest fails"
-    user_subs = (
-        await db_session.execute(select(UserSubscription))
-    ).scalars().all()
+    user_subs = (await db_session.execute(select(UserSubscription))).scalars().all()
     assert user_subs == []

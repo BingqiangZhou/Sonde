@@ -86,6 +86,7 @@ def create_celery_app() -> Celery:
 # Worker lifecycle hooks
 # ---------------------------------------------------------------------------
 
+
 async def _reset_stale_transcription_tasks_on_boot() -> None:
     """Reset stale transcription tasks on a throwaway event loop.
 

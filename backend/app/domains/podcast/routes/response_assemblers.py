@@ -12,11 +12,6 @@ from app.domains.podcast.schemas import (
     PodcastFeedResponse,
     PodcastPendingTranscriptionsResponse,
     PodcastPendingTranscriptionTaskResponse,
-    PodcastPlaybackHistoryItemResponse,
-    PodcastPlaybackHistoryListResponse,
-    PodcastPlaybackStateResponse,
-    PodcastQueueItemResponse,
-    PodcastQueueResponse,
     SummaryModelInfo,
     SummaryModelsResponse,
 )
@@ -61,25 +56,6 @@ def build_episode_list_response(
     )
 
 
-def build_playback_history_list_response(
-    episodes: list[dict[str, Any]],
-    *,
-    total: int,
-    page: int,
-    size: int,
-    next_cursor: str | None = None,
-) -> PodcastPlaybackHistoryListResponse:
-    """Build the lightweight playback history response."""
-    return PodcastPlaybackHistoryListResponse(
-        items=[PodcastPlaybackHistoryItemResponse(**episode) for episode in episodes],
-        total=total,
-        page=page,
-        size=size,
-        pages=(total + size - 1) // size,
-        next_cursor=next_cursor,
-    )
-
-
 def build_daily_report_dates_response(
     payload: dict[str, Any],
 ) -> PodcastDailyReportDatesResponse:
@@ -91,37 +67,6 @@ def build_daily_report_dates_response(
         page=payload["page"],
         size=payload["size"],
         pages=payload["pages"],
-    )
-
-
-def build_playback_state_response(
-    *,
-    payload: dict[str, Any],
-    episode_id: int | None = None,
-) -> PodcastPlaybackStateResponse:
-    """Build the playback state response."""
-    current_position = payload.get("current_position")
-    if current_position is None:
-        current_position = payload["progress"]
-    return PodcastPlaybackStateResponse(
-        episode_id=payload.get("episode_id", episode_id),
-        current_position=current_position,
-        is_playing=payload["is_playing"],
-        playback_rate=payload["playback_rate"],
-        play_count=payload["play_count"],
-        last_updated_at=payload["last_updated_at"],
-        progress_percentage=payload["progress_percentage"],
-        remaining_time=payload["remaining_time"],
-    )
-
-
-def build_queue_response(payload: dict[str, Any]) -> PodcastQueueResponse:
-    """Build the queue snapshot response."""
-    return PodcastQueueResponse(
-        current_episode_id=payload.get("current_episode_id"),
-        revision=payload["revision"],
-        updated_at=payload.get("updated_at"),
-        items=[PodcastQueueItemResponse(**item) for item in payload.get("items", [])],
     )
 
 

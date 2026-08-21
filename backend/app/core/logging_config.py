@@ -80,9 +80,7 @@ def setup_logging(
     level = getattr(logging, log_level.upper(), logging.INFO)
 
     # 日志格式
-    log_format = (
-        "[%(asctime)s] [%(levelname)s] [%(name)s:%(lineno)d] [req:%(request_id)s] %(message)s"
-    )
+    log_format = "[%(asctime)s] [%(levelname)s] [%(name)s:%(lineno)d] [req:%(request_id)s] %(message)s"
     date_format = "%Y-%m-%d %H:%M:%S"
 
     # 创建时区格式化器

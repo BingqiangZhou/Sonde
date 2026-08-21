@@ -114,13 +114,16 @@ async def test_feed_lightweight_cursor_reuses_feed_total_cache_path():
     repo = PodcastRepository(db=db, redis=redis)
     repo._get_feed_total_count = AsyncMock(return_value=9)
 
-    items, total, has_more, next_cursor = (
-        await repo.get_feed_lightweight_cursor_paginated(
-            user_id=1,
-            size=20,
-            cursor_published_at=datetime.now(UTC),
-            cursor_episode_id=999,
-        )
+    (
+        items,
+        total,
+        has_more,
+        next_cursor,
+    ) = await repo.get_feed_lightweight_cursor_paginated(
+        user_id=1,
+        size=20,
+        cursor_published_at=datetime.now(UTC),
+        cursor_episode_id=999,
     )
 
     assert items == []
@@ -129,45 +132,3 @@ async def test_feed_lightweight_cursor_reuses_feed_total_cache_path():
     assert next_cursor is None
     repo._get_feed_total_count.assert_awaited_once_with(1)
     assert db.execute.await_count == 1
-
-
-@pytest.mark.asyncio
-async def test_playback_history_paginated_uses_window_total():
-    db = AsyncMock()
-    redis = AsyncMock()
-    episode = MagicMock()
-    db.execute.return_value = _RowsResult([(episode, 4)])
-
-    repo = PodcastRepository(db=db, redis=redis)
-    items, total = await repo.get_playback_history_paginated(
-        user_id=1,
-        page=1,
-        size=20,
-    )
-
-    assert items == [episode]
-    assert total == 4
-    assert db.scalar.await_count == 0
-
-    executed_query = db.execute.await_args.args[0]
-    sql = str(executed_query)
-    assert "count(podcast_episodes.id) OVER ()" in sql
-
-
-@pytest.mark.asyncio
-async def test_playback_history_paginated_uses_fallback_on_empty_result():
-    db = AsyncMock()
-    redis = AsyncMock()
-    db.execute.return_value = _RowsResult([])
-    db.scalar.return_value = 6
-
-    repo = PodcastRepository(db=db, redis=redis)
-    items, total = await repo.get_playback_history_paginated(
-        user_id=1,
-        page=3,
-        size=20,
-    )
-
-    assert items == []
-    assert total == 6
-    assert db.scalar.await_count == 1

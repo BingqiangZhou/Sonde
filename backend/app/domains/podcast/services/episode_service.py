@@ -88,15 +88,8 @@ class PodcastEpisodeService:
             filters=filters,
         )
 
-        # Batch fetch playback states
-        episode_ids = [ep.id for ep in episodes]
-        playback_states = await self.repo.get_playback_states_batch(
-            self.user_id,
-            episode_ids,
-        )
-
-        # Build response
-        results = self._build_episode_dicts(episodes, playback_states)
+        # Playback state is client-side truth now; episodes ship without it.
+        results = self._build_episode_dicts(episodes, {})
 
         return results, total
 
@@ -129,26 +122,6 @@ class PodcastEpisodeService:
         normalized["ai_summary"] = item.get("ai_summary")
         return normalized
 
-    async def list_playback_history(
-        self,
-        page: int = 1,
-        size: int = 20,
-    ) -> tuple[list[dict[str, Any]], int]:
-        """List user playback/view history ordered by latest activity."""
-        episodes, total = await self.repo.get_playback_history_paginated(
-            self.user_id,
-            page=page,
-            size=size,
-        )
-
-        episode_ids = [ep.id for ep in episodes]
-        playback_states = await self.repo.get_playback_states_batch(
-            self.user_id,
-            episode_ids,
-        )
-        results = self._build_episode_dicts(episodes, playback_states)
-        return results, total
-
     async def list_feed(
         self,
         size: int = 20,
@@ -172,18 +145,6 @@ class PodcastEpisodeService:
             total,
             has_more,
             next_cursor_values,
-        )
-
-    async def list_playback_history_lite(
-        self,
-        page: int = 1,
-        size: int = 20,
-    ) -> tuple[list[dict[str, Any]], int]:
-        """List lightweight playback history for profile history page."""
-        return await self.repo.get_playback_history_lite_paginated(
-            self.user_id,
-            page=page,
-            size=size,
         )
 
     async def get_episode_by_id(self, episode_id: int) -> PodcastEpisode | None:
@@ -240,7 +201,6 @@ class PodcastEpisodeService:
             if not episode:
                 return None
 
-            playback = await self.repo.get_playback_state(self.user_id, episode_id)
             cleaned_summary = filter_thinking_content(episode.ai_summary)
             transcription_task = await self._get_transcription_task(episode_id)
             summary_status = _derive_summary_status(
@@ -277,10 +237,7 @@ class PodcastEpisodeService:
                 "ai_summary": cleaned_summary,
                 "ai_confidence_score": episode.ai_confidence_score,
                 "play_count": episode.play_count,
-                # Use per-user playback timestamp when available.
-                "last_played_at": playback.last_updated_at
-                if playback
-                else episode.last_played_at,
+                "last_played_at": episode.last_played_at,
                 "season": episode.season,
                 "episode_number": episode.episode_number,
                 "explicit": episode.explicit,
@@ -288,9 +245,9 @@ class PodcastEpisodeService:
                 "metadata": episode.metadata_json or {},
                 "created_at": episode.created_at,
                 "updated_at": episode.updated_at,
-                "playback_position": playback.current_position if playback else None,
-                "is_playing": playback.is_playing if playback else False,
-                "playback_rate": playback.playback_rate if playback else 1.0,
+                "playback_position": None,
+                "is_playing": False,
+                "playback_rate": 1.0,
                 "is_played": None,
                 "summary_status": summary_status,
                 "summary_error_message": transcription_task.summary_error_message
@@ -590,14 +547,9 @@ class PodcastSubscriptionService:
             limit_per_subscription=settings.PODCAST_RECENT_EPISODES_LIMIT,
         )
 
-        # Batch fetch playback states
-        all_episode_ids = []
-        for ep_list in episodes_batch.values():
-            all_episode_ids.extend([ep.id for ep in ep_list])
-        playback_states = await self.repo.get_playback_states_batch(
-            self.user_id,
-            all_episode_ids,
-        )
+        # Playback state is client-side truth; unplayed counts derive
+        # from episode presence only.
+        playback_states = {}
 
         # Build response
         results = []

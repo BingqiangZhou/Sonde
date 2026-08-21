@@ -23,6 +23,7 @@ from app.shared.repository_helpers import resolve_window_total
 
 logger = logging.getLogger(__name__)
 
+
 class PodcastSubscriptionRepository(BasePodcastRepository):
     """Subscription aggregate: user subscriptions CRUD and metadata."""
 

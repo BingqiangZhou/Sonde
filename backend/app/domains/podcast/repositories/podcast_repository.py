@@ -1,9 +1,9 @@
 """Composed podcast repository: all aggregate repositories in one object.
 
-Services that legitimately cross aggregates (episode listing also reads
-playback state, summary writes read episodes) depend on this facade; the
-aggregate classes in this package are the organizational units and can be
-used standalone where their method group is self-contained.
+Services that legitimately cross aggregates (summary writes read
+episodes) depend on this facade; the aggregate classes in this package
+are the organizational units and can be used standalone where their
+method group is self-contained.
 """
 
 from __future__ import annotations
@@ -13,12 +13,6 @@ from typing import Any
 from app.domains.podcast.models import PodcastEpisode
 from app.domains.podcast.repositories.episode_repository import EpisodeRepository
 from app.domains.podcast.repositories.feed_repository import FeedQueryRepository
-from app.domains.podcast.repositories.playback_repository import (
-    PlaybackStateRepository,
-)
-from app.domains.podcast.repositories.queue_repository import QueueRepository
-from app.domains.podcast.repositories.search_repository import SearchRepository
-from app.domains.podcast.repositories.stats_repository import StatsRepository
 from app.domains.podcast.repositories.subscription_repository import (
     PodcastSubscriptionRepository,
 )
@@ -29,11 +23,7 @@ class PodcastRepository(
     PodcastSubscriptionRepository,
     EpisodeRepository,
     FeedQueryRepository,
-    PlaybackStateRepository,
     SummaryRepository,
-    SearchRepository,
-    StatsRepository,
-    QueueRepository,
 ):
     """Unified podcast data access (composition of all aggregate repositories)."""
 

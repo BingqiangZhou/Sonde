@@ -1,8 +1,3 @@
-"""单元测试 - Podcast专业化服务
-
-Unit tests for Podcast specialized services
-"""
-
 from datetime import UTC, datetime
 from unittest.mock import AsyncMock, Mock, patch
 
@@ -10,10 +5,44 @@ import pytest
 
 from app.domains.podcast.services import (
     PodcastEpisodeService,
-    PodcastPlaybackService,
-    PodcastSearchService,
     PodcastSubscriptionService,
 )
+
+
+def _build_mock_episode(
+    *,
+    description: str,
+    ai_summary: str | None,
+    created_at: datetime,
+    published_at: datetime,
+) -> Mock:
+    episode = Mock()
+    episode.id = 1
+    episode.subscription_id = 1
+    episode.subscription = None
+    episode.title = "Episode title"
+    episode.description = description
+    episode.audio_url = "https://example.com/audio.mp3"
+    episode.audio_duration = 120
+    episode.audio_file_size = 1024
+    episode.published_at = published_at
+    episode.image_url = None
+    episode.item_link = None
+    episode.transcript_url = None
+    episode.transcript = None
+    episode.ai_summary = ai_summary
+    episode.summary_version = "1.0"
+    episode.ai_confidence_score = 0.9
+    episode.play_count = 0
+    episode.last_played_at = None
+    episode.season = None
+    episode.episode_number = None
+    episode.explicit = False
+    episode.status = "published"
+    episode.metadata_json = {}
+    episode.created_at = created_at
+    episode.updated_at = created_at
+    return episode
 
 
 def _build_lightweight_feed_row(
@@ -223,124 +252,3 @@ class TestPodcastEpisodeService:
 
         assert result is not None
         assert len(result) == service._feed_description_max_length
-
-
-class TestPodcastPlaybackService:
-    """测试播客播放服务"""
-
-    @pytest.fixture
-    def mock_db(self):
-        return AsyncMock()
-
-    @pytest.fixture
-    def mock_repo(self):
-        with patch(
-            "app.domains.podcast.services.playback_service.PodcastRepository",
-        ) as mock:
-            repo_instance = AsyncMock()
-            mock.return_value = repo_instance
-            yield repo_instance
-
-    @pytest.fixture
-    def service(self, mock_db, mock_repo):
-        return PodcastPlaybackService(mock_db, user_id=1)
-
-    @pytest.mark.asyncio
-    async def test_get_playback_state_not_found(self, service, mock_repo):
-        """测试获取不存在的播放状态"""
-        mock_repo.get_playback_state.return_value = None
-        mock_repo.get_episode_by_id.return_value = None
-
-        result = await service.get_playback_state(1)
-
-        assert result is None
-
-    @pytest.mark.asyncio
-    async def test_update_playback_progress_returns_projection(
-        self,
-        service,
-        mock_repo,
-    ):
-        episode = Mock(audio_duration=200)
-        playback = Mock(
-            current_position=50,
-            is_playing=True,
-            playback_rate=1.25,
-            play_count=3,
-            last_updated_at=datetime.now(UTC),
-        )
-        mock_repo.get_episode_by_id.return_value = episode
-        mock_repo.update_playback_progress.return_value = playback
-
-        result = await service.update_playback_progress(1, 50, True, 1.25)
-
-        assert result["current_position"] == 50
-        assert result["progress_percentage"] == 25.0
-
-
-class TestPodcastSearchService:
-    """测试播客搜索服务"""
-
-    @pytest.fixture
-    def mock_db(self):
-        return AsyncMock()
-
-    @pytest.fixture
-    def mock_repo(self):
-        with patch(
-            "app.domains.podcast.services.search_service.PodcastRepository",
-        ) as mock:
-            repo_instance = AsyncMock()
-            mock.return_value = repo_instance
-            yield repo_instance
-
-    @pytest.fixture
-    def service(self, mock_db, mock_repo):
-        return PodcastSearchService(mock_db, user_id=1)
-
-    @pytest.mark.asyncio
-    async def test_search_podcasts_empty(self, service, mock_repo):
-        """测试空搜索结果"""
-        mock_repo.search_episodes.return_value = ([], 0)
-        mock_repo.get_playback_states_batch.return_value = {}
-
-        results, total = await service.search_podcasts("test query")
-
-        assert results == []
-        assert total == 0
-
-
-def _build_mock_episode(
-    *,
-    description: str,
-    ai_summary: str | None,
-    created_at: datetime,
-    published_at: datetime,
-) -> Mock:
-    episode = Mock()
-    episode.id = 1
-    episode.subscription_id = 1
-    episode.subscription = None
-    episode.title = "Episode title"
-    episode.description = description
-    episode.audio_url = "https://example.com/audio.mp3"
-    episode.audio_duration = 120
-    episode.audio_file_size = 1024
-    episode.published_at = published_at
-    episode.image_url = None
-    episode.item_link = None
-    episode.transcript_url = None
-    episode.transcript = None
-    episode.ai_summary = ai_summary
-    episode.summary_version = "1.0"
-    episode.ai_confidence_score = 0.9
-    episode.play_count = 0
-    episode.last_played_at = None
-    episode.season = None
-    episode.episode_number = None
-    episode.explicit = False
-    episode.status = "published"
-    episode.metadata_json = {}
-    episode.created_at = created_at
-    episode.updated_at = created_at
-    return episode

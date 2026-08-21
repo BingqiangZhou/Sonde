@@ -171,8 +171,7 @@ async def db_session(integration_engine) -> AsyncGenerator[AsyncSession, None]:
         await conn.execute(
             text(
                 "TRUNCATE TABLE podcast_episodes, transcription_tasks, "
-                "user_subscriptions, subscriptions, podcast_playback_states, "
-                "podcast_queues, podcast_queue_items, users "
+                "user_subscriptions, subscriptions, users "
                 "RESTART IDENTITY CASCADE"
             )
         )
