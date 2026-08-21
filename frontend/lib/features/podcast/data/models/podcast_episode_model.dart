@@ -20,7 +20,6 @@ class PodcastEpisodeModel extends Equatable {
     this.transcriptUrl,
     this.transcriptContent,
     this.aiSummary,
-    this.summaryVersion,
     this.aiConfidenceScore,
     this.playCount = 0,
     this.lastPlayedAt,
@@ -71,8 +70,6 @@ class PodcastEpisodeModel extends Equatable {
   final String? transcriptContent;
   @JsonKey(name: 'ai_summary')
   final String? aiSummary;
-  @JsonKey(name: 'summary_version')
-  final String? summaryVersion;
   @JsonKey(name: 'ai_confidence_score')
   final double? aiConfidenceScore;
   @JsonKey(name: 'play_count')
@@ -132,7 +129,6 @@ class PodcastEpisodeModel extends Equatable {
     String? transcriptUrl,
     String? transcriptContent,
     String? aiSummary,
-    String? summaryVersion,
     double? aiConfidenceScore,
     int? playCount,
     DateTime? lastPlayedAt,
@@ -170,7 +166,6 @@ class PodcastEpisodeModel extends Equatable {
       transcriptUrl: transcriptUrl ?? this.transcriptUrl,
       transcriptContent: transcriptContent ?? this.transcriptContent,
       aiSummary: aiSummary ?? this.aiSummary,
-      summaryVersion: summaryVersion ?? this.summaryVersion,
       aiConfidenceScore: aiConfidenceScore ?? this.aiConfidenceScore,
       playCount: playCount ?? this.playCount,
       lastPlayedAt: lastPlayedAt ?? this.lastPlayedAt,

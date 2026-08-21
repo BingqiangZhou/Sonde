@@ -185,7 +185,6 @@ PodcastEpisodeModel mergeEpisodeForPlayback(
     transcriptContent:
         latest.transcriptContent ?? incoming.transcriptContent,
     aiSummary: latest.aiSummary ?? incoming.aiSummary,
-    summaryVersion: latest.summaryVersion ?? incoming.summaryVersion,
     aiConfidenceScore:
         latest.aiConfidenceScore ?? incoming.aiConfidenceScore,
     metadata: latest.metadata ?? incoming.metadata,

@@ -24,7 +24,6 @@ PodcastEpisodeModel _$PodcastEpisodeModelFromJson(Map<String, dynamic> json) =>
       transcriptUrl: json['transcript_url'] as String?,
       transcriptContent: json['transcript_content'] as String?,
       aiSummary: json['ai_summary'] as String?,
-      summaryVersion: json['summary_version'] as String?,
       aiConfidenceScore: (json['ai_confidence_score'] as num?)?.toDouble(),
       playCount: (json['play_count'] as num?)?.toInt() ?? 0,
       lastPlayedAt: json['last_played_at'] == null
@@ -69,7 +68,6 @@ Map<String, dynamic> _$PodcastEpisodeModelToJson(
   'transcript_url': instance.transcriptUrl,
   'transcript_content': instance.transcriptContent,
   'ai_summary': instance.aiSummary,
-  'summary_version': instance.summaryVersion,
   'ai_confidence_score': instance.aiConfidenceScore,
   'play_count': instance.playCount,
   'last_played_at': instance.lastPlayedAt?.toIso8601String(),
