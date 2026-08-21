@@ -9,7 +9,7 @@
 - `backend/alembic/`: database migrations (25 migrations).
 - `backend/tests/` and `backend/app/**/tests/`: backend test suites.
 - `frontend/`: Flutter app with feature modules in `frontend/lib/` and tests in `frontend/test/`.
-- `docker/`: Docker Compose files and deployment assets (7 services: postgres, redis, backend, celery_worker, celery_beat, postgres_backup, nginx; only backend runs alembic migrations).
+- `docker/`: Docker Compose files and deployment assets (7 services: postgres, redis, backend, worker, beat, backup, nginx; compose project pinned to `sonde`; only backend runs alembic migrations).
 - `docs/`: detailed design notes.
 
 ## Build, Test, and Development Commands

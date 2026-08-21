@@ -1,6 +1,6 @@
 @echo off
 echo ======================================================
-echo     Sonde - Docker Startup Script
+echo     Sonde (声读) - Docker Startup Script
 echo ======================================================
 echo.
 
@@ -24,38 +24,49 @@ if %errorlevel% NEQ 0 (
 echo Docker compose is available
 
 echo [2/5] Checking configuration...
-if not exist "..\backend\.env" (
-    echo WARNING: .env file not found, creating default...
-    copy ..\backend\.env.example ..\backend\.env
-    echo Please edit ..\backend\.env and configure:
-    echo   - ENVIRONMENT=production
-    echo   - OPENAI_API_KEY (if using AI features)
-    echo.
-    notepad ..\backend\.env
+if not exist ".env" (
+    if exist ".env.example" (
+        echo WARNING: docker\.env not found, creating from .env.example...
+        copy .env.example .env
+        echo Please edit docker\.env and configure:
+        echo   - POSTGRES_PASSWORD
+        echo   - REDIS_PASSWORD
+        echo.
+        notepad .env
+    ) else (
+        echo ERROR: docker\.env.example not found
+        pause
+        exit /b 1
+    )
+)
+if not exist "..ackend\.env" (
+    echo WARNING: backend\.env not found, creating from example...
+    copy ..ackend\.env.example ..ackend\.env
+    echo Please edit ..ackend\.env before using AI features.
 )
 echo Configuration check complete
 
-echo [3/5] Starting services...
+echo [3/5] Building and starting services...
 echo This may take several minutes on first run...
 echo.
 
-%COMPOSE_CMD% -f docker-compose.podcast.yml up -d --build
+%COMPOSE_CMD% up -d --build
 
 if %errorlevel% NEQ 0 (
     echo ERROR: Startup failed
     echo.
     echo Showing last 20 lines of logs:
-    %COMPOSE_CMD% -f docker-compose.podcast.yml logs --tail=20
+    %COMPOSE_CMD% logs --tail=20
     pause
     exit /b 1
 )
 
 echo.
 echo [4/5] Waiting for services to be ready...
-timeout /t 10 /nobreak >nul
+timeout /t 15 /nobreak >nul
 
 echo [5/5] Checking service status...
-%COMPOSE_CMD% -f docker-compose.podcast.yml ps
+%COMPOSE_CMD% ps
 
 echo.
 echo ======================================================
@@ -63,18 +74,18 @@ echo              Deployment Complete!
 echo ======================================================
 echo.
 echo Service URLs:
-echo   API Docs: http://localhost:8000/docs
-echo   Health Check: http://localhost:8000/health
+echo   API Docs: http://localhost:8000/api/v1/docs
+echo   Health Check: http://localhost:8000/api/v1/health
 echo.
 echo Important:
-echo   1. First start takes 1-3 minutes (database init)
+echo   1. First start takes 1-3 minutes (database init + migrations)
 echo   2. All services should show "Up" or "Running"
-echo   3. If failed, run: docker compose -f docker/docker-compose.podcast.yml logs backend
+echo   3. If failed, run: docker compose logs backend
 echo.
-echo Management Commands:
-echo   Stop: docker compose -f docker/docker-compose.podcast.yml down
-echo   Logs: docker compose -f docker/docker-compose.podcast.yml logs -f backend
-echo   Restart: docker compose -f docker/docker-compose.podcast.yml restart
+echo Management Commands (run inside docker\):
+echo   Stop: docker compose down
+echo   Logs: docker compose logs -f backend
+echo   Restart: docker compose restart
 echo.
 echo Press any key to exit...
 pause >nul

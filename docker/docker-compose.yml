@@ -1,19 +1,24 @@
 # =============================================================================
-# Docker Compose - 统一配置 / Unified Configuration
+# Sonde (声读) — Docker Compose
 # =============================================================================
 # 使用方法 / Usage:
 #   1. 复制 .env.example .env / Copy .env.example to .env
-#   2. 根据需要修.env 配置 / Modify .env as needed
-#   3. 启动服务 / Start services: docker compose up -d
+#   2. 按需修改 .env 配置 / Modify .env as needed
+#   3. 启动服务 / Start services: docker compose up -d --build
 #
-# 启动的服/ Started Services (7):
-#   - PostgreSQL (数据/ Database)
-#   - Redis (缓存 / Cache)
+# Compose project name is pinned to "sonde" (top-level `name:`), so images,
+# volumes and the network are always sonde-* regardless of the directory name.
+#
+# 启动的服务 / Started services (7):
+#   - PostgreSQL (数据 / Database)
+#   - Redis (缓存与锁 / Cache & locks)
 #   - Backend API (后端服务, 独占执行迁移 / owns schema migrations)
-#   - Celery Worker (后台任务处理 / Background tasks)
+#   - Celery Worker (后台任务 / Background tasks)
 #   - Celery Beat (调度器, 独立单实例 / standalone scheduler)
 #   - Postgres Backup (每日 pg_dump 侧车 / daily backup sidecar)
 #   - Nginx (反向代理 / Reverse proxy)
+
+name: sonde
 
 # Shared logging configuration for all services
 x-logging: &default-logging
@@ -22,15 +27,30 @@ x-logging: &default-logging
     max-size: "10m"
     max-file: "3"
 
+# Shared build definition for the backend-derived images
+x-app-build: &app-build
+  build:
+    context: ${BACKEND_SRC_DIR:-../backend}
+    dockerfile: Dockerfile
+
+# Shared environment for all backend-derived services (API/worker/beat)
+x-app-env: &app-env
+  DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-admin}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-sonde}
+  REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
+  CELERY_BROKER_URL: redis://:${REDIS_PASSWORD}@redis:6379/1
+  CELERY_RESULT_BACKEND: redis://:${REDIS_PASSWORD}@redis:6379/2
+  TZ: ${TZ:-Asia/Shanghai}
+  PYTHONUTF8: 1
+
 services:
   # =============================================================================
   # PostgreSQL Database
   # =============================================================================
   postgres:
     image: postgres:15-alpine
-    container_name: ${PROJECT_NAME:-personal_ai}_postgres
+    container_name: sonde-postgres
     environment:
-      - POSTGRES_DB=${POSTGRES_DB:-personal_ai}
+      - POSTGRES_DB=${POSTGRES_DB:-sonde}
       - POSTGRES_USER=${POSTGRES_USER:-admin}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     command: postgres -c max_connections=100 -c shared_buffers=128MB -c effective_cache_size=256MB
@@ -41,7 +61,7 @@ services:
     networks:
       - app_network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-admin} -d ${POSTGRES_DB:-personal_ai}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-admin} -d ${POSTGRES_DB:-sonde}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -61,7 +81,7 @@ services:
   # =============================================================================
   redis:
     image: redis:7-alpine
-    container_name: ${PROJECT_NAME:-personal_ai}_redis
+    container_name: sonde-redis
     command: >
       sh -c 'if [ -z "$REDIS_PASSWORD" ]; then
                redis-server --appendonly yes --maxmemory 230mb --maxmemory-policy allkeys-lru;
@@ -96,25 +116,17 @@ services:
           memory: 64M
 
   # =============================================================================
-  # Backend API
+  # Backend API (owns alembic migrations via RUN_MIGRATIONS=1)
   # =============================================================================
   backend:
-    build:
-      context: ${BACKEND_SRC_DIR:-../backend}
-      dockerfile: Dockerfile
-    container_name: ${PROJECT_NAME:-personal_ai}_backend
+    <<: *app-build
+    container_name: sonde-backend
     env_file:
       - ${BACKEND_ENV_FILE:-../backend/.env}
     environment:
-      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-admin}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-personal_ai}
-      - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379
-      - CELERY_BROKER_URL=redis://:${REDIS_PASSWORD}@redis:6379/1
-      - CELERY_RESULT_BACKEND=redis://:${REDIS_PASSWORD}@redis:6379/2
-      # Timezone for log timestamps / 日志时区
-      - TZ=${TZ:-Asia/Shanghai}
-      - PYTHONUTF8=1
+      <<: *app-env
       # Only this container runs alembic migrations (avoids concurrent-upgrade races)
-      - RUN_MIGRATIONS=1
+      RUN_MIGRATIONS: "1"
     ports:
       - "${BACKEND_PUBLISH_PORT:-127.0.0.1:8000}:8000"
     volumes:
@@ -139,7 +151,6 @@ services:
         reservations:
           cpus: '0.25'
           memory: 128M
-    # Health check for backend service
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
       interval: 30s
@@ -153,21 +164,13 @@ services:
   # =============================================================================
   # Celery Worker (background task execution; beat split out below)
   # =============================================================================
-  celery_worker:
-    build:
-      context: ${BACKEND_SRC_DIR:-../backend}
-      dockerfile: Dockerfile
-    container_name: ${PROJECT_NAME:-personal_ai}_celery_worker
+  worker:
+    <<: *app-build
+    container_name: sonde-worker
     env_file:
       - ${BACKEND_ENV_FILE:-../backend/.env}
     environment:
-      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-admin}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-personal_ai}
-      - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379
-      - CELERY_BROKER_URL=redis://:${REDIS_PASSWORD}@redis:6379/1
-      - CELERY_RESULT_BACKEND=redis://:${REDIS_PASSWORD}@redis:6379/2
-      # Timezone for log timestamps / 日志时区
-      - TZ=${TZ:-Asia/Shanghai}
-      - PYTHONUTF8=1
+      <<: *app-env
     volumes:
       - backend_data:/app/data
       - ${TRANSCRIPTION_STORAGE_DIR:-./storage/podcasts}:/app/storage/podcasts
@@ -204,20 +207,13 @@ services:
   # =============================================================================
   # Celery Beat (standalone scheduler — single instance, safe to scale worker)
   # =============================================================================
-  celery_beat:
-    build:
-      context: ${BACKEND_SRC_DIR:-../backend}
-      dockerfile: Dockerfile
-    container_name: ${PROJECT_NAME:-personal_ai}_celery_beat
+  beat:
+    <<: *app-build
+    container_name: sonde-beat
     env_file:
       - ${BACKEND_ENV_FILE:-../backend/.env}
     environment:
-      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-admin}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-personal_ai}
-      - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379
-      - CELERY_BROKER_URL=redis://:${REDIS_PASSWORD}@redis:6379/1
-      - CELERY_RESULT_BACKEND=redis://:${REDIS_PASSWORD}@redis:6379/2
-      - TZ=${TZ:-Asia/Shanghai}
-      - PYTHONUTF8=1
+      <<: *app-env
     volumes:
       - backend_data:/app/data
       - ${LOG_DIR:-./logs}:/app/logs
@@ -245,13 +241,13 @@ services:
   # =============================================================================
   # Postgres Backup (daily pg_dump sidecar with retention)
   # =============================================================================
-  postgres_backup:
+  backup:
     image: postgres:15-alpine
-    container_name: ${PROJECT_NAME:-personal_ai}_postgres_backup
+    container_name: sonde-backup
     environment:
       - POSTGRES_USER=${POSTGRES_USER:-admin}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_DB=${POSTGRES_DB:-personal_ai}
+      - POSTGRES_DB=${POSTGRES_DB:-sonde}
       - PGPASSWORD=${POSTGRES_PASSWORD}
       - BACKUP_RETENTION_DAYS=${BACKUP_RETENTION_DAYS:-7}
     volumes:
@@ -274,7 +270,7 @@ services:
       - /bin/sh
       - -c
       - |
-        echo "=== Postgres backup sidecar: daily pg_dump, retention $${BACKUP_RETENTION_DAYS:-7}d ==="
+        echo "=== Sonde postgres backup sidecar: daily pg_dump, retention $${BACKUP_RETENTION_DAYS:-7}d ==="
         while true; do
           ts=$$(date +%Y%m%d_%H%M%S)
           echo "[backup] dumping $${POSTGRES_DB} to /backups/db_$${ts}.dump"
@@ -290,7 +286,7 @@ services:
   # =============================================================================
   nginx:
     image: nginx:stable-alpine
-    container_name: ${PROJECT_NAME:-personal_ai}_nginx
+    container_name: sonde-nginx
     restart: always
     ports:
       - "${HTTP_PORT:-80}:80"
@@ -303,7 +299,6 @@ services:
       - /etc/localtime:/etc/localtime:ro
       - ${NGINX_CONF_DIR:-./nginx}/docker-entrypoint.sh:/auto-config.sh:ro
     environment:
-      # 域名配置 / Domain configuration
       - DOMAIN=${DOMAIN:-localhost}
       - SSL_CERT_PATH=${SSL_CERT_PATH:-/etc/nginx/cert/fullchain.pem}
       - SSL_KEY_PATH=${SSL_KEY_PATH:-/etc/nginx/cert/privkey.pem}
@@ -329,14 +324,14 @@ services:
 
 volumes:
   postgres_data:
-    driver: local
+    name: sonde_postgres_data
   redis_data:
-    driver: local
+    name: sonde_redis_data
   backend_uploads:
-    driver: local
+    name: sonde_uploads
   backend_data:
-    driver: local
+    name: sonde_data
 
 networks:
   app_network:
-    driver: bridge
+    name: sonde_network
