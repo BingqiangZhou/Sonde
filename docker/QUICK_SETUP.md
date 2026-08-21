@@ -28,11 +28,9 @@ nano ../backend/.env
 DOMAIN=your-domain.com              # 你的域名
 POSTGRES_PASSWORD=secure_password   # 数据库密码
 JWT_SECRET_KEY=random_secret_key    # JWT 密钥
-
-# ============ API 密钥 ============
-OPENAI_API_KEY=your_key_here        # OpenAI API 密钥
-TRANSCRIPTION_API_KEY=your_key      # 转录 API 密钥 (可选)
 ```
+
+> **API 密钥不在 `.env` 配置**：OpenAI / 转录等第三方 key 在服务启动后通过后台管理面板配置（`/api/v1/admin` → API Keys），加密存储、即时生效。
 
 ### 步骤 2: 配置 SSL 证书
 
@@ -99,9 +97,10 @@ ssl_certificate ${SSL_CERT_PATH};  # 自动替换路径
 ├── JWT 配置
 │   └── JWT_SECRET_KEY
 └── 外部服务
-    ├── OPENAI_API_KEY
-    └── TRANSCRIPTION_API_KEY
+    └── TRANSCRIPTION_API_URL
 ```
+
+> AI 服务密钥（OpenAI / SiliconFlow 等）不在 `.env` 中，通过后台管理面板 `/api/v1/admin/apikeys` 配置。
 
 ---
 

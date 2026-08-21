@@ -614,15 +614,6 @@ class TranscriptionModelManager:
         ]
 
     async def _get_api_key(self, model_config) -> str:
-        system_key = None
-        if model_config.is_system:
-            from app.core.config import settings
-
-            if model_config.provider == "openai":
-                system_key = getattr(settings, "OPENAI_API_KEY", "")
-            elif model_config.provider == "siliconflow":
-                system_key = getattr(settings, "TRANSCRIPTION_API_KEY", "")
-
         active_models = await self.ai_model_repo.get_active_models(
             ModelType.TRANSCRIPTION,
         )
@@ -638,7 +629,6 @@ class TranscriptionModelManager:
                     "for at least one TRANSCRIPTION model."
                 ),
                 provider_key_prefix={"siliconflow": "sk-"},
-                system_key=system_key,
             )
         except ValueError as exc:
             raise ValidationError(str(exc)) from exc

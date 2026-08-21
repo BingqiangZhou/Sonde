@@ -12,7 +12,6 @@ from typing import Any
 from sqlalchemy import update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.config import settings
 from app.core.exceptions import ValidationError
 from app.domains.ai.models import AIModelConfig, ModelType
 from app.domains.ai.repositories import AIModelConfigRepository
@@ -21,7 +20,6 @@ from app.domains.ai.schemas import (
     AIModelConfigUpdate,
     APIKeyValidationResponse,
     ModelUsageStats,
-    PresetModelConfig,
 )
 
 
@@ -45,9 +43,6 @@ class AIModelSecurityService:
         if not model.api_key_encrypted:
             return model.api_key
 
-        if model.is_system:
-            return self.get_preset_api_key_from_env(model.name)
-
         from app.core.security import decrypt_data
 
         try:
@@ -69,22 +64,6 @@ class AIModelSecurityService:
         )
         await self.db.execute(stmt)
         await self.db.commit()
-
-    def get_preset_api_key(self, preset: PresetModelConfig) -> str | None:
-        """Resolve a preset-model API key from environment settings."""
-        if preset.provider == "openai":
-            return getattr(settings, "OPENAI_API_KEY", None)
-        if preset.provider == "siliconflow":
-            return getattr(settings, "TRANSCRIPTION_API_KEY", None)
-        return None
-
-    def get_preset_api_key_from_env(self, model_name: str) -> str | None:
-        """Resolve a preset-model API key by well-known model name."""
-        if model_name in ["whisper-1", "gpt-4o-mini", "gpt-4o", "gpt-3.5-turbo"]:
-            return getattr(settings, "OPENAI_API_KEY", None)
-        if model_name == "sensevoice-small":
-            return getattr(settings, "TRANSCRIPTION_API_KEY", None)
-        return None
 
 
 class AIModelManagementService:

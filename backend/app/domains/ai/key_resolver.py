@@ -106,12 +106,9 @@ def resolve_api_key_with_fallback(
     logger: logging.Logger,
     invalid_message: str,
     provider_key_prefix: dict[str, str] | None = None,
-    system_key: str | None = None,
 ) -> str:
     """Resolve a valid API key from primary model then fallback models."""
     prefix_rules = provider_key_prefix or {}
-    if not is_invalid_api_key(system_key):
-        return str(system_key)
 
     primary_key = _extract_model_key(
         model=primary_model,

@@ -21,9 +21,8 @@ DATABASE_URL=postgresql+asyncpg://admin:MySecurePass2024!@postgres:5432/personal
 
 #### 转录功能配置
 ```env
-# 转录API配置 (必需: 替换为实际的API密钥)
+# 转录API地址（密钥不在这里配置，见下方"AI 密钥配置"）
 TRANSCRIPTION_API_URL=https://api.siliconflow.cn/v1/audio/transcriptions
-TRANSCRIPTION_API_KEY=your_siliconflow_api_key_here
 
 # 文件处理配置
 TRANSCRIPTION_CHUNK_SIZE_MB=10
@@ -35,26 +34,22 @@ TRANSCRIPTION_STORAGE_DIR=./storage/podcasts
 TRANSCRIPTION_MAX_THREADS=4
 ```
 
-#### AI功能配置
-```env
-# OpenAI API (可选)
-OPENAI_API_KEY=your-openai-api-key-here
-```
+#### AI 密钥配置
+
+AI 服务密钥（OpenAI / SiliconFlow 等第三方 key）**不再写入 `.env`**，统一在后台管理面板配置：
+登录 `/api/v1/admin`（凭 `API_KEY`），进入 **API Keys** 页面（`/api/v1/admin/apikeys`）添加模型并填写密钥。密钥加密存储在数据库中，修改后下一个任务即生效，无需重启。
 
 ### 使用方法
 
-1. **配置转录API密钥** (必需)
-   ```bash
-   # 编辑 backend/.env 文件
-   # 将 TRANSCRIPTION_API_KEY 替换为你的硅基流动API密钥
-   TRANSCRIPTION_API_KEY=sk-your-actual-api-key-here
-   ```
-
-2. **启动服务**
+1. **启动服务**
    ```bash
    cd docker
    docker-compose -f docker-compose.podcast.yml up -d
    ```
+
+2. **配置 AI 密钥**
+
+   启动后访问后台管理面板 `/api/v1/admin/apikeys`，为转写/摘要模型添加实际 API 密钥。
 
 3. **查看日志**
    ```bash
@@ -100,7 +95,7 @@ docker/
 ### 故障排除
 
 1. **转录功能不工作**
-   - 检查TRANSCRIPTION_API_KEY是否正确配置
+   - 检查后台管理面板（`/api/v1/admin/apikeys`）中是否为启用的转写模型配置了有效密钥
    - 确认网络连接到硅基流动API
    - 查看backend容器日志排查错误
 

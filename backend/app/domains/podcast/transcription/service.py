@@ -37,15 +37,6 @@ from .utils import _ffmpeg_probe_async, build_chunk_info, log_with_timestamp
 logger = logging.getLogger(__name__)
 
 
-def _system_env_key(provider: str | None) -> str | None:
-    """Env override for system transcription models, by provider."""
-    if provider == "siliconflow":
-        return settings.TRANSCRIPTION_API_KEY
-    if provider == "openai":
-        return settings.OPENAI_API_KEY
-    return None
-
-
 class PodcastTranscriptionService:
     """?"""
 
@@ -100,7 +91,6 @@ class PodcastTranscriptionService:
             "TRANSCRIPTION_API_URL",
             "https://api.siliconflow.cn/v1/audio/transcriptions",
         )
-        self.default_api_key = getattr(settings, "TRANSCRIPTION_API_KEY", None)
 
     def _get_episode_storage_path(self, episode: PodcastEpisode) -> str:
         """Build the storage path for an episode's transcription files."""
@@ -515,7 +505,7 @@ class PodcastTranscriptionService:
                 raise RuntimeError(f"Episode {task.episode_id} not found")
 
             api_url = self.default_api_url
-            api_key = self.default_api_key
+            api_key = None
 
             if config_db_id:
                 logger.info(
@@ -524,13 +514,9 @@ class PodcastTranscriptionService:
                 model_config = await ai_repo.get_by_id(config_db_id)
                 if model_config and model_config.is_active:
                     api_url = model_config.api_url
-                    # System models prefer the matching env key; stored keys
-                    # (possibly encrypted) resolve through the shared resolver.
-                    api_key = (
-                        _system_env_key(model_config.provider)
-                        or extract_model_key(model_config)
-                        or model_config.api_key
-                    )
+                    # Stored keys (possibly encrypted) resolve through the
+                    # shared resolver.
+                    api_key = extract_model_key(model_config) or model_config.api_key
 
             if not api_key:
                 logger.error(

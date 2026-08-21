@@ -39,8 +39,9 @@ nano ../backend/.env
 DOMAIN=your-domain.com
 POSTGRES_PASSWORD=secure_password
 JWT_SECRET_KEY=$(openssl rand -hex 32)
-OPENAI_API_KEY=your_key
 ```
+
+> AI 服务密钥（OpenAI / 转写等第三方 key）不在 `.env` 中配置：服务启动后登录后台管理面板 `/api/v1/admin`，在 **API Keys** 页面添加模型并填写密钥（加密存储，即时生效）。
 
 #### 步骤 2: 配置 SSL 证书
 

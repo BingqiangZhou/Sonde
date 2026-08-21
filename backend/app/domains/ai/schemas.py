@@ -171,22 +171,6 @@ class ModelTestResponse(BaseModel):
     error_message: str | None = None
 
 
-# 预设模型配置
-class PresetModelConfig(BaseModel):
-    """预设模型配置"""
-
-    name: str
-    display_name: str
-    description: str
-    model_type: ModelType
-    provider: str
-    model_id: str
-    api_url: str
-    max_tokens: int | None = None
-    temperature: str | None = None
-    extra_config: dict[str, Any] | None = None
-
-
 # 导出配置
 class APIKeyValidationRequest(BaseModel):
     """API密钥验证请求"""

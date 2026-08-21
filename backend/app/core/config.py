@@ -84,12 +84,10 @@ class Settings(BaseSettings):
 
     ALLOWED_AUDIO_SCHEMES: list[str] = ["http", "https"]
 
-    # External APIs
-    OPENAI_API_KEY: str | None = None
-
     # Transcription API Configuration
+    # NOTE: AI provider API keys are NOT configured here anymore — they are
+    # managed (encrypted) via the admin panel at /api/v1/admin/apikeys.
     TRANSCRIPTION_API_URL: str = "https://api.siliconflow.cn/v1/audio/transcriptions"
-    TRANSCRIPTION_API_KEY: str | None = None
 
     # Transcription File Processing Configuration
     TRANSCRIPTION_CHUNK_SIZE_MB: int = 10

@@ -61,9 +61,7 @@ class MockConfig:
     MAX_PODCAST_EPISODE_DOWNLOAD_SIZE = 500 * 1024 * 1024
     RSS_POLL_INTERVAL_MINUTES = 60
     ALLOWED_AUDIO_SCHEMES = ["http", "https"]
-    OPENAI_API_KEY = None
     TRANSCRIPTION_API_URL = "https://api.siliconflow.cn/v1/audio/transcriptions"
-    TRANSCRIPTION_API_KEY = None
     TRANSCRIPTION_CHUNK_SIZE_MB = 10
     TRANSCRIPTION_TARGET_FORMAT = "mp3"
     TRANSCRIPTION_TEMP_DIR = "./temp/transcription"
