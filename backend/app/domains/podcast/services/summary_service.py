@@ -28,6 +28,7 @@ from app.domains.podcast.repositories import PodcastRepository
 
 logger = logging.getLogger(__name__)
 
+
 class SummaryModelManager(BaseModelManager):
     """Resolve and invoke text-generation models for summaries."""
 
@@ -652,24 +653,7 @@ class SummaryWorkflowService:
         await self.db.commit()
 
     async def _mark_episode_summary_failed(self, episode_id: int, error: str) -> None:
-        failed_at = datetime.now(UTC)
-        await self.db.execute(
-            update(PodcastEpisode)
-            .where(PodcastEpisode.id == episode_id)
-            .values(
-                status="summary_failed",
-                updated_at=failed_at,
-            ),
-        )
-        await self.db.execute(
-            update(TranscriptionTask)
-            .where(TranscriptionTask.episode_id == episode_id)
-            .values(
-                summary_error_message=error,
-                updated_at=failed_at,
-            ),
-        )
-        await self.db.commit()
+        await self.repo.mark_summary_failed(episode_id, error)
 
 
 logger = logging.getLogger(__name__)

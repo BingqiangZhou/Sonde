@@ -1124,9 +1124,7 @@ class PodcastTranscriptionService:
                 logger.warning(
                     f"[STEP 6 SAVE] shutil.move failed ({e}), trying copy + delete",
                 )
-                await asyncio.to_thread(
-                    shutil.copy2, converted_file, final_audio_path
-                )
+                await asyncio.to_thread(shutil.copy2, converted_file, final_audio_path)
                 try:
                     await asyncio.to_thread(os.remove, converted_file)
                 except OSError:
@@ -1217,13 +1215,22 @@ class PodcastTranscriptionService:
                 task_id,
             )
 
-            # AI
-            log_with_timestamp(
-                "INFO",
-                f"[AI SUMMARY] Scheduling AI summary for episode {task.episode_id}",
-                task_id,
-            )
-            await self._schedule_ai_summary(session, task_id)
+            # Summary generation runs in its own Celery task so the
+            # transcription task is not extended by LLM latency; the periodic
+            # pending-summary sweeper picks the episode up if enqueueing fails.
+            try:
+                from app.domains.podcast.tasks.tasks_summary import (
+                    generate_episode_summary,
+                )
+
+                generate_episode_summary.delay(task.episode_id)
+            except Exception as enqueue_error:
+                logger.warning(
+                    "[AI SUMMARY] Failed to enqueue summary task for episode %s "
+                    "(periodic sweeper will retry): %s",
+                    task.episode_id,
+                    enqueue_error,
+                )
         except Exception as e:
             import traceback
 
@@ -1303,124 +1310,6 @@ class PodcastTranscriptionService:
         )
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
-
-    async def _schedule_ai_summary(self, session: AsyncSession, task_id: int):
-        """AI"""
-        task: TranscriptionTask | None = None
-        try:
-            log_with_timestamp(
-                "INFO",
-                f"[AI SUMMARY] Getting transcription task {task_id}",
-                task_id,
-            )
-            stmt = select(TranscriptionTask).where(TranscriptionTask.id == task_id)
-            result = await session.execute(stmt)
-            task = result.scalar_one_or_none()
-
-            if not task:
-                log_with_timestamp(
-                    "ERROR",
-                    f"[AI SUMMARY] Transcription task {task_id} not found",
-                    task_id,
-                )
-                return
-
-            log_with_timestamp(
-                "INFO",
-                f"[AI SUMMARY] Found transcription task {task_id} for episode {task.episode_id}",
-                task_id,
-            )
-
-            from app.domains.podcast.services.summary_service import (
-                PodcastSummaryGenerationService,
-            )
-
-            summary_service = PodcastSummaryGenerationService(session)
-            log_with_timestamp(
-                "INFO",
-                f"[AI SUMMARY] Starting AI summary generation for episode {task.episode_id}",
-                task_id,
-            )
-
-            # AI
-            summary_result = await summary_service.generate_summary(task.episode_id)
-
-            word_count = len(summary_result["summary_content"].split())
-
-            log_with_timestamp(
-                "INFO",
-                f"[AI SUMMARY] Successfully generated summary for episode {task.episode_id}",
-                task_id,
-            )
-            log_with_timestamp(
-                "INFO",
-                f"[AI SUMMARY] Summary: {len(summary_result['summary_content'])} chars, {word_count} words",
-                task_id,
-            )
-            log_with_timestamp(
-                "INFO",
-                f"[AI SUMMARY] Processing time: {summary_result['processing_time']:.2f}s, Model: {summary_result['model_name']}",
-                task_id,
-            )
-
-            #  : sessiontaskI
-            #  summary_service.generate_summary() db session
-            # essiontask
-            try:
-                await session.refresh(task)
-                log_with_timestamp(
-                    "INFO",
-                    "[AI SUMMARY] Refreshed task object from database, summary_content is now available",
-                    task_id,
-                )
-            except Exception as refresh_error:
-                log_with_timestamp(
-                    "WARNING",
-                    f"[AI SUMMARY] Failed to refresh task: {refresh_error}",
-                    task_id,
-                )
-
-        except Exception as e:
-            import traceback
-
-            error_trace = traceback.format_exc()
-            error_msg = str(e)
-            log_with_timestamp(
-                "ERROR",
-                f"[AI SUMMARY] Failed to generate summary for task {task_id}: {error_msg}",
-                task_id,
-            )
-            logger.error(f"[AI SUMMARY] Traceback: {error_trace}")
-
-            if task is None:
-                return
-
-            episode_meta_stmt = select(PodcastEpisode.metadata_json).where(
-                PodcastEpisode.id == task.episode_id,
-            )
-            episode_meta_result = await session.execute(episode_meta_stmt)
-            metadata_json = episode_meta_result.scalar_one_or_none() or {}
-            metadata_json["summary_error"] = error_msg
-            metadata_json["summary_failed_at"] = datetime.now(UTC).isoformat()
-
-            await session.execute(
-                update(PodcastEpisode)
-                .where(PodcastEpisode.id == task.episode_id)
-                .values(
-                    status="summary_failed",
-                    metadata_json=metadata_json,
-                    updated_at=datetime.now(UTC),
-                ),
-            )
-            await session.execute(
-                update(TranscriptionTask)
-                .where(TranscriptionTask.id == task_id)
-                .values(
-                    summary_error_message=error_msg,
-                    updated_at=datetime.now(UTC),
-                ),
-            )
-            await session.commit()
 
     async def cancel_transcription(self, task_id: int) -> bool:
         """"""

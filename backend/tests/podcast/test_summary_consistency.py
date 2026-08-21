@@ -178,3 +178,37 @@ def test_search_service_filters_summary_in_list_response() -> None:
 def test_html_timeout_page_is_detected_as_invalid_summary_content() -> None:
     html_error = "<!DOCTYPE html><html><head><title>524: A timeout occurred</title></head></html>"
     assert looks_like_html_error_page(html_error) is True
+
+
+@pytest.mark.asyncio
+async def test_mark_summary_failed_sets_episode_state_and_task_error_column() -> None:
+    from app.domains.podcast.repositories.summary_repository import SummaryRepository
+
+    db = AsyncMock()
+    episode = _make_episode(ai_summary=None)
+    episode.status = "pending_summary"
+    select_result = SimpleNamespace(scalar_one_or_none=lambda: episode)
+    db.execute.side_effect = [select_result, SimpleNamespace(rowcount=1)]
+    db.commit = AsyncMock()
+
+    repo = SummaryRepository(db=db)
+    await repo.mark_summary_failed(1, "boom")
+
+    assert episode.status == "summary_failed"
+    assert episode.metadata_json["summary_error"] == "boom"
+    assert "summary_failed_at" in episode.metadata_json
+
+    assert db.execute.await_count == 2
+    task_update_stmt = db.execute.await_args_list[1].args[0]
+    assert "transcription_tasks" in str(task_update_stmt)
+    assert "summary_error_message" in str(task_update_stmt)
+
+
+@pytest.mark.asyncio
+async def test_workflow_summary_failure_delegates_to_repo() -> None:
+    workflow = SummaryWorkflowService(AsyncMock())
+    workflow.repo = AsyncMock()
+
+    await workflow._mark_episode_summary_failed(7, "err")
+
+    workflow.repo.mark_summary_failed.assert_awaited_once_with(7, "err")

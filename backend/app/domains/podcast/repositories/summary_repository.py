@@ -6,7 +6,7 @@ import logging
 from datetime import UTC, datetime
 from typing import Any
 
-from sqlalchemy import and_, select
+from sqlalchemy import and_, select, update
 from sqlalchemy.orm import joinedload
 
 from app.domains.podcast.models import (
@@ -19,6 +19,7 @@ from app.domains.podcast.repositories.base import (
 
 
 logger = logging.getLogger(__name__)
+
 
 class SummaryRepository(BasePodcastRepository):
     """Summary aggregate: pending-selection and summary state transitions."""
@@ -120,6 +121,11 @@ class SummaryRepository(BasePodcastRepository):
         return episode
 
     async def mark_summary_failed(self, episode_id: int, error: str) -> None:
+        """Single source of summary-failure state.
+
+        Marks the episode (status + metadata) and the transcription task
+        (summary_error_message, surfaced to the frontend) together.
+        """
         episode = await self._get_episode(episode_id)
         if episode:
             episode.status = "summary_failed"
@@ -128,3 +134,12 @@ class SummaryRepository(BasePodcastRepository):
             metadata["summary_failed_at"] = datetime.now(UTC).isoformat()
             episode.metadata_json = metadata
             await self.db.commit()
+
+        from app.domains.podcast.models import TranscriptionTask
+
+        await self.db.execute(
+            update(TranscriptionTask)
+            .where(TranscriptionTask.episode_id == episode_id)
+            .values(summary_error_message=error, updated_at=datetime.now(UTC))
+        )
+        await self.db.commit()
