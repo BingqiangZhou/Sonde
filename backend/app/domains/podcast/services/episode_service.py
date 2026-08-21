@@ -246,7 +246,6 @@ class PodcastEpisodeService:
                 if episode.transcript
                 else None,
                 "ai_summary": cleaned_summary,
-                "summary_version": episode.summary_version,
                 "ai_confidence_score": episode.ai_confidence_score,
                 "play_count": episode.play_count,
                 # Use per-user playback timestamp when available.

@@ -182,7 +182,6 @@ class PodcastEpisodeResponse(TimestampedSchema):
     transcript_url: str | None = None
     transcript_content: str | None = None
     ai_summary: str | None = None
-    summary_version: str | None = None
     ai_confidence_score: float | None = None
     play_count: int = 0
     last_played_at: datetime | None = None
@@ -430,20 +429,6 @@ class PodcastSummaryStartResponse(BaseSchema):
     summary_status: str
     accepted_at: datetime
     message: str
-
-
-class PodcastSummaryResponse(BaseSchema):
-    """AI总结响应"""
-
-    episode_id: int
-    summary: str
-    version: str
-    confidence_score: float | None = None
-    transcript_used: bool
-    generated_at: datetime
-    word_count: int
-    model_used: str | None = None  # 使用的模型名称
-    processing_time: float | None = None  # 处理时间（秒）
 
 
 class SummaryModelInfo(BaseSchema):

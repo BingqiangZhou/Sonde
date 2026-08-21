@@ -41,7 +41,6 @@ def test_repository_contract() -> None:
 
     assert hasattr(PodcastRepository, "create_or_update_subscription")
     assert hasattr(PodcastRepository, "create_or_update_episode")
-    assert hasattr(PodcastRepository, "update_ai_summary")
     assert hasattr(PodcastRepository, "update_playback_progress")
 
 

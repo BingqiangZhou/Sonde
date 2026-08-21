@@ -985,18 +985,7 @@ class TranscriptionWorkflowService:
         return await self.engine.cancel_transcription(task.id)
 
     async def get_transcript_from_existing(self, episode_id: int) -> str | None:
-        episode = await self._get_episode(episode_id)
-        if episode and episode.transcript and episode.transcript.transcript_content:
-            return episode.transcript.transcript_content
-
-        task = await self._get_existing_transcription_task(episode_id)
-        if (
-            task
-            and status_value(task.status) == TranscriptionStatus.COMPLETED.value
-            and task.transcript_content
-        ):
-            return task.transcript_content
-        return None
+        return await self.get_episode_transcript_content(episode_id)
 
     async def _get_episode(self, episode_id: int) -> PodcastEpisode | None:
         stmt = select(PodcastEpisode).where(PodcastEpisode.id == episode_id)

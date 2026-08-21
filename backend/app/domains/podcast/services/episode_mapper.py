@@ -66,7 +66,6 @@ def build_episode_dict(
             "transcript_content": episode.transcript.transcript_content
             if episode.transcript
             else None,
-            "summary_version": episode.summary_version,
             "ai_confidence_score": episode.ai_confidence_score,
             "play_count": episode.play_count,
             "last_played_at": playback.last_updated_at

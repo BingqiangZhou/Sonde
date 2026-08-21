@@ -53,7 +53,6 @@ def _make_episode(*, ai_summary: str) -> SimpleNamespace:
         transcript=SimpleNamespace(transcript_content="transcript"),
         transcript_content="transcript",
         ai_summary=ai_summary,
-        summary_version="1.0",
         ai_confidence_score=None,
         play_count=0,
         last_played_at=None,

@@ -22,6 +22,7 @@ from app.shared.repository_helpers import resolve_window_total
 
 logger = logging.getLogger(__name__)
 
+
 class FeedQueryRepository(BasePodcastRepository):
     """Feed/history read models: lightweight projections and pagination."""
 
@@ -75,7 +76,6 @@ class FeedQueryRepository(BasePodcastRepository):
                 PodcastEpisode.image_url.label("image_url"),
                 PodcastEpisode.item_link.label("item_link"),
                 PodcastEpisode.transcript_url.label("transcript_url"),
-                PodcastEpisode.summary_version.label("summary_version"),
                 PodcastEpisode.ai_confidence_score.label("ai_confidence_score"),
                 PodcastEpisode.play_count.label("play_count"),
                 PodcastEpisode.season.label("season"),
@@ -142,7 +142,6 @@ class FeedQueryRepository(BasePodcastRepository):
             "transcript_url": row_data.get("transcript_url"),
             "transcript_content": None,
             "ai_summary": row_data.get("ai_summary"),
-            "summary_version": row_data.get("summary_version"),
             "ai_confidence_score": row_data.get("ai_confidence_score"),
             "play_count": row_data.get("play_count") or 0,
             "last_played_at": row_data.get("last_played_at"),

@@ -23,7 +23,6 @@ def _feed_item(now: datetime, description: str) -> dict:
         "transcript_url": "https://example.com/transcript",
         "transcript_content": "full transcript",
         "ai_summary": "full summary",
-        "summary_version": "1.0",
         "ai_confidence_score": 0.8,
         "play_count": 0,
         "last_played_at": None,

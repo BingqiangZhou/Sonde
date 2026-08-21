@@ -819,7 +819,6 @@ class PodcastTranscriptionService:
                 "status": TranscriptionStatus.COMPLETED,
                 "current_step": "merging",
                 "progress_percentage": 100.0,
-                "transcript_content": full_transcript,
                 "transcript_word_count": len(full_transcript.split()),
                 "original_file_path": final_audio_path,
                 "original_file_size": file_size,

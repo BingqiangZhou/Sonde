@@ -17,7 +17,6 @@ from app.domains.podcast.schemas import (
     PodcastPlaybackStateResponse,
     PodcastQueueItemResponse,
     PodcastQueueResponse,
-    PodcastSummaryResponse,
     SummaryModelInfo,
     SummaryModelsResponse,
 )
@@ -92,30 +91,6 @@ def build_daily_report_dates_response(
         page=payload["page"],
         size=payload["size"],
         pages=payload["pages"],
-    )
-
-
-def build_summary_response(
-    *,
-    episode_id: int,
-    summary_result: dict[str, Any],
-) -> PodcastSummaryResponse:
-    """Build the episode summary response."""
-    summary_text = summary_result.get("summary") or summary_result.get(
-        "summary_content",
-        "",
-    )
-    model_used = summary_result.get("model_used") or summary_result.get("model_name")
-    return PodcastSummaryResponse(
-        episode_id=episode_id,
-        summary=summary_text,
-        version=summary_result["version"],
-        confidence_score=None,
-        transcript_used=True,
-        generated_at=summary_result["generated_at"],
-        word_count=len(summary_text.split()),
-        model_used=model_used,
-        processing_time=summary_result["processing_time"],
     )
 
 

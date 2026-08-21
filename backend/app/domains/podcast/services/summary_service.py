@@ -323,7 +323,6 @@ class PodcastSummaryGenerationService:
                 .where(PodcastEpisode.id == episode_id)
                 .values(
                     ai_summary=summary_content,
-                    summary_version="1.0",
                     status="summarized",
                     updated_at=datetime.now(UTC),
                 )
@@ -336,7 +335,6 @@ class PodcastSummaryGenerationService:
                 update(TranscriptionTask)
                 .where(TranscriptionTask.episode_id == episode_id)
                 .values(
-                    summary_content=summary_content,
                     summary_model_used=model_name,
                     summary_word_count=word_count,
                     summary_processing_time=processing_time,
@@ -394,11 +392,9 @@ class SummaryWorkflowService:
         )
         episode = await self.repo.get_episode_by_id(episode_id)
         final_summary = episode.ai_summary if episode and episode.ai_summary else ""
-        final_version = episode.summary_version if episode else "1.0"
         return {
             "episode_id": episode_id,
             "summary": final_summary,
-            "version": final_version or "1.0",
             "model_used": summary_result["model_name"],
             "processing_time": summary_result["processing_time"],
             "generated_at": datetime.now(UTC),

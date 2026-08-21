@@ -91,35 +91,6 @@ class SummaryRepository(BasePodcastRepository):
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def update_ai_summary(
-        self,
-        episode_id: int,
-        summary: str,
-        version: str = "v1",
-        confidence: float | None = None,
-        transcript_used: bool = False,
-    ) -> PodcastEpisode:
-        episode = await self._get_episode(episode_id)
-        if not episode:
-            raise ValueError(f"Episode {episode_id} not found")
-
-        episode.ai_summary = summary
-        episode.summary_version = version
-        episode.status = "summarized"
-        if confidence:
-            episode.ai_confidence_score = confidence
-
-        metadata = episode.metadata_json or {}
-        metadata["transcript_used"] = transcript_used
-        metadata["summarized_at"] = datetime.now(UTC).isoformat()
-        metadata.pop("summary_error", None)
-        metadata.pop("summary_failed_at", None)
-        episode.metadata_json = metadata
-
-        await self.db.commit()
-        # No refresh needed - episode is already in session with updated values
-        return episode
-
     async def mark_summary_failed(self, episode_id: int, error: str) -> None:
         """Single source of summary-failure state.
 

@@ -8,7 +8,6 @@ from app.domains.podcast.routes.response_assemblers import (
     build_playback_state_response,
     build_queue_response,
     build_summary_models_response,
-    build_summary_response,
 )
 from app.domains.podcast.schemas import (
     PodcastSummaryPendingResponse,
@@ -28,7 +27,6 @@ def _episode_payload(now: datetime) -> dict:
         "image_url": "https://example.com/ep.jpg",
         "subscription_image_url": "https://example.com/sub.jpg",
         "ai_summary": "summary",
-        "summary_version": "v1",
         "ai_confidence_score": 0.9,
         "play_count": 0,
         "last_played_at": None,
@@ -133,19 +131,9 @@ def test_build_report_dates_response():
     assert report_dates.items[0].total_items == 1
 
 
-def test_build_summary_and_playback_responses():
+def test_build_playback_state_response_from_payload():
     now = datetime.now(UTC)
 
-    summary = build_summary_response(
-        episode_id=9,
-        summary_result={
-            "summary": "alpha beta gamma",
-            "version": "v2",
-            "generated_at": now,
-            "model_name": "gpt-test",
-            "processing_time": 1.2,
-        },
-    )
     playback = build_playback_state_response(
         payload={
             "episode_id": 9,
@@ -159,26 +147,7 @@ def test_build_summary_and_playback_responses():
         },
     )
 
-    assert summary.word_count == 3
     assert playback.current_position == 33
-
-
-def test_build_summary_response_accepts_model_used_key():
-    now = datetime.now(UTC)
-
-    summary = build_summary_response(
-        episode_id=9,
-        summary_result={
-            "summary": "alpha beta gamma",
-            "version": "v2",
-            "generated_at": now,
-            "model_used": "workflow-model",
-            "processing_time": 1.2,
-        },
-    )
-
-    assert summary.model_used == "workflow-model"
-    assert summary.word_count == 3
 
 
 def test_build_playback_and_queue_responses_from_dicts():

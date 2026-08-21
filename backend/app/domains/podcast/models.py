@@ -65,7 +65,6 @@ class PodcastEpisode(Base):
 
     # AI summary
     ai_summary = Column(Text)
-    summary_version = Column(String(50))  # Track summary version
     ai_confidence_score = Column(Float)  # AI summary quality score
 
     # Episode image
@@ -657,12 +656,10 @@ class TranscriptionTask(Base):
     original_file_size = Column(Integer)  # Original file size (bytes)
 
     # Processing results
-    transcript_content = Column(Text)  # Final transcript text
     transcript_word_count = Column(Integer)  # Transcript word count
     transcript_duration = Column(Integer)  # Actual transcription duration (seconds)
 
     # AI summary results
-    summary_content = Column(Text)  # AI summary content
     summary_model_used = Column(String(100))  # AI summary model used
     summary_word_count = Column(Integer)  # Summary word count
     summary_processing_time = Column(Float)  # Summary processing time (seconds)

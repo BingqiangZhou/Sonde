@@ -43,9 +43,7 @@ async def _seed_subscription_with_episode(db_session) -> tuple[int, int]:
     db_session.add(subscription)
     await db_session.flush()
 
-    db_session.add(
-        UserSubscription(user_id=user.id, subscription_id=subscription.id)
-    )
+    db_session.add(UserSubscription(user_id=user.id, subscription_id=subscription.id))
     episode = PodcastEpisode(
         subscription_id=subscription.id,
         title="Episode 1",
@@ -68,9 +66,7 @@ async def test_list_episodes_by_subscription(db_session) -> None:
     user_id, episode_id = await _seed_subscription_with_episode(db_session)
     service = PodcastEpisodeService(db_session, user_id)
 
-    filters = SimpleNamespace(
-        subscription_id=1, has_summary=None, is_played=None
-    )
+    filters = SimpleNamespace(subscription_id=1, has_summary=None, is_played=None)
     results, total = await service.list_episodes(filters=filters, page=1, size=10)
 
     assert total == 1
@@ -106,20 +102,6 @@ async def test_update_playback_progress_completes_after_commit(db_session) -> No
         episode_id, progress_seconds=60, is_playing=False, playback_rate=1.0
     )
     assert result2["current_position"] == 60
-
-
-@pytest.mark.asyncio
-async def test_update_ai_summary_completes_after_commit(db_session) -> None:
-    """Regression: summary save crashed after commit (redis.set_ai_summary)."""
-    user_id, episode_id = await _seed_subscription_with_episode(db_session)
-    repo = PodcastRepository(db_session)
-
-    episode = await repo.update_ai_summary(
-        episode_id, "summary text", version=1, confidence=0.9
-    )
-
-    assert episode.status == "summarized"
-    assert episode.ai_summary == "summary text"
 
 
 @pytest.mark.asyncio
@@ -172,7 +154,9 @@ async def test_stats_service_returns_defaults_when_aggregation_fails(
     repo = AsyncMock()
     repo.get_user_stats_aggregated.side_effect = RuntimeError("db boom")
     playback = PodcastPlaybackService(db_session, user_id)
-    service = PodcastStatsService(db_session, user_id, repo=repo, playback_service=playback)
+    service = PodcastStatsService(
+        db_session, user_id, repo=repo, playback_service=playback
+    )
 
     stats = await service.get_user_stats()
 
@@ -194,7 +178,5 @@ def test_admin_session_hash_resolves_secret_key_lazily() -> None:
 
         session_hash = _compute_session_hash("admin-key")
 
-    expected = hmac.new(
-        b"generated-secret", b"admin-key", hashlib.sha256
-    ).hexdigest()
+    expected = hmac.new(b"generated-secret", b"admin-key", hashlib.sha256).hexdigest()
     assert session_hash == expected
