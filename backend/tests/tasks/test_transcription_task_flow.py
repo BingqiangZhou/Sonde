@@ -108,7 +108,7 @@ async def test_transcription_workflow_updates_status_and_releases_lock():
 
     workflow = TranscriptionWorkflowService(
         session,
-        transcription_service_factory=_FakeService,
+        engine_factory=_FakeService,
         state_manager_factory=_get_state,
         claim_dispatched=_claim,
         clear_dispatched=_clear,
@@ -167,7 +167,7 @@ async def test_transcription_workflow_raises_when_execution_fails():
 
     workflow = TranscriptionWorkflowService(
         session,
-        transcription_service_factory=_FailingService,
+        engine_factory=_FailingService,
         state_manager_factory=_get_state,
         claim_dispatched=_claim,
         clear_dispatched=_clear,

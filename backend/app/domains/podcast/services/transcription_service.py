@@ -1,4 +1,11 @@
-"""Transcription services - workflow, runtime, scheduling."""
+"""Transcription workflow - lifecycle policy, scheduling, worker execution.
+
+Single orchestration service for transcription used by HTTP routes and
+Celery workers. Owns task reuse/redispatch policy, schedule facades, the
+worker execution flow (redis lock + dispatch claim), stale-task reset and
+temp-file cleanup. The pipeline engine (``PodcastTranscriptionService``)
+and model resolution (``TranscriptionModelManager``) are composed.
+"""
 
 from __future__ import annotations
 
@@ -10,7 +17,7 @@ from collections.abc import Awaitable, Callable
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
-from sqlalchemy import and_, or_, select
+from sqlalchemy import and_, or_, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -26,10 +33,7 @@ from app.domains.podcast.models import (
     TranscriptionStatus,
     TranscriptionTask,
 )
-from app.domains.podcast.transcription import (
-    PodcastTranscriptionService,
-    SiliconFlowTranscriber,
-)
+from app.domains.podcast.transcription import PodcastTranscriptionService
 from app.domains.podcast.transcription.state import (
     claim_task_dispatch,
     clear_task_dispatch,
@@ -41,95 +45,8 @@ from app.domains.podcast.utils.status_helpers import status_value
 logger = logging.getLogger(__name__)
 
 
-# ── Transcription state coordination (merged from transcription_state_coordinator.py) ──
+# ── Status payload (route projection of a transcription task) ──
 
-
-class TranscriptionStateCoordinator:
-    """Coordinate redis locks for route and worker transcription flows."""
-
-    def __init__(self, *, state_manager_factory: Callable[[], Awaitable[Any]]):
-        self.state_manager_factory = state_manager_factory
-
-    async def cleanup_deleted_task(self, episode_id: int, task_id: int | None) -> None:
-        state_manager = await self.state_manager_factory()
-        if task_id:
-            try:
-                await state_manager.release_task_lock(episode_id, task_id)
-                return
-            except Exception as redis_error:
-                logger.warning("[DELETE] Failed to cleanup redis: %s", redis_error)
-                return
-
-        try:
-            locked_task_id = await state_manager.is_episode_locked(episode_id)
-            if locked_task_id:
-                await state_manager.release_task_lock(episode_id, locked_task_id)
-        except Exception as redis_error:
-            logger.warning("[DELETE] Failed to cleanup stale locks: %s", redis_error)
-
-    async def execute_task_with_state(
-        self,
-        *,
-        db: AsyncSession,
-        task_id: int,
-        config_db_id: int | None,
-        transcription_service_factory,
-        claim_dispatch: Callable[[int], Awaitable[bool]],
-        clear_dispatch: Callable[[int], Awaitable[None]],
-    ) -> dict[str, Any]:
-        dispatch_claimed = await claim_dispatch(task_id)
-        if not dispatch_claimed:
-            return {
-                "status": "skipped",
-                "reason": "task_already_dispatched",
-                "task_id": task_id,
-            }
-
-        state_manager = await self.state_manager_factory()
-        stmt = select(TranscriptionTask).where(TranscriptionTask.id == task_id)
-        result = await db.execute(stmt)
-        task = result.scalar_one_or_none()
-        if task is None:
-            await clear_dispatch(task_id)
-            return {"status": "error", "reason": "task_not_found", "task_id": task_id}
-
-        episode_id = task.episode_id
-        lock_acquired = await state_manager.acquire_task_lock(
-            episode_id,
-            task_id,
-            expire_seconds=3600,
-        )
-        if not lock_acquired:
-            locked_task_id = await state_manager.is_episode_locked(episode_id)
-            await clear_dispatch(task_id)
-            lock_owner = (
-                str(locked_task_id) if locked_task_id is not None else "unknown_owner"
-            )
-            raise RuntimeError(
-                f"Episode {episode_id} is locked by task {lock_owner}, retry later",
-            )
-
-        service = transcription_service_factory(db)
-
-        try:
-            await service.execute_transcription_task(task_id, db, config_db_id)
-            await state_manager.clear_task_state(task_id, episode_id)
-            return {
-                "status": "success",
-                "task_id": task_id,
-                "config_db_id": config_db_id,
-                "processed_at": datetime.now(UTC).isoformat(),
-            }
-        except Exception as exc:
-            await state_manager.fail_task_state(task_id, episode_id, str(exc))
-            logger.exception("Transcription task failed for task_id=%s", task_id)
-            raise
-        finally:
-            await state_manager.release_task_lock(episode_id, task_id)
-            await clear_dispatch(task_id)
-
-
-# ── Status helpers (inlined from transcription_status_projection.py) ──
 
 STATUS_MESSAGES = {
     "pending": "Waiting to start",
@@ -172,371 +89,14 @@ def _build_transcription_status_payload(task, *, status_key: str) -> dict[str, A
     }
 
 
-class TranscriptionWorkflowService:
-    """Coordinate transcription task orchestration across routes and workers."""
-
-    def __init__(
-        self,
-        db: AsyncSession,
-        *,
-        transcription_service_factory: Callable[
-            [AsyncSession],
-            PodcastTranscriptionRuntimeService,
-        ]
-        | None = None,
-        scheduler_factory: Callable[
-            [AsyncSession],
-            PodcastTranscriptionScheduleService,
-        ]
-        | None = None,
-        state_manager_factory: Callable[
-            [],
-            Awaitable[Any],
-        ] = get_transcription_state_manager,
-        redis_factory: Callable[[], RedisCache] = get_shared_redis,
-        claim_dispatched: Callable[[AsyncSession, int], Awaitable[bool]] | None = None,
-        clear_dispatched: Callable[[int], Awaitable[None]] | None = None,
-    ):
-        self.db = db
-        if transcription_service_factory is None:
-            transcription_service_factory = PodcastTranscriptionRuntimeService
-        if scheduler_factory is None:
-            scheduler_factory = PodcastTranscriptionScheduleService
-        self.transcription_service_factory = transcription_service_factory
-        self.scheduler_factory = scheduler_factory
-        self.state_manager_factory = state_manager_factory
-        self.redis_factory = redis_factory
-        self._claim_dispatched_callback = claim_dispatched
-        self._clear_dispatched_callback = clear_dispatched
-        self.state_coordinator = TranscriptionStateCoordinator(
-            state_manager_factory=state_manager_factory,
-        )
-
-    # ── Dispatch Guard Methods (inlined from transcription_dispatch_guard.py) ──
-
-    async def _claim_dispatch(self, task_id: int) -> bool:
-        """Claim dispatch right for a task. Returns True if claimed successfully."""
-        if self._claim_dispatched_callback is not None:
-            return await self._claim_dispatched_callback(self.db, task_id)
-        return await claim_task_dispatch(self.redis_factory(), self.db, task_id)
-
-    async def _clear_dispatch(self, task_id: int) -> None:
-        """Clear dispatch flag for a task."""
-        if self._clear_dispatched_callback is not None:
-            await self._clear_dispatched_callback(task_id)
-            return
-        await clear_task_dispatch(self.redis_factory(), task_id)
-
-    async def start_episode_transcription(
-        self,
-        episode_id: int,
-        *,
-        transcription_model: str | None = None,
-        force_regenerate: bool = False,
-        episode_lookup: Callable[[int], Awaitable[PodcastEpisode | None]],
-    ) -> dict[str, Any]:
-        """Start or reuse a transcription task and update redis state."""
-        episode = await episode_lookup(episode_id)
-        if not episode:
-            raise ValueError(f"Episode {episode_id} not found")
-
-        transcription_service = self.transcription_service_factory(self.db)
-        start_result = await transcription_service.start_transcription(
-            episode_id,
-            transcription_model,
-            force_regenerate,
-        )
-        task = start_result["task"]
-        action = start_result["action"]
-
-        return {"task": task, "action": action, "episode": episode}
-
-    async def dispatch_pending_transcriptions(
-        self,
-        episode_ids: list[int],
-    ) -> dict[str, Any]:
-        """Start backlog transcriptions through the shared service entrypoint."""
-        transcription_service = self.transcription_service_factory(self.db)
-        dispatched_count = 0
-        skipped_count = 0
-        failed_count = 0
-        skipped_reasons: dict[str, int] = {}
-
-        for episode_id in episode_ids:
-            try:
-                result = await transcription_service.start_transcription(
-                    episode_id,
-                    force=False,
-                )
-                action = result.get("action", "unknown")
-                if action in {
-                    "created",
-                    "redispatched_pending",
-                    "redispatched_failed_with_temp",
-                }:
-                    dispatched_count += 1
-                    continue
-
-                skipped_count += 1
-                skipped_reasons[action] = skipped_reasons.get(action, 0) + 1
-            except (ValueError, RuntimeError, OSError):
-                failed_count += 1
-                logger.exception(
-                    "Failed to dispatch backlog transcription for episode %s",
-                    episode_id,
-                )
-
-        return {
-            "checked": len(episode_ids),
-            "dispatched": dispatched_count,
-            "skipped": skipped_count,
-            "failed": failed_count,
-            "skipped_reasons": skipped_reasons,
-        }
-
-    async def delete_episode_transcription(
-        self,
-        episode_id: int,
-        *,
-        episode_lookup: Callable[[int], Awaitable[PodcastEpisode | None]],
-    ) -> dict[str, Any]:
-        """Delete transcription task and cleanup redis state."""
-        episode = await episode_lookup(episode_id)
-        if not episode:
-            raise ValueError(f"Episode {episode_id} not found")
-
-        transcription_service = self.transcription_service_factory(self.db)
-        task_id = await transcription_service.delete_episode_transcription(episode_id)
-        await self.state_coordinator.cleanup_deleted_task(episode_id, task_id)
-
-        return {"task_id": task_id, "episode": episode}
-
-    async def get_transcription_task_status(
-        self,
-        task_id: int,
-        *,
-        episode_lookup: Callable[[int], Awaitable[PodcastEpisode | None]],
-    ) -> dict[str, Any]:
-        """Get task status and enforce episode access."""
-        transcription_service = self.transcription_service_factory(self.db)
-        task = await transcription_service.get_transcription_status(task_id)
-        if not task:
-            raise ValueError("Transcription task not found")
-
-        episode = await episode_lookup(task.episode_id)
-        if not episode:
-            raise PermissionError(
-                "You don't have permission to access this transcription task",
-            )
-
-        return _build_transcription_status_payload(
-            task,
-            status_key=status_value(task.status),
-        )
-
-    async def schedule_episode_transcription(
-        self,
-        episode_id: int,
-        *,
-        force: bool,
-        episode_lookup: Callable[[int], Awaitable[PodcastEpisode | None]],
-    ) -> dict[str, Any]:
-        episode = await episode_lookup(episode_id)
-        if not episode:
-            raise ValueError(f"Episode {episode_id} not found")
-        scheduler = self.scheduler_factory(self.db)
-        return await scheduler.schedule_transcription(
-            episode_id=episode_id,
-            force=force,
-        )
-
-    async def get_episode_transcript_payload(
-        self,
-        episode_id: int,
-        *,
-        episode_lookup: Callable[[int], Awaitable[PodcastEpisode | None]],
-    ) -> dict[str, Any]:
-        episode = await episode_lookup(episode_id)
-        if not episode:
-            raise ValueError(f"Episode {episode_id} not found")
-
-        transcript = await get_episode_transcript(self.db, episode_id)
-        if not transcript:
-            raise LookupError(
-                "No transcription found for this episode. Please schedule transcription first.",
-            )
-
-        return {
-            "episode_id": episode_id,
-            "episode_title": episode.title,
-            "transcript_length": len(transcript),
-            "transcript": transcript,
-            "status": "success",
-        }
-
-    async def batch_transcribe_subscription(
-        self,
-        subscription_id: int,
-        *,
-        skip_existing: bool,
-        max_episodes: int = 50,
-        subscription_lookup: Callable[[int], Awaitable[Any | None]],
-    ) -> dict[str, Any]:
-        subscription = await subscription_lookup(subscription_id)
-        if not subscription:
-            raise ValueError(f"Subscription {subscription_id} not found")
-        return await batch_transcribe_subscription(
-            self.db,
-            subscription_id,
-            skip_existing=skip_existing,
-            max_episodes=max_episodes,
-        )
-
-    async def get_schedule_status(
-        self,
-        episode_id: int,
-        *,
-        episode_lookup: Callable[[int], Awaitable[PodcastEpisode | None]],
-    ) -> dict[str, Any]:
-        episode = await episode_lookup(episode_id)
-        if not episode:
-            raise ValueError(f"Episode {episode_id} not found")
-        scheduler = self.scheduler_factory(self.db)
-        return await scheduler.get_transcription_status(episode_id)
-
-    async def cancel_episode_transcription(
-        self,
-        episode_id: int,
-        *,
-        episode_lookup: Callable[[int], Awaitable[PodcastEpisode | None]],
-    ) -> dict[str, Any]:
-        episode = await episode_lookup(episode_id)
-        if not episode:
-            raise ValueError(f"Episode {episode_id} not found")
-        scheduler = self.scheduler_factory(self.db)
-        success = await scheduler.cancel_transcription(episode_id)
-        return {
-            "success": success,
-            "message": (
-                "Transcription cancelled"
-                if success
-                else "No active transcription to cancel"
-            ),
-        }
-
-    async def check_and_transcribe_new_episodes(
-        self,
-        subscription_id: int,
-        *,
-        hours_since_published: int,
-        subscription_lookup: Callable[[int], Awaitable[Any | None]],
-    ) -> dict[str, Any]:
-        subscription = await subscription_lookup(subscription_id)
-        if not subscription:
-            raise ValueError(f"Subscription {subscription_id} not found")
-        scheduler = self.scheduler_factory(self.db)
-        return await scheduler.check_and_transcribe_new_episodes(
-            subscription_id=subscription_id,
-            hours_since_published=hours_since_published,
-        )
-
-    async def list_pending_transcriptions(
-        self,
-        *,
-        episodes_lookup: Callable[[list[int]], Awaitable[dict[int, Any]]],
-    ) -> dict[str, Any]:
-        scheduler = self.scheduler_factory(self.db)
-        tasks = await scheduler.get_pending_transcriptions()
-        if not tasks:
-            return {"total": 0, "tasks": []}
-        # One batched episode query instead of a per-task lookup.
-        found = await episodes_lookup([task["episode_id"] for task in tasks])
-        user_tasks = [task for task in tasks if task["episode_id"] in found]
-        return {"total": len(user_tasks), "tasks": user_tasks}
-
-    async def cleanup_old_temp_files(self, *, days: int = 7) -> dict[str, Any]:
-        """Cleanup stale transcription temporary files via the shared service."""
-        transcription_service = self.transcription_service_factory(self.db)
-        return await transcription_service.cleanup_old_temp_files(days=days)
-
-    async def reset_stale_tasks(self) -> None:
-        """Reset stale in-progress tasks at application startup."""
-        transcription_service = self.transcription_service_factory(self.db)
-        await transcription_service.reset_stale_tasks()
-
-    async def execute_transcription_task(
-        self,
-        task_id: int,
-        *,
-        config_db_id: int | None,
-    ) -> dict[str, Any]:
-        """Worker-side transcription execution flow with redis lock/progress state."""
-        return await self.state_coordinator.execute_task_with_state(
-            db=self.db,
-            task_id=task_id,
-            config_db_id=config_db_id,
-            transcription_service_factory=self.transcription_service_factory,
-            claim_dispatch=self._claim_dispatch,
-            clear_dispatch=self._clear_dispatch,
-        )
-
-    async def trigger_episode_pipeline(
-        self,
-        episode_id: int,
-        *,
-        user_id: int,
-        episode_lookup: Callable[[int], Awaitable[PodcastEpisode | None]],
-    ) -> dict[str, Any]:
-        """Dispatch transcription pipeline for one episode."""
-        episode = await episode_lookup(episode_id)
-        if episode is None:
-            return {
-                "status": "error",
-                "message": "Episode not found",
-                "episode_id": episode_id,
-            }
-
-        # Directly use transcription service instead of sync_service wrapper
-        transcription_service = self.transcription_service_factory(self.db)
-        result = await transcription_service.start_transcription(episode_id)
-        if not result or not result.get("task"):
-            raise RuntimeError(
-                f"Failed to trigger transcription for episode={episode_id}, user={user_id}",
-            )
-
-        logger.info(
-            "Triggered transcription task %s for episode %s (action=%s)",
-            result["task"].id,
-            episode_id,
-            result.get("action"),
-        )
-
-        return {
-            "status": "queued",
-            "episode_id": episode_id,
-            "transcription_task_id": result["task"].id,
-            "processed_at": datetime.now(UTC).isoformat(),
-        }
-
-
-
-async def _directory_has_files_async(path: str) -> bool:
-    """Check if directory has any files (async wrapper)."""
-    return await asyncio.to_thread(_directory_has_files, path)
+# ── Filesystem helpers (temp-dir inspection) ──
 
 
 def _directory_has_files(path: str) -> bool:
-    """Synchronous implementation of directory check."""
     return any(files for _, _, files in os.walk(path))
 
 
-async def _directory_size_bytes_async(path: str) -> int:
-    """Get directory size in bytes (async wrapper)."""
-    return await asyncio.to_thread(_directory_size_bytes, path)
-
-
 def _directory_size_bytes(path: str) -> int:
-    """Synchronous implementation of directory size calculation."""
     return sum(
         os.path.getsize(os.path.join(dirpath, filename))
         for dirpath, _, filenames in os.walk(path)
@@ -546,7 +106,6 @@ def _directory_size_bytes(path: str) -> int:
 
 
 async def _rmtree_async(path: str) -> None:
-    """Remove directory tree asynchronously."""
     await asyncio.to_thread(shutil.rmtree, path)
 
 
@@ -583,13 +142,13 @@ class TranscriptionModelManager:
 
         api_url = model_config.api_url
         if not api_url or api_url.strip() == "":
-            from app.core.config import settings
-
             api_url = getattr(
                 settings,
                 "TRANSCRIPTION_API_URL",
                 "https://api.siliconflow.cn/v1/audio/transcriptions",
             )
+
+        from app.domains.podcast.transcription import SiliconFlowTranscriber
 
         return SiliconFlowTranscriber(
             api_key=api_key,
@@ -634,36 +193,35 @@ class TranscriptionModelManager:
             raise ValidationError(str(exc)) from exc
 
 
-class PodcastTranscriptionRuntimeService:
-    """Transcription runtime that resolves models from DB configuration.
-
-    Composes the engine (``PodcastTranscriptionService``) instead of
-    inheriting it: the engine owns task execution and file handling, the
-    runtime owns model resolution, reuse/redispatch policy and enqueueing.
-    """
+class TranscriptionWorkflowService:
+    """Coordinate transcription task orchestration across routes and workers."""
 
     def __init__(
         self,
         db: AsyncSession,
         task_orchestration_service_factory=None,
         *,
-        engine: PodcastTranscriptionService | None = None,
+        engine_factory: Callable[[AsyncSession], PodcastTranscriptionService]
+        | None = None,
+        state_manager_factory: Callable[
+            [], Awaitable[Any]
+        ] = get_transcription_state_manager,
+        redis_factory: Callable[[], RedisCache] = get_shared_redis,
+        claim_dispatched: Callable[[AsyncSession, int], Awaitable[bool]] | None = None,
+        clear_dispatched: Callable[[int], Awaitable[None]] | None = None,
     ):
         self.db = db
-        self.engine = engine or PodcastTranscriptionService(db)
+        self.engine = (
+            engine_factory(db)
+            if engine_factory is not None
+            else PodcastTranscriptionService(db)
+        )
         self.model_manager = TranscriptionModelManager(db)
         self._task_orchestration_service_factory = task_orchestration_service_factory
-
-    async def execute_transcription_task(
-        self,
-        task_id: int,
-        session,
-        config_db_id: int | None = None,
-    ):
-        """Delegate task execution to the composed engine."""
-        return await self.engine.execute_transcription_task(
-            task_id, session, config_db_id
-        )
+        self.state_manager_factory = state_manager_factory
+        self.redis_factory = redis_factory
+        self._claim_dispatched_callback = claim_dispatched
+        self._clear_dispatched_callback = clear_dispatched
 
     def _task_orchestration_service(self):
         factory = self._task_orchestration_service_factory
@@ -675,6 +233,23 @@ class PodcastTranscriptionRuntimeService:
             factory = PodcastTaskOrchestrationService
         return factory(self.db)
 
+    # ── Dispatch guard ──
+
+    async def _claim_dispatch(self, task_id: int) -> bool:
+        """Claim dispatch right for a task. Returns True if claimed successfully."""
+        if self._claim_dispatched_callback is not None:
+            return await self._claim_dispatched_callback(self.db, task_id)
+        return await claim_task_dispatch(self.redis_factory(), self.db, task_id)
+
+    async def _clear_dispatch(self, task_id: int) -> None:
+        """Clear dispatch flag for a task."""
+        if self._clear_dispatched_callback is not None:
+            await self._clear_dispatched_callback(task_id)
+            return
+        await clear_task_dispatch(self.redis_factory(), task_id)
+
+    # ── Task lifecycle policy: start / reuse / redispatch ──
+
     async def start_transcription(
         self,
         episode_id: int,
@@ -684,22 +259,18 @@ class PodcastTranscriptionRuntimeService:
         if model_name:
             await self.model_manager.get_active_transcription_model(model_name)
 
-        state_manager = await get_transcription_state_manager()
+        state_manager = await self.state_manager_factory()
         existing_task = await self._load_existing_task(episode_id)
         if existing_task and not force:
-            status_value = (
-                existing_task.status.value
-                if hasattr(existing_task.status, "value")
-                else str(existing_task.status)
-            )
+            task_status = status_value(existing_task.status)
 
-            if status_value == "completed":
+            if task_status == "completed":
                 return {"task": existing_task, "action": "reused_completed"}
 
-            if status_value == "in_progress":
+            if task_status == "in_progress":
                 return {"task": existing_task, "action": "reused_in_progress"}
 
-            if status_value == "pending":
+            if task_status == "pending":
                 locked_task_id = await state_manager.is_episode_locked(episode_id)
                 if locked_task_id == existing_task.id:
                     return {"task": existing_task, "action": "reused_pending"}
@@ -715,7 +286,7 @@ class PodcastTranscriptionRuntimeService:
                 )
                 return {"task": existing_task, "action": "redispatched_pending"}
 
-            if status_value in {"failed", "cancelled"}:
+            if task_status in {"failed", "cancelled"}:
                 temp_episode_dir = os.path.join(
                     self.engine.temp_dir, f"episode_{episode_id}"
                 )
@@ -736,7 +307,7 @@ class PodcastTranscriptionRuntimeService:
                         existing_task.progress_percentage = 0
                         existing_task.current_step = "not_started"
                         await self.db.commit()
-                        # No refresh needed - existing_task is already in session with updated values
+                        # No refresh needed - existing_task is already in session
 
                         config_db_id = await self._resolve_transcription_config_db_id(
                             model_name,
@@ -768,15 +339,13 @@ class PodcastTranscriptionRuntimeService:
             model_name,
         )
         if not created:
-            status_value = (
-                task.status.value if hasattr(task.status, "value") else str(task.status)
-            )
-            if status_value == "completed":
+            task_status = status_value(task.status)
+            if task_status == "completed":
                 return {"task": task, "action": "reused_completed"}
-            if status_value in {"pending", "in_progress"}:
+            if task_status in {"pending", "in_progress"}:
                 action = (
                     "reused_in_progress"
-                    if status_value == "in_progress"
+                    if task_status == "in_progress"
                     else "reused_pending"
                 )
                 return {"task": task, "action": action}
@@ -788,9 +357,7 @@ class PodcastTranscriptionRuntimeService:
         )
         return {"task": task, "action": "created"}
 
-    async def _load_existing_task(self, episode_id: int):
-        from app.domains.podcast.models import TranscriptionTask
-
+    async def _load_existing_task(self, episode_id: int) -> TranscriptionTask | None:
         stmt = (
             select(TranscriptionTask)
             .where(TranscriptionTask.episode_id == episode_id)
@@ -803,9 +370,7 @@ class PodcastTranscriptionRuntimeService:
         self,
         episode_id: int,
         model_name: str | None,
-    ) -> tuple[Any, int | None, bool]:
-        from app.domains.podcast.models import TranscriptionTask
-
+    ) -> tuple[TranscriptionTask, int | None, bool]:
         episode = await self._load_episode_for_task_creation(episode_id)
         model_config = await self.model_manager.get_active_transcription_model(
             model_name
@@ -813,7 +378,7 @@ class PodcastTranscriptionRuntimeService:
         task_values = {
             "episode_id": episode_id,
             "original_audio_url": episode.audio_url,
-            "chunk_size_mb": self.chunk_size_mb,
+            "chunk_size_mb": self.engine.chunk_size_mb,
             "model_used": model_config.model_id,
         }
 
@@ -854,9 +419,7 @@ class PodcastTranscriptionRuntimeService:
                 raise
             return existing_task, None, False
 
-    async def _load_episode_for_task_creation(self, episode_id: int):
-        from app.domains.podcast.models import PodcastEpisode
-
+    async def _load_episode_for_task_creation(self, episode_id: int) -> PodcastEpisode:
         stmt = select(PodcastEpisode).where(PodcastEpisode.id == episode_id)
         result = await self.db.execute(stmt)
         episode = result.scalar_one_or_none()
@@ -865,9 +428,7 @@ class PodcastTranscriptionRuntimeService:
             raise ValidationError(f"Episode {episode_id} not found")
         return episode
 
-    async def _load_task_by_id(self, task_id: int):
-        from app.domains.podcast.models import TranscriptionTask
-
+    async def _load_task_by_id(self, task_id: int) -> TranscriptionTask:
         stmt = select(TranscriptionTask).where(TranscriptionTask.id == task_id)
         result = await self.db.execute(stmt)
         task = result.scalar_one_or_none()
@@ -890,10 +451,90 @@ class PodcastTranscriptionRuntimeService:
             model_config = active_models[0] if active_models else None
         return model_config.id if model_config else None
 
-    async def get_transcription_models(self):
-        return await self.model_manager.list_available_models()
+    # ── Route facades (episode/subscription scoped) ──
 
-    async def delete_episode_transcription(self, episode_id: int) -> int | None:
+    async def start_episode_transcription(
+        self,
+        episode_id: int,
+        *,
+        transcription_model: str | None = None,
+        force_regenerate: bool = False,
+        episode_lookup: Callable[[int], Awaitable[PodcastEpisode | None]],
+    ) -> dict[str, Any]:
+        """Start or reuse a transcription task and update redis state."""
+        episode = await episode_lookup(episode_id)
+        if not episode:
+            raise ValueError(f"Episode {episode_id} not found")
+
+        start_result = await self.start_transcription(
+            episode_id,
+            transcription_model,
+            force_regenerate,
+        )
+        task = start_result["task"]
+        action = start_result["action"]
+
+        return {"task": task, "action": action, "episode": episode}
+
+    async def dispatch_pending_transcriptions(
+        self,
+        episode_ids: list[int],
+    ) -> dict[str, Any]:
+        """Start backlog transcriptions through the shared service entrypoint."""
+        dispatched_count = 0
+        skipped_count = 0
+        failed_count = 0
+        skipped_reasons: dict[str, int] = {}
+
+        for episode_id in episode_ids:
+            try:
+                result = await self.start_transcription(
+                    episode_id,
+                    force=False,
+                )
+                action = result.get("action", "unknown")
+                if action in {
+                    "created",
+                    "redispatched_pending",
+                    "redispatched_failed_with_temp",
+                }:
+                    dispatched_count += 1
+                    continue
+
+                skipped_count += 1
+                skipped_reasons[action] = skipped_reasons.get(action, 0) + 1
+            except (ValueError, RuntimeError, OSError):
+                failed_count += 1
+                logger.exception(
+                    "Failed to dispatch backlog transcription for episode %s",
+                    episode_id,
+                )
+
+        return {
+            "checked": len(episode_ids),
+            "dispatched": dispatched_count,
+            "skipped": skipped_count,
+            "failed": failed_count,
+            "skipped_reasons": skipped_reasons,
+        }
+
+    async def delete_episode_transcription(
+        self,
+        episode_id: int,
+        *,
+        episode_lookup: Callable[[int], Awaitable[PodcastEpisode | None]],
+    ) -> dict[str, Any]:
+        """Delete transcription task and cleanup redis state."""
+        episode = await episode_lookup(episode_id)
+        if not episode:
+            raise ValueError(f"Episode {episode_id} not found")
+
+        task_id = await self.delete_transcription_task_record(episode_id)
+        await self._cleanup_deleted_task_state(episode_id, task_id)
+
+        return {"task_id": task_id, "episode": episode}
+
+    async def delete_transcription_task_record(self, episode_id: int) -> int | None:
         task = await self.get_episode_transcription(episode_id)
         if not task:
             return None
@@ -902,122 +543,219 @@ class PodcastTranscriptionRuntimeService:
         await self.db.commit()
         return task_id
 
-    async def reset_stale_tasks(self):
-        from sqlalchemy import and_, update
-
-        from app.domains.podcast.models import TranscriptionTask
-
-        stale_threshold = datetime.now(UTC) - timedelta(minutes=5)
-        in_progress_statuses = ["in_progress"]
+    async def _cleanup_deleted_task_state(
+        self, episode_id: int, task_id: int | None
+    ) -> None:
+        state_manager = await self.state_manager_factory()
+        if task_id:
+            try:
+                await state_manager.release_task_lock(episode_id, task_id)
+                return
+            except Exception as redis_error:
+                logger.warning("[DELETE] Failed to cleanup redis: %s", redis_error)
+                return
 
         try:
-            stmt = (
-                update(TranscriptionTask)
-                .where(
-                    and_(
-                        TranscriptionTask.status.in_(in_progress_statuses),
-                        TranscriptionTask.started_at.isnot(None),
-                        TranscriptionTask.updated_at < stale_threshold,
-                    ),
-                )
-                .values(
-                    status="failed",
-                    error_message="Task interrupted by server restart",
-                    updated_at=datetime.now(UTC),
-                    completed_at=datetime.now(UTC),
-                )
+            locked_task_id = await state_manager.is_episode_locked(episode_id)
+            if locked_task_id:
+                await state_manager.release_task_lock(episode_id, locked_task_id)
+        except Exception as redis_error:
+            logger.warning("[DELETE] Failed to cleanup stale locks: %s", redis_error)
+
+    async def get_transcription_task_status(
+        self,
+        task_id: int,
+        *,
+        episode_lookup: Callable[[int], Awaitable[PodcastEpisode | None]],
+    ) -> dict[str, Any]:
+        """Get task status and enforce episode access."""
+        task = await self.engine.get_transcription_status(task_id)
+        if not task:
+            raise ValueError("Transcription task not found")
+
+        episode = await episode_lookup(task.episode_id)
+        if not episode:
+            raise PermissionError(
+                "You don't have permission to access this transcription task",
             )
 
-            result = await self.db.execute(stmt)
-            await self.db.commit()
-            if result.rowcount > 0:
-                logger.warning(
-                    "Reset %s stale transcription tasks to FAILED", result.rowcount
-                )
-
-            pending_stale_threshold = datetime.now(UTC) - timedelta(hours=1)
-            stmt2 = (
-                update(TranscriptionTask)
-                .where(
-                    and_(
-                        TranscriptionTask.status == "pending",
-                        TranscriptionTask.started_at.is_(None),
-                        TranscriptionTask.created_at < pending_stale_threshold,
-                    ),
-                )
-                .values(
-                    status="failed",
-                    error_message="Task was never scheduled for execution",
-                    updated_at=datetime.now(UTC),
-                    completed_at=datetime.now(UTC),
-                )
-            )
-
-            result2 = await self.db.execute(stmt2)
-            await self.db.commit()
-            if result2.rowcount > 0:
-                logger.warning(
-                    "Reset %s stale PENDING tasks to FAILED", result2.rowcount
-                )
-        except Exception as exc:  # noqa: BLE001
-            logger.error("Failed to reset stale tasks: %s", exc)
-
-    async def cleanup_old_temp_files(self, days: int = 7):
-        import os
-
-        from sqlalchemy import and_
-
-        from app.core.config import settings
-        from app.domains.podcast.models import TranscriptionTask
-
-        temp_dir = getattr(settings, "TRANSCRIPTION_TEMP_DIR", "./temp/transcription")
-        temp_dir_abs = await asyncio.to_thread(os.path.abspath, temp_dir)
-
-        if not await asyncio.to_thread(os.path.exists, temp_dir_abs):
-            return {"cleaned": 0, "freed_bytes": 0}
-
-        stale_threshold = datetime.now(UTC) - timedelta(days=days)
-        stmt = (
-            select(TranscriptionTask.episode_id)
-            .where(
-                and_(
-                    TranscriptionTask.status.in_(["failed", "cancelled"]),
-                    TranscriptionTask.completed_at < stale_threshold,
-                ),
-            )
-            .distinct()
+        return _build_transcription_status_payload(
+            task,
+            status_key=status_value(task.status),
         )
 
-        result = await self.db.execute(stmt)
-        episode_ids_to_cleanup = [row[0] for row in result.all()]
+    async def get_episode_transcription(
+        self,
+        episode_id: int,
+    ) -> TranscriptionTask | None:
+        return await self.engine.get_episode_transcription(episode_id)
 
-        cleaned_count = 0
-        freed_bytes = 0
-        for episode_id in episode_ids_to_cleanup:
-            temp_episode_dir = os.path.join(temp_dir_abs, f"episode_{episode_id}")
-            if not await asyncio.to_thread(os.path.exists, temp_episode_dir):
-                continue
+    async def get_transcription_models(self):
+        return await self.model_manager.list_available_models()
 
-            dir_size = await asyncio.to_thread(_directory_size_bytes, temp_episode_dir)
-            await _rmtree_async(temp_episode_dir)
-            cleaned_count += 1
-            freed_bytes += dir_size
+    async def schedule_episode_transcription(
+        self,
+        episode_id: int,
+        *,
+        force: bool,
+        episode_lookup: Callable[[int], Awaitable[PodcastEpisode | None]],
+    ) -> dict[str, Any]:
+        episode = await episode_lookup(episode_id)
+        if not episode:
+            raise ValueError(f"Episode {episode_id} not found")
+        return await self.schedule_transcription(
+            episode_id=episode_id,
+            force=force,
+        )
+
+    async def get_episode_transcript_payload(
+        self,
+        episode_id: int,
+        *,
+        episode_lookup: Callable[[int], Awaitable[PodcastEpisode | None]],
+    ) -> dict[str, Any]:
+        episode = await episode_lookup(episode_id)
+        if not episode:
+            raise ValueError(f"Episode {episode_id} not found")
+
+        transcript = await self.get_transcript_from_existing(episode_id)
+        if not transcript:
+            raise LookupError(
+                "No transcription found for this episode. Please schedule transcription first.",
+            )
 
         return {
-            "cleaned": cleaned_count,
-            "freed_bytes": freed_bytes,
-            "freed_mb": round(freed_bytes / 1024 / 1024, 2),
+            "episode_id": episode_id,
+            "episode_title": episode.title,
+            "transcript_length": len(transcript),
+            "transcript": transcript,
+            "status": "success",
         }
 
+    async def batch_transcribe_subscription(
+        self,
+        subscription_id: int,
+        *,
+        skip_existing: bool,
+        max_episodes: int = 50,
+        subscription_lookup: Callable[[int], Awaitable[Any | None]],
+    ) -> dict[str, Any]:
+        subscription = await subscription_lookup(subscription_id)
+        if not subscription:
+            raise ValueError(f"Subscription {subscription_id} not found")
 
+        results = await self.batch_schedule_transcription(
+            subscription_id=subscription_id,
+            skip_existing=skip_existing,
+            max_episodes=max_episodes,
+        )
 
+        return {
+            "subscription_id": subscription_id,
+            "total": len(results),
+            "scheduled": sum(
+                1 for item in results if item.get("status") == "scheduled"
+            ),
+            "skipped": sum(1 for item in results if item.get("status") == "skipped"),
+            "errors": sum(1 for item in results if item.get("status") == "error"),
+            "details": results,
+        }
 
-class PodcastTranscriptionScheduleService:
-    """Scheduler facade for podcast transcription tasks."""
+    async def get_schedule_status(
+        self,
+        episode_id: int,
+        *,
+        episode_lookup: Callable[[int], Awaitable[PodcastEpisode | None]],
+    ) -> dict[str, Any]:
+        episode = await episode_lookup(episode_id)
+        if not episode:
+            raise ValueError(f"Episode {episode_id} not found")
+        return await self.get_transcription_status(episode_id)
 
-    def __init__(self, db: AsyncSession):
-        self.db = db
-        self.transcription_service = PodcastTranscriptionRuntimeService(db)
+    async def cancel_episode_transcription(
+        self,
+        episode_id: int,
+        *,
+        episode_lookup: Callable[[int], Awaitable[PodcastEpisode | None]],
+    ) -> dict[str, Any]:
+        episode = await episode_lookup(episode_id)
+        if not episode:
+            raise ValueError(f"Episode {episode_id} not found")
+        success = await self.cancel_transcription(episode_id)
+        return {
+            "success": success,
+            "message": (
+                "Transcription cancelled"
+                if success
+                else "No active transcription to cancel"
+            ),
+        }
+
+    async def check_and_transcribe_new_episodes(
+        self,
+        subscription_id: int,
+        *,
+        hours_since_published: int,
+        subscription_lookup: Callable[[int], Awaitable[Any | None]],
+    ) -> dict[str, Any]:
+        subscription = await subscription_lookup(subscription_id)
+        if not subscription:
+            raise ValueError(f"Subscription {subscription_id} not found")
+        return await self._check_and_transcribe_new_episodes(
+            subscription_id=subscription_id,
+            hours_since_published=hours_since_published,
+        )
+
+    async def list_pending_transcriptions(
+        self,
+        *,
+        episodes_lookup: Callable[[list[int]], Awaitable[dict[int, Any]]],
+    ) -> dict[str, Any]:
+        tasks = await self.get_pending_transcriptions()
+        if not tasks:
+            return {"total": 0, "tasks": []}
+        # One batched episode query instead of a per-task lookup.
+        found = await episodes_lookup([task["episode_id"] for task in tasks])
+        user_tasks = [task for task in tasks if task["episode_id"] in found]
+        return {"total": len(user_tasks), "tasks": user_tasks}
+
+    async def trigger_episode_pipeline(
+        self,
+        episode_id: int,
+        *,
+        user_id: int,
+        episode_lookup: Callable[[int], Awaitable[PodcastEpisode | None]],
+    ) -> dict[str, Any]:
+        """Dispatch transcription pipeline for one episode."""
+        episode = await episode_lookup(episode_id)
+        if episode is None:
+            return {
+                "status": "error",
+                "message": "Episode not found",
+                "episode_id": episode_id,
+            }
+
+        result = await self.start_transcription(episode_id)
+        if not result or not result.get("task"):
+            raise RuntimeError(
+                f"Failed to trigger transcription for episode={episode_id}, user={user_id}",
+            )
+
+        logger.info(
+            "Triggered transcription task %s for episode %s (action=%s)",
+            result["task"].id,
+            episode_id,
+            result.get("action"),
+        )
+
+        return {
+            "status": "queued",
+            "episode_id": episode_id,
+            "transcription_task_id": result["task"].id,
+            "processed_at": datetime.now(UTC).isoformat(),
+        }
+
+    # ── Scheduling internals ──
 
     async def schedule_transcription(
         self,
@@ -1027,7 +765,7 @@ class PodcastTranscriptionScheduleService:
         episode = await self._get_episode(episode_id)
         if not episode:
             raise ValidationError(f"Episode {episode_id} not found")
-        start_result = await self.transcription_service.start_transcription(
+        start_result = await self.start_transcription(
             episode_id,
             force=force,
         )
@@ -1130,7 +868,7 @@ class PodcastTranscriptionScheduleService:
                 )
         return results
 
-    async def check_and_transcribe_new_episodes(
+    async def _check_and_transcribe_new_episodes(
         self,
         subscription_id: int,
         hours_since_published: int = 24,
@@ -1153,7 +891,7 @@ class PodcastTranscriptionScheduleService:
                             PodcastEpisodeTranscript.transcript_content == "",
                         ),
                     ),
-                ),
+                )
             )
             .order_by(PodcastEpisode.published_at.desc())
         )
@@ -1281,7 +1019,7 @@ class PodcastTranscriptionScheduleService:
         task = await self._get_existing_transcription_task(episode_id)
         if not task:
             return False
-        return await self.transcription_service.cancel_transcription(task.id)
+        return await self.engine.cancel_transcription(task.id)
 
     async def get_transcript_from_existing(self, episode_id: int) -> str | None:
         episode = await self._get_episode(episode_id)
@@ -1310,33 +1048,158 @@ class PodcastTranscriptionScheduleService:
         )
         return (await self.db.execute(stmt)).scalar_one_or_none()
 
+    # ── Housekeeping ──
 
-async def get_episode_transcript(db: AsyncSession, episode_id: int) -> str | None:
-    scheduler = PodcastTranscriptionScheduleService(db)
-    return await scheduler.get_transcript_from_existing(episode_id)
+    async def reset_stale_tasks(self):
+        """Reset stale in-progress tasks (e.g. after server restart)."""
+        stale_threshold = datetime.now(UTC) - timedelta(minutes=5)
 
+        try:
+            stmt = (
+                update(TranscriptionTask)
+                .where(
+                    and_(
+                        TranscriptionTask.status.in_(["in_progress"]),
+                        TranscriptionTask.started_at.isnot(None),
+                        TranscriptionTask.updated_at < stale_threshold,
+                    ),
+                )
+                .values(
+                    status="failed",
+                    error_message="Task interrupted by server restart",
+                    updated_at=datetime.now(UTC),
+                    completed_at=datetime.now(UTC),
+                )
+            )
 
-async def batch_transcribe_subscription(
-    db: AsyncSession,
-    subscription_id: int,
-    skip_existing: bool = True,
-    max_episodes: int = 50,
-) -> dict[str, Any]:
-    scheduler = PodcastTranscriptionScheduleService(db)
-    results = await scheduler.batch_schedule_transcription(
-        subscription_id=subscription_id,
-        skip_existing=skip_existing,
-        max_episodes=max_episodes,
-    )
+            result = await self.db.execute(stmt)
+            await self.db.commit()
+            if result.rowcount > 0:
+                logger.warning(
+                    "Reset %s stale transcription tasks to FAILED", result.rowcount
+                )
 
-    return {
-        "subscription_id": subscription_id,
-        "total": len(results),
-        "scheduled": sum(1 for item in results if item.get("status") == "scheduled"),
-        "skipped": sum(1 for item in results if item.get("status") == "skipped"),
-        "errors": sum(1 for item in results if item.get("status") == "error"),
-        "details": results,
-    }
+            pending_stale_threshold = datetime.now(UTC) - timedelta(hours=1)
+            stmt2 = (
+                update(TranscriptionTask)
+                .where(
+                    and_(
+                        TranscriptionTask.status == "pending",
+                        TranscriptionTask.started_at.is_(None),
+                        TranscriptionTask.created_at < pending_stale_threshold,
+                    ),
+                )
+                .values(
+                    status="failed",
+                    error_message="Task was never scheduled for execution",
+                    updated_at=datetime.now(UTC),
+                    completed_at=datetime.now(UTC),
+                )
+            )
 
+            result2 = await self.db.execute(stmt2)
+            await self.db.commit()
+            if result2.rowcount > 0:
+                logger.warning(
+                    "Reset %s stale PENDING tasks to FAILED", result2.rowcount
+                )
+        except Exception as exc:  # noqa: BLE001
+            logger.error("Failed to reset stale tasks: %s", exc)
 
-TranscriptionScheduler = PodcastTranscriptionScheduleService
+    async def cleanup_old_temp_files(self, days: int = 7):
+        temp_dir = getattr(settings, "TRANSCRIPTION_TEMP_DIR", "./temp/transcription")
+        temp_dir_abs = await asyncio.to_thread(os.path.abspath, temp_dir)
+
+        if not await asyncio.to_thread(os.path.exists, temp_dir_abs):
+            return {"cleaned": 0, "freed_bytes": 0}
+
+        stale_threshold = datetime.now(UTC) - timedelta(days=days)
+        stmt = (
+            select(TranscriptionTask.episode_id)
+            .where(
+                and_(
+                    TranscriptionTask.status.in_(["failed", "cancelled"]),
+                    TranscriptionTask.completed_at < stale_threshold,
+                ),
+            )
+            .distinct()
+        )
+
+        result = await self.db.execute(stmt)
+        episode_ids_to_cleanup = [row[0] for row in result.all()]
+
+        cleaned_count = 0
+        freed_bytes = 0
+        for episode_id in episode_ids_to_cleanup:
+            temp_episode_dir = os.path.join(temp_dir_abs, f"episode_{episode_id}")
+            if not await asyncio.to_thread(os.path.exists, temp_episode_dir):
+                continue
+
+            dir_size = await asyncio.to_thread(_directory_size_bytes, temp_episode_dir)
+            await _rmtree_async(temp_episode_dir)
+            cleaned_count += 1
+            freed_bytes += dir_size
+
+        return {
+            "cleaned": cleaned_count,
+            "freed_bytes": freed_bytes,
+            "freed_mb": round(freed_bytes / 1024 / 1024, 2),
+        }
+
+    # ── Worker execution flow (redis lock + dispatch claim) ──
+
+    async def execute_transcription_task(
+        self,
+        task_id: int,
+        *,
+        config_db_id: int | None,
+    ) -> dict[str, Any]:
+        """Worker-side transcription execution flow with redis lock/progress state."""
+        dispatch_claimed = await self._claim_dispatch(task_id)
+        if not dispatch_claimed:
+            return {
+                "status": "skipped",
+                "reason": "task_already_dispatched",
+                "task_id": task_id,
+            }
+
+        state_manager = await self.state_manager_factory()
+        stmt = select(TranscriptionTask).where(TranscriptionTask.id == task_id)
+        result = await self.db.execute(stmt)
+        task = result.scalar_one_or_none()
+        if task is None:
+            await self._clear_dispatch(task_id)
+            return {"status": "error", "reason": "task_not_found", "task_id": task_id}
+
+        episode_id = task.episode_id
+        lock_acquired = await state_manager.acquire_task_lock(
+            episode_id,
+            task_id,
+            expire_seconds=3600,
+        )
+        if not lock_acquired:
+            locked_task_id = await state_manager.is_episode_locked(episode_id)
+            await self._clear_dispatch(task_id)
+            lock_owner = (
+                str(locked_task_id) if locked_task_id is not None else "unknown_owner"
+            )
+            raise RuntimeError(
+                f"Episode {episode_id} is locked by task {lock_owner}, retry later",
+            )
+
+        try:
+            await self.engine.execute_transcription_task(task_id, self.db, config_db_id)
+            await state_manager.clear_task_state(task_id, episode_id)
+            return {
+                "status": "success",
+                "task_id": task_id,
+                "config_db_id": config_db_id,
+                "processed_at": datetime.now(UTC).isoformat(),
+            }
+        except Exception as exc:
+            await state_manager.fail_task_state(task_id, episode_id, str(exc))
+            logger.exception("Transcription task failed for task_id=%s", task_id)
+            raise
+        finally:
+            await state_manager.release_task_lock(episode_id, task_id)
+            await self._clear_dispatch(task_id)

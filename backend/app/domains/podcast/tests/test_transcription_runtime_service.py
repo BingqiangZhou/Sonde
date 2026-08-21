@@ -6,16 +6,8 @@ import pytest
 
 from app.domains.podcast.services import transcription_service as service_module
 from app.domains.podcast.services.transcription_service import (
-    PodcastTranscriptionRuntimeService,
+    TranscriptionWorkflowService,
 )
-
-
-class _ScalarOneOrNoneResult:
-    def __init__(self, value):
-        self._value = value
-
-    def scalar_one_or_none(self):
-        return self._value
 
 
 class _FakeTaskOrchestrationService:
@@ -37,17 +29,23 @@ class _FakeStateManager:
         return self.locked_episodes[0] if self.locked_episodes else None
 
 
+def _make_workflow(db, fake_task_service) -> TranscriptionWorkflowService:
+    workflow = TranscriptionWorkflowService(
+        db,
+        task_orchestration_service_factory=lambda session: fake_task_service,
+        engine_factory=lambda _db: AsyncMock(),
+    )
+    return workflow
+
+
 @pytest.mark.asyncio
 async def test_start_transcription_dispatches_via_task_orchestration_service():
     db = AsyncMock()
     fake_task_service = _FakeTaskOrchestrationService(db)
-    service = PodcastTranscriptionRuntimeService(
-        db=db,
-        task_orchestration_service_factory=lambda session: fake_task_service,
-    )
+    workflow = _make_workflow(db, fake_task_service)
     created_task = SimpleNamespace(id=55)
-    service._load_existing_task = AsyncMock(return_value=None)
-    service._create_or_get_task_record = AsyncMock(
+    workflow._load_existing_task = AsyncMock(return_value=None)
+    workflow._create_or_get_task_record = AsyncMock(
         return_value=(created_task, 11, True)
     )
 
@@ -55,7 +53,7 @@ async def test_start_transcription_dispatches_via_task_orchestration_service():
         "app.domains.podcast.services.transcription_service.get_transcription_state_manager",
         new=AsyncMock(return_value=AsyncMock()),
     ):
-        result = await service.start_transcription(episode_id=77)
+        result = await workflow.start_transcription(episode_id=77)
 
     assert result == {"task": created_task, "action": "created"}
     assert fake_task_service.audio_transcription_calls == [
@@ -67,15 +65,12 @@ async def test_start_transcription_dispatches_via_task_orchestration_service():
 async def test_start_transcription_concurrent_calls_reuse_pending_task():
     db = AsyncMock()
     fake_task_service = _FakeTaskOrchestrationService(db)
-    service = PodcastTranscriptionRuntimeService(
-        db=db,
-        task_orchestration_service_factory=lambda session: fake_task_service,
-    )
+    workflow = _make_workflow(db, fake_task_service)
     state_manager = _FakeStateManager()
     task = SimpleNamespace(id=91, status="pending", progress_percentage=0)
     create_call_count = 0
 
-    service._load_existing_task = AsyncMock(return_value=None)
+    workflow._load_existing_task = AsyncMock(return_value=None)
 
     async def _fake_create_or_get_task_record(episode_id: int, model_name: str | None):
         nonlocal create_call_count
@@ -85,7 +80,7 @@ async def test_start_transcription_concurrent_calls_reuse_pending_task():
             return task, 17, True
         return task, None, False
 
-    service._create_or_get_task_record = _fake_create_or_get_task_record
+    workflow._create_or_get_task_record = _fake_create_or_get_task_record
 
     with patch.object(
         service_module,
@@ -93,8 +88,8 @@ async def test_start_transcription_concurrent_calls_reuse_pending_task():
         new=AsyncMock(return_value=state_manager),
     ):
         results = await asyncio.gather(
-            service.start_transcription(episode_id=12),
-            service.start_transcription(episode_id=12),
+            workflow.start_transcription(episode_id=12),
+            workflow.start_transcription(episode_id=12),
         )
 
     assert sorted(result["action"] for result in results) == [

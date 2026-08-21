@@ -118,10 +118,7 @@ async def get_transcription(
                 detail=f"Episode {episode_id} not found",
             ) from None
 
-        transcription_service = transcription_workflow.transcription_service_factory(
-            transcription_workflow.db,
-        )
-        task = await transcription_service.get_episode_transcription(episode_id)
+        task = await transcription_workflow.get_episode_transcription(episode_id)
         if not task:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
