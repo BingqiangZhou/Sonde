@@ -675,6 +675,28 @@ class $EpisodesCacheTable extends EpisodesCache
     type: DriftSqlType.dateTime,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _descriptionMeta = const VerificationMeta(
+    'description',
+  );
+  @override
+  late final GeneratedColumn<String> description = GeneratedColumn<String>(
+    'description',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _aiSummaryMeta = const VerificationMeta(
+    'aiSummary',
+  );
+  @override
+  late final GeneratedColumn<String> aiSummary = GeneratedColumn<String>(
+    'ai_summary',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -687,6 +709,8 @@ class $EpisodesCacheTable extends EpisodesCache
     subscriptionImageUrl,
     publishedAt,
     updatedAt,
+    description,
+    aiSummary,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -782,6 +806,21 @@ class $EpisodesCacheTable extends EpisodesCache
     } else if (isInserting) {
       context.missing(_updatedAtMeta);
     }
+    if (data.containsKey('description')) {
+      context.handle(
+        _descriptionMeta,
+        description.isAcceptableOrUnknown(
+          data['description']!,
+          _descriptionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('ai_summary')) {
+      context.handle(
+        _aiSummaryMeta,
+        aiSummary.isAcceptableOrUnknown(data['ai_summary']!, _aiSummaryMeta),
+      );
+    }
     return context;
   }
 
@@ -831,6 +870,14 @@ class $EpisodesCacheTable extends EpisodesCache
         DriftSqlType.dateTime,
         data['${effectivePrefix}updated_at'],
       )!,
+      description: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}description'],
+      ),
+      aiSummary: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}ai_summary'],
+      ),
     );
   }
 
@@ -852,6 +899,12 @@ class EpisodesCacheData extends DataClass
   final String? subscriptionImageUrl;
   final DateTime publishedAt;
   final DateTime updatedAt;
+
+  /// Collapsed one-line description (feed semantics).
+  final String? description;
+
+  /// Full AI summary text kept for offline summary reading.
+  final String? aiSummary;
   const EpisodesCacheData({
     required this.id,
     required this.subscriptionId,
@@ -863,6 +916,8 @@ class EpisodesCacheData extends DataClass
     this.subscriptionImageUrl,
     required this.publishedAt,
     required this.updatedAt,
+    this.description,
+    this.aiSummary,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -885,6 +940,12 @@ class EpisodesCacheData extends DataClass
     }
     map['published_at'] = Variable<DateTime>(publishedAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
+    if (!nullToAbsent || description != null) {
+      map['description'] = Variable<String>(description);
+    }
+    if (!nullToAbsent || aiSummary != null) {
+      map['ai_summary'] = Variable<String>(aiSummary);
+    }
     return map;
   }
 
@@ -908,6 +969,12 @@ class EpisodesCacheData extends DataClass
           : Value(subscriptionImageUrl),
       publishedAt: Value(publishedAt),
       updatedAt: Value(updatedAt),
+      description: description == null && nullToAbsent
+          ? const Value.absent()
+          : Value(description),
+      aiSummary: aiSummary == null && nullToAbsent
+          ? const Value.absent()
+          : Value(aiSummary),
     );
   }
 
@@ -931,6 +998,8 @@ class EpisodesCacheData extends DataClass
       ),
       publishedAt: serializer.fromJson<DateTime>(json['publishedAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      description: serializer.fromJson<String?>(json['description']),
+      aiSummary: serializer.fromJson<String?>(json['aiSummary']),
     );
   }
   @override
@@ -947,6 +1016,8 @@ class EpisodesCacheData extends DataClass
       'subscriptionImageUrl': serializer.toJson<String?>(subscriptionImageUrl),
       'publishedAt': serializer.toJson<DateTime>(publishedAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'description': serializer.toJson<String?>(description),
+      'aiSummary': serializer.toJson<String?>(aiSummary),
     };
   }
 
@@ -961,6 +1032,8 @@ class EpisodesCacheData extends DataClass
     Value<String?> subscriptionImageUrl = const Value.absent(),
     DateTime? publishedAt,
     DateTime? updatedAt,
+    Value<String?> description = const Value.absent(),
+    Value<String?> aiSummary = const Value.absent(),
   }) => EpisodesCacheData(
     id: id ?? this.id,
     subscriptionId: subscriptionId ?? this.subscriptionId,
@@ -978,6 +1051,8 @@ class EpisodesCacheData extends DataClass
         : this.subscriptionImageUrl,
     publishedAt: publishedAt ?? this.publishedAt,
     updatedAt: updatedAt ?? this.updatedAt,
+    description: description.present ? description.value : this.description,
+    aiSummary: aiSummary.present ? aiSummary.value : this.aiSummary,
   );
   EpisodesCacheData copyWithCompanion(EpisodesCacheCompanion data) {
     return EpisodesCacheData(
@@ -1001,6 +1076,10 @@ class EpisodesCacheData extends DataClass
           ? data.publishedAt.value
           : this.publishedAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      description: data.description.present
+          ? data.description.value
+          : this.description,
+      aiSummary: data.aiSummary.present ? data.aiSummary.value : this.aiSummary,
     );
   }
 
@@ -1016,7 +1095,9 @@ class EpisodesCacheData extends DataClass
           ..write('subscriptionTitle: $subscriptionTitle, ')
           ..write('subscriptionImageUrl: $subscriptionImageUrl, ')
           ..write('publishedAt: $publishedAt, ')
-          ..write('updatedAt: $updatedAt')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('description: $description, ')
+          ..write('aiSummary: $aiSummary')
           ..write(')'))
         .toString();
   }
@@ -1033,6 +1114,8 @@ class EpisodesCacheData extends DataClass
     subscriptionImageUrl,
     publishedAt,
     updatedAt,
+    description,
+    aiSummary,
   );
   @override
   bool operator ==(Object other) =>
@@ -1047,7 +1130,9 @@ class EpisodesCacheData extends DataClass
           other.subscriptionTitle == this.subscriptionTitle &&
           other.subscriptionImageUrl == this.subscriptionImageUrl &&
           other.publishedAt == this.publishedAt &&
-          other.updatedAt == this.updatedAt);
+          other.updatedAt == this.updatedAt &&
+          other.description == this.description &&
+          other.aiSummary == this.aiSummary);
 }
 
 class EpisodesCacheCompanion extends UpdateCompanion<EpisodesCacheData> {
@@ -1061,6 +1146,8 @@ class EpisodesCacheCompanion extends UpdateCompanion<EpisodesCacheData> {
   final Value<String?> subscriptionImageUrl;
   final Value<DateTime> publishedAt;
   final Value<DateTime> updatedAt;
+  final Value<String?> description;
+  final Value<String?> aiSummary;
   const EpisodesCacheCompanion({
     this.id = const Value.absent(),
     this.subscriptionId = const Value.absent(),
@@ -1072,6 +1159,8 @@ class EpisodesCacheCompanion extends UpdateCompanion<EpisodesCacheData> {
     this.subscriptionImageUrl = const Value.absent(),
     this.publishedAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
+    this.description = const Value.absent(),
+    this.aiSummary = const Value.absent(),
   });
   EpisodesCacheCompanion.insert({
     this.id = const Value.absent(),
@@ -1084,6 +1173,8 @@ class EpisodesCacheCompanion extends UpdateCompanion<EpisodesCacheData> {
     this.subscriptionImageUrl = const Value.absent(),
     required DateTime publishedAt,
     required DateTime updatedAt,
+    this.description = const Value.absent(),
+    this.aiSummary = const Value.absent(),
   }) : subscriptionId = Value(subscriptionId),
        title = Value(title),
        audioUrl = Value(audioUrl),
@@ -1100,6 +1191,8 @@ class EpisodesCacheCompanion extends UpdateCompanion<EpisodesCacheData> {
     Expression<String>? subscriptionImageUrl,
     Expression<DateTime>? publishedAt,
     Expression<DateTime>? updatedAt,
+    Expression<String>? description,
+    Expression<String>? aiSummary,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -1113,6 +1206,8 @@ class EpisodesCacheCompanion extends UpdateCompanion<EpisodesCacheData> {
         'subscription_image_url': subscriptionImageUrl,
       if (publishedAt != null) 'published_at': publishedAt,
       if (updatedAt != null) 'updated_at': updatedAt,
+      if (description != null) 'description': description,
+      if (aiSummary != null) 'ai_summary': aiSummary,
     });
   }
 
@@ -1127,6 +1222,8 @@ class EpisodesCacheCompanion extends UpdateCompanion<EpisodesCacheData> {
     Value<String?>? subscriptionImageUrl,
     Value<DateTime>? publishedAt,
     Value<DateTime>? updatedAt,
+    Value<String?>? description,
+    Value<String?>? aiSummary,
   }) {
     return EpisodesCacheCompanion(
       id: id ?? this.id,
@@ -1139,6 +1236,8 @@ class EpisodesCacheCompanion extends UpdateCompanion<EpisodesCacheData> {
       subscriptionImageUrl: subscriptionImageUrl ?? this.subscriptionImageUrl,
       publishedAt: publishedAt ?? this.publishedAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      description: description ?? this.description,
+      aiSummary: aiSummary ?? this.aiSummary,
     );
   }
 
@@ -1177,6 +1276,12 @@ class EpisodesCacheCompanion extends UpdateCompanion<EpisodesCacheData> {
     if (updatedAt.present) {
       map['updated_at'] = Variable<DateTime>(updatedAt.value);
     }
+    if (description.present) {
+      map['description'] = Variable<String>(description.value);
+    }
+    if (aiSummary.present) {
+      map['ai_summary'] = Variable<String>(aiSummary.value);
+    }
     return map;
   }
 
@@ -1192,7 +1297,9 @@ class EpisodesCacheCompanion extends UpdateCompanion<EpisodesCacheData> {
           ..write('subscriptionTitle: $subscriptionTitle, ')
           ..write('subscriptionImageUrl: $subscriptionImageUrl, ')
           ..write('publishedAt: $publishedAt, ')
-          ..write('updatedAt: $updatedAt')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('description: $description, ')
+          ..write('aiSummary: $aiSummary')
           ..write(')'))
         .toString();
   }
@@ -1510,12 +1617,881 @@ class ResponseCacheCompanion extends UpdateCompanion<ResponseCacheData> {
   }
 }
 
+class $PlaybackStatesTable extends PlaybackStates
+    with TableInfo<$PlaybackStatesTable, PlaybackState> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $PlaybackStatesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _episodeIdMeta = const VerificationMeta(
+    'episodeId',
+  );
+  @override
+  late final GeneratedColumn<int> episodeId = GeneratedColumn<int>(
+    'episode_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _positionMeta = const VerificationMeta(
+    'position',
+  );
+  @override
+  late final GeneratedColumn<int> position = GeneratedColumn<int>(
+    'position',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _playbackRateMeta = const VerificationMeta(
+    'playbackRate',
+  );
+  @override
+  late final GeneratedColumn<double> playbackRate = GeneratedColumn<double>(
+    'playback_rate',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1.0),
+  );
+  static const VerificationMeta _isPlayingMeta = const VerificationMeta(
+    'isPlaying',
+  );
+  @override
+  late final GeneratedColumn<bool> isPlaying = GeneratedColumn<bool>(
+    'is_playing',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_playing" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _playCountMeta = const VerificationMeta(
+    'playCount',
+  );
+  @override
+  late final GeneratedColumn<int> playCount = GeneratedColumn<int>(
+    'play_count',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    episodeId,
+    position,
+    playbackRate,
+    isPlaying,
+    playCount,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'playback_states';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<PlaybackState> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('episode_id')) {
+      context.handle(
+        _episodeIdMeta,
+        episodeId.isAcceptableOrUnknown(data['episode_id']!, _episodeIdMeta),
+      );
+    }
+    if (data.containsKey('position')) {
+      context.handle(
+        _positionMeta,
+        position.isAcceptableOrUnknown(data['position']!, _positionMeta),
+      );
+    }
+    if (data.containsKey('playback_rate')) {
+      context.handle(
+        _playbackRateMeta,
+        playbackRate.isAcceptableOrUnknown(
+          data['playback_rate']!,
+          _playbackRateMeta,
+        ),
+      );
+    }
+    if (data.containsKey('is_playing')) {
+      context.handle(
+        _isPlayingMeta,
+        isPlaying.isAcceptableOrUnknown(data['is_playing']!, _isPlayingMeta),
+      );
+    }
+    if (data.containsKey('play_count')) {
+      context.handle(
+        _playCountMeta,
+        playCount.isAcceptableOrUnknown(data['play_count']!, _playCountMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {episodeId};
+  @override
+  PlaybackState map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return PlaybackState(
+      episodeId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}episode_id'],
+      )!,
+      position: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}position'],
+      )!,
+      playbackRate: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}playback_rate'],
+      )!,
+      isPlaying: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_playing'],
+      )!,
+      playCount: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}play_count'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $PlaybackStatesTable createAlias(String alias) {
+    return $PlaybackStatesTable(attachedDatabase, alias);
+  }
+}
+
+class PlaybackState extends DataClass implements Insertable<PlaybackState> {
+  final int episodeId;
+  final int position;
+  final double playbackRate;
+  final bool isPlaying;
+  final int playCount;
+  final DateTime updatedAt;
+  const PlaybackState({
+    required this.episodeId,
+    required this.position,
+    required this.playbackRate,
+    required this.isPlaying,
+    required this.playCount,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['episode_id'] = Variable<int>(episodeId);
+    map['position'] = Variable<int>(position);
+    map['playback_rate'] = Variable<double>(playbackRate);
+    map['is_playing'] = Variable<bool>(isPlaying);
+    map['play_count'] = Variable<int>(playCount);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  PlaybackStatesCompanion toCompanion(bool nullToAbsent) {
+    return PlaybackStatesCompanion(
+      episodeId: Value(episodeId),
+      position: Value(position),
+      playbackRate: Value(playbackRate),
+      isPlaying: Value(isPlaying),
+      playCount: Value(playCount),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory PlaybackState.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return PlaybackState(
+      episodeId: serializer.fromJson<int>(json['episodeId']),
+      position: serializer.fromJson<int>(json['position']),
+      playbackRate: serializer.fromJson<double>(json['playbackRate']),
+      isPlaying: serializer.fromJson<bool>(json['isPlaying']),
+      playCount: serializer.fromJson<int>(json['playCount']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'episodeId': serializer.toJson<int>(episodeId),
+      'position': serializer.toJson<int>(position),
+      'playbackRate': serializer.toJson<double>(playbackRate),
+      'isPlaying': serializer.toJson<bool>(isPlaying),
+      'playCount': serializer.toJson<int>(playCount),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  PlaybackState copyWith({
+    int? episodeId,
+    int? position,
+    double? playbackRate,
+    bool? isPlaying,
+    int? playCount,
+    DateTime? updatedAt,
+  }) => PlaybackState(
+    episodeId: episodeId ?? this.episodeId,
+    position: position ?? this.position,
+    playbackRate: playbackRate ?? this.playbackRate,
+    isPlaying: isPlaying ?? this.isPlaying,
+    playCount: playCount ?? this.playCount,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  PlaybackState copyWithCompanion(PlaybackStatesCompanion data) {
+    return PlaybackState(
+      episodeId: data.episodeId.present ? data.episodeId.value : this.episodeId,
+      position: data.position.present ? data.position.value : this.position,
+      playbackRate: data.playbackRate.present
+          ? data.playbackRate.value
+          : this.playbackRate,
+      isPlaying: data.isPlaying.present ? data.isPlaying.value : this.isPlaying,
+      playCount: data.playCount.present ? data.playCount.value : this.playCount,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PlaybackState(')
+          ..write('episodeId: $episodeId, ')
+          ..write('position: $position, ')
+          ..write('playbackRate: $playbackRate, ')
+          ..write('isPlaying: $isPlaying, ')
+          ..write('playCount: $playCount, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    episodeId,
+    position,
+    playbackRate,
+    isPlaying,
+    playCount,
+    updatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is PlaybackState &&
+          other.episodeId == this.episodeId &&
+          other.position == this.position &&
+          other.playbackRate == this.playbackRate &&
+          other.isPlaying == this.isPlaying &&
+          other.playCount == this.playCount &&
+          other.updatedAt == this.updatedAt);
+}
+
+class PlaybackStatesCompanion extends UpdateCompanion<PlaybackState> {
+  final Value<int> episodeId;
+  final Value<int> position;
+  final Value<double> playbackRate;
+  final Value<bool> isPlaying;
+  final Value<int> playCount;
+  final Value<DateTime> updatedAt;
+  const PlaybackStatesCompanion({
+    this.episodeId = const Value.absent(),
+    this.position = const Value.absent(),
+    this.playbackRate = const Value.absent(),
+    this.isPlaying = const Value.absent(),
+    this.playCount = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+  });
+  PlaybackStatesCompanion.insert({
+    this.episodeId = const Value.absent(),
+    this.position = const Value.absent(),
+    this.playbackRate = const Value.absent(),
+    this.isPlaying = const Value.absent(),
+    this.playCount = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+  });
+  static Insertable<PlaybackState> custom({
+    Expression<int>? episodeId,
+    Expression<int>? position,
+    Expression<double>? playbackRate,
+    Expression<bool>? isPlaying,
+    Expression<int>? playCount,
+    Expression<DateTime>? updatedAt,
+  }) {
+    return RawValuesInsertable({
+      if (episodeId != null) 'episode_id': episodeId,
+      if (position != null) 'position': position,
+      if (playbackRate != null) 'playback_rate': playbackRate,
+      if (isPlaying != null) 'is_playing': isPlaying,
+      if (playCount != null) 'play_count': playCount,
+      if (updatedAt != null) 'updated_at': updatedAt,
+    });
+  }
+
+  PlaybackStatesCompanion copyWith({
+    Value<int>? episodeId,
+    Value<int>? position,
+    Value<double>? playbackRate,
+    Value<bool>? isPlaying,
+    Value<int>? playCount,
+    Value<DateTime>? updatedAt,
+  }) {
+    return PlaybackStatesCompanion(
+      episodeId: episodeId ?? this.episodeId,
+      position: position ?? this.position,
+      playbackRate: playbackRate ?? this.playbackRate,
+      isPlaying: isPlaying ?? this.isPlaying,
+      playCount: playCount ?? this.playCount,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (episodeId.present) {
+      map['episode_id'] = Variable<int>(episodeId.value);
+    }
+    if (position.present) {
+      map['position'] = Variable<int>(position.value);
+    }
+    if (playbackRate.present) {
+      map['playback_rate'] = Variable<double>(playbackRate.value);
+    }
+    if (isPlaying.present) {
+      map['is_playing'] = Variable<bool>(isPlaying.value);
+    }
+    if (playCount.present) {
+      map['play_count'] = Variable<int>(playCount.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PlaybackStatesCompanion(')
+          ..write('episodeId: $episodeId, ')
+          ..write('position: $position, ')
+          ..write('playbackRate: $playbackRate, ')
+          ..write('isPlaying: $isPlaying, ')
+          ..write('playCount: $playCount, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $QueueItemsTable extends QueueItems
+    with TableInfo<$QueueItemsTable, QueueItem> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $QueueItemsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _episodeIdMeta = const VerificationMeta(
+    'episodeId',
+  );
+  @override
+  late final GeneratedColumn<int> episodeId = GeneratedColumn<int>(
+    'episode_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _positionMeta = const VerificationMeta(
+    'position',
+  );
+  @override
+  late final GeneratedColumn<int> position = GeneratedColumn<int>(
+    'position',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _addedAtMeta = const VerificationMeta(
+    'addedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> addedAt = GeneratedColumn<DateTime>(
+    'added_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [episodeId, position, addedAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'queue_items';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<QueueItem> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('episode_id')) {
+      context.handle(
+        _episodeIdMeta,
+        episodeId.isAcceptableOrUnknown(data['episode_id']!, _episodeIdMeta),
+      );
+    }
+    if (data.containsKey('position')) {
+      context.handle(
+        _positionMeta,
+        position.isAcceptableOrUnknown(data['position']!, _positionMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_positionMeta);
+    }
+    if (data.containsKey('added_at')) {
+      context.handle(
+        _addedAtMeta,
+        addedAt.isAcceptableOrUnknown(data['added_at']!, _addedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {episodeId};
+  @override
+  QueueItem map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return QueueItem(
+      episodeId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}episode_id'],
+      )!,
+      position: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}position'],
+      )!,
+      addedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}added_at'],
+      )!,
+    );
+  }
+
+  @override
+  $QueueItemsTable createAlias(String alias) {
+    return $QueueItemsTable(attachedDatabase, alias);
+  }
+}
+
+class QueueItem extends DataClass implements Insertable<QueueItem> {
+  final int episodeId;
+  final int position;
+  final DateTime addedAt;
+  const QueueItem({
+    required this.episodeId,
+    required this.position,
+    required this.addedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['episode_id'] = Variable<int>(episodeId);
+    map['position'] = Variable<int>(position);
+    map['added_at'] = Variable<DateTime>(addedAt);
+    return map;
+  }
+
+  QueueItemsCompanion toCompanion(bool nullToAbsent) {
+    return QueueItemsCompanion(
+      episodeId: Value(episodeId),
+      position: Value(position),
+      addedAt: Value(addedAt),
+    );
+  }
+
+  factory QueueItem.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return QueueItem(
+      episodeId: serializer.fromJson<int>(json['episodeId']),
+      position: serializer.fromJson<int>(json['position']),
+      addedAt: serializer.fromJson<DateTime>(json['addedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'episodeId': serializer.toJson<int>(episodeId),
+      'position': serializer.toJson<int>(position),
+      'addedAt': serializer.toJson<DateTime>(addedAt),
+    };
+  }
+
+  QueueItem copyWith({int? episodeId, int? position, DateTime? addedAt}) =>
+      QueueItem(
+        episodeId: episodeId ?? this.episodeId,
+        position: position ?? this.position,
+        addedAt: addedAt ?? this.addedAt,
+      );
+  QueueItem copyWithCompanion(QueueItemsCompanion data) {
+    return QueueItem(
+      episodeId: data.episodeId.present ? data.episodeId.value : this.episodeId,
+      position: data.position.present ? data.position.value : this.position,
+      addedAt: data.addedAt.present ? data.addedAt.value : this.addedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('QueueItem(')
+          ..write('episodeId: $episodeId, ')
+          ..write('position: $position, ')
+          ..write('addedAt: $addedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(episodeId, position, addedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is QueueItem &&
+          other.episodeId == this.episodeId &&
+          other.position == this.position &&
+          other.addedAt == this.addedAt);
+}
+
+class QueueItemsCompanion extends UpdateCompanion<QueueItem> {
+  final Value<int> episodeId;
+  final Value<int> position;
+  final Value<DateTime> addedAt;
+  const QueueItemsCompanion({
+    this.episodeId = const Value.absent(),
+    this.position = const Value.absent(),
+    this.addedAt = const Value.absent(),
+  });
+  QueueItemsCompanion.insert({
+    this.episodeId = const Value.absent(),
+    required int position,
+    this.addedAt = const Value.absent(),
+  }) : position = Value(position);
+  static Insertable<QueueItem> custom({
+    Expression<int>? episodeId,
+    Expression<int>? position,
+    Expression<DateTime>? addedAt,
+  }) {
+    return RawValuesInsertable({
+      if (episodeId != null) 'episode_id': episodeId,
+      if (position != null) 'position': position,
+      if (addedAt != null) 'added_at': addedAt,
+    });
+  }
+
+  QueueItemsCompanion copyWith({
+    Value<int>? episodeId,
+    Value<int>? position,
+    Value<DateTime>? addedAt,
+  }) {
+    return QueueItemsCompanion(
+      episodeId: episodeId ?? this.episodeId,
+      position: position ?? this.position,
+      addedAt: addedAt ?? this.addedAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (episodeId.present) {
+      map['episode_id'] = Variable<int>(episodeId.value);
+    }
+    if (position.present) {
+      map['position'] = Variable<int>(position.value);
+    }
+    if (addedAt.present) {
+      map['added_at'] = Variable<DateTime>(addedAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('QueueItemsCompanion(')
+          ..write('episodeId: $episodeId, ')
+          ..write('position: $position, ')
+          ..write('addedAt: $addedAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $SettingsEntriesTable extends SettingsEntries
+    with TableInfo<$SettingsEntriesTable, SettingsEntry> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $SettingsEntriesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _keyMeta = const VerificationMeta('key');
+  @override
+  late final GeneratedColumn<String> key = GeneratedColumn<String>(
+    'key',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _valueMeta = const VerificationMeta('value');
+  @override
+  late final GeneratedColumn<String> value = GeneratedColumn<String>(
+    'value',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [key, value];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'settings_entries';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<SettingsEntry> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('key')) {
+      context.handle(
+        _keyMeta,
+        key.isAcceptableOrUnknown(data['key']!, _keyMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_keyMeta);
+    }
+    if (data.containsKey('value')) {
+      context.handle(
+        _valueMeta,
+        value.isAcceptableOrUnknown(data['value']!, _valueMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_valueMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {key};
+  @override
+  SettingsEntry map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return SettingsEntry(
+      key: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}key'],
+      )!,
+      value: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}value'],
+      )!,
+    );
+  }
+
+  @override
+  $SettingsEntriesTable createAlias(String alias) {
+    return $SettingsEntriesTable(attachedDatabase, alias);
+  }
+}
+
+class SettingsEntry extends DataClass implements Insertable<SettingsEntry> {
+  final String key;
+  final String value;
+  const SettingsEntry({required this.key, required this.value});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['key'] = Variable<String>(key);
+    map['value'] = Variable<String>(value);
+    return map;
+  }
+
+  SettingsEntriesCompanion toCompanion(bool nullToAbsent) {
+    return SettingsEntriesCompanion(key: Value(key), value: Value(value));
+  }
+
+  factory SettingsEntry.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return SettingsEntry(
+      key: serializer.fromJson<String>(json['key']),
+      value: serializer.fromJson<String>(json['value']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'key': serializer.toJson<String>(key),
+      'value': serializer.toJson<String>(value),
+    };
+  }
+
+  SettingsEntry copyWith({String? key, String? value}) =>
+      SettingsEntry(key: key ?? this.key, value: value ?? this.value);
+  SettingsEntry copyWithCompanion(SettingsEntriesCompanion data) {
+    return SettingsEntry(
+      key: data.key.present ? data.key.value : this.key,
+      value: data.value.present ? data.value.value : this.value,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SettingsEntry(')
+          ..write('key: $key, ')
+          ..write('value: $value')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(key, value);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is SettingsEntry &&
+          other.key == this.key &&
+          other.value == this.value);
+}
+
+class SettingsEntriesCompanion extends UpdateCompanion<SettingsEntry> {
+  final Value<String> key;
+  final Value<String> value;
+  final Value<int> rowid;
+  const SettingsEntriesCompanion({
+    this.key = const Value.absent(),
+    this.value = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  SettingsEntriesCompanion.insert({
+    required String key,
+    required String value,
+    this.rowid = const Value.absent(),
+  }) : key = Value(key),
+       value = Value(value);
+  static Insertable<SettingsEntry> custom({
+    Expression<String>? key,
+    Expression<String>? value,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (key != null) 'key': key,
+      if (value != null) 'value': value,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  SettingsEntriesCompanion copyWith({
+    Value<String>? key,
+    Value<String>? value,
+    Value<int>? rowid,
+  }) {
+    return SettingsEntriesCompanion(
+      key: key ?? this.key,
+      value: value ?? this.value,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (key.present) {
+      map['key'] = Variable<String>(key.value);
+    }
+    if (value.present) {
+      map['value'] = Variable<String>(value.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SettingsEntriesCompanion(')
+          ..write('key: $key, ')
+          ..write('value: $value, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
   late final $DownloadTasksTable downloadTasks = $DownloadTasksTable(this);
   late final $EpisodesCacheTable episodesCache = $EpisodesCacheTable(this);
   late final $ResponseCacheTable responseCache = $ResponseCacheTable(this);
+  late final $PlaybackStatesTable playbackStates = $PlaybackStatesTable(this);
+  late final $QueueItemsTable queueItems = $QueueItemsTable(this);
+  late final $SettingsEntriesTable settingsEntries = $SettingsEntriesTable(
+    this,
+  );
   late final DownloadDao downloadDao = DownloadDao(this as AppDatabase);
   late final EpisodeCacheDao episodeCacheDao = EpisodeCacheDao(
     this as AppDatabase,
@@ -1523,6 +2499,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final ResponseCacheDao responseCacheDao = ResponseCacheDao(
     this as AppDatabase,
   );
+  late final PlaybackDao playbackDao = PlaybackDao(this as AppDatabase);
+  late final QueueDao queueDao = QueueDao(this as AppDatabase);
+  late final SettingsDao settingsDao = SettingsDao(this as AppDatabase);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -1531,6 +2510,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     downloadTasks,
     episodesCache,
     responseCache,
+    playbackStates,
+    queueItems,
+    settingsEntries,
   ];
 }
 
@@ -1819,6 +2801,8 @@ typedef $$EpisodesCacheTableCreateCompanionBuilder =
       Value<String?> subscriptionImageUrl,
       required DateTime publishedAt,
       required DateTime updatedAt,
+      Value<String?> description,
+      Value<String?> aiSummary,
     });
 typedef $$EpisodesCacheTableUpdateCompanionBuilder =
     EpisodesCacheCompanion Function({
@@ -1832,6 +2816,8 @@ typedef $$EpisodesCacheTableUpdateCompanionBuilder =
       Value<String?> subscriptionImageUrl,
       Value<DateTime> publishedAt,
       Value<DateTime> updatedAt,
+      Value<String?> description,
+      Value<String?> aiSummary,
     });
 
 class $$EpisodesCacheTableFilterComposer
@@ -1890,6 +2876,16 @@ class $$EpisodesCacheTableFilterComposer
 
   ColumnFilters<DateTime> get updatedAt => $composableBuilder(
     column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get aiSummary => $composableBuilder(
+    column: $table.aiSummary,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -1952,6 +2948,16 @@ class $$EpisodesCacheTableOrderingComposer
     column: $table.updatedAt,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get aiSummary => $composableBuilder(
+    column: $table.aiSummary,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$EpisodesCacheTableAnnotationComposer
@@ -2002,6 +3008,14 @@ class $$EpisodesCacheTableAnnotationComposer
 
   GeneratedColumn<DateTime> get updatedAt =>
       $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get aiSummary =>
+      $composableBuilder(column: $table.aiSummary, builder: (column) => column);
 }
 
 class $$EpisodesCacheTableTableManager
@@ -2049,6 +3063,8 @@ class $$EpisodesCacheTableTableManager
                 Value<String?> subscriptionImageUrl = const Value.absent(),
                 Value<DateTime> publishedAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
+                Value<String?> description = const Value.absent(),
+                Value<String?> aiSummary = const Value.absent(),
               }) => EpisodesCacheCompanion(
                 id: id,
                 subscriptionId: subscriptionId,
@@ -2060,6 +3076,8 @@ class $$EpisodesCacheTableTableManager
                 subscriptionImageUrl: subscriptionImageUrl,
                 publishedAt: publishedAt,
                 updatedAt: updatedAt,
+                description: description,
+                aiSummary: aiSummary,
               ),
           createCompanionCallback:
               ({
@@ -2073,6 +3091,8 @@ class $$EpisodesCacheTableTableManager
                 Value<String?> subscriptionImageUrl = const Value.absent(),
                 required DateTime publishedAt,
                 required DateTime updatedAt,
+                Value<String?> description = const Value.absent(),
+                Value<String?> aiSummary = const Value.absent(),
               }) => EpisodesCacheCompanion.insert(
                 id: id,
                 subscriptionId: subscriptionId,
@@ -2084,6 +3104,8 @@ class $$EpisodesCacheTableTableManager
                 subscriptionImageUrl: subscriptionImageUrl,
                 publishedAt: publishedAt,
                 updatedAt: updatedAt,
+                description: description,
+                aiSummary: aiSummary,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
@@ -2295,6 +3317,521 @@ typedef $$ResponseCacheTableProcessedTableManager =
       ResponseCacheData,
       PrefetchHooks Function()
     >;
+typedef $$PlaybackStatesTableCreateCompanionBuilder =
+    PlaybackStatesCompanion Function({
+      Value<int> episodeId,
+      Value<int> position,
+      Value<double> playbackRate,
+      Value<bool> isPlaying,
+      Value<int> playCount,
+      Value<DateTime> updatedAt,
+    });
+typedef $$PlaybackStatesTableUpdateCompanionBuilder =
+    PlaybackStatesCompanion Function({
+      Value<int> episodeId,
+      Value<int> position,
+      Value<double> playbackRate,
+      Value<bool> isPlaying,
+      Value<int> playCount,
+      Value<DateTime> updatedAt,
+    });
+
+class $$PlaybackStatesTableFilterComposer
+    extends Composer<_$AppDatabase, $PlaybackStatesTable> {
+  $$PlaybackStatesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get episodeId => $composableBuilder(
+    column: $table.episodeId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get position => $composableBuilder(
+    column: $table.position,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get playbackRate => $composableBuilder(
+    column: $table.playbackRate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isPlaying => $composableBuilder(
+    column: $table.isPlaying,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get playCount => $composableBuilder(
+    column: $table.playCount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$PlaybackStatesTableOrderingComposer
+    extends Composer<_$AppDatabase, $PlaybackStatesTable> {
+  $$PlaybackStatesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get episodeId => $composableBuilder(
+    column: $table.episodeId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get position => $composableBuilder(
+    column: $table.position,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get playbackRate => $composableBuilder(
+    column: $table.playbackRate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isPlaying => $composableBuilder(
+    column: $table.isPlaying,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get playCount => $composableBuilder(
+    column: $table.playCount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$PlaybackStatesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $PlaybackStatesTable> {
+  $$PlaybackStatesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get episodeId =>
+      $composableBuilder(column: $table.episodeId, builder: (column) => column);
+
+  GeneratedColumn<int> get position =>
+      $composableBuilder(column: $table.position, builder: (column) => column);
+
+  GeneratedColumn<double> get playbackRate => $composableBuilder(
+    column: $table.playbackRate,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isPlaying =>
+      $composableBuilder(column: $table.isPlaying, builder: (column) => column);
+
+  GeneratedColumn<int> get playCount =>
+      $composableBuilder(column: $table.playCount, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$PlaybackStatesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $PlaybackStatesTable,
+          PlaybackState,
+          $$PlaybackStatesTableFilterComposer,
+          $$PlaybackStatesTableOrderingComposer,
+          $$PlaybackStatesTableAnnotationComposer,
+          $$PlaybackStatesTableCreateCompanionBuilder,
+          $$PlaybackStatesTableUpdateCompanionBuilder,
+          (
+            PlaybackState,
+            BaseReferences<_$AppDatabase, $PlaybackStatesTable, PlaybackState>,
+          ),
+          PlaybackState,
+          PrefetchHooks Function()
+        > {
+  $$PlaybackStatesTableTableManager(
+    _$AppDatabase db,
+    $PlaybackStatesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$PlaybackStatesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$PlaybackStatesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$PlaybackStatesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> episodeId = const Value.absent(),
+                Value<int> position = const Value.absent(),
+                Value<double> playbackRate = const Value.absent(),
+                Value<bool> isPlaying = const Value.absent(),
+                Value<int> playCount = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+              }) => PlaybackStatesCompanion(
+                episodeId: episodeId,
+                position: position,
+                playbackRate: playbackRate,
+                isPlaying: isPlaying,
+                playCount: playCount,
+                updatedAt: updatedAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> episodeId = const Value.absent(),
+                Value<int> position = const Value.absent(),
+                Value<double> playbackRate = const Value.absent(),
+                Value<bool> isPlaying = const Value.absent(),
+                Value<int> playCount = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+              }) => PlaybackStatesCompanion.insert(
+                episodeId: episodeId,
+                position: position,
+                playbackRate: playbackRate,
+                isPlaying: isPlaying,
+                playCount: playCount,
+                updatedAt: updatedAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$PlaybackStatesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $PlaybackStatesTable,
+      PlaybackState,
+      $$PlaybackStatesTableFilterComposer,
+      $$PlaybackStatesTableOrderingComposer,
+      $$PlaybackStatesTableAnnotationComposer,
+      $$PlaybackStatesTableCreateCompanionBuilder,
+      $$PlaybackStatesTableUpdateCompanionBuilder,
+      (
+        PlaybackState,
+        BaseReferences<_$AppDatabase, $PlaybackStatesTable, PlaybackState>,
+      ),
+      PlaybackState,
+      PrefetchHooks Function()
+    >;
+typedef $$QueueItemsTableCreateCompanionBuilder =
+    QueueItemsCompanion Function({
+      Value<int> episodeId,
+      required int position,
+      Value<DateTime> addedAt,
+    });
+typedef $$QueueItemsTableUpdateCompanionBuilder =
+    QueueItemsCompanion Function({
+      Value<int> episodeId,
+      Value<int> position,
+      Value<DateTime> addedAt,
+    });
+
+class $$QueueItemsTableFilterComposer
+    extends Composer<_$AppDatabase, $QueueItemsTable> {
+  $$QueueItemsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get episodeId => $composableBuilder(
+    column: $table.episodeId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get position => $composableBuilder(
+    column: $table.position,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get addedAt => $composableBuilder(
+    column: $table.addedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$QueueItemsTableOrderingComposer
+    extends Composer<_$AppDatabase, $QueueItemsTable> {
+  $$QueueItemsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get episodeId => $composableBuilder(
+    column: $table.episodeId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get position => $composableBuilder(
+    column: $table.position,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get addedAt => $composableBuilder(
+    column: $table.addedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$QueueItemsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $QueueItemsTable> {
+  $$QueueItemsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get episodeId =>
+      $composableBuilder(column: $table.episodeId, builder: (column) => column);
+
+  GeneratedColumn<int> get position =>
+      $composableBuilder(column: $table.position, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get addedAt =>
+      $composableBuilder(column: $table.addedAt, builder: (column) => column);
+}
+
+class $$QueueItemsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $QueueItemsTable,
+          QueueItem,
+          $$QueueItemsTableFilterComposer,
+          $$QueueItemsTableOrderingComposer,
+          $$QueueItemsTableAnnotationComposer,
+          $$QueueItemsTableCreateCompanionBuilder,
+          $$QueueItemsTableUpdateCompanionBuilder,
+          (
+            QueueItem,
+            BaseReferences<_$AppDatabase, $QueueItemsTable, QueueItem>,
+          ),
+          QueueItem,
+          PrefetchHooks Function()
+        > {
+  $$QueueItemsTableTableManager(_$AppDatabase db, $QueueItemsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$QueueItemsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$QueueItemsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$QueueItemsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> episodeId = const Value.absent(),
+                Value<int> position = const Value.absent(),
+                Value<DateTime> addedAt = const Value.absent(),
+              }) => QueueItemsCompanion(
+                episodeId: episodeId,
+                position: position,
+                addedAt: addedAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> episodeId = const Value.absent(),
+                required int position,
+                Value<DateTime> addedAt = const Value.absent(),
+              }) => QueueItemsCompanion.insert(
+                episodeId: episodeId,
+                position: position,
+                addedAt: addedAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$QueueItemsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $QueueItemsTable,
+      QueueItem,
+      $$QueueItemsTableFilterComposer,
+      $$QueueItemsTableOrderingComposer,
+      $$QueueItemsTableAnnotationComposer,
+      $$QueueItemsTableCreateCompanionBuilder,
+      $$QueueItemsTableUpdateCompanionBuilder,
+      (QueueItem, BaseReferences<_$AppDatabase, $QueueItemsTable, QueueItem>),
+      QueueItem,
+      PrefetchHooks Function()
+    >;
+typedef $$SettingsEntriesTableCreateCompanionBuilder =
+    SettingsEntriesCompanion Function({
+      required String key,
+      required String value,
+      Value<int> rowid,
+    });
+typedef $$SettingsEntriesTableUpdateCompanionBuilder =
+    SettingsEntriesCompanion Function({
+      Value<String> key,
+      Value<String> value,
+      Value<int> rowid,
+    });
+
+class $$SettingsEntriesTableFilterComposer
+    extends Composer<_$AppDatabase, $SettingsEntriesTable> {
+  $$SettingsEntriesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get key => $composableBuilder(
+    column: $table.key,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get value => $composableBuilder(
+    column: $table.value,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$SettingsEntriesTableOrderingComposer
+    extends Composer<_$AppDatabase, $SettingsEntriesTable> {
+  $$SettingsEntriesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get key => $composableBuilder(
+    column: $table.key,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get value => $composableBuilder(
+    column: $table.value,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$SettingsEntriesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $SettingsEntriesTable> {
+  $$SettingsEntriesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get key =>
+      $composableBuilder(column: $table.key, builder: (column) => column);
+
+  GeneratedColumn<String> get value =>
+      $composableBuilder(column: $table.value, builder: (column) => column);
+}
+
+class $$SettingsEntriesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $SettingsEntriesTable,
+          SettingsEntry,
+          $$SettingsEntriesTableFilterComposer,
+          $$SettingsEntriesTableOrderingComposer,
+          $$SettingsEntriesTableAnnotationComposer,
+          $$SettingsEntriesTableCreateCompanionBuilder,
+          $$SettingsEntriesTableUpdateCompanionBuilder,
+          (
+            SettingsEntry,
+            BaseReferences<_$AppDatabase, $SettingsEntriesTable, SettingsEntry>,
+          ),
+          SettingsEntry,
+          PrefetchHooks Function()
+        > {
+  $$SettingsEntriesTableTableManager(
+    _$AppDatabase db,
+    $SettingsEntriesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$SettingsEntriesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$SettingsEntriesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$SettingsEntriesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> key = const Value.absent(),
+                Value<String> value = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => SettingsEntriesCompanion(
+                key: key,
+                value: value,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String key,
+                required String value,
+                Value<int> rowid = const Value.absent(),
+              }) => SettingsEntriesCompanion.insert(
+                key: key,
+                value: value,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$SettingsEntriesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $SettingsEntriesTable,
+      SettingsEntry,
+      $$SettingsEntriesTableFilterComposer,
+      $$SettingsEntriesTableOrderingComposer,
+      $$SettingsEntriesTableAnnotationComposer,
+      $$SettingsEntriesTableCreateCompanionBuilder,
+      $$SettingsEntriesTableUpdateCompanionBuilder,
+      (
+        SettingsEntry,
+        BaseReferences<_$AppDatabase, $SettingsEntriesTable, SettingsEntry>,
+      ),
+      SettingsEntry,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -2305,4 +3842,10 @@ class $AppDatabaseManager {
       $$EpisodesCacheTableTableManager(_db, _db.episodesCache);
   $$ResponseCacheTableTableManager get responseCache =>
       $$ResponseCacheTableTableManager(_db, _db.responseCache);
+  $$PlaybackStatesTableTableManager get playbackStates =>
+      $$PlaybackStatesTableTableManager(_db, _db.playbackStates);
+  $$QueueItemsTableTableManager get queueItems =>
+      $$QueueItemsTableTableManager(_db, _db.queueItems);
+  $$SettingsEntriesTableTableManager get settingsEntries =>
+      $$SettingsEntriesTableTableManager(_db, _db.settingsEntries);
 }

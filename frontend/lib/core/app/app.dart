@@ -11,6 +11,7 @@ import 'package:sonde/core/localization/l10n_delegates.dart';
 import 'package:sonde/core/localization/locale_provider.dart';
 import 'package:sonde/core/providers/route_provider.dart';
 import 'package:sonde/core/router/app_router.dart';
+import 'package:sonde/core/services/episode_sync_service.dart';
 import 'package:sonde/core/theme/app_theme.dart';
 import 'package:sonde/core/theme/theme_provider.dart';
 import 'package:sonde/core/utils/app_logger.dart' as logger;
@@ -257,6 +258,17 @@ class _PersonalAIAssistantAppState
     final elapsed = DateTime.now().difference(startedAt);
     if (elapsed < minSplash) {
       await Future<void>.delayed(minSplash - elapsed);
+    }
+
+    // Hydrate the local episode cache from the backend (fire and forget;
+    // the persisted cursor makes later runs tiny deltas).
+    if (ref.read(authProvider).isAuthenticated) {
+      unawaited(
+        ref.read(episodeSyncServiceProvider).sync().catchError((Object e) {
+          logger.AppLogger.debug('[AppInit] Episode sync failed: $e');
+          return EpisodeSyncResult(syncedEpisodes: 0, completed: false);
+        }),
+      );
     }
 
     if (mounted) {
