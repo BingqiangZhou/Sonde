@@ -93,10 +93,3 @@ async def get_db_session_dependency() -> AsyncGenerator[AsyncSession, None]:
     """Provide the request-scoped DB session through the provider layer."""
     async for db in get_db_session():
         yield db
-
-
-async def get_redis_client():
-    """Provide the shared Redis helper (process-level singleton)."""
-    from app.core.redis import get_shared_redis
-
-    return get_shared_redis()
