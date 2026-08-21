@@ -2524,5 +2524,41 @@
     "time_unknown":  "--:--",
     "@time_unknown":  {
                         "description":  "未知时间或时长的占位符"
-                    }
+                    },
+    "pairingTitle":  "连接服务器",
+    "@pairingTitle":  {
+                          "description":  "Pairing page title"
+                      },
+    "pairingSubtitle":  "扫描服务器管理面板（App 接入页）中的二维码，或手动输入地址与 API Key。",
+    "@pairingSubtitle":  {
+                             "description":  "Pairing page subtitle"
+                         },
+    "pairingScanHint":  "将相机对准接入二维码",
+    "@pairingScanHint":  {
+                             "description":  "Hint under the QR scanner"
+                         },
+    "pairingHostLabel":  "服务器地址",
+    "@pairingHostLabel":  {
+                              "description":  "Manual host input label"
+                          },
+    "pairingKeyLabel":  "API Key",
+    "@pairingKeyLabel":  {
+                             "description":  "Manual API key input label"
+                         },
+    "pairingConnect":  "连接",
+    "@pairingConnect":  {
+                            "description":  "Connect button label"
+                        },
+    "pairingFailed":  "连接失败",
+    "@pairingFailed":  {
+                           "description":  "Prefix shown above the error detail"
+                       },
+    "pairingInvalidInput":  "请输入有效的服务器地址和 API Key",
+    "@pairingInvalidInput":  {
+                                 "description":  "Manual entry validation message"
+                             },
+    "pairingLoginInstead":  "使用账号登录",
+    "@pairingLoginInstead":  {
+                                 "description":  "Legacy account login link"
+                             }
 }

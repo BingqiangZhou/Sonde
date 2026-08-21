@@ -51,6 +51,8 @@ class DioClient {
   late final CacheOptions _cacheOptions;
   final SecureStorageService _secureStorage;
   String? _cachedAccessToken;
+  String? _cachedApiKey;
+  static const String _apiKeyStorageKey = 'api_key';
 
   // --- Public API ---------------------------------------------------------
 
@@ -100,7 +102,8 @@ class DioClient {
 
   Future<void> _onRequest(RequestOptions options, RequestInterceptorHandler handler) async {
     _log('${options.method} ${options.baseUrl}${options.path}');
-    if (options.headers.containsKey('Authorization')) {
+    if (options.headers.containsKey('Authorization') ||
+        options.headers.containsKey('X-API-Key')) {
       handler.next(options);
       return;
     }
@@ -109,7 +112,21 @@ class DioClient {
       token = await _secureStorage.getAccessToken();
       if (token != null) _cachedAccessToken = token;
     }
-    if (token != null) options.headers['Authorization'] = 'Bearer $token';
+    if (token != null) {
+      options.headers['Authorization'] = 'Bearer $token';
+      handler.next(options);
+      return;
+    }
+    // API-key pairing mode: no JWT tokens, fall back to the stored
+    // deployment key (QR pairing writes it via SecureStorage).
+    var apiKey = _cachedApiKey;
+    if (apiKey == null) {
+      apiKey = await _secureStorage.get(_apiKeyStorageKey);
+      if (apiKey != null && apiKey.isNotEmpty) _cachedApiKey = apiKey;
+    }
+    if (apiKey != null && apiKey.isNotEmpty) {
+      options.headers['X-API-Key'] = apiKey;
+    }
     handler.next(options);
   }
 
@@ -163,6 +180,17 @@ class DioClient {
   }
 
   Future<void> _handle401(DioException err, ErrorInterceptorHandler handler) async {
+    // API-key pairing mode (or logged out): no refresh token to rotate.
+    final refreshToken = await _secureStorage.getRefreshToken();
+    if (refreshToken == null) {
+      handler.reject(DioException(
+        requestOptions: err.requestOptions,
+        response: err.response,
+        type: DioExceptionType.badResponse,
+        error: AuthException.fromDioError(err),
+      ));
+      return;
+    }
     try {
       final response = await _tokenRefreshService.handle401(
         err.requestOptions,

@@ -56,8 +56,8 @@ GoRouter _router() {
         ],
       ),
       GoRoute(
-        path: '/login',
-        builder: (context, state) => const Scaffold(body: Text('login')),
+        path: '/pairing',
+        builder: (context, state) => const Scaffold(body: Text('pairing')),
       ),
     ],
   );
@@ -73,13 +73,13 @@ Widget _app({required bool authenticated}) {
 }
 
 void main() {
-  testWidgets('SplashPage shows loader and redirects to login', (tester) async {
+  testWidgets('SplashPage shows loader and redirects to pairing', (tester) async {
     await tester.pumpWidget(_app(authenticated: false));
     // 首帧即加载态：导航在 postFrameCallback 中执行，额外 pump 会跳转走
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
 
     await tester.pumpAndSettle();
-    expect(find.text('login'), findsOneWidget);
+    expect(find.text('pairing'), findsOneWidget);
   });
 
   testWidgets('SplashPage shows loader and redirects to home', (tester) async {

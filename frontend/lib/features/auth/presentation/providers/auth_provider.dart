@@ -152,8 +152,17 @@ class AuthNotifier extends Notifier<AuthState> {
     return const AuthState();
   }
 
-  void _onAppLifecycleStateChanged(AppLifecycleState state) {
-    // Only handle lifecycle events if user is authenticated
+  /// API-key pairing mode: authenticated without a user profile or
+  /// refreshable tokens (every request carries X-API-Key instead).
+  void markPaired() {
+    state = state.copyWith(
+      isAuthenticated: true,
+      isLoading: false,
+      clearError: true,
+    );
+  }
+
+  void _onAppLifecycleStateChanged(AppLifecycleState state) {    // Only handle lifecycle events if user is authenticated
     if (!this.state.isAuthenticated) return;
 
     switch (state) {
@@ -227,7 +236,15 @@ class AuthNotifier extends Notifier<AuthState> {
         // Enable auto-refresh on successful auth check
         _enableAutoRefresh();
       } else {
-        state = state.copyWith(isLoading: false);
+        // No JWT tokens: fall back to API-key pairing mode. A stored
+        // deployment key authenticates every request via X-API-Key, so
+        // the session is valid without a user profile or token refresh.
+        final apiKey = await _secureStorage.get('api_key');
+        if (apiKey != null && apiKey.isNotEmpty) {
+          state = state.copyWith(isAuthenticated: true, isLoading: false);
+        } else {
+          state = state.copyWith(isLoading: false);
+        }
       }
     } catch (e) {
       state = state.copyWith(

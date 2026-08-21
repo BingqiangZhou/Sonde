@@ -1930,4 +1930,32 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get time_unknown => '--:--';
+
+  @override
+  String get pairingTitle => 'Connect to Server';
+
+  @override
+  String get pairingSubtitle =>
+      'Scan the QR code from the server admin panel (App Pairing), or enter the address and API key manually.';
+
+  @override
+  String get pairingScanHint => 'Point the camera at the pairing QR code';
+
+  @override
+  String get pairingHostLabel => 'Server address';
+
+  @override
+  String get pairingKeyLabel => 'API Key';
+
+  @override
+  String get pairingConnect => 'Connect';
+
+  @override
+  String get pairingFailed => 'Connection failed';
+
+  @override
+  String get pairingInvalidInput => 'Enter a valid server address and API key';
+
+  @override
+  String get pairingLoginInstead => 'Sign in with an account instead';
 }

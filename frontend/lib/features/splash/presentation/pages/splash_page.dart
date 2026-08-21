@@ -39,7 +39,7 @@ class _SplashPageState extends ConsumerState<SplashPage> {
     if (authState.isAuthenticated) {
       context.go('/feed');
     } else {
-      context.go('/login');
+      context.go('/pairing');
     }
   }
 

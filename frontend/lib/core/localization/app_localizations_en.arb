@@ -2524,5 +2524,41 @@
     "time_unknown":  "--:--",
     "@time_unknown":  {
                         "description":  "Placeholder for unknown time or duration"
-                    }
+                    },
+    "pairingTitle":  "Connect to Server",
+    "@pairingTitle":  {
+                          "description":  "Pairing page title"
+                      },
+    "pairingSubtitle":  "Scan the QR code from the server admin panel (App Pairing), or enter the address and API key manually.",
+    "@pairingSubtitle":  {
+                             "description":  "Pairing page subtitle"
+                         },
+    "pairingScanHint":  "Point the camera at the pairing QR code",
+    "@pairingScanHint":  {
+                             "description":  "Hint under the QR scanner"
+                         },
+    "pairingHostLabel":  "Server address",
+    "@pairingHostLabel":  {
+                              "description":  "Manual host input label"
+                          },
+    "pairingKeyLabel":  "API Key",
+    "@pairingKeyLabel":  {
+                             "description":  "Manual API key input label"
+                         },
+    "pairingConnect":  "Connect",
+    "@pairingConnect":  {
+                            "description":  "Connect button label"
+                        },
+    "pairingFailed":  "Connection failed",
+    "@pairingFailed":  {
+                           "description":  "Prefix shown above the error detail"
+                       },
+    "pairingInvalidInput":  "Enter a valid server address and API key",
+    "@pairingInvalidInput":  {
+                                 "description":  "Manual entry validation message"
+                             },
+    "pairingLoginInstead":  "Sign in with an account instead",
+    "@pairingLoginInstead":  {
+                                 "description":  "Legacy account login link"
+                             }
 }

@@ -8,7 +8,7 @@ import 'package:sonde/features/auth/presentation/providers/auth_provider.dart';
 
 void main() {
   testWidgets(
-    'redirects unauthenticated access to /reports/daily back to login',
+    'redirects unauthenticated access to /reports/daily back to pairing',
     (tester) async {
       final container = ProviderContainer(
         overrides: [
@@ -40,7 +40,7 @@ void main() {
 
       expect(
         router.routerDelegate.currentConfiguration.uri.toString(),
-        '/login',
+        '/pairing',
       );
     },
   );

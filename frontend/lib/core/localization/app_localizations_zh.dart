@@ -1857,4 +1857,31 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get time_unknown => '--:--';
+
+  @override
+  String get pairingTitle => '连接服务器';
+
+  @override
+  String get pairingSubtitle => '扫描服务器管理面板（App 接入页）中的二维码，或手动输入地址与 API Key。';
+
+  @override
+  String get pairingScanHint => '将相机对准接入二维码';
+
+  @override
+  String get pairingHostLabel => '服务器地址';
+
+  @override
+  String get pairingKeyLabel => 'API Key';
+
+  @override
+  String get pairingConnect => '连接';
+
+  @override
+  String get pairingFailed => '连接失败';
+
+  @override
+  String get pairingInvalidInput => '请输入有效的服务器地址和 API Key';
+
+  @override
+  String get pairingLoginInstead => '使用账号登录';
 }

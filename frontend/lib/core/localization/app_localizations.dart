@@ -3577,6 +3577,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'--:--'**
   String get time_unknown;
+
+  /// Pairing page title
+  ///
+  /// In en, this message translates to:
+  /// **'Connect to Server'**
+  String get pairingTitle;
+
+  /// Pairing page subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'Scan the QR code from the server admin panel (App Pairing), or enter the address and API key manually.'**
+  String get pairingSubtitle;
+
+  /// Hint under the QR scanner
+  ///
+  /// In en, this message translates to:
+  /// **'Point the camera at the pairing QR code'**
+  String get pairingScanHint;
+
+  /// Manual host input label
+  ///
+  /// In en, this message translates to:
+  /// **'Server address'**
+  String get pairingHostLabel;
+
+  /// Manual API key input label
+  ///
+  /// In en, this message translates to:
+  /// **'API Key'**
+  String get pairingKeyLabel;
+
+  /// Connect button label
+  ///
+  /// In en, this message translates to:
+  /// **'Connect'**
+  String get pairingConnect;
+
+  /// Prefix shown above the error detail
+  ///
+  /// In en, this message translates to:
+  /// **'Connection failed'**
+  String get pairingFailed;
+
+  /// Manual entry validation message
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid server address and API key'**
+  String get pairingInvalidInput;
+
+  /// Legacy account login link
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in with an account instead'**
+  String get pairingLoginInstead;
 }
 
 class _AppLocalizationsDelegate

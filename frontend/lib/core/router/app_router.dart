@@ -12,6 +12,7 @@ import 'package:sonde/features/auth/presentation/pages/register_page.dart';
 import 'package:sonde/features/auth/presentation/pages/reset_password_page.dart';
 import 'package:sonde/features/auth/presentation/providers/auth_provider.dart';
 import 'package:sonde/features/home/presentation/pages/home_page.dart';
+import 'package:sonde/features/pairing/presentation/pages/pairing_page.dart';
 import 'package:sonde/features/podcast/presentation/navigation/podcast_navigation.dart';
 import 'package:sonde/features/podcast/presentation/pages/podcast_charts_page.dart';
 import 'package:sonde/features/podcast/presentation/pages/podcast_daily_report_page.dart';
@@ -71,6 +72,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
 
       // Auth
+      GoRoute(
+        path: '/pairing',
+        name: 'pairing',
+        pageBuilder: (context, state) => _buildPageWithTransition(
+          state: state,
+          child: const PairingPage(),
+        ),
+      ),
       GoRoute(
         path: '/login',
         name: 'login',
@@ -309,6 +318,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     redirect: (context, state) {
       final authState = ref.read(authProvider);
       final isAuthenticated = authState.isAuthenticated;
+      final isPairing = state.matchedLocation == '/pairing';
       final isLoggingIn = state.matchedLocation == '/login';
       final isRegistering = state.matchedLocation == '/register';
       final isSplash = state.matchedLocation == '/splash';
@@ -333,13 +343,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       }
 
       if (!isAuthenticated) {
-        if (isLoggingIn || isRegistering) {
+        if (isPairing || isLoggingIn || isRegistering) {
           return null;
         }
-        return '/login';
+        return '/pairing';
       } else {
         // Authenticated user checks
-        if (isLoggingIn || isRegistering) {
+        if (isPairing || isLoggingIn || isRegistering) {
           return '/feed';
         }
 
