@@ -1,7 +1,7 @@
 """Admin service helpers for system settings."""
 
 from fastapi import HTTPException, status
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domains.podcast.models import (
@@ -210,27 +210,22 @@ class AdminSettingsService:
             category="subscription",
         )
 
-        user_subscriptions = (
-            (
-                await self.db.execute(
-                    select(UserSubscription)
-                    .join(
-                        Subscription,
-                        Subscription.id == UserSubscription.subscription_id,
-                    )
-                    .where(Subscription.source_type.in_(["rss", "podcast-rss"])),
-                )
+        update_result = await self.db.execute(
+            update(UserSubscription)
+            .where(
+                UserSubscription.subscription_id.in_(
+                    select(Subscription.id).where(
+                        Subscription.source_type.in_(["rss", "podcast-rss"]),
+                    ),
+                ),
             )
-            .scalars()
-            .all()
+            .values(
+                update_frequency=settings_data["update_frequency"],
+                update_time=settings_data["update_time"],
+                update_day_of_week=settings_data["update_day_of_week"],
+            ),
         )
-
-        total_count = 0
-        for user_sub in user_subscriptions:
-            user_sub.update_frequency = settings_data["update_frequency"]
-            user_sub.update_time = settings_data["update_time"]
-            user_sub.update_day_of_week = settings_data["update_day_of_week"]
-            total_count += 1
+        total_count = int(update_result.rowcount or 0)
 
         await self.db.commit()
         return settings_data, total_count

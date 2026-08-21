@@ -7,7 +7,7 @@ from fastapi import APIRouter, Form, Request, status
 from fastapi.responses import HTMLResponse, RedirectResponse
 
 from app.admin.auth import _compute_session_hash
-from app.admin.routes._shared import get_templates
+from app.admin.routes._shared import get_templates, render_admin_template
 from app.core.config import get_settings
 from app.core.rate_limit import limiter
 
@@ -22,9 +22,7 @@ templates = get_templates()
 async def login_page(request: Request, error: str = None):
     """Display login page."""
     messages = [{"type": "error", "text": error}] if error else []
-    from app.admin.services.setup_auth_service import AdminSetupAuthService
-
-    return AdminSetupAuthService.build_template_response(
+    return render_admin_template(
         templates=templates,
         template_name="login.html",
         request=request,
@@ -48,9 +46,7 @@ async def login(
         return response
 
     if not secrets.compare_digest(api_key, settings.API_KEY):
-        from app.admin.services.setup_auth_service import AdminSetupAuthService
-
-        return AdminSetupAuthService.build_template_response(
+        return render_admin_template(
             templates=templates,
             template_name="login.html",
             request=request,

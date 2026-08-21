@@ -22,7 +22,6 @@ from app.domains.podcast.models import (
     UpdateFrequency,
     UserSubscription,
 )
-from app.shared.system_settings import persist_setting
 
 
 logger = logging.getLogger(__name__)
@@ -169,29 +168,14 @@ class AdminSubscriptionsService:
         if total_count <= 0:
             return defaults
 
-        freq_result = await self.db.execute(
-            select(
-                UserSubscription.update_frequency,
-                UserSubscription.update_time,
-                UserSubscription.update_day_of_week,
-            )
-            .where(UserSubscription.update_frequency.isnot(None))
-            .group_by(
-                UserSubscription.update_frequency,
-                UserSubscription.update_time,
-                UserSubscription.update_day_of_week,
-            )
-            .order_by(func.count().desc())
-            .limit(1),
-        )
-        row = freq_result.first()
-        if not row:
-            return defaults
+        from app.admin.services.settings_service import AdminSettingsService
 
-        defaults["default_frequency"] = row[0] or UpdateFrequency.HOURLY.value
-        defaults["default_update_time"] = row[1] or "00:00"
-        defaults["default_day_of_week"] = row[2] or 1
-        return defaults
+        freq = await AdminSettingsService(self.db).get_frequency_settings()
+        return {
+            "default_frequency": freq["update_frequency"],
+            "default_update_time": freq["update_time"],
+            "default_day_of_week": freq["update_day_of_week"],
+        }
 
     def _empty_context(
         self,
@@ -228,7 +212,8 @@ class AdminSubscriptionsService:
         update_time: str | None,
         update_day: int | None,
     ) -> dict:
-        # Use shared validation from AdminSettingsService
+        # Shared implementation with the settings page: validate, persist the
+        # system setting, then fan out one bulk UPDATE to user subscriptions.
         from app.admin.services.settings_service import AdminSettingsService
 
         AdminSettingsService.validate_frequency_settings(
@@ -237,45 +222,14 @@ class AdminSubscriptionsService:
             update_day=update_day,
         )
 
-        day_of_week = (
-            update_day if update_frequency == UpdateFrequency.WEEKLY.value else None
-        )
-
-        settings_data = {
-            "update_frequency": update_frequency,
-            "update_time": update_time
-            if update_frequency in {"DAILY", "WEEKLY"}
-            else None,
-            "update_day_of_week": day_of_week,
-        }
-
-        await persist_setting(
+        _, update_count = await AdminSettingsService(
             self.db,
-            "rss.frequency_settings",
-            settings_data,
-            description="RSS subscription update frequency settings",
-            category="subscription",
+        ).update_frequency_settings(
+            update_frequency=update_frequency,
+            update_time=update_time,
+            update_day=update_day,
         )
 
-        update_stmt = (
-            update(UserSubscription)
-            .where(
-                UserSubscription.subscription_id.in_(
-                    select(Subscription.id).where(
-                        Subscription.source_type.in_(["rss", "podcast-rss"]),
-                    ),
-                ),
-            )
-            .values(
-                update_frequency=settings_data["update_frequency"],
-                update_time=settings_data["update_time"],
-                update_day_of_week=settings_data["update_day_of_week"],
-            )
-        )
-        update_result = await self.db.execute(update_stmt)
-        update_count = int(update_result.rowcount or 0)
-
-        await self.db.commit()
         return {
             "success": True,
             "message": f"Updated frequency settings for {update_count} user subscriptions",
