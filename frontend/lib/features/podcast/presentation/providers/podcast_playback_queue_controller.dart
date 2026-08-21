@@ -70,7 +70,7 @@ class QueueOperationNotifier extends Notifier<QueueOperationState> {
 }
 
 class PodcastQueueController extends AsyncNotifier<PodcastQueueModel> {
-  late PodcastRepository _repository;
+  LocalQueueStore get _localQueue => ref.read(localQueueStoreProvider);
   final InFlightSlot<PodcastQueueModel> _loadSlot =
       InFlightSlot<PodcastQueueModel>();
   final Map<int, InFlightSlot<PodcastQueueModel>> _addSlotsByEpisodeId =
@@ -86,7 +86,6 @@ class PodcastQueueController extends AsyncNotifier<PodcastQueueModel> {
 
   @override
   FutureOr<PodcastQueueModel> build() async {
-    _repository = ref.read(podcastRepositoryProvider);
     try {
       return await _loadQueueInternal(
         forceRefresh: false,
@@ -288,7 +287,7 @@ class PodcastQueueController extends AsyncNotifier<PodcastQueueModel> {
 
     return _loadSlot(() async {
       try {
-        final queue = await _repository.getQueue().timeout(queueLoadTimeout);
+        final queue = await _localQueue.getQueue().timeout(queueLoadTimeout);
         return _applyQueue(queue);
       } catch (error, stackTrace) {
         if (setErrorStateOnFailure || state.value == null) {
@@ -350,7 +349,7 @@ class PodcastQueueController extends AsyncNotifier<PodcastQueueModel> {
         try {
           final playerSnapshot = ref.read(audioPlayerProvider);
 
-          var queue = await _repository.addQueueItem(episodeId);
+          var queue = await _localQueue.addQueueItem(episodeId);
           queue = _applyQueue(queue);
 
           final currentOrder =
@@ -364,7 +363,7 @@ class PodcastQueueController extends AsyncNotifier<PodcastQueueModel> {
 
           if (!isSameEpisodeOrder(currentOrder, desiredOrder)) {
             try {
-              final reorderedQueue = await _repository.reorderQueueItems(
+              final reorderedQueue = await _localQueue.reorderQueueItems(
                 desiredOrder,
               );
               queue = _applyQueue(reorderedQueue);
@@ -442,7 +441,7 @@ class PodcastQueueController extends AsyncNotifier<PodcastQueueModel> {
     _beginQueueSync();
     _setQueueOperation(QueueOperationState.removing(episodeId: episodeId));
     try {
-      final queue = await _repository.removeQueueItem(episodeId);
+      final queue = await _localQueue.removeQueueItem(episodeId);
       return _applyQueue(queue);
     } catch (error, stackTrace) {
       if (previousQueue != null) {
@@ -501,7 +500,7 @@ class PodcastQueueController extends AsyncNotifier<PodcastQueueModel> {
     _beginQueueSync();
     _setQueueOperation(const QueueOperationState.reordering());
     try {
-      final queue = await _repository.reorderQueueItems(episodeIds);
+      final queue = await _localQueue.reorderQueueItems(episodeIds);
       return _applyQueue(queue);
     } catch (error, stackTrace) {
       if (previousQueue != null) {
@@ -520,7 +519,7 @@ class PodcastQueueController extends AsyncNotifier<PodcastQueueModel> {
     _beginQueueSync();
     _setQueueOperation(QueueOperationState.activating(episodeId: episodeId));
     try {
-      final queue = await _repository.setQueueCurrent(episodeId);
+      final queue = await _localQueue.setQueueCurrent(episodeId);
       return _applyQueue(queue);
     } catch (error, stackTrace) {
       _setErrorStateIfNeeded(error, stackTrace);
@@ -535,7 +534,7 @@ class PodcastQueueController extends AsyncNotifier<PodcastQueueModel> {
     _beginQueueSync();
     _setQueueOperation(QueueOperationState.activating(episodeId: episodeId));
     try {
-      final queue = await _repository.activateQueueEpisode(episodeId);
+      final queue = await _localQueue.activateQueueEpisode(episodeId);
       return _applyQueue(queue);
     } catch (error, stackTrace) {
       _setErrorStateIfNeeded(error, stackTrace);
@@ -569,7 +568,7 @@ class PodcastQueueController extends AsyncNotifier<PodcastQueueModel> {
 
   Future<PodcastQueueModel> onQueueTrackCompleted() async {
     try {
-      final queue = await _repository.completeQueueCurrent();
+      final queue = await _localQueue.completeQueueCurrent();
       return _applyQueue(queue);
     } catch (error, stackTrace) {
       _setErrorStateIfNeeded(error, stackTrace);

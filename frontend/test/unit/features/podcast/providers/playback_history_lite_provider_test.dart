@@ -6,7 +6,9 @@ import 'package:sonde/core/constants/cache_constants.dart';
 import 'package:sonde/features/podcast/data/models/playback_history_lite_model.dart';
 import 'package:sonde/features/podcast/data/repositories/podcast_repository.dart';
 import 'package:sonde/features/podcast/data/services/podcast_api_service.dart';
+import 'package:sonde/features/podcast/data/services/local_podcast_store.dart';
 import 'package:sonde/features/podcast/presentation/providers/podcast_providers.dart';
+import '../../../../helpers/local_store_fakes.dart';
 
 void main() {
   group('PlaybackHistoryLiteNotifier', () {
@@ -15,7 +17,7 @@ void main() {
         history: <PlaybackHistoryLiteResponse>[_historyResponse(10)],
       );
       final container = ProviderContainer(
-        overrides: [podcastRepositoryProvider.overrideWithValue(repository)],
+        overrides: [localPlaybackStoreProvider.overrideWithValue(repository)],
       );
       addTearDown(container.dispose);
 
@@ -35,7 +37,7 @@ void main() {
         ],
       );
       final container = ProviderContainer(
-        overrides: [podcastRepositoryProvider.overrideWithValue(repository)],
+        overrides: [localPlaybackStoreProvider.overrideWithValue(repository)],
       );
       addTearDown(container.dispose);
 
@@ -57,7 +59,7 @@ void main() {
         );
         final container = ProviderContainer(
           overrides: [
-            podcastRepositoryProvider.overrideWithValue(repository),
+            localPlaybackStoreProvider.overrideWithValue(repository),
           ],
         );
         addTearDown(container.dispose);
@@ -83,19 +85,16 @@ void main() {
   });
 }
 
-class _FakePodcastRepository extends PodcastRepository {
+class _FakePodcastRepository extends ScriptedLocalPlaybackStore {
   _FakePodcastRepository({required List<PlaybackHistoryLiteResponse> history})
-    : _history = history,
-      super(PodcastApiService(Dio()));
+    : _history = List<PlaybackHistoryLiteResponse>.from(history),
+      super(historyLiteResponse: history.isEmpty ? null : history.first);
 
   final List<PlaybackHistoryLiteResponse> _history;
   int getPlaybackHistoryLiteCalls = 0;
 
   @override
-  Future<PlaybackHistoryLiteResponse> getPlaybackHistoryLite({
-    int page = 1,
-    int size = 100,
-  }) async {
+  Future<PlaybackHistoryLiteResponse> historyLite({int limit = 100}) async {
     final index = getPlaybackHistoryLiteCalls < _history.length
         ? getPlaybackHistoryLiteCalls
         : _history.length - 1;

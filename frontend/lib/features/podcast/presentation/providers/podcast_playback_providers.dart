@@ -24,6 +24,7 @@ import 'package:sonde/features/podcast/data/models/podcast_episode_model.dart';
 import 'package:sonde/features/podcast/data/models/podcast_playback_model.dart';
 import 'package:sonde/features/podcast/data/models/podcast_queue_model.dart';
 import 'package:sonde/features/podcast/data/repositories/podcast_repository.dart';
+import 'package:sonde/features/podcast/data/services/local_podcast_store.dart';
 import 'package:sonde/features/podcast/presentation/constants/podcast_ui_constants.dart';
 import 'package:sonde/features/podcast/presentation/providers/audio_handler_logic.dart';
 import 'package:sonde/features/podcast/presentation/providers/podcast_providers.dart';
@@ -117,6 +118,7 @@ class _TimerManager {
 
 class AudioPlayerNotifier extends Notifier<AudioPlayerState> {
   PodcastRepository get _repository => ref.read(podcastRepositoryProvider);
+  LocalPlaybackStore get _localPlayback => ref.read(localPlaybackStoreProvider);
   bool _isDisposed = false;
   bool _isPlayingEpisode = false;
   bool _isRestoringLastPlayed = false;
@@ -603,13 +605,13 @@ class AudioPlayerNotifier extends Notifier<AudioPlayerState> {
           );
           return;
         }
-        unawaited(_restoreLastPlayedEpisodeFromServer(expectedEpisodeId));
+        unawaited(_restoreLastPlayedEpisodeFromLocal(expectedEpisodeId));
         return;
       }
       logger.AppLogger.debug(
         '[PlaybackRestore] Restoring last played episode for mini player',
       );
-      final response = await _repository.getPlaybackHistory(size: 20);
+      final response = await _localPlayback.historyFull(limit: 20);
       if (_isDisposed || !ref.mounted) {
         return;
       }
@@ -687,7 +689,7 @@ class AudioPlayerNotifier extends Notifier<AudioPlayerState> {
     }
   }
 
-  Future<void> _restoreLastPlayedEpisodeFromServer(
+  Future<void> _restoreLastPlayedEpisodeFromLocal(
     int? expectedEpisodeId,
   ) async {
     if (_isDisposed || !ref.mounted) return;
@@ -695,7 +697,7 @@ class AudioPlayerNotifier extends Notifier<AudioPlayerState> {
     if (!ref.read(authProvider).isAuthenticated) return;
 
     try {
-      final response = await _repository.getPlaybackHistory(size: 20);
+      final response = await _localPlayback.historyFull(limit: 20);
       if (_isDisposed || !ref.mounted) return;
       if (_isPlayingEpisode) return;
       if (expectedEpisodeId != null &&
@@ -722,7 +724,7 @@ class AudioPlayerNotifier extends Notifier<AudioPlayerState> {
       }
       _schedulePersistLastPlaybackSnapshot(immediate: true);
     } catch (e) {
-      logger.AppLogger.debug('[PlaybackRestore] Failed to restore from server: $e');
+      logger.AppLogger.debug('[PlaybackRestore] Failed to restore from local store: $e');
     }
   }
 
@@ -733,24 +735,21 @@ class AudioPlayerNotifier extends Notifier<AudioPlayerState> {
       return episode;
     }
 
-    logger.AppLogger.debug(
-      '[PlaybackRestore] Fetch latest playback state before play: episode=${episode.id}',
-    );
-    final resolved = await resolveEpisodeForPlayback(episode, () async {
-      return _repository.getEpisode(episode.id);
-    });
-
-    if (identical(resolved, episode)) {
+    final localState = await _localPlayback.stateOf(episode.id);
+    if (localState == null) {
       logger.AppLogger.debug(
-        '[PlaybackRestore] Fallback to local episode data: episode=${episode.id}',
+        '[PlaybackRestore] No local playback state: episode=${episode.id}',
       );
-    } else {
-      logger.AppLogger.debug(
-        '[PlaybackRestore] Using server playback state: episode=${resolved.id}, position=${resolved.playbackPosition ?? 0}s',
-      );
+      return episode;
     }
-
-    return resolved;
+    logger.AppLogger.debug(
+      '[PlaybackRestore] Using local playback state: episode=${episode.id}, position=${localState.position}s',
+    );
+    return episode.copyWith(
+      playbackPosition: localState.position,
+      isPlaying: localState.isPlaying,
+      playbackRate: localState.playbackRate,
+    );
   }
 
   Future<void> playManagedEpisode(PodcastEpisodeModel episode) async {

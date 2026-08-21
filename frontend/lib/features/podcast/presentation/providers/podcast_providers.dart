@@ -15,6 +15,7 @@ import 'package:sonde/features/podcast/data/models/podcast_state_models.dart';
 import 'package:sonde/features/podcast/data/models/podcast_subscription_model.dart';
 import 'package:sonde/features/podcast/data/models/profile_stats_model.dart';
 import 'package:sonde/features/podcast/data/repositories/podcast_repository.dart';
+import 'package:sonde/features/podcast/data/services/local_podcast_store.dart';
 import 'package:sonde/features/podcast/data/services/podcast_api_service.dart';
 import 'package:sonde/features/podcast/data/utils/podcast_url_utils.dart';
 // PodcastAudioHandler lives in the podcast_playback_providers library
@@ -316,10 +317,10 @@ final profileStatsProvider =
       ProfileStatsNotifier.new,
     );
 class ProfileStatsNotifier extends CachedAsyncNotifier<ProfileStatsModel> {
-  PodcastRepository get _repository => ref.read(podcastRepositoryProvider);
+  LocalPlaybackStore get _localPlayback => ref.read(localPlaybackStoreProvider);
 
   @override
-  Future<ProfileStatsModel> fetch() => _repository.getProfileStats();
+  Future<ProfileStatsModel> fetch() => _localPlayback.profileStats();
 
   @override
   void onError(Object error, StackTrace stackTrace) {
@@ -334,11 +335,11 @@ final playbackHistoryProvider =
 
 class PlaybackHistoryNotifier
     extends CachedAsyncNotifier<PodcastEpisodeListResponse> {
-  PodcastRepository get _repository => ref.read(podcastRepositoryProvider);
+  LocalPlaybackStore get _localPlayback => ref.read(localPlaybackStoreProvider);
 
   @override
   Future<PodcastEpisodeListResponse> fetch() =>
-      _repository.getPlaybackHistory(size: 100);
+      _localPlayback.historyFull(limit: 100);
 
   @override
   void onError(Object error, StackTrace stackTrace) {
@@ -353,11 +354,11 @@ final playbackHistoryLiteProvider =
     >(PlaybackHistoryLiteNotifier.new);
 class PlaybackHistoryLiteNotifier
     extends CachedAsyncNotifier<PlaybackHistoryLiteResponse> {
-  PodcastRepository get _repository => ref.read(podcastRepositoryProvider);
+  LocalPlaybackStore get _localPlayback => ref.read(localPlaybackStoreProvider);
 
   @override
   Future<PlaybackHistoryLiteResponse> fetch() =>
-      _repository.getPlaybackHistoryLite();
+      _localPlayback.historyLite(limit: 100);
 
   @override
   void onError(Object error, StackTrace stackTrace) {

@@ -26,6 +26,8 @@ import 'package:sonde/features/podcast/data/services/itunes_search_service.dart'
 import 'package:sonde/features/podcast/data/services/podcast_api_service.dart';
 import 'package:sonde/features/podcast/presentation/providers/podcast_daily_report_providers.dart';
 import 'package:sonde/features/podcast/presentation/providers/podcast_providers.dart';
+import 'package:sonde/features/podcast/data/services/local_podcast_store.dart';
+import '../../../../helpers/local_store_fakes.dart';
 import 'package:sonde/features/podcast/presentation/providers/podcast_search_provider.dart';
 import 'package:sonde/features/profile/presentation/pages/profile_cache_management_page.dart';
 import 'package:sonde/features/profile/presentation/pages/profile_page.dart';
@@ -119,6 +121,11 @@ class _ThrowingPodcastApiService extends Mock implements PodcastApiService {
   Future<ProfileStatsModel> getProfileStats() async {
     throw Exception('profile stats failed');
   }
+}
+
+class _ThrowingLocalPlaybackStore extends ScriptedLocalPlaybackStore {
+  @override
+  Future<ProfileStatsModel> profileStats() async => throw Exception('offline');
 }
 
 class _ThrowingPodcastRepository extends PodcastRepository {
@@ -605,6 +612,9 @@ void main() {
           authProvider.overrideWith(_TestAuthNotifier.new),
           podcastRepositoryProvider.overrideWithValue(
             _ThrowingPodcastRepository(),
+          ),
+          localPlaybackStoreProvider.overrideWithValue(
+            _ThrowingLocalPlaybackStore(),
           ),
           podcastSubscriptionProvider.overrideWith(
             () => TestPodcastSubscriptionNotifier(const PodcastSubscriptionState(total: 5)),

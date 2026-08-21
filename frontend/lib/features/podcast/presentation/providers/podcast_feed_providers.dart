@@ -8,6 +8,7 @@ import 'package:sonde/core/utils/request_dedup.dart';
 import 'package:sonde/features/auth/presentation/providers/auth_provider.dart';
 import 'package:sonde/features/podcast/data/models/podcast_state_models.dart';
 import 'package:sonde/features/podcast/data/repositories/podcast_repository.dart';
+import 'package:sonde/features/podcast/data/services/local_podcast_store.dart';
 import 'package:sonde/features/podcast/presentation/providers/podcast_providers.dart';
 
 final podcastFeedProvider =
@@ -57,9 +58,12 @@ class PodcastFeedNotifier extends Notifier<PodcastFeedState> {
           page: 1,
           pageSize: 20,
         );
+        final overlayed = await ref
+            .read(localPlaybackStoreProvider)
+            .overlayPlaybackStates(response.items);
 
         state = state.copyWith(
-          episodes: response.items,
+          episodes: overlayed,
           hasMore: response.hasMore,
           nextPage: response.nextPage,
           nextCursor: response.nextCursor,
@@ -98,9 +102,12 @@ class PodcastFeedNotifier extends Notifier<PodcastFeedState> {
         pageSize: 20,
         cursor: currentState.nextCursor,
       );
+      final overlayed = await ref
+          .read(localPlaybackStoreProvider)
+          .overlayPlaybackStates(response.items);
 
       state = state.copyWith(
-        episodes: [...state.episodes, ...response.items],
+        episodes: [...state.episodes, ...overlayed],
         hasMore: response.hasMore,
         nextPage: response.nextPage,
         nextCursor: response.nextCursor,

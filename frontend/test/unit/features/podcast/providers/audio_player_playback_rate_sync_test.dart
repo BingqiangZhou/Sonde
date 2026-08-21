@@ -4,9 +4,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:sonde/features/podcast/data/models/audio_player_state_model.dart';
 import 'package:sonde/features/podcast/data/models/podcast_episode_model.dart';
 import 'package:sonde/features/podcast/data/models/podcast_playback_model.dart';
-import 'package:sonde/features/podcast/data/repositories/podcast_repository.dart';
-import 'package:sonde/features/podcast/data/services/podcast_api_service.dart';
+import 'package:sonde/features/podcast/data/services/local_podcast_store.dart';
 import 'package:sonde/features/podcast/presentation/providers/podcast_playback_providers.dart';
+import '../../../../helpers/local_store_fakes.dart';
 import 'package:sonde/features/podcast/presentation/providers/podcast_providers.dart';
 
 void main() {
@@ -14,7 +14,7 @@ void main() {
 
   group('AudioPlayerNotifier playback-rate sync', () {
     test('uses server effective rate for speed sheet state', () async {
-      final repository = _TrackingPodcastRepository(
+      final store = _TrackingPodcastRepository(
         effectiveResponse: const PlaybackRateEffectiveResponse(
           globalPlaybackRate: 1,
           subscriptionPlaybackRate: 1.5,
@@ -24,7 +24,7 @@ void main() {
       );
       final container = ProviderContainer(
         overrides: [
-          podcastRepositoryProvider.overrideWithValue(repository),
+          localPlaybackStoreProvider.overrideWithValue(store),
           audioPlayerProvider.overrideWith(
             () => _TestAudioPlayerNotifier(
               AudioPlayerState(
@@ -42,16 +42,16 @@ void main() {
 
       expect(selection.speed, 1.5);
       expect(selection.applyToSubscription, isTrue);
-      expect(repository.effectivePlaybackRateRequests, <int?>[1]);
+      expect(store.effectivePlaybackRateRequests, <int?>[1]);
     });
 
     test('sync speed sheet snapshot falls back to local playback state', () {
-      final repository = _TrackingPodcastRepository(
+      final store = _TrackingPodcastRepository(
         effectivePlaybackRateError: Exception('offline'),
       );
       final container = ProviderContainer(
         overrides: [
-          podcastRepositoryProvider.overrideWithValue(repository),
+          localPlaybackStoreProvider.overrideWithValue(store),
           audioPlayerProvider.overrideWith(
             () => _TestAudioPlayerNotifier(
               AudioPlayerState(
@@ -70,18 +70,18 @@ void main() {
 
       expect(snapshot.speed, 1.25);
       expect(snapshot.applyToSubscription, isFalse);
-      expect(repository.effectivePlaybackRateRequests, isEmpty);
+      expect(store.effectivePlaybackRateRequests, isEmpty);
     });
 
     test(
       'falls back to current state when resolving effective rate fails',
       () async {
-        final repository = _TrackingPodcastRepository(
+        final store = _TrackingPodcastRepository(
           effectivePlaybackRateError: Exception('offline'),
         );
         final container = ProviderContainer(
           overrides: [
-            podcastRepositoryProvider.overrideWithValue(repository),
+            localPlaybackStoreProvider.overrideWithValue(store),
             audioPlayerProvider.overrideWith(
               () => _TestAudioPlayerNotifier(
                 AudioPlayerState(
@@ -100,12 +100,12 @@ void main() {
 
         expect(selection.speed, 1.25);
         expect(selection.applyToSubscription, isFalse);
-        expect(repository.effectivePlaybackRateRequests, <int?>[1]);
+        expect(store.effectivePlaybackRateRequests, <int?>[1]);
       },
     );
 
     test('resume refreshes audio speed from server before playing', () async {
-      final repository = _TrackingPodcastRepository(
+      final store = _TrackingPodcastRepository(
         effectiveResponse: const PlaybackRateEffectiveResponse(
           globalPlaybackRate: 1,
           subscriptionPlaybackRate: 1.75,
@@ -120,7 +120,8 @@ void main() {
       );
       final container = ProviderContainer(
         overrides: [
-          podcastRepositoryProvider.overrideWithValue(repository),
+          localPlaybackStoreProvider.overrideWithValue(store),
+          localQueueStoreProvider.overrideWithValue(ScriptedLocalQueueStore()),
           audioPlayerProvider.overrideWith(() => notifier),
         ],
       );
@@ -128,17 +129,17 @@ void main() {
 
       await container.read(audioPlayerProvider.notifier).resume();
 
-      expect(repository.effectivePlaybackRateRequests, <int?>[1]);
+      expect(store.effectivePlaybackRateRequests, <int?>[1]);
       expect(notifier.audioSpeedCalls, <double>[1.75]);
       expect(notifier.playAudioCalls, 1);
       expect(container.read(audioPlayerProvider).playbackRate, 1.75);
-      expect(repository.updatePlaybackProgressCalls, 1);
+      expect(store.updatePlaybackProgressCalls, 1);
     });
 
     test(
       'resume falls back to local playback rate when server lookup fails',
       () async {
-        final repository = _TrackingPodcastRepository(
+        final store = _TrackingPodcastRepository(
           effectivePlaybackRateError: Exception('offline'),
         );
         final notifier = _TestAudioPlayerNotifier(
@@ -149,7 +150,8 @@ void main() {
         );
         final container = ProviderContainer(
           overrides: [
-            podcastRepositoryProvider.overrideWithValue(repository),
+            localPlaybackStoreProvider.overrideWithValue(store),
+            localQueueStoreProvider.overrideWithValue(ScriptedLocalQueueStore()),
             audioPlayerProvider.overrideWith(() => notifier),
           ],
         );
@@ -157,7 +159,7 @@ void main() {
 
         await container.read(audioPlayerProvider.notifier).resume();
 
-        expect(repository.effectivePlaybackRateRequests, <int?>[1]);
+        expect(store.effectivePlaybackRateRequests, <int?>[1]);
         expect(notifier.audioSpeedCalls, <double>[1.25]);
         expect(notifier.playAudioCalls, 1);
         expect(container.read(audioPlayerProvider).playbackRate, 1.25);
@@ -165,7 +167,7 @@ void main() {
     );
 
     test('setPlaybackRate refreshes cached speed selection snapshot', () async {
-      final repository = _TrackingPodcastRepository();
+      final store = _TrackingPodcastRepository();
       final notifier = _TestAudioPlayerNotifier(
         AudioPlayerState(
           currentEpisode: _episode(playbackRate: 1),
@@ -173,7 +175,8 @@ void main() {
       );
       final container = ProviderContainer(
         overrides: [
-          podcastRepositoryProvider.overrideWithValue(repository),
+          localPlaybackStoreProvider.overrideWithValue(store),
+          localQueueStoreProvider.overrideWithValue(ScriptedLocalQueueStore()),
           audioPlayerProvider.overrideWith(() => notifier),
         ],
       );
@@ -187,7 +190,7 @@ void main() {
           .read(audioPlayerProvider.notifier)
           .getPlaybackRateSelectionSnapshot();
 
-      expect(repository.applyPlaybackRateCalls, 1);
+      expect(store.applyPlaybackRateCalls, 1);
       expect(snapshot.speed, 1.75);
       expect(snapshot.applyToSubscription, isTrue);
       expect(container.read(audioPlayerProvider).playbackRate, 1.75);
@@ -196,11 +199,10 @@ void main() {
     test(
       'sleep timer remains session-local and does not hit repository',
       () async {
-        final repository = _TrackingPodcastRepository();
+        final store = _TrackingPodcastRepository();
         final container = ProviderContainer(
           overrides: [
-            podcastRepositoryProvider.overrideWithValue(repository),
-            audioPlayerProvider.overrideWith(
+              audioPlayerProvider.overrideWith(
               () => _TestAudioPlayerNotifier(const AudioPlayerState()),
             ),
           ],
@@ -212,17 +214,17 @@ void main() {
         notifier.cancelSleepTimer();
 
         expect(container.read(audioPlayerProvider).isSleepTimerActive, isFalse);
-        expect(repository.effectivePlaybackRateRequests, isEmpty);
-        expect(repository.applyPlaybackRateCalls, 0);
-        expect(repository.updatePlaybackProgressCalls, 0);
+        expect(store.effectivePlaybackRateRequests, isEmpty);
+        expect(store.applyPlaybackRateCalls, 0);
+        expect(store.updatePlaybackProgressCalls, 0);
       },
     );
 
     test('sleep timer is cleared after provider rebuild', () async {
-      final repository = _TrackingPodcastRepository();
+      final store = _TrackingPodcastRepository();
       final firstContainer = ProviderContainer(
         overrides: [
-          podcastRepositoryProvider.overrideWithValue(repository),
+          localPlaybackStoreProvider.overrideWithValue(store),
           audioPlayerProvider.overrideWith(
             () => _TestAudioPlayerNotifier(const AudioPlayerState()),
           ),
@@ -242,7 +244,7 @@ void main() {
 
       final secondContainer = ProviderContainer(
         overrides: [
-          podcastRepositoryProvider.overrideWithValue(repository),
+          localPlaybackStoreProvider.overrideWithValue(store),
           audioPlayerProvider.overrideWith(
             () => _TestAudioPlayerNotifier(const AudioPlayerState()),
           ),
@@ -283,69 +285,28 @@ class _TestAudioPlayerNotifier extends AudioPlayerNotifier {
   }
 }
 
-class _TrackingPodcastRepository extends PodcastRepository {
+class _TrackingPodcastRepository extends ScriptedLocalPlaybackStore {
   _TrackingPodcastRepository({
-    this.effectiveResponse = const PlaybackRateEffectiveResponse(
-      globalPlaybackRate: 1,
-      subscriptionPlaybackRate: null,
-      effectivePlaybackRate: 1,
-      source: 'global',
-    ),
-    this.effectivePlaybackRateError,
-  }) : super(PodcastApiService(Dio()));
+    PlaybackRateEffectiveResponse? effectiveResponse,
+    Object? effectivePlaybackRateError,
+  }) : super(
+          effectiveRateResponse:
+              effectiveResponse ??
+              const PlaybackRateEffectiveResponse(
+                globalPlaybackRate: 1,
+                subscriptionPlaybackRate: null,
+                effectivePlaybackRate: 1,
+                source: 'global',
+              ),
+          effectiveRateError: effectivePlaybackRateError,
+          applyRateResponse: effectiveResponse,
+        );
 
-  final PlaybackRateEffectiveResponse effectiveResponse;
-  final Exception? effectivePlaybackRateError;
-  final List<int?> effectivePlaybackRateRequests = <int?>[];
-  int updatePlaybackProgressCalls = 0;
-  int applyPlaybackRateCalls = 0;
-
-  @override
-  Future<PlaybackRateEffectiveResponse> getEffectivePlaybackRate({
-    int? subscriptionId,
-  }) async {
-    effectivePlaybackRateRequests.add(subscriptionId);
-    if (effectivePlaybackRateError != null) {
-      throw effectivePlaybackRateError!;
-    }
-    return effectiveResponse;
-  }
-
-  @override
-  Future<PodcastPlaybackStateResponse> updatePlaybackProgress({
-    required int episodeId,
-    required int position,
-    required bool isPlaying,
-    double playbackRate = 1.0,
-  }) async {
-    updatePlaybackProgressCalls += 1;
-    return PodcastPlaybackStateResponse(
-      episodeId: episodeId,
-      currentPosition: position,
-      isPlaying: isPlaying,
-      playbackRate: playbackRate,
-      playCount: 1,
-      lastUpdatedAt: DateTime(2026, 3, 12),
-      progressPercentage: 0,
-      remainingTime: 0,
-    );
-  }
-
-  @override
-  Future<PlaybackRateEffectiveResponse> applyPlaybackRatePreference({
-    required double playbackRate,
-    required bool applyToSubscription,
-    int? subscriptionId,
-  }) async {
-    applyPlaybackRateCalls += 1;
-    return PlaybackRateEffectiveResponse(
-      globalPlaybackRate: playbackRate,
-      subscriptionPlaybackRate: applyToSubscription ? playbackRate : null,
-      effectivePlaybackRate: playbackRate,
-      source: applyToSubscription ? 'subscription' : 'global',
-    );
-  }
+  int get updatePlaybackProgressCalls => savedProgress.length;
+  int get applyPlaybackRateCalls => appliedRates.length;
+  List<int?> get effectivePlaybackRateRequests => super.effectiveRateRequests;
 }
+
 
 PodcastEpisodeModel _episode({required double playbackRate}) {
   final now = DateTime(2026, 3, 12);

@@ -7,10 +7,9 @@ import 'package:sonde/core/services/download_provider.dart';
 import 'package:sonde/features/podcast/data/models/audio_player_state_model.dart';
 import 'package:sonde/features/podcast/data/models/podcast_episode_model.dart';
 import 'package:sonde/features/podcast/data/models/podcast_queue_model.dart';
-import 'package:sonde/features/podcast/data/repositories/podcast_repository.dart';
-import 'package:sonde/features/podcast/data/services/podcast_api_service.dart';
+import 'package:sonde/features/podcast/data/services/local_podcast_store.dart';
 import 'package:sonde/features/podcast/presentation/providers/podcast_playback_providers.dart';
-import 'package:sonde/features/podcast/presentation/providers/podcast_providers.dart';
+import '../../../../helpers/local_store_fakes.dart';
 // riverpod 3.x 将 Override 移出公共导出；测试需要为 override 列表显式标注类型。
 import 'package:riverpod/src/internals.dart' show Override;
 
@@ -530,11 +529,11 @@ class _FakeAudioDownloadService implements AudioDownloadService {
 
 /// Common provider overrides shared by all queue-controller tests.
 List<Override> _testOverrides({
-  required PodcastRepository repository,
+  required LocalQueueStore repository,
   AudioPlayerNotifier? audioNotifier,
 }) {
   return [
-    podcastRepositoryProvider.overrideWithValue(repository),
+    localQueueStoreProvider.overrideWithValue(repository),
     downloadManagerProvider.overrideWithValue(_FakeAudioDownloadService()),
     if (audioNotifier != null)
       audioPlayerProvider.overrideWith(() => audioNotifier)
@@ -543,7 +542,7 @@ List<Override> _testOverrides({
   ];
 }
 
-class _FakePodcastRepository extends PodcastRepository {
+class _FakePodcastRepository extends LocalQueueStore {
   _FakePodcastRepository({
     this.addDelay = Duration.zero,
     List<PodcastQueueModel>? queuedGetQueueResponses,
@@ -577,7 +576,7 @@ class _FakePodcastRepository extends PodcastRepository {
            ),
        _removeQueueResult =
            removeQueueResult ?? const PodcastQueueModel(revision: 10),
-       super(_NoopPodcastApiService());
+       super(throwawayMemoryDb());
 
   final Duration addDelay;
   final List<PodcastQueueModel> _queuedGetQueueResponses;
@@ -666,11 +665,6 @@ class _FakePodcastRepository extends PodcastRepository {
     activateQueueEpisodeCallCount += 1;
     return _activateQueueResult;
   }
-}
-
-class _NoopPodcastApiService implements PodcastApiService {
-  @override
-  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
 class _FakeAudioPlayerNotifier extends AudioPlayerNotifier {

@@ -10,6 +10,8 @@ import 'package:sonde/features/podcast/data/repositories/podcast_repository.dart
 import 'package:sonde/features/podcast/data/services/podcast_api_service.dart';
 import 'package:sonde/features/podcast/presentation/providers/podcast_daily_report_providers.dart';
 import 'package:sonde/features/podcast/presentation/providers/podcast_feed_providers.dart';
+import 'package:sonde/features/podcast/data/services/local_podcast_store.dart';
+import '../../../../helpers/local_store_fakes.dart';
 import 'package:sonde/features/podcast/presentation/providers/podcast_providers.dart';
 
 void main() {
@@ -23,6 +25,7 @@ void main() {
       final container = ProviderContainer(
         overrides: [
           podcastRepositoryProvider.overrideWithValue(fakeRepository),
+            localPlaybackStoreProvider.overrideWithValue(ScriptedLocalPlaybackStore()),
         ],
       );
       addTearDown(container.dispose);
@@ -47,6 +50,7 @@ void main() {
         final container = ProviderContainer(
           overrides: [
             podcastRepositoryProvider.overrideWithValue(fakeRepository),
+            localPlaybackStoreProvider.overrideWithValue(ScriptedLocalPlaybackStore()),
           ],
         );
         addTearDown(container.dispose);
@@ -82,6 +86,7 @@ void main() {
         final container = ProviderContainer(
           overrides: [
             podcastRepositoryProvider.overrideWithValue(fakeRepository),
+            localPlaybackStoreProvider.overrideWithValue(ScriptedLocalPlaybackStore()),
           ],
         );
         addTearDown(container.dispose);
@@ -111,6 +116,7 @@ void main() {
       final container = ProviderContainer(
         overrides: [
           podcastRepositoryProvider.overrideWithValue(fakeRepository),
+            localPlaybackStoreProvider.overrideWithValue(ScriptedLocalPlaybackStore()),
         ],
       );
       addTearDown(container.dispose);
@@ -139,6 +145,7 @@ void main() {
       final container = ProviderContainer(
         overrides: [
           podcastRepositoryProvider.overrideWithValue(fakeRepository),
+            localPlaybackStoreProvider.overrideWithValue(ScriptedLocalPlaybackStore()),
         ],
       );
       addTearDown(container.dispose);
@@ -163,6 +170,7 @@ void main() {
       final container = ProviderContainer(
         overrides: [
           podcastRepositoryProvider.overrideWithValue(fakeRepository),
+            localPlaybackStoreProvider.overrideWithValue(ScriptedLocalPlaybackStore()),
         ],
       );
       addTearDown(container.dispose);
@@ -188,6 +196,7 @@ void main() {
         overrides: [
           authProvider.overrideWith(_AuthenticatedAuthNotifier.new),
           podcastRepositoryProvider.overrideWithValue(fakeRepository),
+            localPlaybackStoreProvider.overrideWithValue(ScriptedLocalPlaybackStore()),
           dailyReportProvider.overrideWith(() => dailyReportNotifier),
           dailyReportDatesProvider.overrideWith(() => dailyReportDatesNotifier),
         ],
@@ -216,6 +225,7 @@ void main() {
           overrides: [
             authProvider.overrideWith(_AuthenticatedAuthNotifier.new),
             podcastRepositoryProvider.overrideWithValue(fakeRepository),
+            localPlaybackStoreProvider.overrideWithValue(ScriptedLocalPlaybackStore()),
           ],
         );
         addTearDown(container.dispose);

@@ -3,10 +3,14 @@
 // ignore_for_file: invalid_use_of_protected_member, invalid_use_of_visible_for_testing_member
 part of 'podcast_playback_providers.dart';
 
-/// Server-side playback state sync extension for AudioPlayerNotifier.
+/// Local playback-state persistence extension for AudioPlayerNotifier.
 ///
-/// Handles throttled and immediate sync of playback state to the backend.
+/// Handles throttled and immediate persistence of playback state to the
+/// on-device store (phase 2c: server sync endpoints are retired in phase 3).
 extension AudioServerSyncNotifier on AudioPlayerNotifier {
+  LocalPlaybackStore get _localPlayback =>
+      ref.read(localPlaybackStoreProvider);
+
   Future<void> _updatePlaybackStateOnServer({bool immediate = false}) async {
     if (_isDisposed) return;
 
@@ -120,17 +124,16 @@ extension AudioServerSyncNotifier on AudioPlayerNotifier {
     final payload = buildPersistPayload(positionMs, state.duration, isPlaying);
 
     try {
-      await _repository.updatePlaybackProgress(
+      await _localPlayback.saveProgress(
         episodeId: episode.id,
-        position: payload.positionSec,
+        positionSec: payload.positionSec,
         isPlaying: payload.isPlaying,
         playbackRate: state.playbackRate,
       );
       return true;
     } catch (error) {
-      // Log more detailed error for debugging
       logger.AppLogger.debug(
-        '[Error] Failed to update playback state on server: $error',
+        '[Error] Failed to persist playback state locally: $error',
       );
       logger.AppLogger.debug('[Playback] Episode ID: ${episode.id}');
       logger.AppLogger.debug(
@@ -139,15 +142,7 @@ extension AudioServerSyncNotifier on AudioPlayerNotifier {
       logger.AppLogger.debug('[Playback] Is Playing: $isPlaying');
       logger.AppLogger.debug('[Playback] Playback Rate: ${state.playbackRate}');
 
-      // Check if it's an authentication error
-      if (error.toString().contains('401') ||
-          error.toString().contains('authentication')) {
-        logger.AppLogger.debug(
-          '[Error] Authentication error - user may need to log in again',
-        );
-      }
-
-      // Don't update the UI state for server errors - continue playback
+      // Don't update the UI state for storage errors - continue playback
       return false;
     }
   }

@@ -23,8 +23,8 @@ extension AudioPlaybackRateNotifier on AudioPlayerNotifier {
       }
 
       await setAudioSpeed(rate);
-      final applied = await _repository.applyPlaybackRatePreference(
-        playbackRate: rate,
+      final applied = await _localPlayback.applyRate(
+        rate: rate,
         applyToSubscription: applyToSubscription,
         subscriptionId: currentEpisode?.subscriptionId,
       );
@@ -64,7 +64,7 @@ extension AudioPlaybackRateNotifier on AudioPlayerNotifier {
     int? subscriptionId,
   }) async {
     try {
-      return await _repository.getEffectivePlaybackRate(
+      return await _localPlayback.effectiveRate(
         subscriptionId: subscriptionId,
       );
     } catch (error) {

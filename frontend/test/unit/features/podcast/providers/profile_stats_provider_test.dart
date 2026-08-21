@@ -1,12 +1,11 @@
-import 'package:dio/dio.dart';
 import 'package:fake_async/fake_async.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sonde/core/constants/cache_constants.dart';
 import 'package:sonde/features/podcast/data/models/profile_stats_model.dart';
-import 'package:sonde/features/podcast/data/repositories/podcast_repository.dart';
-import 'package:sonde/features/podcast/data/services/podcast_api_service.dart';
+import 'package:sonde/features/podcast/data/services/local_podcast_store.dart';
 import 'package:sonde/features/podcast/presentation/providers/podcast_providers.dart';
+import '../../../../helpers/local_store_fakes.dart';
 
 void main() {
   group('ProfileStatsNotifier', () {
@@ -15,7 +14,7 @@ void main() {
         stats: <ProfileStatsModel>[_stats(10)],
       );
       final container = ProviderContainer(
-        overrides: [podcastRepositoryProvider.overrideWithValue(repository)],
+        overrides: [localPlaybackStoreProvider.overrideWithValue(repository)],
       );
       addTearDown(container.dispose);
 
@@ -32,7 +31,7 @@ void main() {
         stats: <ProfileStatsModel>[_stats(10), _stats(20)],
       );
       final container = ProviderContainer(
-        overrides: [podcastRepositoryProvider.overrideWithValue(repository)],
+        overrides: [localPlaybackStoreProvider.overrideWithValue(repository)],
       );
       addTearDown(container.dispose);
 
@@ -51,7 +50,7 @@ void main() {
         );
         final container = ProviderContainer(
           overrides: [
-            podcastRepositoryProvider.overrideWithValue(repository),
+            localPlaybackStoreProvider.overrideWithValue(repository),
           ],
         );
         addTearDown(container.dispose);
@@ -77,16 +76,16 @@ void main() {
   });
 }
 
-class _FakePodcastRepository extends PodcastRepository {
+class _FakePodcastRepository extends ScriptedLocalPlaybackStore {
   _FakePodcastRepository({required List<ProfileStatsModel> stats})
-    : _stats = stats,
-      super(PodcastApiService(Dio()));
+    : _stats = List<ProfileStatsModel>.from(stats),
+      super(profileStatsResponse: stats.isEmpty ? null : stats.first);
 
   final List<ProfileStatsModel> _stats;
   int getProfileStatsCalls = 0;
 
   @override
-  Future<ProfileStatsModel> getProfileStats() async {
+  Future<ProfileStatsModel> profileStats() async {
     final index = getProfileStatsCalls < _stats.length
         ? getProfileStatsCalls
         : _stats.length - 1;
