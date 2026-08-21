@@ -6,7 +6,7 @@
 
 ## Project Structure & Module Organization
 - `backend/`: FastAPI service (DDD layout) with `core`, `shared`, `admin`, `http`, `bootstrap`, and 2 domain modules (`ai`, `podcast`) under `backend/app/` (`domains/`).
-- `backend/alembic/`: database migrations (25 migrations).
+- `backend/alembic/`: database migrations (27 migrations).
 - `backend/tests/` and `backend/app/**/tests/`: backend test suites.
 - `frontend/`: Flutter app with feature modules in `frontend/lib/` and tests in `frontend/test/`.
 - `docker/`: Docker Compose files and deployment assets (6 services: postgres, redis, backend, worker, beat, nginx; compose project pinned to `sonde`; only backend runs alembic migrations).

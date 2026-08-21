@@ -122,11 +122,11 @@ backend/
 │   │   └── middleware/     # 中间件（请求日志、限流）
 │   ├── shared/         # 共享层（repository helpers, schemas）
 │   ├── http/           # HTTP 辅助（错误处理）
-│   ├── admin/          # 管理面板（独立认证、2FA、CSRF、服务端渲染）
+│   ├── admin/          # 管理面板（独立认证、CSRF、服务端渲染）
 │   └── domains/        # 业务领域
-│       ├── podcast/        # 播客订阅、单集、播放、转录、摘要、对话、高亮
+│       ├── podcast/        # 播客订阅、单集、播放、转录、摘要
 │       └── ai/             # AI 模型配置、供应商管理
-├── alembic/            # 数据库迁移（25 个迁移文件）
+├── alembic/            # 数据库迁移（27 个迁移文件）
 ├── tests/              # 测试文件
 ├── pyproject.toml      # 项目配置
 └── uv.lock             # 依赖锁定
