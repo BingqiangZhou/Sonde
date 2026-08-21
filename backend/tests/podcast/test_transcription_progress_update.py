@@ -1,3 +1,4 @@
+from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
 import pytest
@@ -6,38 +7,41 @@ from app.domains.podcast.models import TranscriptionStatus
 from app.domains.podcast.transcription import PodcastTranscriptionService
 
 
-class _NoopThrottle:
-    def __init__(self) -> None:
-        self.calls: list[tuple[int, str, float]] = []
+@pytest.mark.asyncio
+async def test_cancel_transcription_marks_active_task_cancelled():
+    db = AsyncMock()
+    task = SimpleNamespace(
+        status=TranscriptionStatus.IN_PROGRESS, progress_percentage=42.0
+    )
+    db.execute.side_effect = [
+        SimpleNamespace(scalar_one_or_none=lambda: task),
+        SimpleNamespace(rowcount=1),
+    ]
+    service = PodcastTranscriptionService(db)
 
-    def should_log(self, task_id: int, status: str, progress: float) -> bool:
-        self.calls.append((task_id, status, progress))
-        return False
+    cancelled = await service.cancel_transcription(task_id=123)
+
+    assert cancelled is True
+    assert db.execute.await_count == 2
+    db.commit.assert_awaited_once()
 
 
 @pytest.mark.asyncio
-async def test_update_task_progress_in_progress_path_no_name_error(monkeypatch):
+@pytest.mark.parametrize(
+    "status",
+    [
+        TranscriptionStatus.COMPLETED,
+        TranscriptionStatus.FAILED,
+        TranscriptionStatus.CANCELLED,
+    ],
+)
+async def test_cancel_transcription_rejects_finished_tasks(status):
     db = AsyncMock()
+    task = SimpleNamespace(status=status, progress_percentage=100.0)
+    db.execute.side_effect = [SimpleNamespace(scalar_one_or_none=lambda: task)]
     service = PodcastTranscriptionService(db)
-    service._get_task_field = AsyncMock(return_value=None)
 
-    throttle = _NoopThrottle()
-    monkeypatch.setattr(
-        "app.domains.podcast.transcription.service._progress_throttle",
-        throttle,
-    )
+    cancelled = await service.cancel_transcription(task_id=123)
 
-    await service.update_task_progress(
-        task_id=123,
-        status=TranscriptionStatus.IN_PROGRESS,
-        progress=35.0,
-        message="step running",
-    )
-
-    service._get_task_field.assert_awaited_once_with(123, "started_at")
-    db.execute.assert_awaited_once()
-    db.commit.assert_awaited_once()
-    assert "started_at" in str(db.execute.await_args.args[0])
-    assert throttle.calls == [
-        (123, str(TranscriptionStatus.IN_PROGRESS), 35.0),
-    ]
+    assert cancelled is False
+    db.commit.assert_not_awaited()

@@ -25,7 +25,6 @@ from app.domains.podcast.models import (
     TranscriptionStep,
     TranscriptionTask,
 )
-from app.domains.podcast.transcription.state import _progress_throttle
 
 from .converter import AudioConverter
 from .downloader import AudioDownloader
@@ -105,61 +104,6 @@ class PodcastTranscriptionService:
         filename = re.sub(r'[<>:"/\\|?*]', "", filename)
         filename = filename.replace(" ", "_")
         return filename[:100]
-
-    async def update_task_progress(
-        self,
-        task_id: int,
-        status: TranscriptionStatus,
-        progress: float,
-        message: str,
-        error_message: str | None = None,
-    ):
-        """Update transcription task progress and status in database."""
-        update_data = {
-            "status": status,
-            "progress_percentage": progress,
-            "updated_at": datetime.now(UTC),
-        }
-
-        if error_message:
-            update_data["error_message"] = error_message
-
-        # Set started_at timestamp when task begins processing
-        if status == TranscriptionStatus.IN_PROGRESS and not await self._get_task_field(
-            task_id,
-            "started_at",
-        ):
-            update_data["started_at"] = datetime.now(UTC)
-
-        if status in [
-            TranscriptionStatus.COMPLETED,
-            TranscriptionStatus.FAILED,
-            TranscriptionStatus.CANCELLED,
-        ]:
-            update_data["completed_at"] = datetime.now(UTC)
-
-        stmt = (
-            update(TranscriptionTask)
-            .where(TranscriptionTask.id == task_id)
-            .values(**update_data)
-        )
-
-        await self.db.execute(stmt)
-        await self.db.commit()
-
-        # ?
-        if _progress_throttle.should_log(task_id, str(status), progress):
-            logger.info(
-                f"Updated task {task_id}: status={status}, progress={progress:.1f}%",
-            )
-
-    async def _get_task_field(self, task_id: int, field: str):
-        """?"""
-        stmt = select(getattr(TranscriptionTask, field)).where(
-            TranscriptionTask.id == task_id,
-        )
-        result = await self.db.execute(stmt)
-        return result.scalar()
 
     async def _update_task_progress_with_session(
         self,
@@ -1291,7 +1235,7 @@ class PodcastTranscriptionService:
         return result.scalar_one_or_none()
 
     async def cancel_transcription(self, task_id: int) -> bool:
-        """"""
+        """Mark an active task cancelled; the worker skips it on next check."""
         task = await self.get_transcription_status(task_id)
         if not task:
             return False
@@ -1303,11 +1247,17 @@ class PodcastTranscriptionService:
         ]:
             return False
 
-        await self.update_task_progress(
-            task_id,
-            TranscriptionStatus.CANCELLED,
-            task.progress_percentage,
-            "Transcription cancelled by user",
+        now = datetime.now(UTC)
+        await self.db.execute(
+            update(TranscriptionTask)
+            .where(TranscriptionTask.id == task_id)
+            .values(
+                status=TranscriptionStatus.CANCELLED,
+                progress_percentage=task.progress_percentage,
+                updated_at=now,
+                completed_at=now,
+            ),
         )
-
+        await self.db.commit()
+        logger.info("Cancelled transcription task %s by user request", task_id)
         return True

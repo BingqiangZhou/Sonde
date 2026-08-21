@@ -8,7 +8,7 @@ import ffmpeg
 from fastapi import HTTPException, status
 
 from .models import AudioChunk
-from .utils import _ffmpeg_probe_async, _run_ffmpeg_sync
+from .utils import _ffmpeg_probe_async
 
 
 logger = logging.getLogger(__name__)
@@ -16,99 +16,6 @@ logger = logging.getLogger(__name__)
 
 class AudioSplitter:
     """?"""
-
-    @staticmethod
-    async def split_mp3_by_duration(
-        input_path: str,
-        output_dir: str,
-        chunk_duration_seconds: int = 300,
-        progress_callback=None,
-    ) -> list[AudioChunk]:
-        """P3
-
-        Args:
-            input_path: MP3
-            output_dir:
-            chunk_duration_seconds: ?005?
-            progress_callback:
-
-        Returns:
-            List[AudioChunk]:
-
-        """
-        try:
-            os.makedirs(output_dir, exist_ok=True)
-
-            # FFmpeg
-            probe = await _ffmpeg_probe_async(input_path)
-            duration = float(probe["streams"][0]["duration"])
-
-            num_chunks = max(
-                1,
-                int(duration // chunk_duration_seconds)
-                + (1 if duration % chunk_duration_seconds > 0 else 0),
-            )
-            actual_chunk_duration = duration / num_chunks
-
-            chunks = []
-            base_name = os.path.splitext(os.path.basename(input_path))[0]
-
-            for i in range(num_chunks):
-                start_time = i * chunk_duration_seconds
-                end_time = min(start_time + chunk_duration_seconds, duration)
-                segment_duration = end_time - start_time
-
-                output_path = os.path.join(
-                    output_dir,
-                    f"{base_name}_chunk_{i + 1:03d}.mp3",
-                )
-
-                # FFmpeg -
-                await _run_ffmpeg_sync(
-                    lambda start_time=start_time, segment_duration=segment_duration, output_path=output_path: (
-                        ffmpeg.input(input_path, ss=start_time, t=segment_duration)
-                        .output(
-                            output_path,
-                            acodec="mp3",
-                            ac=1,  # ?
-                            ar="16000",  # 16kHz?
-                            ab="64k",  # 64kbps?
-                        )
-                        .overwrite_output()
-                        .global_args("-loglevel", "quiet")
-                        .run()
-                    ),
-                )
-
-                chunk_file_size = os.path.getsize(output_path)
-
-                chunk = AudioChunk(
-                    index=i + 1,
-                    file_path=output_path,
-                    start_time=start_time,
-                    duration=segment_duration,
-                    file_size=chunk_file_size,
-                )
-                chunks.append(chunk)
-
-                if progress_callback:
-                    progress = ((i + 1) / num_chunks) * 100
-                    await progress_callback(progress)
-
-            logger.info(
-                f"Successfully split {input_path} into {len(chunks)} chunks by time ({chunk_duration_seconds}s each)",
-            )
-            return chunks
-
-        except Exception as e:
-            logger.error(f"Audio splitting by time failed: {e!s}")
-            for chunk in locals().get("chunks", []):
-                if os.path.exists(chunk.file_path):
-                    os.remove(chunk.file_path)
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Audio splitting by time failed: {e!s}",
-            ) from e
 
     @staticmethod
     async def split_mp3(

@@ -9,7 +9,6 @@ truth); no redis mirrors are maintained for them.
 """
 
 import logging
-import time
 
 import orjson
 import redis.exceptions
@@ -19,45 +18,6 @@ from app.core.redis import RedisCache, get_shared_redis
 
 
 logger = logging.getLogger(__name__)
-
-
-class ProgressLogThrottle:
-    """Throttle progress logs to reduce noisy output."""
-
-    def __init__(self, min_interval_seconds: int = 5):
-        """Create a throttle with a minimum log interval."""
-        self.min_interval = min_interval_seconds
-        self._last_log_time: dict[str, float] = {}
-        self._last_log_progress: dict[str, float] = {}
-
-    def should_log(self, task_id: int, status: str, progress: float) -> bool:
-        """Return True when a progress update should be logged."""
-        key = f"{task_id}_{status}"
-        current_time = time.time()
-
-        # Compare against the previous logged timestamp and progress value.
-        last_time = self._last_log_time.get(key, 0)
-        last_progress = self._last_log_progress.get(key, -1)
-
-        time_elapsed = current_time - last_time
-        if time_elapsed < self.min_interval:
-            return False
-
-        progress_changed = abs(progress - last_progress) >= 5.0
-
-        # Always log key milestones.
-        milestone = (progress < 1) or (49 <= progress <= 51) or (progress >= 99)
-
-        if progress_changed or milestone:
-            self._last_log_time[key] = current_time
-            self._last_log_progress[key] = progress
-            return True
-
-        return False
-
-
-# Global progress throttle instance.
-_progress_throttle = ProgressLogThrottle(min_interval_seconds=5)
 
 
 class TranscriptionStateKeys:
@@ -377,7 +337,9 @@ async def claim_task_dispatch(
     if await redis.set_if_not_exists(_dispatch_key(task_id), "1", ttl=2 * 3600):
         return True
 
-    status_stmt = select(TranscriptionTask.status).where(TranscriptionTask.id == task_id)
+    status_stmt = select(TranscriptionTask.status).where(
+        TranscriptionTask.id == task_id
+    )
     status_result = await db.execute(status_stmt)
     task_status_value = status_value(status_result.scalar_one_or_none())
     if task_status_value in {"completed", "failed", "cancelled"}:

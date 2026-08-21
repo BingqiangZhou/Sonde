@@ -350,19 +350,8 @@ class PodcastSummaryGenerationService:
             await self.db.rollback()
             raise
 
-    async def regenerate_summary(
-        self,
-        episode_id: int,
-        model_name: str | None = None,
-        custom_prompt: str | None = None,
-    ) -> dict[str, Any]:
-        return await self.generate_summary(episode_id, model_name, custom_prompt)
-
     async def get_summary_models(self):
         return await self.model_manager.list_available_models()
-
-
-DatabaseBackedAISummaryService = PodcastSummaryGenerationService
 
 
 # ── Summary workflow service (merged from summary_workflow_service.py) ──
@@ -654,6 +643,3 @@ class SummaryWorkflowService:
 
     async def _mark_episode_summary_failed(self, episode_id: int, error: str) -> None:
         await self.repo.mark_summary_failed(episode_id, error)
-
-
-logger = logging.getLogger(__name__)

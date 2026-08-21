@@ -42,10 +42,6 @@ async def _ffmpeg_probe_async(input_path: str) -> dict[str, Any]:
     return await asyncio.to_thread(ffmpeg.probe, input_path)
 
 
-async def _run_ffmpeg_sync(command_builder) -> None:
-    await asyncio.to_thread(command_builder)
-
-
 def build_chunk_info(chunks: list[AudioChunk]) -> dict[str, Any]:
     """Build lightweight persisted metadata for chunk execution state."""
     ordered_chunks = sorted(chunks, key=lambda item: item.index)
