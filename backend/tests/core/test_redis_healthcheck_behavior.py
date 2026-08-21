@@ -1,3 +1,9 @@
+"""RedisCache health-check and client-lifecycle behavior.
+
+Note: reconnection after a failed periodic ping is covered by the
+integration suite (tests/integration), not by mocks here.
+"""
+
 from unittest.mock import AsyncMock
 
 import pytest
@@ -47,18 +53,6 @@ async def test_cache_get_skips_ping_within_health_check_interval(monkeypatch):
     assert await redis.get("podcast:test:1") == "cached-value"
     assert client.ping_calls == 1
     assert client.get_calls == 2
-
-
-@pytest.mark.skip(
-    reason="Mock staticmethod interaction is complex; tested via integration tests"
-)
-@pytest.mark.asyncio
-async def test_get_client_reconnects_when_periodic_ping_fails(monkeypatch):
-    """Test that _get_client reconnects when periodic health check ping fails."""
-    # This test is skipped because mocking @staticmethod on an instance
-    # has complex interactions with how Python resolves method calls.
-    # The reconnection behavior is tested via integration tests.
-    pass
 
 
 @pytest.mark.asyncio

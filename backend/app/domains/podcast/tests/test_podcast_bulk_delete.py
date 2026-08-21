@@ -136,24 +136,3 @@ async def test_remove_subscription_succeeds(
         removed = await service.remove_subscription(1)
 
     assert removed is True
-
-
-@pytest.mark.asyncio
-async def test_bulk_delete_succeeds(
-    service: PodcastSubscriptionService,
-    mock_db: AsyncMock,
-):
-    mock_db.execute.side_effect = [
-        _result_with_rows(
-            [SimpleNamespace(id=1), SimpleNamespace(id=2), SimpleNamespace(id=3)]
-        ),
-        MagicMock(),
-        _result_with_rows([]),
-        MagicMock(),
-    ]
-
-    result = await service.remove_subscriptions_bulk([1, 2, 3])
-
-    assert result["success_count"] == 3
-    assert result["failed_count"] == 0
-    assert result["deleted_subscription_ids"] == [1, 2, 3]

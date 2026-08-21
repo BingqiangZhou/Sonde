@@ -3,10 +3,7 @@ Comprehensive API Validation Tests for Podcast Feature
 Tests security, models, and core functionality
 """
 
-import asyncio
 import sys
-
-import pytest
 
 
 # Fix encoding for Windows
@@ -139,66 +136,3 @@ class TestPodcastAPI:
         is_valid, error = validator.validate_rss_xml(good_rss)
         assert is_valid is True, "Valid RSS should pass"
         print("[PASS] Valid RSS processing works")
-
-    # Test 6: Redis integration (mocked)
-    @pytest.mark.asyncio
-    async def test_redis_functions(self):
-        """Integration Test: Redis operations (mocked)"""
-        from unittest.mock import AsyncMock
-
-        # Mock Redis since we don't have real Redis
-        mock_redis = AsyncMock()
-        mock_redis.set_user_progress = AsyncMock()
-        mock_redis.get_user_progress = AsyncMock(return_value=0.5)
-
-        # Test progress tracking
-        await mock_redis.set_user_progress(1, 42, 0.5)
-        progress = await mock_redis.get_user_progress(1, 42)
-
-        assert progress == 0.5
-        print("[PASS] Redis workflow logic verified (mocked)")
-
-
-if __name__ == "__main__":
-    # Run tests programmatically
-    print("=== Stage 3: API Security & Validation Tests ===")
-
-    test_instance = TestPodcastAPI()
-
-    tests = [
-        ("XXE Protection", test_instance.test_xxe_protection),
-        ("RSS Security", test_instance.test_rss_security_validations),
-        ("Model Structure", test_instance.test_model_definitions),
-        ("Service Logic", test_instance.test_service_workflow_logic),
-    ]
-
-    # Async test for Redis
-    async_test = test_instance.test_redis_functions
-
-    passed = 0
-    failed = 0
-
-    for name, test_func in tests:
-        try:
-            test_func()
-            passed += 1
-        except Exception as e:
-            print(f"[FAIL] {name}: {e}")
-            failed += 1
-
-    # Run async test
-    try:
-        asyncio.run(async_test())
-        passed += 1
-    except Exception as e:
-        print(f"[FAIL] Redis workflow: {e}")
-        failed += 1
-
-    print(f"\n[RESULTS] Stage 3: {passed} passed, {failed} failed")
-
-    if failed == 0:
-        print("🎉 All security tests passed!")
-        sys.exit(0)
-    else:
-        print("❌ Some tests failed")
-        sys.exit(1)

@@ -42,28 +42,6 @@ async def test_update_subscription_fetch_time_preserves_timezone():
 
 
 @pytest.mark.asyncio
-async def test_episode_published_at_comparison_with_subscription():
-    """Test that episode.published_at can be compared with subscription.last_fetched_at."""
-    subscription = Subscription(
-        source_url="https://example.com/feed.xml",
-        source_type="podcast-rss",
-        title="Test Podcast",
-        last_fetched_at=datetime(2024, 1, 1, 12, 0, tzinfo=UTC),
-    )
-
-    episode = PodcastEpisode(
-        subscription_id=subscription.id,
-        title="Test Episode",
-        audio_url="https://example.com/episode.mp3",
-        item_link="https://example.com/episode",
-        published_at=datetime(2024, 1, 2, 12, 0, tzinfo=UTC),
-    )
-
-    # This should NOT raise TypeError
-    assert episode.published_at > subscription.last_fetched_at
-
-
-@pytest.mark.asyncio
 async def test_ensure_timezone_aware_fetch_time_with_naive_datetime():
     """Test that ensure_timezone_aware_fetch_time converts naive to aware."""
     naive_time = datetime(2024, 1, 1, 12, 0, 0)

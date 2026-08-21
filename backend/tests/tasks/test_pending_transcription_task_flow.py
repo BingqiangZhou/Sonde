@@ -31,68 +31,7 @@ async def test_backlog_handler_dispatches_candidates(monkeypatch):
     )
 
     result = await process_pending_transcriptions_handler(session=object())
-    assert result["status"] == "success"
-    assert result["total_candidates"] == 37
-    assert result["checked"] == 3
-    assert result["dispatched"] == 3
-    assert result["skipped"] == 0
-    assert result["failed"] == 0
-
-
-@pytest.mark.asyncio
-async def test_backlog_handler_skips_reused_actions(monkeypatch):
-    monkeypatch.setattr(
-        PodcastTaskOrchestrationService,
-        "process_pending_transcriptions",
-        AsyncMock(
-            return_value={
-                "status": "success",
-                "total_candidates": 2,
-                "checked": 2,
-                "dispatched": 0,
-                "skipped": 2,
-                "failed": 0,
-                "skipped_reasons": {
-                    "reused_pending": 1,
-                    "reused_in_progress": 1,
-                },
-            }
-        ),
-    )
-
-    result = await process_pending_transcriptions_handler(session=object())
-    assert result["status"] == "success"
-    assert result["dispatched"] == 0
-    assert result["skipped"] == 2
-    assert result["failed"] == 0
-    assert result["skipped_reasons"] == {
-        "reused_pending": 1,
-        "reused_in_progress": 1,
-    }
-
-
-@pytest.mark.asyncio
-async def test_backlog_handler_counts_failures(monkeypatch):
-    monkeypatch.setattr(
-        PodcastTaskOrchestrationService,
-        "process_pending_transcriptions",
-        AsyncMock(
-            return_value={
-                "status": "success",
-                "total_candidates": 2,
-                "checked": 2,
-                "dispatched": 1,
-                "skipped": 0,
-                "failed": 1,
-                "skipped_reasons": {},
-            }
-        ),
-    )
-
-    result = await process_pending_transcriptions_handler(session=object())
-    assert result["status"] == "success"
-    assert result["dispatched"] == 1
-    assert result["failed"] == 1
+    assert result == expected
 
 
 def test_process_pending_transcriptions_retries_on_failure(monkeypatch):

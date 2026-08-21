@@ -26,12 +26,14 @@ class TestIsRetryableHttpStatus:
     def test_5xx_retryable(self):
         assert is_retryable_http_status(500) is True
         assert is_retryable_http_status(502) is True
+        assert is_retryable_http_status(503) is True
         assert is_retryable_http_status(599) is True
 
     def test_4xx_not_retryable(self):
         assert is_retryable_http_status(400) is False
         assert is_retryable_http_status(401) is False
         assert is_retryable_http_status(403) is False
+        assert is_retryable_http_status(404) is False
 
     def test_specific_retryable_codes(self):
         assert is_retryable_http_status(408) is True

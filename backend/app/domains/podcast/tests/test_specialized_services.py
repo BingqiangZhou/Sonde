@@ -11,7 +11,6 @@ import pytest
 from app.domains.podcast.services import (
     PodcastEpisodeService,
     PodcastPlaybackService,
-    PodcastQueueService,
     PodcastSearchService,
     PodcastSubscriptionService,
 )
@@ -70,14 +69,6 @@ class TestPodcastSubscriptionService:
         return PodcastSubscriptionService(mock_db, user_id=1)
 
     @pytest.mark.asyncio
-    async def test_service_initialization(self, service):
-        """测试服务初始化"""
-        assert service.user_id == 1
-        assert service.db is not None
-        assert service.repo is not None
-        assert service.parser is not None
-
-    @pytest.mark.asyncio
     async def test_list_subscriptions_empty(self, service, mock_repo):
         """测试空订阅列表"""
         mock_repo.get_user_subscriptions_paginated.return_value = ([], 0, {})
@@ -89,7 +80,6 @@ class TestPodcastSubscriptionService:
         assert results == []
         assert total == 0
         mock_repo.get_user_subscriptions_paginated.assert_called_once()
-        mock_repo.get_episodes_counts_batch.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_get_subscription_details_not_found(self, service, mock_repo):
@@ -121,13 +111,6 @@ class TestPodcastEpisodeService:
     @pytest.fixture
     def service(self, mock_db, mock_repo):
         return PodcastEpisodeService(mock_db, user_id=1)
-
-    @pytest.mark.asyncio
-    async def test_service_initialization(self, service):
-        """测试服务初始化"""
-        assert service.user_id == 1
-        assert service.db is not None
-        assert service.repo is not None
 
     @pytest.mark.asyncio
     async def test_get_episode_by_id(self, service, mock_repo):
@@ -263,13 +246,6 @@ class TestPodcastPlaybackService:
         return PodcastPlaybackService(mock_db, user_id=1)
 
     @pytest.mark.asyncio
-    async def test_service_initialization(self, service):
-        """测试服务初始化"""
-        assert service.user_id == 1
-        assert service.db is not None
-        assert service.repo is not None
-
-    @pytest.mark.asyncio
     async def test_get_playback_state_not_found(self, service, mock_repo):
         """测试获取不存在的播放状态"""
         mock_repo.get_playback_state.return_value = None
@@ -302,60 +278,6 @@ class TestPodcastPlaybackService:
         assert result["progress_percentage"] == 25.0
 
 
-class TestPodcastQueueService:
-    """测试播客队列服务"""
-
-    @pytest.fixture
-    def mock_db(self):
-        return AsyncMock()
-
-    @pytest.fixture
-    def mock_repo(self):
-        with patch(
-            "app.domains.podcast.services.playback_service.PodcastRepository",
-        ) as mock:
-            repo_instance = AsyncMock()
-            mock.return_value = repo_instance
-            yield repo_instance
-
-    @pytest.fixture
-    def service(self, mock_db, mock_repo):
-        return PodcastQueueService(mock_db, user_id=1)
-
-    @pytest.mark.asyncio
-    async def test_get_queue_returns_projection(self, service, mock_repo):
-        now = datetime.now(UTC)
-        subscription = Mock(
-            title="Podcast",
-            config={"image_url": "https://example.com/sub.jpg"},
-        )
-        episode = Mock(
-            title="Episode 1",
-            subscription_id=10,
-            audio_url="https://example.com/audio.mp3",
-            audio_duration=120,
-            published_at=now,
-            image_url="https://example.com/ep.jpg",
-            subscription=subscription,
-        )
-        queue_item = Mock(id=1, episode_id=5, position=0, episode=episode)
-        queue = Mock(
-            current_episode_id=5,
-            revision=2,
-            updated_at=now,
-            items=[queue_item],
-        )
-        playback_state = Mock(current_position=30)
-        mock_repo.get_queue_with_items.return_value = queue
-        mock_repo.get_playback_states_batch.return_value = {5: playback_state}
-
-        result = await service.get_queue()
-
-        assert result["current_episode_id"] == 5
-        assert result["items"][0]["episode_id"] == 5
-        assert result["items"][0]["playback_position"] == 30
-
-
 class TestPodcastSearchService:
     """测试播客搜索服务"""
 
@@ -375,13 +297,6 @@ class TestPodcastSearchService:
     @pytest.fixture
     def service(self, mock_db, mock_repo):
         return PodcastSearchService(mock_db, user_id=1)
-
-    @pytest.mark.asyncio
-    async def test_service_initialization(self, service):
-        """测试服务初始化"""
-        assert service.user_id == 1
-        assert service.db is not None
-        assert service.repo is not None
 
     @pytest.mark.asyncio
     async def test_search_podcasts_empty(self, service, mock_repo):

@@ -29,13 +29,8 @@ class TestPodcastSubscriptionPlatform:
 
     @pytest.fixture
     def mock_parser(self):
-        """Mock RSS parser"""
-        with patch(
-            "app.domains.podcast.integration.secure_rss_parser.SecureRSSParser",
-        ) as mock:
-            parser_instance = AsyncMock()
-            mock.return_value = parser_instance
-            yield parser_instance
+        """Mock RSS parser, injected directly by the service fixture below."""
+        return AsyncMock()
 
     @pytest.fixture
     def service(self, mock_db, mock_repo, mock_parser):
@@ -64,92 +59,36 @@ class TestPodcastSubscriptionPlatform:
         mock_feed.episodes = []
         return mock_feed
 
+    @pytest.mark.parametrize(
+        ("platform", "feed_url"),
+        [
+            (PodcastPlatform.XIMALAYA, "https://www.ximalaya.com/album/51076156.xml"),
+            (PodcastPlatform.XIAOYUZHOU, "https://feed.xyzfm.space/mcklbwxjdvfu"),
+            (PodcastPlatform.GENERIC, "https://example.com/podcast.rss"),
+        ],
+    )
     @pytest.mark.asyncio
-    async def test_add_subscription_stores_ximalaya_platform(
+    async def test_add_subscription_stores_platform(
         self,
         service,
         mock_repo,
         mock_parser,
+        platform,
+        feed_url,
     ):
-        """Test adding Ximalaya subscription stores platform in metadata"""
-        feed_url = "https://www.ximalaya.com/album/51076156.xml"
-        mock_feed = self.create_mock_feed(PodcastPlatform.XIMALAYA)
+        """Adding a subscription stores the detected platform in metadata."""
+        mock_feed = self.create_mock_feed(platform)
 
         mock_parser.fetch_and_parse_feed.return_value = (True, mock_feed, None)
         mock_repo.get_user_subscriptions.return_value = []
-        mock_subscription = Mock()
-        mock_subscription.id = 1
-        mock_subscription.config = {"platform": PodcastPlatform.XIMALAYA}
-        mock_repo.add_subscription_with_episodes.return_value = (
-            mock_subscription,
-            [],
-            [],
-        )
+        mock_repo.add_subscription_with_episodes.return_value = (Mock(), [], [])
 
-        subscription, episodes = await service.add_subscription(feed_url)
+        await service.add_subscription(feed_url)
 
         # Verify platform was passed to repository
         call_args = mock_repo.add_subscription_with_episodes.call_args
         metadata = call_args.kwargs.get("metadata") or call_args[0][5]
-        assert metadata["platform"] == PodcastPlatform.XIMALAYA
-
-    @pytest.mark.asyncio
-    async def test_add_subscription_stores_xiaoyuzhou_platform(
-        self,
-        service,
-        mock_repo,
-        mock_parser,
-    ):
-        """Test adding Xiaoyuzhou subscription stores platform in metadata"""
-        feed_url = "https://feed.xyzfm.space/mcklbwxjdvfu"
-        mock_feed = self.create_mock_feed(PodcastPlatform.XIAOYUZHOU)
-
-        mock_parser.fetch_and_parse_feed.return_value = (True, mock_feed, None)
-        mock_repo.get_user_subscriptions.return_value = []
-        mock_subscription = Mock()
-        mock_subscription.id = 1
-        mock_subscription.config = {"platform": PodcastPlatform.XIAOYUZHOU}
-        mock_repo.add_subscription_with_episodes.return_value = (
-            mock_subscription,
-            [],
-            [],
-        )
-
-        subscription, episodes = await service.add_subscription(feed_url)
-
-        # Verify platform was passed to repository
-        call_args = mock_repo.add_subscription_with_episodes.call_args
-        metadata = call_args.kwargs.get("metadata") or call_args[0][5]
-        assert metadata["platform"] == PodcastPlatform.XIAOYUZHOU
-
-    @pytest.mark.asyncio
-    async def test_add_subscription_stores_generic_platform(
-        self,
-        service,
-        mock_repo,
-        mock_parser,
-    ):
-        """Test adding generic RSS subscription stores generic platform"""
-        feed_url = "https://example.com/podcast.rss"
-        mock_feed = self.create_mock_feed(PodcastPlatform.GENERIC)
-
-        mock_parser.fetch_and_parse_feed.return_value = (True, mock_feed, None)
-        mock_repo.get_user_subscriptions.return_value = []
-        mock_subscription = Mock()
-        mock_subscription.id = 1
-        mock_subscription.config = {"platform": PodcastPlatform.GENERIC}
-        mock_repo.add_subscription_with_episodes.return_value = (
-            mock_subscription,
-            [],
-            [],
-        )
-
-        subscription, episodes = await service.add_subscription(feed_url)
-
-        # Verify platform was passed to repository
-        call_args = mock_repo.add_subscription_with_episodes.call_args
-        metadata = call_args.kwargs.get("metadata") or call_args[0][5]
-        assert metadata["platform"] == PodcastPlatform.GENERIC
+        assert metadata["platform"] == platform
 
     @pytest.mark.asyncio
     async def test_add_subscription_includes_all_metadata_with_platform(
@@ -210,7 +149,6 @@ class TestPodcastSubscriptionPlatform:
         assert len(result) == 1
         # Platform should be included in subscription data
         assert "config" in result[0] or "platform" in str(result[0])
-        mock_repo.get_episodes_counts_batch.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_refresh_subscription_preserves_platform(

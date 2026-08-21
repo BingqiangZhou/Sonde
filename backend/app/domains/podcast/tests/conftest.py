@@ -92,13 +92,6 @@ def mock_workflow_service(mock_service_factory):
     yield from mock_service_factory(get_transcription_workflow_service)
 
 
-@pytest.fixture
-def mock_schedule_service(mock_service_factory):
-    from app.domains.podcast.routes.dependencies import get_podcast_schedule_service
-
-    yield from mock_service_factory(get_podcast_schedule_service)
-
-
 @pytest.fixture(autouse=True)
 def override_auth_dependencies(
     mock_episode_service: AsyncMock,
