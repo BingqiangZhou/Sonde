@@ -4,6 +4,13 @@ import type { FastifyInstance } from 'fastify';
 
 import { SITE } from '@sonde/industry';
 
+import {
+  getDailyReport,
+  getLatestDailyReport,
+  listDailyReportKeys,
+} from '@sonde/backend';
+import { getSelectedEpisode, listSelectedEpisodes } from '@sonde/backend';
+
 export async function siteRoutes(app: FastifyInstance) {
   app.get('/meta', async () => ({
     name: SITE.name,
@@ -14,7 +21,58 @@ export async function siteRoutes(app: FastifyInstance) {
     tagline: SITE.tagline,
   }));
 
-  // 首页精选 / 单集详情 / 日报 等 route 在后续阶段加入
-  app.get('/episodes', async () => ({ items: [], total: 0 }));
-  app.get('/reports/daily/latest', async () => ({ available: false }));
+  app.get('/episodes', async (request) => {
+    const query = request.query as { limit?: string };
+    const limit = Number.parseInt(query.limit ?? '20', 10);
+    const items = await listSelectedEpisodes(Number.isFinite(limit) ? limit : 20);
+    return { items };
+  });
+
+  app.get('/episodes/:id', async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const episodeId = Number.parseInt(id, 10);
+    if (!Number.isFinite(episodeId)) {
+      reply.code(400);
+      return { error: 'invalid episode id' };
+    }
+    const item = await getSelectedEpisode(episodeId);
+    if (!item) {
+      reply.code(404);
+      return { error: 'episode not found' };
+    }
+    return { episode: item };
+  });
+
+  app.get('/reports/daily/latest', async (_request, reply) => {
+    const report = await getLatestDailyReport();
+    if (!report) {
+      reply.code(404);
+      return { error: 'no report yet' };
+    }
+    return report;
+  });
+
+  app.get('/reports/daily/:key', async (request, reply) => {
+    const { key } = request.params as { key: string };
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(key)) {
+      reply.code(400);
+      return { error: 'invalid report key' };
+    }
+    const report = await getDailyReport(key);
+    if (!report) {
+      reply.code(404);
+      return { error: 'report not found' };
+    }
+    return report;
+  });
+
+  app.get('/reports/daily', async (request) => {
+    const query = request.query as { page?: string; size?: string };
+    const page = Number.parseInt(query.page ?? '1', 10);
+    const size = Number.parseInt(query.size ?? '30', 10);
+    return listDailyReportKeys(
+      Number.isFinite(page) ? page : 1,
+      Number.isFinite(size) ? size : 30,
+    );
+  });
 }

@@ -54,3 +54,6 @@ export {
   listDailyReportKeys,
 } from './reports/daily.ts';
 export type { DailyReportOptions } from './reports/daily.ts';
+
+export { listSelectedEpisodes, getSelectedEpisode } from './publication/read.ts';
+export type { SelectedEpisodeItem } from './publication/read.ts';
