@@ -12,6 +12,7 @@ import {
 
 import { SITE } from '@sonde/industry';
 
+import { useThemeSync } from './components/ThemeControls.tsx';
 import { MobileTabBar } from './components/shell/MobileTabBar.tsx';
 import { Sidebar } from './components/shell/Sidebar.tsx';
 
@@ -27,14 +28,19 @@ export const meta: MetaFunction = () => [
   { name: 'description', content: SITE.description },
 ];
 
+/** 首屏主题初始化：在样式加载后、渲染前给 <html> 打 .dark，避免深色用户看到白色闪烁。
+ *  与 lib/theme.ts 的存储键（sonde-theme）保持一致。 */
+const THEME_INIT_SCRIPT = `(function(){try{var t=localStorage.getItem('sonde-theme')||'system';var d=t==='dark'||(t!=='light'&&window.matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.classList.toggle('dark',d);}catch(e){}})();`;
+
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="zh-CN">
+    <html lang="zh-CN" suppressHydrationWarning>
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
         <Meta />
         <Links />
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
       <body className="min-h-dvh bg-paper font-sans text-ink antialiased">
         {children}
@@ -73,6 +79,8 @@ function SiteShell({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   const { pathname } = useLocation();
+  // 水合后重新应用主题（React 水合会剥掉内联脚本加在 <html> 上的 .dark），并跟踪系统偏好
+  useThemeSync();
   // admin 使用完全独立的 chrome
   if (pathname === '/admin' || pathname.startsWith('/admin/')) {
     return <Outlet />;

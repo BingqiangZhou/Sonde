@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* 深色模式走 .dark class（root.tsx 的内联脚本在首屏前打好，避免闪烁） */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
     "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC",
@@ -12,6 +15,28 @@
   --color-vermilion: #b91c1c;
 }
 
+/* ── 深色主题：覆盖 Tailwind 主题变量（暖墨色，保持报刊质感）。
+   工具类（bg-white、text-stone-600 等）都引用这些变量，暗色下整体翻转。 */
+.dark {
+  color-scheme: dark;
+
+  --color-paper: #17140f;       /* 页面底 */
+  --color-ink: #ece7db;         /* 主文字 */
+  --color-white: #211d16;       /* 卡片面 */
+  --color-vermilion: #e05252;   /* 朱砂提亮以保证对比度 */
+
+  --color-stone-50: #1c1812;
+  --color-stone-100: #262019;
+  --color-stone-200: #373127;
+  --color-stone-300: #4b443a;
+  --color-stone-400: #97907f;
+  --color-stone-500: #b0a894;
+  --color-stone-600: #cfc7b4;
+  --color-stone-700: #e0d9c7;
+  --color-stone-800: #ede6d6;
+  --color-stone-900: #f5efe2;
+}
+
 :root {
   color-scheme: light;
 }
@@ -22,6 +47,11 @@ html {
 
 ::selection {
   background-color: #fde68a;
+}
+
+.dark ::selection {
+  background-color: #7c3a0d;
+  color: #fef3c7;
 }
 
 /* 报刊风双细线（用于刊头上下） */
@@ -37,9 +67,85 @@ html {
   box-shadow: 0 4px 16px rgba(28, 25, 23, 0.08);
   transform: translateY(-1px);
 }
+.dark .card-lift:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+}
 
 /* 焦点可见性 */
 :where(a, button, input, select, textarea):focus-visible {
-  outline: 2px solid #b91c1c;
+  outline: 2px solid var(--color-vermilion, #b91c1c);
   outline-offset: 2px;
+}
+
+/* ── 更新日志页（渲染仓库 CHANGELOG.md）── */
+.changelog-body h2 {
+  margin-top: 2.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 3px double var(--color-ink);
+  font-family: var(--font-serif);
+  font-size: 1.35rem;
+  font-weight: 700;
+}
+.changelog-body h2:first-child {
+  margin-top: 0;
+}
+.changelog-body h3 {
+  margin-top: 1.5rem;
+  font-family: var(--font-serif);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: var(--color-vermilion);
+}
+.changelog-body blockquote {
+  margin: 1rem 0 1.25rem;
+  padding: 0.85rem 1.1rem;
+  border-left: 3px solid var(--color-vermilion);
+  background: color-mix(in oklab, var(--color-white) 55%, transparent);
+  font-size: 0.875rem;
+  line-height: 1.9;
+}
+.changelog-body blockquote p + p {
+  margin-top: 0.6rem;
+}
+.changelog-body ul {
+  margin: 0.75rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.changelog-body li {
+  position: relative;
+  padding-left: 1.1rem;
+  font-size: 0.9rem;
+  line-height: 1.7;
+}
+.changelog-body li::before {
+  content: "—";
+  position: absolute;
+  left: 0;
+  color: var(--color-vermilion);
+}
+.changelog-body hr {
+  margin: 2.5rem 0;
+  border: 0;
+  border-top: 1px solid var(--color-stone-300);
+}
+.changelog-body a {
+  color: var(--color-vermilion);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.changelog-body a:hover {
+  text-decoration: none;
+}
+.changelog-body code {
+  padding: 0.1em 0.4em;
+  border-radius: 4px;
+  background: var(--color-stone-100);
+  font-size: 0.85em;
+}
+.changelog-body p {
+  font-size: 0.9rem;
+  line-height: 1.8;
 }

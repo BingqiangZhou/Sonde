@@ -6,6 +6,7 @@ import { SITE } from '@sonde/industry';
 
 import { IconKey } from '../icons.tsx';
 import { SIDEBAR, tabIsActive, type NavItem } from './nav.ts';
+import { ThemeModeSelector } from '../ThemeControls.tsx';
 
 function SideLink({ item }: { item: NavItem }) {
   const { pathname } = useLocation();
@@ -57,6 +58,10 @@ export function Sidebar() {
       </nav>
 
       <div className="mt-2 space-y-2 border-t border-stone-200 px-1 pt-3">
+        <div className="flex items-center justify-between px-2.5">
+          <span className="text-[11px] tracking-wider text-stone-400">主题</span>
+          <ThemeModeSelector variant="compact" />
+        </div>
         <a
           href="/admin"
           className="flex h-9 items-center gap-2.5 rounded-md px-2.5 text-[13px] text-stone-400 transition-colors hover:bg-stone-100 hover:text-ink"

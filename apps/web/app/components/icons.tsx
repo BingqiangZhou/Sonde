@@ -76,6 +76,98 @@ export function IconKey({ size }: IconProps) {
   );
 }
 
+/** 周报：日历（周） */
+export function IconCalendar({ size }: IconProps) {
+  return svg(
+    size,
+    <>
+      <rect width="18" height="18" x="3" y="4" rx="2" />
+      <path d="M16 2v4M8 2v4M3 10h18" />
+    </>,
+  );
+}
+
+/** 月报：日历（月，带日期点） */
+export function IconCalendarDays({ size }: IconProps) {
+  return svg(
+    size,
+    <>
+      <rect width="18" height="18" x="3" y="4" rx="2" />
+      <path d="M16 2v4M8 2v4M3 10h18" />
+      <path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01" />
+    </>,
+  );
+}
+
+/** 收藏：星 */
+export function IconStar({ size, filled, className }: IconProps & { filled?: boolean; className?: string }) {
+  return (
+    <svg
+      className={className}
+      width={size ?? 18}
+      height={size ?? 18}
+      viewBox="0 0 24 24"
+      fill={filled ? 'currentColor' : 'none'}
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M11.5 3.2a.6.6 0 0 1 1 0l2.4 4.9 5.4.8a.6.6 0 0 1 .3 1l-3.9 3.8.9 5.4a.6.6 0 0 1-.9.6L12 17.2l-4.8 2.5a.6.6 0 0 1-.9-.6l.9-5.4-3.9-3.8a.6.6 0 0 1 .3-1l5.4-.8Z" />
+    </svg>
+  );
+}
+
+/** 更新日志：卷轴 */
+export function IconScroll({ size }: IconProps) {
+  return svg(
+    size,
+    <>
+      <path d="M19 17V5a2 2 0 0 0-2-2H4" />
+      <path d="M8 21h12a2 2 0 0 0 2-2v-1a1 1 0 0 0-1-1H11a1 1 0 0 0-1 1v1a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v2a1 1 0 0 0 1 1h3" />
+    </>,
+  );
+}
+
+/** 我的：用户 */
+export function IconUser({ size }: IconProps) {
+  return svg(
+    size,
+    <>
+      <circle cx="12" cy="8" r="4" />
+      <path d="M4 21c0-4 3.6-6 8-6s8 2 8 6" />
+    </>,
+  );
+}
+
+/** 主题：太阳（浅色） */
+export function IconSun({ size }: IconProps) {
+  return svg(
+    size,
+    <>
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
+    </>,
+  );
+}
+
+/** 主题：月亮（深色） */
+export function IconMoon({ size }: IconProps) {
+  return svg(size, <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" />);
+}
+
+/** 主题：显示器（跟随系统） */
+export function IconMonitor({ size }: IconProps) {
+  return svg(
+    size,
+    <>
+      <rect width="20" height="14" x="2" y="3" rx="2" />
+      <path d="M8 21h8M12 17v4" />
+    </>,
+  );
+}
+
 /** admin 仪表盘：四格 */
 export function IconGrid({ size }: IconProps) {
   return svg(
