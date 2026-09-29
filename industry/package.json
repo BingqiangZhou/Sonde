@@ -5,6 +5,7 @@
   "type": "module",
   "exports": {
     ".": "./index.ts",
+    "./paths": "./paths.ts",
     "./sources.json": "./sources.json"
   },
   "scripts": {

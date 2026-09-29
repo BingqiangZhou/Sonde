@@ -11,6 +11,7 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
+    "@sonde/industry": "*",
     "pg": "^8.16.0",
     "pg-boss": "^10.2.0",
     "rss-parser": "^3.13.0",
