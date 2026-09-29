@@ -1,6 +1,6 @@
 # 声读 Sonde 全面重写决策（2026-09-29）
 
-> 状态：已批准，实施中。本文档记录本次重写的背景、决策与目标架构。
+> 状态：**已实施完成**（同日完成 v1 全链路）。本文档记录本次重写的背景、决策与目标架构。
 
 ## 背景
 
@@ -55,3 +55,17 @@ deploy/      Caddyfile
 
 - `LOCAL_FIRST_REDESIGN_2026-08-21.md`（已取消）、`PER_USER_CONSOLE_PLAN_2026-08-21.md`（已搁置）、`SERVER_PIPELINE_ARCH_2026-08-21.md`（已被本重写取代）仅作历史存档
 - `INFRA_PGQUEUE_CADDY_2026-08-21 前后` 的 Postgres + Caddy 经验延续到新架构（pg-boss 同样跑在 Postgres 上）
+
+## 实施记录（v1 完成态）
+
+| 阶段 | 内容 | 验证方式 |
+|---|---|---|
+| 清理 | 删除 backend/ frontend/ docker/ .github，重写 README/AGENTS/.gitignore | git 941ff6ba |
+| 脚手架 | npm workspaces 三进程、0001_init.sql、Dockerfile(ffmpeg)、compose 五容器 | Docker 端到端健康检查 |
+| 核心包 | chatJson（重试/校验/记账）、transcribeChunk、prompt 渲染器、时区/JSON 工具 | 51 个单测 |
+| 采集+转写 | 条件 GET 抓取、首导 14 天/10 条截断、六步转写（下载/ffmpeg 16k/分块/逐块转写/合并/派发） | Docker 真实 feed 实测 |
+| 分析+日报 | 评分（zod 容错）→ tier 门槛 → 写作；08:00 站点时区成刊 + taxonomy 分节 | mock LLM/ASR 全链路实测 |
+| 阅读站 | 首页/日报/单集/归档 + 站点读 API | Docker 实测页面渲染 |
+| admin | 登录会话、源管理、单集诊断、日报触发、成本页（web 自定义服务器反代 /api） | Docker 实测 |
+
+开发用 mock（无 key 跑全链路）：`scripts/dev/mock-llm.mjs`，见 README「本地开发」。

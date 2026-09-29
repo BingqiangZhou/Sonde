@@ -39,7 +39,19 @@ docker compose up -d --build
 #   后台  http://localhost:3000/admin（密码见 .env 的 ADMIN_PASSWORD）
 ```
 
-本地开发：Node 24 + Docker 跑 Postgres，`npm install` 后用 `tsx` 直接运行各进程（见 AGENTS.md）。
+本地开发：Node 24 + Docker 跑 Postgres，`npm install` 后用 `npm run dev:api` / `dev:worker` / `dev:web`（详见 AGENTS.md）。
+
+### 无 API key 的本地联调
+
+`scripts/dev/mock-llm.mjs` 提供模拟的 LLM 与转写端点，可跑通全链路（数据为固定假文案）：
+
+```bash
+docker network create sonde_default 2>/dev/null; docker run -d --name sonde-mock-llm --network sonde_default \
+  -v "$PWD/scripts:/scripts:ro" node:24-trixie-slim node /scripts/dev/mock-llm.mjs
+# .env 中把 LLM_BASE_URL / TRANSCRIPTION_BASE_URL 指向 http://sonde-mock-llm:9999/v1
+```
+
+正式使用前请把 `.env` 换成真实的 OpenAI 兼容端点与 key。
 
 ## 定制
 
