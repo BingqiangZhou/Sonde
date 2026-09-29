@@ -2,13 +2,13 @@
 
 ## Project Overview
 - **Sonde (声读)** — personal podcast daily-digest site: podcast RSS → transcription → AI scoring/filtering → daily report. Learning the architecture of AIHOT (self-collecting, self-writing digest framework), implemented from scratch for podcasts.
-- Stack: Node 24, TypeScript (strict), npm workspaces monorepo, Fastify, pg-boss, PostgreSQL 17, React Router 7 (SSR, framework mode), Tailwind CSS, Docker Compose.
+- Stack: Node 24, TypeScript (strict), npm workspaces monorepo, Fastify, pg-boss, PostgreSQL 17, React Router 8 (SSR, framework mode), Tailwind CSS, Docker Compose.
 - The workspace directory is still named `PodcastInsight` (historical); the product name is 声读 Sonde.
 
 ## Project Structure
 - `apps/api/` — Fastify HTTP service: site read API (`/api/site/*`), admin API (`/api/admin/*`, session auth), health.
 - `apps/worker/` — pg-boss worker: queue consumers + cron schedules (fetch/transcribe/analyze/report).
-- `apps/web/` — React Router 7 SSR web app (Chinese UI). Reads ONLY via HTTP from api, never touches the DB directly.
+- `apps/web/` — React Router 8 SSR web app (Chinese UI). Reads ONLY via HTTP from api, never touches the DB directly.
 - `packages/backend/` — all business logic: `db` (raw tagged-template SQL, no ORM), `sources`, `pipeline`, `reports`, `providers` (llm/transcription + receipts), `prompts` renderer.
 - `industry/` — the customization pack (change config, not code): `site.ts`, `taxonomy.ts`, `selection.ts` (thresholds + interest profile), `sources.json` (seed subscriptions), `prompts/*.md` (all LLM prompts, `{{var}}` + `{{> include}}` templates).
 - `database/migrations/` — plain SQL migrations applied by `scripts/migrate.ts`.
@@ -33,7 +33,7 @@
 - Every paid call (LLM, transcription) goes through the provider layer which writes a `receipts` row (model, tokens/audio seconds, ok/fail) before business writes.
 - Node-side errors: throw typed `AppError` subclasses from `packages/backend/src/errors.ts`; api maps them to HTTP status codes.
 - Date/time: DB stores timestamptz (UTC); daily report windows are computed on the Asia/Shanghai calendar.
-- Web: React Router 7 framework mode (`app/routes.ts`), Tailwind for styling, no component library. Chinese-first UI copy.
+- Web: React Router 8 framework mode (`app/routes.ts`), Tailwind for styling, no component library. Chinese-first UI copy.
 - Commits follow Conventional Commits: `feat:`, `fix:`, `refactor:`, `chore:` (see history).
 
 ## Environment & Secrets

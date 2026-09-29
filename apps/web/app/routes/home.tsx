@@ -84,7 +84,7 @@ export default function Home() {
       <section>
         <div className="mb-5 flex items-baseline justify-between">
           <h2 className="font-serif text-xl font-bold">最近精选</h2>
-          <Link to="/archive" className="text-sm text-stone-400 hover:text-vermilion">
+          <Link to="/all" className="text-sm text-stone-400 hover:text-vermilion">
             全部 →
           </Link>
         </div>

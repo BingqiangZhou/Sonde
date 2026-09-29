@@ -54,5 +54,5 @@ export {
 } from './reports/daily.ts';
 export type { DailyReportOptions } from './reports/daily.ts';
 
-export { listSelectedEpisodes, getSelectedEpisode } from './publication/read.ts';
-export type { SelectedEpisodeItem } from './publication/read.ts';
+export { listSelectedEpisodes, getSelectedEpisode, listAllAnalyzedEpisodes } from './publication/read.ts';
+export type { SelectedEpisodeItem, AnalyzedEpisodeItem } from './publication/read.ts';

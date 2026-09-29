@@ -17,13 +17,13 @@
 ```
 apps/api       Fastify：站点读 API + admin API
 apps/worker    pg-boss 队列 + cron：采集/转写/分析/成刊
-apps/web       React Router 7 SSR：中文阅读站 + /admin
+apps/web       React Router 8 SSR：中文阅读站 + /admin
 packages/backend  业务逻辑（原生 SQL、流水线、LLM/转写 provider）
 industry/      声读定制层：站点文案、分类、门槛、兴趣画像、prompt
 database/      纯 SQL 迁移
 ```
 
-技术栈：Node 24 · TypeScript · Fastify · pg-boss · PostgreSQL 17 · React Router 7 · Tailwind CSS · Docker Compose
+技术栈：Node 24 · TypeScript · Fastify · pg-boss · PostgreSQL 17 · React Router 8 · Tailwind CSS · Docker Compose
 
 ## 快速开始
 

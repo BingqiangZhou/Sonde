@@ -24,6 +24,12 @@ export interface EpisodeItem {
   durationSeconds: number | null;
 }
 
+/** 全部动态条目：在 EpisodeItem 之上附带评分理由与入选状态 */
+export interface AnalyzedEpisodeItem extends EpisodeItem {
+  reason: string;
+  selected: boolean;
+}
+
 export interface ReportItem {
   episodeId: number;
   podcast: string;

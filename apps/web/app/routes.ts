@@ -4,6 +4,7 @@ export default [
   index('routes/home.tsx'),
   route('daily', 'routes/daily.tsx'),
   route('daily/:key', 'routes/daily-detail.tsx'),
+  route('all', 'routes/all.tsx'),
   route('archive', 'routes/archive.tsx'),
   route('episodes/:id', 'routes/episode-detail.tsx'),
   route('about', 'routes/about.tsx'),

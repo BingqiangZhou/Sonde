@@ -18,7 +18,7 @@ export const SIDEBAR: Array<{ title: string; items: NavItem[] }> = [
     items: [
       { to: '/', label: '首页', icon: IconWave, end: true },
       { to: '/daily', label: '日报', icon: IconNews },
-      { to: '/archive', label: '全部精选', icon: IconList },
+      { to: '/all', label: '全部动态', icon: IconList },
     ],
   },
   {
@@ -30,13 +30,17 @@ export const SIDEBAR: Array<{ title: string; items: NavItem[] }> = [
 export const TABBAR: NavItem[] = [
   { to: '/', label: '首页', icon: IconWave, end: true },
   { to: '/daily', label: '日报', icon: IconNews },
-  { to: '/archive', label: '全部', icon: IconList },
+  { to: '/all', label: '全部', icon: IconList },
   { to: '/about', label: '关于', icon: IconHeart },
 ];
 
 export function tabIsActive(item: NavItem, pathname: string): boolean {
   if (item.end) {
     return pathname === item.to;
+  }
+  // /archive 已并入 /all
+  if (item.to === '/all') {
+    return /^\/(all|archive)(\/|$)/.test(pathname);
   }
   return pathname === item.to || pathname.startsWith(`${item.to}/`);
 }

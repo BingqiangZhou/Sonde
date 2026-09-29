@@ -6,6 +6,7 @@
 import { createServer } from 'node:http';
 
 const port = Number.parseInt(process.argv[2] ?? '9999', 10);
+let scoreCalls = 0;
 
 const server = createServer(async (req, res) => {
   const url = req.url ?? '';
@@ -13,7 +14,7 @@ const server = createServer(async (req, res) => {
   if (req.method === 'POST' && url.endsWith('/audio/transcriptions')) {
     // 消费 multipart body
     await readBody(req);
-    sendJson(res, 200, { text: '这是模拟转录文本。嘉宾详细讲述了模型能力的边界，以及三个实际落地案例，包含具体数据与团队经验的反思。' });
+    sendJson(res, 200, { text: '这是模拟转录文本。嘉宾详细讲述了模型能力边界与三个实际落地案例，包含具体数据与团队经验的反思。' });
     return;
   }
 
@@ -35,7 +36,13 @@ const server = createServer(async (req, res) => {
         reasonZh: '一手经验复盘，案例具体可对照',
       };
     } else if (userPrompt.includes('注意力价值')) {
-      payload = { score: 88, reason: '一手信息密度高，含具体落地案例', category: 'tech-ai', tags: ['AI', '落地实践'] };
+      // 每 3 次评分轮换低分，便于验证「全部动态」的入选/未入选两种呈现
+      scoreCalls += 1;
+      if (scoreCalls % 3 === 0) {
+        payload = { score: 45, reason: '内容以新闻罗列为主，缺乏增量判断', category: 'business', tags: ['资讯罗列'] };
+      } else {
+        payload = { score: 88, reason: '一手信息密度高，含具体落地案例', category: 'tech-ai', tags: ['AI', '落地实践'] };
+      }
     } else {
       sendJson(res, 400, { error: { message: 'mock: unknown prompt' } });
       return;

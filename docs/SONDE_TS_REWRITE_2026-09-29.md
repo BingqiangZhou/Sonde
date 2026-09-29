@@ -14,7 +14,7 @@
 |---|---|
 | 旧 Python 后端 / Flutter 前端 | 全部删除，不保留任何旧代码 |
 | 落地方式 | **从零自写**（学习 AIHOT 架构思想，不复制其代码） |
-| 技术栈 | Node 24 + TypeScript monorepo：Fastify + pg-boss + PostgreSQL 17 + React Router 7 SSR + Tailwind CSS + Docker Compose |
+| 技术栈 | Node 24 + TypeScript monorepo：Fastify + pg-boss + PostgreSQL 17 + React Router 8 SSR + Tailwind CSS + Docker Compose |
 | 播客音频转写策略 | **全部转写**：每个新单集都下载音频→转写全文，评分基于完整转录（转写流程逻辑沿用旧项目六步流水线，移植为 TS） |
 | 网页播放 | **纯阅读 + 外链**：不做播放器，单集页外链原始单集 |
 | 数据库 | **从零开始**：新 schema，不做任何旧数据迁移（含旧订阅列表，手动重新添加） |
@@ -29,7 +29,7 @@
 apps/
   api/       Fastify：站点读 API + admin API（session 鉴权）
   worker/    pg-boss 队列消费 + cron 调度（含转写流水线）
-  web/       React Router 7 (framework mode, SSR)：中文阅读站 + /admin
+  web/       React Router 8 (framework mode, SSR)：中文阅读站 + /admin
 packages/
   backend/   业务逻辑：db（原生 SQL）、sources、pipeline、reports、llm/transcription providers、prompts 渲染
 industry/    声读定制层：site.ts / taxonomy.ts / selection.ts / sources.json / prompts/*.md
