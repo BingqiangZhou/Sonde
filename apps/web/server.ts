@@ -7,7 +7,10 @@ import { fileURLToPath } from 'node:url';
 
 import { createRequestHandler, type ServerBuild } from 'react-router';
 
-const build = (await import('./build/server/index.js')) as unknown as ServerBuild;
+// 构建产物只在 build 之后存在（CI/全新 checkout 没有 build/ 目录），
+// 用变量做动态导入，避免 tsc 静态解析该路径报错。
+const serverEntry = './build/server/index.js';
+const build = (await import(serverEntry)) as unknown as ServerBuild;
 const handler = createRequestHandler(build);
 
 const API_URL = process.env.API_URL ?? 'http://localhost:3001';
