@@ -5,6 +5,20 @@ This is the English edition — see [CHANGELOG.md](CHANGELOG.md) for the Chinese
 
 
 
+## [1.2.0](https://github.com/BingqiangZhou/Sonde/compare/v1.1.0...v1.2.0) - 2026-09-29 ([📥](https://github.com/BingqiangZhou/Sonde/releases/tag/v1.2.0))
+
+> Sonde v1.2.0 adds weekly and monthly reports alongside the daily: a weekly recap lands every Monday 08:30 and a monthly review on the 1st at 08:30 (site timezone), sharing one composition pipeline with kind-specific editor prompts, plus /weekly and /monthly archive and detail pages. This release also ships a site changelog page (/changelog, bundled from the repo's Chinese CHANGELOG), browser-local episode favorites (star buttons on episode detail, the all-episodes feed and report cards, a favorites page and a mobile "Me" hub), and a tri-state light/dark/system theme with a warm-dark newspaper palette and no first-paint flash.
+>
+> 3 commits: 🚀 Features 3
+
+### 🚀 Features
+
+- *(reports)* Weekly and monthly reports alongside the daily ([220013a](https://github.com/BingqiangZhou/Sonde/commit/220013aaf57d8fb54faa3b9ad2f6114f607decc7))
+- *(web)* Light/dark/system theme with warm-dark newspaper palette ([55b522f](https://github.com/BingqiangZhou/Sonde/commit/55b522f4beeac87681eee55c1a724a682f8b8c65))
+- *(web)* Weekly/monthly pages, site changelog, browser-local favorites ([d9b1909](https://github.com/BingqiangZhou/Sonde/commit/d9b19095657c6fdb2e1ec0c0b3d94c75a155ec06))
+
+
+
 ## [1.1.0](https://github.com/BingqiangZhou/Sonde/compare/v1.0.1...v1.1.0) - 2026-09-29 ([📥](https://github.com/BingqiangZhou/Sonde/releases/tag/v1.1.0))
 
 > Sonde v1.1.0 upgrades the web app to React Router 8.4.0 and adds the "All Episodes" feed (/all): every scored episode, including those below the selection threshold, is listed in one place — selected items link to the episode detail page while unselected ones show their gray score and the reason they were filtered out. This release also adds GitHub Actions CI and a release pipeline that verifies the build and publishes the GitHub Release automatically when a v* tag is pushed, plus a fix so typecheck passes on a fresh checkout without build artifacts.

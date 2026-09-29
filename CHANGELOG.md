@@ -4,6 +4,20 @@
 
 
 
+## [1.2.0](https://github.com/BingqiangZhou/Sonde/compare/v1.1.0...v1.2.0) - 2026-09-29 ([📥](https://github.com/BingqiangZhou/Sonde/releases/tag/v1.2.0))
+
+> v1.2.0 在日报之外新增周报与月报：每周一 08:30 回顾上一周、每月 1 日 08:30 盘点上个月，三刊共用同一条成刊流水线与各自的主编 prompt，站点新增 /weekly、/monthly 归档与详情页；同时上线站点更新日志页（/changelog，与仓库中文版 CHANGELOG 同步打包）、仅存本浏览器的单集收藏（详情页/列表/报刊卡片星标、收藏页与移动端「我的」入口），以及浅色/深色/跟随系统三态主题（暖墨色暗色调色板，防首屏闪烁）。
+>
+> 共 3 个提交：🚀 新功能 3
+
+### 🚀 新功能
+
+- *(reports)* 在日报之外新增周报与月报 ([220013a](https://github.com/BingqiangZhou/Sonde/commit/220013aaf57d8fb54faa3b9ad2f6114f607decc7))
+- *(web)* 浅色/深色/跟随系统主题（暖墨色暗色调色板） ([55b522f](https://github.com/BingqiangZhou/Sonde/commit/55b522f4beeac87681eee55c1a724a682f8b8c65))
+- *(web)* 周报/月报页面、站点更新日志与浏览器本地收藏 ([d9b1909](https://github.com/BingqiangZhou/Sonde/commit/d9b19095657c6fdb2e1ec0c0b3d94c75a155ec06))
+
+
+
 ## [1.1.0](https://github.com/BingqiangZhou/Sonde/compare/v1.0.1...v1.1.0) - 2026-09-29 ([📥](https://github.com/BingqiangZhou/Sonde/releases/tag/v1.1.0))
 
 > v1.1.0 将 Web 端升级到 React Router 8.4.0，并新增「全部动态」页（/all）：所有完成评分的单集（含未过门槛者）统一在此浏览——入选条目链接到单集详情，未入选条目展示灰色评分与筛选理由；同时补齐 GitHub Actions CI 与推送 v* 标签后自动验证并创建 GitHub Release 的发版流水线，并修复了全新 checkout 上 server.ts 因引用构建产物导致 typecheck 失败的问题。
