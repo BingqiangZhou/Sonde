@@ -416,7 +416,7 @@ class TestThirdPartyNoiseSuppression:
         ("gunicorn.access", logging.WARNING),
         ("gunicorn.error", logging.ERROR),
         ("sqlalchemy.engine", logging.WARNING),
-        ("celery", logging.WARNING),
+        ("procrastinate", logging.INFO),
         ("httpx", logging.WARNING),
         ("httpcore", logging.WARNING),
     ]

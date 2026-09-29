@@ -47,13 +47,12 @@ class _MappingRowsResult:
 @pytest.mark.asyncio
 async def test_subscription_episodes_batch_uses_topn_window_query():
     db = AsyncMock()
-    redis = AsyncMock()
     episode_a = MagicMock(subscription_id=1)
     episode_b = MagicMock(subscription_id=1)
     episode_c = MagicMock(subscription_id=2)
     db.execute.return_value = _ScalarRowsResult([episode_a, episode_b, episode_c])
 
-    repo = PodcastRepository(db=db, redis=redis)
+    repo = PodcastRepository(db=db)
     result = await repo.get_subscription_episodes_batch(
         [1, 2], limit_per_subscription=2
     )
@@ -68,7 +67,6 @@ async def test_subscription_episodes_batch_uses_topn_window_query():
 @pytest.mark.asyncio
 async def test_user_subscriptions_paginated_returns_counts_without_fallback():
     db = AsyncMock()
-    redis = AsyncMock()
 
     sub1 = MagicMock()
     sub1.id = 101
@@ -76,7 +74,7 @@ async def test_user_subscriptions_paginated_returns_counts_without_fallback():
     sub2.id = 202
     db.execute.return_value = _RowsResult([(sub1, 7, 2), (sub2, 3, 2)])
 
-    repo = PodcastRepository(db=db, redis=redis)
+    repo = PodcastRepository(db=db)
     items, total, counts = await repo.get_user_subscriptions_paginated(
         user_id=1, page=1, size=20
     )
@@ -90,11 +88,10 @@ async def test_user_subscriptions_paginated_returns_counts_without_fallback():
 @pytest.mark.asyncio
 async def test_user_subscriptions_paginated_uses_fallback_on_empty_page():
     db = AsyncMock()
-    redis = AsyncMock()
     db.execute.return_value = _RowsResult([])
     db.scalar.return_value = 5
 
-    repo = PodcastRepository(db=db, redis=redis)
+    repo = PodcastRepository(db=db)
     items, total, counts = await repo.get_user_subscriptions_paginated(
         user_id=1, page=3, size=20
     )
@@ -108,10 +105,9 @@ async def test_user_subscriptions_paginated_uses_fallback_on_empty_page():
 @pytest.mark.asyncio
 async def test_feed_lightweight_cursor_reuses_feed_total_cache_path():
     db = AsyncMock()
-    redis = AsyncMock()
     db.execute.return_value = _MappingRowsResult([])
 
-    repo = PodcastRepository(db=db, redis=redis)
+    repo = PodcastRepository(db=db)
     repo._get_feed_total_count = AsyncMock(return_value=9)
 
     (

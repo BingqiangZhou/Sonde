@@ -6,7 +6,7 @@ Delegates to four focused orchestrators (merged from orchestration/ package):
 - ReportOrchestrator        -- daily report generation
 - MaintenanceOrchestrator   -- statistics, cleanup, housekeeping
 
-The public API is preserved so that all Celery task handlers and tests
+The public API is preserved so that all queue task handlers and tests
 continue to import ``PodcastTaskOrchestrationService`` unchanged.
 """
 
@@ -25,7 +25,6 @@ from sqlalchemy.orm import joinedload
 from app.core.config import settings
 from app.core.database import get_async_session_factory  # noqa: F401
 from app.core.datetime_utils import ensure_timezone_aware_fetch_time
-from app.core.redis import get_shared_redis
 from app.domains.podcast.integration.secure_rss_parser import (
     SecureRSSParser,  # noqa: F401
 )
@@ -43,8 +42,6 @@ from app.domains.podcast.services.transcription_service import (  # noqa: F401
     TranscriptionWorkflowService,
 )
 from app.domains.podcast.transcription.state import (
-    claim_task_dispatch,
-    clear_task_dispatch,
     get_transcription_state_manager,
 )
 from app.shared.storage_cleanup import StorageCleanupService
@@ -61,7 +58,6 @@ class BaseOrchestrator:
 
     def __init__(self, session: AsyncSession):
         self.session = session
-        self.redis = get_shared_redis()
 
     async def lookup_episode(self, episode_id: int) -> PodcastEpisode | None:
         """Look up a single episode by ID."""
@@ -447,20 +443,11 @@ class TranscriptionOrchestrator(BaseOrchestrator):
         )
 
     def build_transcription_workflow(self) -> TranscriptionWorkflowService:
-        """Build a TranscriptionWorkflowService wired with claim/clear helpers."""
+        """Build a TranscriptionWorkflowService wired with the shared state manager."""
         return TranscriptionWorkflowService(
             self.session,
             state_manager_factory=get_transcription_state_manager,
-            redis_factory=lambda: self.redis,
-            claim_dispatched=self._claim_dispatched,
-            clear_dispatched=self._clear_dispatched,
         )
-
-    async def _clear_dispatched(self, task_id: int) -> None:
-        await clear_task_dispatch(self.redis, task_id)
-
-    async def _claim_dispatched(self, session: AsyncSession, task_id: int) -> bool:
-        return await claim_task_dispatch(self.redis, session, task_id)
 
     async def process_pending_transcriptions(self) -> dict:
         if not settings.TRANSCRIPTION_BACKLOG_ENABLED:
@@ -548,32 +535,49 @@ class TranscriptionOrchestrator(BaseOrchestrator):
     def _now_iso() -> str:
         return datetime.now(UTC).isoformat()
 
-    # -- Celery task enqueue helpers --
+    # -- Queue enqueue helpers --
 
-    def enqueue_audio_transcription(
+    async def enqueue_audio_transcription(
         self,
         task_id: int,
         config_db_id: int | None = None,
-    ) -> Any:
-        """Queue a transcription worker task without exposing Celery imports."""
+    ) -> int | None:
+        """Queue a transcription job; returns the job id (None if already queued).
+
+        The queueing_lock dedups duplicate dispatches while the job sits in
+        the queue, replacing the former Redis dispatch-claim guard.
+        """
+        import procrastinate.exceptions
+
         from app.domains.podcast.tasks.tasks_transcription import (
             process_audio_transcription,
         )
 
-        return process_audio_transcription.delay(task_id, config_db_id)
+        try:
+            return await process_audio_transcription.configure(
+                queueing_lock=f"transcription:dispatch:{task_id}",
+            ).defer_async(task_id=task_id, config_db_id=config_db_id)
+        except procrastinate.exceptions.AlreadyEnqueued:
+            logger.info(
+                "Transcription job for task %s already queued; skipping",
+                task_id,
+            )
+            return None
 
-    def enqueue_episode_processing(
+    async def enqueue_episode_processing(
         self,
         *,
         episode_id: int,
         user_id: int,
-    ) -> Any:
+    ) -> int:
         """Queue the episode transcription/summary pipeline."""
         from app.domains.podcast.tasks.tasks_transcription import (
             process_podcast_episode_with_transcription,
         )
 
-        return process_podcast_episode_with_transcription.delay(episode_id, user_id)
+        return await process_podcast_episode_with_transcription.configure(
+            queueing_lock=f"transcription:pipeline:{episode_id}",
+        ).defer_async(episode_id=episode_id, user_id=user_id)
 
 
 # ── Report orchestrator (merged from orchestration/report.py) ──
@@ -734,15 +738,15 @@ class MaintenanceOrchestrator(BaseOrchestrator):
             "executed_at": datetime.now(UTC).isoformat(),
         }
 
-    # -- Celery task enqueue helpers --
+    # -- Queue enqueue helpers --
 
-    def enqueue_opml_subscription_episodes(self, **kwargs) -> Any:
-        """Queue OPML episode parsing without exposing Celery task imports."""
+    async def enqueue_opml_subscription_episodes(self, **kwargs) -> int:
+        """Queue OPML episode parsing in the background."""
         from app.domains.podcast.tasks.tasks_maintenance import (
             process_opml_subscription_episodes,
         )
 
-        return process_opml_subscription_episodes.delay(**kwargs)
+        return await process_opml_subscription_episodes.defer_async(**kwargs)
 
 
 # ── Podcast task orchestration facade ──
@@ -759,7 +763,6 @@ class PodcastTaskOrchestrationService:
 
     def __init__(self, session: AsyncSession):
         self.session = session
-        self.redis = get_shared_redis()
         self._feed_sync = FeedSyncOrchestrator(session)
         self._transcription = TranscriptionOrchestrator(session)
         self._report = ReportOrchestrator(session)
@@ -814,31 +817,25 @@ class PodcastTaskOrchestrationService:
     async def process_pending_transcriptions(self) -> dict:
         return await self._transcription.process_pending_transcriptions()
 
-    # ── Celery task enqueue helpers ────────────────────────────────────────
+    # ── Queue enqueue helpers ──────────────────────────────────────────────
 
-    def enqueue_opml_subscription_episodes(self, **kwargs) -> Any:
-        return self._maintenance.enqueue_opml_subscription_episodes(**kwargs)
+    async def enqueue_opml_subscription_episodes(self, **kwargs) -> int:
+        return await self._maintenance.enqueue_opml_subscription_episodes(**kwargs)
 
-    def enqueue_audio_transcription(
+    async def enqueue_audio_transcription(
         self,
         task_id: int,
         config_db_id: int | None = None,
-    ) -> Any:
-        return self._transcription.enqueue_audio_transcription(
+    ) -> int | None:
+        return await self._transcription.enqueue_audio_transcription(
             task_id,
             config_db_id,
         )
 
-    def enqueue_episode_processing(self, **kwargs) -> Any:
-        return self._transcription.enqueue_episode_processing(**kwargs)
+    async def enqueue_episode_processing(self, **kwargs) -> int:
+        return await self._transcription.enqueue_episode_processing(**kwargs)
 
     # ── Shared utilities (preserved for test monkeypatching) ───────────────
 
     async def _lookup_episode(self, episode_id: int):
         return await self._feed_sync.lookup_episode(episode_id)
-
-    async def _claim_dispatched(self, session, task_id: int) -> bool:
-        return await self._transcription._claim_dispatched(session, task_id)
-
-    async def _clear_dispatched(self, task_id: int) -> None:
-        await self._transcription._clear_dispatched(task_id)

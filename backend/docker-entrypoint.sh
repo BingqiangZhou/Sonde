@@ -43,15 +43,18 @@ done
 echo "✅ Permission setup complete"
 echo ""
 
-# Auto-run database migrations.
+# Auto-run database migrations and queue schema.
 # Only the container with RUN_MIGRATIONS=1 executes them, so the backend and
-# worker never race on concurrent alembic upgrades (worker waits for backend
-# health via compose depends_on instead).
-# 只有 RUN_MIGRATIONS=1 的容器执行迁移，避免 backend 与 worker 并发跑 alembic。
+# worker never race on concurrent upgrades (worker waits for backend health
+# via compose depends_on instead).
+# 只有 RUN_MIGRATIONS=1 的容器执行迁移与队列 schema，避免 backend 与 worker 并发竞争。
 if [ "${RUN_MIGRATIONS:-0}" = "1" ]; then
     echo "📦 Running database migrations..."
     alembic upgrade head
     echo "✅ Migrations complete"
+    echo "📦 Applying procrastinate queue schema (idempotent)..."
+    python -m procrastinate -a app.core.jobs.procrastinate_app schema --apply
+    echo "✅ Queue schema ready"
 else
     echo "⏭️  Skipping migrations (RUN_MIGRATIONS != 1); the backend container owns them."
 fi

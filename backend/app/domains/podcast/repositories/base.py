@@ -7,7 +7,6 @@ from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.redis import RedisCache, get_shared_redis
 from app.shared.system_settings import DatabaseSettingsProvider
 
 
@@ -37,16 +36,14 @@ def _get_user_subscription_model():
 
 
 class BasePodcastRepository:
-    """Shared session/redis handle and common subscription filters."""
+    """Shared session handle and common subscription filters."""
 
     def __init__(
         self,
         db: AsyncSession,
-        redis: RedisCache | None = None,
         settings_provider: DatabaseSettingsProvider | None = None,
     ):
         self.db = db
-        self.redis = redis or get_shared_redis()
         self.settings_provider = settings_provider or DatabaseSettingsProvider()
         self._queue_position_step = 1024
         self._queue_position_compaction_threshold = 1_000_000

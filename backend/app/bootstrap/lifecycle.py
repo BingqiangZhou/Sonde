@@ -13,11 +13,8 @@ from app.core.database import (
     init_db,
 )
 from app.core.http_client import close_shared_http_session
+from app.core.jobs import procrastinate_app
 from app.core.logging_config import setup_logging_from_env
-from app.core.redis import close_shared_redis, get_shared_redis
-from app.domains.podcast.services.transcription_service import (
-    TranscriptionWorkflowService,
-)
 
 
 logger = logging.getLogger(__name__)
@@ -28,10 +25,11 @@ async def verify_critical_services() -> dict[str, bool]:
 
     Returns:
         Dictionary with service names and their health status.
+
     """
     checks = {}
 
-    # Database connectivity
+    # Database connectivity (also backs the job queue)
     try:
         async with asyncio.timeout(5.0):
             db_status = await check_db_readiness()
@@ -47,23 +45,6 @@ async def verify_critical_services() -> dict[str, bool]:
     except Exception as exc:
         checks["database"] = False
         logger.error("Database health check failed: %s", exc)
-
-    # Redis connectivity
-    try:
-        async with asyncio.timeout(3.0):
-            redis_status = await get_shared_redis().check_health()
-            checks["redis"] = redis_status.get("status") == "healthy"
-            if not checks["redis"]:
-                logger.error(
-                    "Redis health check failed: %s",
-                    redis_status.get("error", "Unknown error"),
-                )
-    except TimeoutError:
-        checks["redis"] = False
-        logger.error("Redis health check timed out after 3 seconds")
-    except Exception as exc:
-        checks["redis"] = False
-        logger.error("Redis health check failed: %s", exc)
 
     return checks
 
@@ -97,6 +78,43 @@ async def ensure_single_user_identity() -> None:
             {"uid": SINGLE_USER_ID},
         )
         await session.commit()
+
+
+async def reset_stale_transcription_tasks() -> None:
+    """Fail transcription tasks orphaned by a crashed process.
+
+    Serialized across processes (API lifespan + worker boot) with a Postgres
+    advisory lock that replaces the former Redis startup lock.
+    """
+    from app.core.advisory_lock import advisory_lock
+    from app.domains.podcast.services.transcription_service import (
+        TranscriptionWorkflowService,
+    )
+
+    settings = get_settings()
+    try:
+        async with advisory_lock("startup:reset-stale-transcription-tasks") as ok:
+            if not ok:
+                logger.info(
+                    "Skipped stale transcription reset; another process owns the lock"
+                )
+                return
+            session_factory = get_async_session_factory()
+            async with session_factory() as session:
+                workflow = TranscriptionWorkflowService(session)
+                try:
+                    async with asyncio.timeout(
+                        settings.TRANSCRIPTION_STARTUP_RESET_TIMEOUT_SECONDS,
+                    ):
+                        await workflow.reset_stale_tasks()
+                    logger.info("Reset stale transcription tasks during startup")
+                except TimeoutError:
+                    logger.warning(
+                        "Timed out resetting stale transcription tasks after %.1fs",
+                        settings.TRANSCRIPTION_STARTUP_RESET_TIMEOUT_SECONDS,
+                    )
+    except Exception as exc:
+        logger.error("Failed to reset stale tasks during startup: %s", exc)
 
 
 async def application_lifespan(app: FastAPI):
@@ -160,46 +178,16 @@ async def application_lifespan(app: FastAPI):
         app.state.degraded_services = []
         app.state.service_health = service_health
 
-    startup_lock_acquired = False
-    try:
-        startup_lock_acquired = await get_shared_redis().acquire_lock(
-            "startup:reset-stale-transcription-tasks",
-            expire=300,
-        )
-        if startup_lock_acquired:
-            session_factory = get_async_session_factory()
-            async with session_factory() as session:
-                workflow = TranscriptionWorkflowService(session)
-                try:
-                    async with asyncio.timeout(
-                        settings.TRANSCRIPTION_STARTUP_RESET_TIMEOUT_SECONDS,
-                    ):
-                        await workflow.reset_stale_tasks()
-                    logger.info("Reset stale transcription tasks during startup")
-                except TimeoutError:
-                    logger.warning(
-                        "Timed out resetting stale transcription tasks during startup after %.1fs",
-                        settings.TRANSCRIPTION_STARTUP_RESET_TIMEOUT_SECONDS,
-                    )
-        else:
-            logger.info(
-                "Skipped stale transcription reset; another worker owns startup lock"
-            )
-    except Exception as exc:
-        logger.error("Failed to reset stale tasks during startup: %s", exc)
+    await reset_stale_transcription_tasks()
 
     logger.info("Service startup completed")
-    try:
-        yield
-    finally:
-        if startup_lock_acquired:
-            await get_shared_redis().release_lock(
-                "startup:reset-stale-transcription-tasks",
-            )
-        # Shutdown order: DB first (stops new queries),
-        # then HTTP (in-flight requests complete),
-        # then Redis (last since in-flight HTTP may need cache).
-        await close_db()
-        await close_shared_http_session()
-        await close_shared_redis()
-        logger.info("Service shutdown completed")
+    # Open the queue connector so request handlers can defer jobs.
+    async with procrastinate_app.open_async():
+        try:
+            yield
+        finally:
+            # Shutdown order: DB first (stops new queries),
+            # then HTTP (in-flight requests complete).
+            await close_db()
+            await close_shared_http_session()
+            logger.info("Service shutdown completed")

@@ -13,10 +13,10 @@ dependencies = [
     "sqlalchemy>=2.0.48",
     "asyncpg>=0.31.0",
     "alembic>=1.18.4",
-    "redis>=7.3.0",
+    "procrastinate>=3.0.0",
+    "psycopg[binary]>=3.2.0",
     "orjson>=3.10.0",
     "python-multipart>=0.0.22",
-    "celery>=5.6.2",
     "pydantic>=2.12.5",
     "pydantic-settings>=2.13.1",
     "aiohttp>=3.13.3",
@@ -120,5 +120,5 @@ python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
 markers = [
-    "integration: runs against the real docker-compose postgres/redis stack (skipped automatically when the stack is down)",
+    "integration: runs against the real docker-compose postgres stack (skipped automatically when the stack is down)",
 ]

@@ -9,7 +9,7 @@
 - `backend/alembic/`: database migrations (27 migrations).
 - `backend/tests/` and `backend/app/**/tests/`: backend test suites.
 - `frontend/`: Flutter app with feature modules in `frontend/lib/` and tests in `frontend/test/`.
-- `docker/`: Docker Compose files and deployment assets (6 services: postgres, redis, backend, worker, beat, nginx; compose project pinned to `sonde`; only backend runs alembic migrations).
+- `docker/`: Docker Compose files and deployment assets (4 services: postgres, backend, worker, caddy; compose project pinned to `sonde`; only backend runs alembic migrations + the procrastinate queue schema).
 - `docs/`: detailed design notes.
 
 ## Build, Test, and Development Commands
@@ -27,7 +27,7 @@
 ## Coding Style & Naming Conventions
 - Backend uses `ruff` for linting/formatting; do not use `black`, `isort`, or `flake8`.
 - Use `uv` for Python package management; avoid `pip install`.
-- Follow async/await patterns for I/O in the backend (SQLAlchemy async, aiohttp, redis).
+- Follow async/await patterns for I/O in the backend (SQLAlchemy async, aiohttp, psycopg).
 - Frontend uses Material 3 (`useMaterial3: true`) and `CustomAdaptiveNavigation` with `Breakpoints` class.
 - Frontend uses platform-adaptive UI: CupertinoTheme wrapper and `.adaptive()` widgets for iOS-native feel.
 - Use `AppColors`, `AppRadius`, and `AppSpacing` tokens — no hardcoded colors, radii, or spacing.
@@ -45,7 +45,7 @@
 
 ## Environment & Secrets
 - Backend config lives in `backend/.env` (start from `.env.example`); never commit secrets.
-- Local infrastructure is expected to run via Docker Compose in `docker/` (PostgreSQL, Redis, Celery).
+- Local infrastructure is expected to run via Docker Compose in `docker/` (PostgreSQL; the queue is procrastinate on the same Postgres).
 - Use the health check once running: `curl http://localhost:8000/api/v1/health`.
 
 ## Configuration & Requirements Notes
@@ -56,7 +56,7 @@
 ## Backend Architecture Notes
 - DI: FastAPI `Depends()`. Migrations: `backend/alembic/`.
 - Exceptions: service layer raises `BaseCustomError`; routes use `HTTPException` from `app.http.errors`.
-- Celery: single `default` queue, worker runs with embedded beat (`-B` flag).
+- Job queue: procrastinate on Postgres (`app/core/jobs.py`); single `default` queue; periodic schedules are `@procrastinate_app.periodic` crons (UTC) executed by the worker (`python -m app.bootstrap.worker`, container pins TZ=UTC).
 
 ## Gotchas
 

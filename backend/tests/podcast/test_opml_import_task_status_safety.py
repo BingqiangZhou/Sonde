@@ -1,16 +1,15 @@
 """Status-safety tests for OPML background episode parsing handler."""
 
+from contextlib import asynccontextmanager
 from datetime import UTC, datetime
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 
 from app.domains.podcast.models import PodcastEpisode
+from app.domains.podcast.tasks import tasks_maintenance
 from app.domains.podcast.tasks.task_orchestration import (
     PodcastTaskOrchestrationService,
-)
-from app.domains.podcast.tasks.tasks_maintenance import (
-    process_opml_subscription_episodes_handler,
 )
 
 
@@ -81,15 +80,26 @@ async def test_opml_background_handler_does_not_mutate_existing_episode_status()
     assert existing_episode.status == "summarized"
     mock_repo.create_or_update_episodes_batch.assert_awaited_once()
     mock_parser.close.assert_awaited_once()
-    with patch.object(
-        PodcastTaskOrchestrationService,
-        "process_opml_subscription_episodes",
-        new=AsyncMock(return_value=result),
+    with (
+        patch.object(
+            PodcastTaskOrchestrationService,
+            "process_opml_subscription_episodes",
+            new=AsyncMock(return_value=result),
+        ),
+        patch.object(
+            tasks_maintenance,
+            "worker_session",
+            new=lambda: _fake_worker_session(AsyncMock()),
+        ),
     ):
-        delegated_result = await process_opml_subscription_episodes_handler(
-            session=AsyncMock(),
+        delegated_result = await tasks_maintenance.process_opml_subscription_episodes(
             subscription_id=1,
             user_id=1,
             source_url="https://example.com/feed.xml",
         )
     assert delegated_result == result
+
+
+@asynccontextmanager
+async def _fake_worker_session(session_obj):
+    yield session_obj

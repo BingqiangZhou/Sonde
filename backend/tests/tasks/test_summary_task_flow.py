@@ -2,12 +2,7 @@
 
 from contextlib import asynccontextmanager
 
-import pytest
-
 from app.domains.podcast.tasks import tasks_summary as summary_generation
-from app.domains.podcast.tasks.tasks_summary import (
-    generate_pending_summaries_handler,
-)
 
 
 @asynccontextmanager
@@ -15,8 +10,7 @@ async def _worker_session_factory(session_obj):
     yield session_obj
 
 
-@pytest.mark.asyncio
-async def test_handler_delegates_to_summary_workflow(monkeypatch):
+async def test_generate_pending_summaries_delegates_to_workflow(monkeypatch):
     class _FakeWorkflow:
         def __init__(self, session):
             self.session = session
@@ -29,31 +23,11 @@ async def test_handler_delegates_to_summary_workflow(monkeypatch):
         _FakeWorkflow,
     )
 
-    result = await generate_pending_summaries_handler(object())
+    result = await summary_generation.generate_pending_summaries(timestamp=0)
     assert result == {"status": "success", "processed": 1, "failed": 0}
 
 
-def test_generate_pending_summaries_retries_on_failure(monkeypatch):
-    class _RetryError(Exception):
-        pass
-
-    def _run_async_raise(coro):
-        coro.close()
-        raise RuntimeError("summary failed")
-
-    task = summary_generation.generate_pending_summaries
-    monkeypatch.setattr(summary_generation, "run_async", _run_async_raise)
-
-    def _retry(*, countdown):
-        raise _RetryError(countdown)
-
-    monkeypatch.setattr(task, "retry", _retry)
-
-    with pytest.raises(_RetryError):
-        task.run()
-
-
-def test_generate_episode_summary_task_delegates_to_workflow(monkeypatch):
+async def test_generate_episode_summary_delegates_to_workflow(monkeypatch):
     monkeypatch.setattr(
         summary_generation,
         "worker_session",
@@ -79,10 +53,20 @@ def test_generate_episode_summary_task_delegates_to_workflow(monkeypatch):
 
     monkeypatch.setattr(summary_generation, "SummaryWorkflowService", _FakeWorkflow)
 
-    result = summary_generation.generate_episode_summary.run(
+    result = await summary_generation.generate_episode_summary(
         episode_id=15,
         summary_model="model-a",
         custom_prompt="prompt",
     )
 
     assert result["episode_id"] == 15
+
+
+def test_summary_tasks_configure_exponential_retry() -> None:
+    """Both summary tasks retry with the Celery-parity backoff policy."""
+    pending_task = summary_generation.generate_pending_summaries
+    episode_task = summary_generation.generate_episode_summary
+    for task in (pending_task, episode_task):
+        strategy = task.retry_strategy
+        assert strategy is not None
+        assert strategy.max_attempts == 4

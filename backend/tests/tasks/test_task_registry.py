@@ -1,45 +1,56 @@
-"""Celery task registry and schedule snapshot checks."""
+"""Procrastinate task registry and periodic schedule snapshot checks."""
 
-from app.core.celery_app import celery_app
+import app.domains.podcast.tasks  # noqa: F401  (registers tasks + schedules)
+from app.core.jobs import procrastinate_app
 
 
 def test_registered_task_names_snapshot() -> None:
-    registered_names = set(celery_app.tasks.keys())
+    registered_names = set(procrastinate_app.tasks.keys())
     expected_names = {
-        "app.domains.podcast.tasks.tasks_subscription.refresh_all_podcast_feeds",
-        "app.domains.podcast.tasks.tasks_summary.generate_pending_summaries",
-        "app.domains.podcast.tasks.tasks_transcription.process_audio_transcription",
-        "app.domains.podcast.tasks.tasks_transcription.process_podcast_episode_with_transcription",
-        "app.domains.podcast.tasks.tasks_transcription.process_pending_transcriptions",
-        "app.domains.podcast.tasks.tasks_maintenance.cleanup_old_playback_states",
-        "app.domains.podcast.tasks.tasks_maintenance.cleanup_old_transcription_temp_files",
-        "app.domains.podcast.tasks.tasks_maintenance.auto_cleanup_cache_files",
-        "app.domains.podcast.tasks.tasks_daily_report.generate_daily_podcast_reports",
+        "podcast.subscription.refresh_all_feeds",
+        "podcast.summary.generate_pending",
+        "podcast.summary.generate_episode",
+        "podcast.transcription.process_audio",
+        "podcast.transcription.process_episode",
+        "podcast.transcription.process_pending",
+        "podcast.maintenance.cleanup_old_playback_states",
+        "podcast.maintenance.cleanup_old_transcription_temp_files",
+        "podcast.maintenance.auto_cleanup_cache",
+        "podcast.maintenance.process_opml_subscription_episodes",
+        "podcast.report.generate_daily",
     }
     assert expected_names.issubset(registered_names)
 
 
-def test_beat_schedule_references_registered_tasks() -> None:
-    registered_names = set(celery_app.tasks.keys())
-    beat_schedule = celery_app.conf.beat_schedule
+def test_periodic_registry_references_registered_tasks() -> None:
+    registered_names = set(procrastinate_app.tasks.keys())
+    periodic_tasks = procrastinate_app.periodic_registry.periodic_tasks
 
-    assert beat_schedule
+    assert periodic_tasks
 
-    for beat_name, beat_item in beat_schedule.items():
-        task_name = beat_item["task"]
+    for (task_name, periodic_id), periodic_task in periodic_tasks.items():
         assert task_name in registered_names, (
-            f"{beat_name} references unregistered task"
+            f"{periodic_id} references unregistered task"
         )
-        # Single-queue mode: every beat entry targets the default queue.
-        assert beat_item["options"]["queue"] == "default", (
-            f"{beat_name} should use default queue in single-user mode"
+        # Single-queue mode: every task targets the default queue.
+        assert periodic_task.task.queue == "default", (
+            f"{periodic_id} should use default queue in single-user mode"
         )
 
 
-def test_beat_schedule_snapshot() -> None:
-    beat_schedule = celery_app.conf.beat_schedule
+def test_periodic_schedule_snapshot() -> None:
+    periodic_tasks = procrastinate_app.periodic_registry.periodic_tasks
 
-    assert "refresh-podcast-feeds" in beat_schedule
-    assert "generate-pending-summaries" in beat_schedule
-    assert "auto-cleanup-cache" in beat_schedule
-    assert "generate-daily-podcast-reports" in beat_schedule
+    # Cron schedules keep UTC semantics (the worker container pins TZ=UTC),
+    # matching the former Celery beat entries.
+    expected = {
+        "refresh-podcast-feeds": "0 * * * *",
+        "generate-pending-summaries": "*/30 * * * *",
+        "auto-cleanup-cache": "0 4 * * *",
+        "generate-daily-podcast-reports": "30 19 * * *",
+    }
+    actual = {
+        periodic_id: periodic_task.cron
+        for (_task_name, periodic_id), periodic_task in periodic_tasks.items()
+    }
+    assert actual == expected

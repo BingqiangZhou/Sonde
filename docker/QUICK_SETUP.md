@@ -3,12 +3,12 @@
 ## 概述
 
 现在**只需要配置一个 `.env` 文件**就可以完成所有配置，包括：
-- 数据库和 Redis
-- 域名和 SSL
+- 数据库与任务队列
+- 域名和 TLS 证书
 - 后端 API 配置
 - 外部服务密钥
 
-**无需手动修改 Nginx 配置文件！**
+**无需手动修改 Caddy 配置文件！**
 
 ---
 
@@ -32,15 +32,9 @@ JWT_SECRET_KEY=random_secret_key    # JWT 密钥
 
 > **API 密钥不在 `.env` 配置**：OpenAI / 转录等第三方 key 在服务启动后通过后台管理面板配置（`/api/v1/admin` → API Keys），加密存储、即时生效。
 
-### 步骤 2: 配置 SSL 证书
+### 步骤 2: 确认 TLS 模式（默认零配置）
 
-```bash
-# 证书文件放在以下位置：
-docker/nginx/cert/fullchain.pem
-docker/nginx/cert/privkey.pem
-
-# 获取证书参考: nginx/SSL_SETUP.md
-```
+Caddy 默认 `tls internal`（内置 CA 自动签发本地证书并自动续期），**无需放置任何证书文件**。公网域名部署时，按 [caddy/README.md](caddy/README.md) 切换 ACME 自动证书（`.env` 设置 `ACME_EMAIL` 并修改 Caddyfile 中 `tls` 指令）或挂载手动证书。
 
 ### 步骤 3: 启动服务
 
@@ -55,24 +49,28 @@ docker-compose --env-file ../backend/.env up -d
 
 ## 工作原理
 
-### Nginx 配置自动化
+### Caddy 配置自动化
 
-Nginx 使用 `envsubst` 自动从 `.env` 文件读取配置：
+`caddy/Caddyfile` 直接使用 `{$ENV_VAR}` 环境变量占位符，容器启动时由 Caddy 从环境注入（无需 envsubst 模板渲染）：
 
 **.env 文件**:
 ```env
 DOMAIN=example.com
-SSL_CERT_PATH=/etc/nginx/cert/fullchain.pem
-SSL_KEY_PATH=/etc/nginx/cert/privkey.pem
+MAX_BODY_SIZE=20MB
 ```
 
-**Nginx 模板** (`default.conf.template`):
-```nginx
-server_name ${DOMAIN};  # 自动替换为 example.com
-ssl_certificate ${SSL_CERT_PATH};  # 自动替换路径
+**Caddyfile** (`caddy/Caddyfile`):
+```caddyfile
+{$DOMAIN:localhost} {              # 自动替换为 example.com
+    tls internal
+    request_body {
+        max_size {$MAX_BODY_SIZE:20MB}  # 自动替换请求体上限
+    }
+    reverse_proxy backend:8000
+}
 ```
 
-启动时自动替换，无需手动修改！
+启动时自动注入，无需手动修改！
 
 ---
 
@@ -83,16 +81,17 @@ ssl_certificate ${SSL_CERT_PATH};  # 自动替换路径
 ├── 项目配置
 │   ├── PROJECT_NAME
 │   └── ENVIRONMENT
-├── Nginx 配置 ⭐ 新增
-│   ├── DOMAIN                  # 域名
-│   └── SSL_CERT_PATH           # SSL 证书路径
+├── Caddy 配置
+│   ├── DOMAIN                  # 站点地址（默认 localhost）
+│   ├── MAX_BODY_SIZE           # 请求体大小上限（默认 20MB）
+│   ├── ACME_EMAIL              # ACME 自动证书邮箱（公网域名时使用）
+│   └── CADDY_CONF_DIR          # Caddyfile 挂载目录
 ├── 数据库配置
 │   ├── POSTGRES_USER
 │   └── POSTGRES_PASSWORD
-├── Redis 配置
-│   └── REDIS_PASSWORD
 ├── 后端配置
 │   ├── BACKEND_WORKERS
+│   ├── WORKER_CONCURRENCY      # 任务 worker 并发数（默认 1）
 │   └── LOG_LEVEL
 ├── JWT 配置
 │   └── JWT_SECRET_KEY
@@ -112,47 +111,45 @@ ssl_certificate ${SSL_CERT_PATH};  # 自动替换路径
 
 ### Q2: 如何修改域名?
 
-**A**: 只需修改 `.env` 中的 `DOMAIN` 变量，重启 Nginx 即可。
+**A**: 只需修改 `.env` 中的 `DOMAIN` 变量，重启 Caddy 即可。
 
 ```bash
 # 编辑 .env
 DOMAIN=new-domain.com
 
-# 重启 Nginx
-docker-compose restart nginx
+# 重启 Caddy
+docker-compose restart caddy
 ```
 
-### Q3: 开发环境需要配置 Nginx 吗?
+### Q3: 开发环境需要配置 TLS 吗?
 
-**A**: 不需要。开发环境使用 `docker-compose.podcast.yml`，直接访问后端端口。
+**A**: 不需要。默认 `DOMAIN=localhost` 时 Caddy 用内置 CA 自动签发本地证书，开箱即用（浏览器首次访问需信任 Caddy 根证书，见 [caddy/README.md](caddy/README.md)）。
 
-### Q4: SSL 证书路径需要修改吗?
+### Q4: 需要手动放置 SSL 证书吗?
 
-**A**: 不需要。`.env` 中的路径已经是容器内路径，证书放在 `docker/nginx/cert/` 即可。
+**A**: 默认不需要。`tls internal` 模式零配置；仅在使用外部签发的手动证书时，按 [caddy/README.md](caddy/README.md) 挂载证书目录并修改 Caddyfile 的 `tls` 指令。
 
 ---
 
 ## 配置对比
 
-### 旧方式 (手动配置)
+### 旧方式 (手动配置，已废弃)
 
 ```bash
 # 1. 修改 .env
 nano .env
 
-# 2. 修改 Nginx 配置
-nano nginx/conf.d/default-ssl.conf
+# 2. 手动编辑反向代理配置文件
 # 修改 server_name、证书路径...
 
 # 3. 启用配置
-mv default.conf default.conf.bak
-mv default-ssl.conf default.conf
+# 手动切换/重载配置文件...
 ```
 
 ### 新方式 (只用 .env)
 
 ```bash
-# 1. 修改 .env (包含域名、SSL路径等)
+# 1. 修改 .env (包含域名、TLS 模式等)
 nano backend/.env
 
 # 2. 启动 (自动读取配置)
@@ -174,11 +171,8 @@ DOMAIN=api.example.com
 POSTGRES_PASSWORD=MySecurePassword123!
 JWT_SECRET_KEY=$(openssl rand -hex 32)
 
-# 3. 放置 SSL 证书
-mkdir -p nginx/cert
-# 将 fullchain.pem 和 privkey.pem 放到 nginx/cert/
-
-# 4. 启动
+# 3. 启动（默认 tls internal，无需证书文件；
+#    公网域名 ACME 证书见 caddy/README.md）
 docker-compose --env-file ../backend/.env up -d
 
 # 完成！访问 https://api.example.com

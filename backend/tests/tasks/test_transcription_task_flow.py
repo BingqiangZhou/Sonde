@@ -1,5 +1,6 @@
 """Transcription task flow tests."""
 
+from contextlib import asynccontextmanager
 from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
@@ -11,9 +12,6 @@ from app.domains.podcast.services.transcription_service import (
 from app.domains.podcast.tasks import tasks_transcription as transcription
 from app.domains.podcast.tasks.task_orchestration import (
     PodcastTaskOrchestrationService,
-)
-from app.domains.podcast.tasks.tasks_transcription import (
-    process_audio_transcription_handler,
 )
 
 
@@ -63,8 +61,18 @@ class _FakeStateManager:
         self.released.append((episode_id, task_id))
 
 
+@asynccontextmanager
+async def _fake_worker_session(session_obj):
+    yield session_obj
+
+
 @pytest.mark.asyncio
-async def test_transcription_handler_lock_conflict(monkeypatch):
+async def test_transcription_task_lock_conflict(monkeypatch):
+    monkeypatch.setattr(
+        transcription,
+        "worker_session",
+        lambda: _fake_worker_session(object()),
+    )
     monkeypatch.setattr(
         PodcastTaskOrchestrationService,
         "process_audio_transcription_task",
@@ -72,7 +80,7 @@ async def test_transcription_handler_lock_conflict(monkeypatch):
     )
 
     with pytest.raises(RuntimeError, match="locked"):
-        await process_audio_transcription_handler(session=object(), task_id=10)
+        await transcription.process_audio_transcription(task_id=10)
 
 
 @pytest.mark.asyncio
@@ -100,9 +108,6 @@ async def test_transcription_workflow_updates_status_and_releases_lock():
     async def _claim(_session, _task_id: int) -> bool:
         return True
 
-    async def _clear(_task_id: int) -> None:
-        return None
-
     async def _get_state():
         return state
 
@@ -111,7 +116,6 @@ async def test_transcription_workflow_updates_status_and_releases_lock():
         engine_factory=_FakeService,
         state_manager_factory=_get_state,
         claim_dispatched=_claim,
-        clear_dispatched=_clear,
     )
 
     result = await workflow.execute_transcription_task(task_id=1, config_db_id=None)
@@ -120,24 +124,16 @@ async def test_transcription_workflow_updates_status_and_releases_lock():
     assert state.released == [(2, 1)]
 
 
-def test_transcription_task_retries_on_failure(monkeypatch):
-    class _RetryError(Exception):
-        pass
-
-    def _run_async_raise(coro):
-        coro.close()
-        raise RuntimeError("boom")
-
-    task = transcription.process_audio_transcription
-    monkeypatch.setattr(transcription, "run_async", _run_async_raise)
-
-    def _retry(*, countdown):
-        raise _RetryError(countdown)
-
-    monkeypatch.setattr(task, "retry", _retry)
-
-    with pytest.raises(_RetryError):
-        task.run(task_id=123, config_db_id=None)
+def test_transcription_tasks_configure_exponential_retry() -> None:
+    """Transcription tasks retry with the Celery-parity backoff policy."""
+    for task in (
+        transcription.process_audio_transcription,
+        transcription.process_podcast_episode_with_transcription,
+        transcription.process_pending_transcriptions,
+    ):
+        strategy = task.retry_strategy
+        assert strategy is not None
+        assert strategy.max_attempts == 4
 
 
 @pytest.mark.asyncio
@@ -159,9 +155,6 @@ async def test_transcription_workflow_raises_when_execution_fails():
     async def _claim(_session, _task_id: int) -> bool:
         return True
 
-    async def _clear(_task_id: int) -> None:
-        return None
-
     async def _get_state():
         return state
 
@@ -170,7 +163,6 @@ async def test_transcription_workflow_raises_when_execution_fails():
         engine_factory=_FailingService,
         state_manager_factory=_get_state,
         claim_dispatched=_claim,
-        clear_dispatched=_clear,
     )
 
     with pytest.raises(RuntimeError, match="transcription boom"):

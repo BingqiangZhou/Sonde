@@ -880,7 +880,7 @@ class PodcastTranscriptionService:
                 transcription_time,
             )
 
-            # Summary generation runs in its own Celery task so the
+            # Summary generation runs in its own queue job so the
             # transcription task is not extended by LLM latency; the periodic
             # pending-summary sweeper picks the episode up if enqueueing fails.
             try:
@@ -888,7 +888,9 @@ class PodcastTranscriptionService:
                     generate_episode_summary,
                 )
 
-                generate_episode_summary.delay(task.episode_id)
+                await generate_episode_summary.defer_async(
+                    episode_id=task.episode_id,
+                )
             except Exception as enqueue_error:
                 logger.warning(
                     "[AI SUMMARY] Failed to enqueue summary task for episode %s "

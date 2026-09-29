@@ -1,0 +1,31 @@
+# =============================================================================
+# Sonde (声读) — Caddy 反向代理 / Reverse Proxy
+# =============================================================================
+# 默认 tls internal：Caddy 内置 CA 自动签发本地证书，零配置零续期，
+# 浏览器首次访问需信任 Caddy 根证书（见 caddy/README.md）。
+#
+# 切换证书模式（改完后 docker compose restart caddy）：
+# - ACME 自动证书（公网域名、80/443 可达）：
+#     把下面的 `tls internal` 改为 `tls {$ACME_EMAIL}` 并设置 DOMAIN 为公网域名
+# - 手动证书（沿用 certbot 等）：
+#     挂载证书目录后把 `tls internal` 改为
+#     `tls /etc/caddy/cert/fullchain.pem /etc/caddy/cert/privkey.pem`
+
+{$DOMAIN:localhost} {
+	tls internal
+
+	encode zstd gzip
+
+	request_body {
+		max_size {$MAX_BODY_SIZE:20MB}
+	}
+
+	header {
+		X-Frame-Options SAMEORIGIN
+		X-Content-Type-Options nosniff
+		-Server
+	}
+
+	# WebSocket 升级与流式响应透传均为 Caddy 默认行为
+	reverse_proxy backend:8000
+}

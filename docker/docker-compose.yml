@@ -9,13 +9,11 @@
 # Compose project name is pinned to "sonde" (top-level `name:`), so images,
 # volumes and the network are always sonde-* regardless of the directory name.
 #
-# 启动的服务 / Started services (6):
-#   - PostgreSQL (数据 / Database)
-#   - Redis (缓存与锁 / Cache & locks)
+# 启动的服务 / Started services (4):
+#   - PostgreSQL (数据 + 任务队列 / Database & job queue)
 #   - Backend API (后端服务, 独占执行迁移 / owns schema migrations)
-#   - Celery Worker (后台任务 / Background tasks)
-#   - Celery Beat (调度器, 独立单实例 / standalone scheduler)
-#   - Nginx (反向代理 / Reverse proxy)
+#   - Worker (procrastinate 队列 worker + 周期调度 / queue worker + cron)
+#   - Caddy (反向代理 + TLS / Reverse proxy & TLS)
 
 name: sonde
 
@@ -32,18 +30,15 @@ x-app-build: &app-build
     context: ${BACKEND_SRC_DIR:-../backend}
     dockerfile: Dockerfile
 
-# Shared environment for all backend-derived services (API/worker/beat)
+# Shared environment for all backend-derived services (API/worker)
 x-app-env: &app-env
   DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-admin}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-sonde}
-  REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
-  CELERY_BROKER_URL: redis://:${REDIS_PASSWORD}@redis:6379/1
-  CELERY_RESULT_BACKEND: redis://:${REDIS_PASSWORD}@redis:6379/2
   TZ: ${TZ:-Asia/Shanghai}
   PYTHONUTF8: 1
 
 services:
   # =============================================================================
-  # PostgreSQL Database
+  # PostgreSQL Database (data + procrastinate job queue)
   # =============================================================================
   postgres:
     image: postgres:15-alpine
@@ -76,46 +71,7 @@ services:
           memory: 256M
 
   # =============================================================================
-  # Redis Cache
-  # =============================================================================
-  redis:
-    image: redis:7-alpine
-    container_name: sonde-redis
-    command: >
-      sh -c 'if [ -z "$REDIS_PASSWORD" ]; then
-               redis-server --appendonly yes --maxmemory 230mb --maxmemory-policy allkeys-lru;
-             else
-               redis-server --appendonly yes --requirepass "$REDIS_PASSWORD" --maxmemory 230mb --maxmemory-policy allkeys-lru;
-             fi'
-    ports:
-      - "${REDIS_PORT:-127.0.0.1:6379}:6379"
-    volumes:
-      - redis_data:/data
-    networks:
-      - app_network
-    healthcheck:
-      test: >
-        sh -c 'if [ -z "$REDIS_PASSWORD" ]; then
-                 redis-cli ping;
-               else
-                 redis-cli -a "$REDIS_PASSWORD" ping;
-               fi'
-      interval: 10s
-      timeout: 3s
-      retries: 5
-    restart: always
-    logging: *default-logging
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 256M
-        reservations:
-          cpus: '0.1'
-          memory: 64M
-
-  # =============================================================================
-  # Backend API (owns alembic migrations via RUN_MIGRATIONS=1)
+  # Backend API (owns alembic migrations + queue schema via RUN_MIGRATIONS=1)
   # =============================================================================
   backend:
     <<: *app-build
@@ -136,8 +92,6 @@ services:
       - ${LOG_DIR:-./logs}:/app/logs
     depends_on:
       postgres:
-        condition: service_healthy
-      redis:
         condition: service_healthy
     networks:
       - app_network
@@ -161,7 +115,7 @@ services:
     logging: *default-logging
 
   # =============================================================================
-  # Celery Worker (background task execution; beat split out below)
+  # Queue Worker (procrastinate: job execution + periodic cron deferral)
   # =============================================================================
   worker:
     <<: *app-build
@@ -170,6 +124,10 @@ services:
       - ${BACKEND_ENV_FILE:-../backend/.env}
     environment:
       <<: *app-env
+      # Cron expressions are evaluated in the process-local timezone; pin UTC
+      # to keep parity with the former Celery beat schedules (19:30 UTC etc.)
+      TZ: UTC
+      WORKER_CONCURRENCY: ${WORKER_CONCURRENCY:-1}
     volumes:
       - backend_data:/app/data
       - ${TRANSCRIPTION_STORAGE_DIR:-./storage/podcasts}:/app/storage/podcasts
@@ -177,8 +135,6 @@ services:
       - ${LOG_DIR:-./logs}:/app/logs
     depends_on:
       postgres:
-        condition: service_healthy
-      redis:
         condition: service_healthy
       # Migrations are owned by backend; wait for its health so the schema is settled
       backend:
@@ -194,9 +150,9 @@ services:
         reservations:
           cpus: '0.25'
           memory: 128M
-    command: celery -A app.core.celery_app:celery_app worker --loglevel=${CELERY_LOG_LEVEL:-info} --concurrency=1 -Q default
+    command: python -m app.bootstrap.worker
     healthcheck:
-      test: ["CMD-SHELL", "celery -A app.core.celery_app:celery_app inspect ping --destination celery@$$HOSTNAME | grep -q pong"]
+      test: ["CMD", "python", "-m", "app.bootstrap.worker", "--healthcheck"]
       interval: 60s
       timeout: 15s
       retries: 3
@@ -204,76 +160,31 @@ services:
     logging: *default-logging
 
   # =============================================================================
-  # Celery Beat (standalone scheduler — single instance, safe to scale worker)
+  # Caddy Reverse Proxy (反向代理 + TLS)
   # =============================================================================
-  beat:
-    <<: *app-build
-    container_name: sonde-beat
-    env_file:
-      - ${BACKEND_ENV_FILE:-../backend/.env}
-    environment:
-      <<: *app-env
-    volumes:
-      - backend_data:/app/data
-      - ${LOG_DIR:-./logs}:/app/logs
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      backend:
-        condition: service_healthy
-    networks:
-      - app_network
-    restart: always
-    deploy:
-      resources:
-        limits:
-          cpus: '0.3'
-          memory: 192M
-        reservations:
-          cpus: '0.05'
-          memory: 64M
-    command: celery -A app.core.celery_app:celery_app beat --loglevel=${CELERY_LOG_LEVEL:-info}
-    logging: *default-logging
-
-  # =============================================================================
-  # Nginx Reverse Proxy (反向代理)
-  # =============================================================================
-  nginx:
-    image: nginx:stable-alpine
-    container_name: sonde-nginx
+  caddy:
+    image: caddy:2-alpine
+    container_name: sonde-caddy
     restart: always
     ports:
       - "${HTTP_PORT:-80}:80"
       - "${HTTPS_PORT:-443}:443"
     volumes:
-      - ${NGINX_CONF_DIR:-./nginx}/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ${NGINX_CONF_DIR:-./nginx}/conf.d:/etc/nginx/templates:rw
-      - ${NGINX_CERT_DIR:-./nginx/cert}:/etc/nginx/cert:ro
-      - ${NGINX_LOG_DIR:-./nginx/logs}:/var/log/nginx
+      - ${CADDY_CONF_DIR:-./caddy}/Caddyfile:/etc/caddy/Caddyfile:ro
+      # /data persists the internal CA (and ACME account/certs when enabled)
+      - caddy_data:/data
+      - caddy_config:/config
       - /etc/localtime:/etc/localtime:ro
-      - ${NGINX_CONF_DIR:-./nginx}/docker-entrypoint.sh:/auto-config.sh:ro
     environment:
       - DOMAIN=${DOMAIN:-localhost}
-      - SSL_CERT_PATH=${SSL_CERT_PATH:-/etc/nginx/cert/fullchain.pem}
-      - SSL_KEY_PATH=${SSL_KEY_PATH:-/etc/nginx/cert/privkey.pem}
-    entrypoint:
-      - /bin/sh
-      - -c
-      - |
-        if [ -f /auto-config.sh ]; then
-          echo "=== Running auto-configuration ==="
-          sh /auto-config.sh || echo "Warning: auto-config script failed, continuing..."
-        fi
-        echo "=== Starting Nginx ==="
-        exec /docker-entrypoint.sh nginx -g 'daemon off;'
+      - ACME_EMAIL=${ACME_EMAIL:-}
+      - MAX_BODY_SIZE=${MAX_BODY_SIZE:-20MB}
     depends_on:
       - backend
     networks:
       - app_network
     healthcheck:
-      test: ["CMD", "nginx", "-t"]
+      test: ["CMD", "caddy", "validate", "--config", "/etc/caddy/Caddyfile"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -281,12 +192,14 @@ services:
 volumes:
   postgres_data:
     name: sonde_postgres_data
-  redis_data:
-    name: sonde_redis_data
   backend_uploads:
     name: sonde_uploads
   backend_data:
     name: sonde_data
+  caddy_data:
+    name: sonde_caddy_data
+  caddy_config:
+    name: sonde_caddy_config
 
 networks:
   app_network:

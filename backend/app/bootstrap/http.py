@@ -14,7 +14,6 @@ from app.core.database import check_db_readiness
 from app.core.exceptions import setup_exception_handlers
 from app.core.middleware import RequestIDMiddleware, RequestLoggingMiddleware
 from app.core.rate_limit import limiter
-from app.core.redis import get_shared_redis
 
 
 logger = logging.getLogger(__name__)
@@ -128,18 +127,13 @@ def register_internal_routes(app: FastAPI) -> None:
     @app.get(f"{settings.API_V1_STR}/health/ready")
     async def readiness_check():
         try:
-            redis_status = await get_shared_redis().check_health()
             db_status = await check_db_readiness()
             overall_status = (
-                "healthy"
-                if db_status["status"] == "healthy"
-                and redis_status["status"] == "healthy"
-                else "unhealthy"
+                "healthy" if db_status["status"] == "healthy" else "unhealthy"
             )
             payload = {
                 "status": overall_status,
                 "db": db_status,
-                "redis": redis_status,
             }
             status_code = 200 if overall_status == "healthy" else 503
             return JSONResponse(status_code=status_code, content=payload)

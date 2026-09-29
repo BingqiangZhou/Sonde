@@ -1,118 +1,62 @@
-"""Celery tasks for maintenance, housekeeping, and OPML import."""
+"""Procrastinate tasks for maintenance, housekeeping, and OPML import."""
 
-from app.core.celery_app import celery_app
-from app.domains.podcast.tasks.runtime import (
-    run_async,
-    worker_session,
-)
+from __future__ import annotations
+
+from typing import Any
+
+from app.core.jobs import exponential_retry, procrastinate_app
+from app.domains.podcast.tasks.runtime import worker_session
 from app.domains.podcast.tasks.task_orchestration import (
     PodcastTaskOrchestrationService,
 )
 
 
-async def cleanup_old_playback_states_handler(session) -> dict:
-    """Delete playback states older than 90 days."""
-    return await PodcastTaskOrchestrationService(session).cleanup_old_playback_states()
+@procrastinate_app.task(
+    name="podcast.maintenance.cleanup_old_playback_states",
+    retry=exponential_retry(max_attempts=3),
+)
+async def cleanup_old_playback_states() -> dict[str, Any]:
+    """Delete playback states older than 90 days (dormant: no schedule)."""
+    async with worker_session() as session:
+        return await PodcastTaskOrchestrationService(
+            session,
+        ).cleanup_old_playback_states()
 
 
-async def cleanup_old_transcription_temp_files_handler(session, days: int = 7) -> dict:
-    """Clean stale transcription temporary files."""
-    return await PodcastTaskOrchestrationService(
-        session,
-    ).cleanup_old_transcription_temp_files(days=days)
+@procrastinate_app.task(
+    name="podcast.maintenance.cleanup_old_transcription_temp_files",
+    retry=exponential_retry(max_attempts=3),
+)
+async def cleanup_old_transcription_temp_files(days: int = 7) -> dict[str, Any]:
+    """Clean stale transcription temporary files (dormant: no schedule)."""
+    async with worker_session() as session:
+        return await PodcastTaskOrchestrationService(
+            session,
+        ).cleanup_old_transcription_temp_files(days=days)
 
 
-async def auto_cleanup_cache_files_handler(session) -> dict:
-    """Execute cache cleanup when enabled by admin settings."""
-    return await PodcastTaskOrchestrationService(session).auto_cleanup_cache_files()
+@procrastinate_app.periodic(cron="0 4 * * *", periodic_id="auto-cleanup-cache")
+@procrastinate_app.task(name="podcast.maintenance.auto_cleanup_cache")
+async def auto_cleanup_cache_files(timestamp: int) -> dict[str, Any]:
+    """Execute cache cleanup when enabled by admin settings (daily 04:00 UTC)."""
+    async with worker_session() as session:
+        return await PodcastTaskOrchestrationService(session).auto_cleanup_cache_files()
 
 
-async def process_opml_subscription_episodes_handler(
-    session,
-    *,
+@procrastinate_app.task(
+    name="podcast.maintenance.process_opml_subscription_episodes",
+    retry=exponential_retry(max_attempts=4),
+)
+async def process_opml_subscription_episodes(
     subscription_id: int,
     user_id: int,
     source_url: str,
-) -> dict:
+) -> dict[str, Any]:
     """Parse and upsert episodes for one OPML subscription in background."""
-    return await PodcastTaskOrchestrationService(
-        session,
-    ).process_opml_subscription_episodes(
-        subscription_id=subscription_id,
-        user_id=user_id,
-        source_url=source_url,
-    )
-
-
-@celery_app.task(bind=True, max_retries=2)
-def cleanup_old_playback_states(self):
-    try:
-        return run_async(_cleanup_old_playback_states_async())
-    except Exception as exc:
-        if self.request.retries < self.max_retries:
-            raise self.retry(countdown=60 * (2**self.request.retries)) from exc
-        raise
-
-
-async def _cleanup_old_playback_states_async():
     async with worker_session() as session:
-        return await cleanup_old_playback_states_handler(session)
-
-
-@celery_app.task(bind=True, max_retries=2)
-def cleanup_old_transcription_temp_files(self, days: int = 7):
-    try:
-        return run_async(_cleanup_old_transcription_temp_files_async(days=days))
-    except Exception as exc:
-        if self.request.retries < self.max_retries:
-            raise self.retry(countdown=60 * (2**self.request.retries)) from exc
-        raise
-
-
-async def _cleanup_old_transcription_temp_files_async(days: int):
-    async with worker_session() as session:
-        return await cleanup_old_transcription_temp_files_handler(session, days=days)
-
-
-@celery_app.task
-def auto_cleanup_cache_files():
-    return run_async(_auto_cleanup_cache_files_async())
-
-
-async def _auto_cleanup_cache_files_async():
-    async with worker_session() as session:
-        return await auto_cleanup_cache_files_handler(session)
-
-
-@celery_app.task(bind=True, max_retries=3)
-def process_opml_subscription_episodes(
-    self,
-    subscription_id: int,
-    user_id: int,
-    source_url: str,
-):
-    try:
-        return run_async(
-            _process_opml_subscription_episodes_async(
-                subscription_id=subscription_id,
-                user_id=user_id,
-                source_url=source_url,
-            ),
-        )
-    except Exception as exc:
-        if self.request.retries < self.max_retries:
-            raise self.retry(countdown=60 * (2**self.request.retries)) from exc
-        raise
-
-
-async def _process_opml_subscription_episodes_async(
-    subscription_id: int,
-    user_id: int,
-    source_url: str,
-):
-    async with worker_session() as session:
-        return await process_opml_subscription_episodes_handler(
-            session=session,
+        return await PodcastTaskOrchestrationService(
+            session,
+        ).process_opml_subscription_episodes(
             subscription_id=subscription_id,
             user_id=user_id,
             source_url=source_url,

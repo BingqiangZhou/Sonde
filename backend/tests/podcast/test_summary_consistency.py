@@ -2,7 +2,7 @@
 
 from datetime import UTC, datetime
 from types import SimpleNamespace
-from unittest.mock import AsyncMock, Mock
+from unittest.mock import AsyncMock, patch
 
 import pytest
 
@@ -78,9 +78,9 @@ async def test_generate_summary_response_uses_persisted_episode_summary() -> Non
     }
     import app.domains.podcast.routes.routes_episodes as routes_module
 
-    delay_mock = Mock()
-    original_delay = routes_module.generate_episode_summary_task.delay
-    routes_module.generate_episode_summary_task.delay = delay_mock
+    defer_mock = AsyncMock(return_value=1)
+    original_defer = routes_module.generate_episode_summary_task.defer_async
+    routes_module.generate_episode_summary_task.defer_async = defer_mock
 
     try:
         response = await generate_summary(
@@ -90,11 +90,15 @@ async def test_generate_summary_response_uses_persisted_episode_summary() -> Non
             summary_workflow=summary_workflow,
         )
     finally:
-        routes_module.generate_episode_summary_task.delay = original_delay
+        routes_module.generate_episode_summary_task.defer_async = original_defer
 
     assert response.summary_status == "summary_generating"
     assert response.accepted_at == accepted_at
-    delay_mock.assert_called_once_with(1, "test-model", None)
+    defer_mock.assert_called_once_with(
+        episode_id=1,
+        summary_model="test-model",
+        custom_prompt=None,
+    )
 
 
 @pytest.mark.asyncio
@@ -129,18 +133,16 @@ async def test_generate_summary_reuses_existing_when_lock_contended() -> None:
     service = PodcastSummaryGenerationService(db=db)
     service.model_manager = AsyncMock()
 
-    class _FakeRedis:
-        async def acquire_lock(self, *_args, **_kwargs):
-            return False
+    from contextlib import asynccontextmanager
 
-        async def release_lock(self, *_args, **_kwargs):
-            raise AssertionError(
-                "release_lock should not be called when lock not acquired"
-            )
+    @asynccontextmanager
+    async def _contended_lock(_name):
+        yield False
 
-    service.redis = _FakeRedis()
+    import app.domains.podcast.services.summary_service as summary_module
 
-    result = await service.generate_summary(episode_id=1)
+    with patch.object(summary_module, "advisory_lock", _contended_lock):
+        result = await service.generate_summary(episode_id=1)
 
     assert result["reused_existing"] is True
     assert result["summary_content"] == "existing summary"

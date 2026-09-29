@@ -471,7 +471,7 @@ class DailyReportService:
 
     async def _trigger_episode_processing(self, episode_id: int) -> None:
         try:
-            self._task_orchestration_service().enqueue_episode_processing(
+            await self._task_orchestration_service().enqueue_episode_processing(
                 episode_id=episode_id,
                 user_id=self.user_id,
             )

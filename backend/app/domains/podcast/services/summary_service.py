@@ -11,9 +11,9 @@ from typing import Any
 from sqlalchemy import and_, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.advisory_lock import advisory_lock
 from app.core.database import get_async_session_factory
 from app.core.exceptions import ValidationError
-from app.core.redis import get_shared_redis
 from app.core.utils import filter_thinking_content, strip_html_tags
 from app.domains.ai.invocation import call_ai_api_with_retry
 from app.domains.ai.models import ModelType
@@ -213,10 +213,11 @@ class PodcastSummaryGenerationService:
     def __init__(self, db: AsyncSession):
         self.db = db
         self.model_manager = SummaryModelManager(db)
-        self.redis = get_shared_redis()
-        self.summary_lock_ttl_seconds = 1800
-        self.summary_wait_retries = 6
-        self.summary_wait_interval_seconds = 1.0
+
+    # Postgres advisory lock namespace for per-episode summary generation.
+    summary_lock_name_template = "podcast:summary:{episode_id}"
+    summary_wait_retries = 6
+    summary_wait_interval_seconds = 1.0
 
     async def generate_summary(
         self,
@@ -224,61 +225,57 @@ class PodcastSummaryGenerationService:
         model_name: str | None = None,
         custom_prompt: str | None = None,
     ) -> dict[str, Any]:
-        lock_name = f"summary:{episode_id}"
-        lock_acquired = await self.redis.acquire_lock(
-            lock_name,
-            expire=self.summary_lock_ttl_seconds,
-        )
-        if not lock_acquired:
-            return await self._wait_for_existing_summary(episode_id)
-
-        try:
-            from sqlalchemy import select
-            from sqlalchemy.orm import selectinload
-
-            stmt = (
-                select(PodcastEpisode)
-                .where(PodcastEpisode.id == episode_id)
-                .options(selectinload(PodcastEpisode.transcript))
-            )
-            result = await self.db.execute(stmt)
-            episode = result.scalar_one_or_none()
-            if not episode:
-                raise ValidationError(f"Episode {episode_id} not found")
-
-            transcript_content = (
-                episode.transcript.transcript_content if episode.transcript else None
-            )
-            if not transcript_content:
-                raise ValidationError(
-                    f"No transcript content available for episode {episode_id}",
-                )
-
-            episode_info = {
-                "title": episode.title,
-                "description": episode.description,
-                "duration": episode.audio_duration,
-            }
-            summary_result = await self.model_manager.generate_summary(
-                transcript=transcript_content,
-                episode_info=episode_info,
+        lock_name = self.summary_lock_name_template.format(episode_id=episode_id)
+        async with advisory_lock(lock_name) as lock_acquired:
+            if not lock_acquired:
+                return await self._wait_for_existing_summary(episode_id)
+            return await self._generate_summary_locked(
+                episode_id,
                 model_name=model_name,
                 custom_prompt=custom_prompt,
             )
-            await self._update_episode_summary(episode_id, summary_result)
-            # Invalidate episode detail cache so next fetch picks up new summary
-            try:
-                await self.redis.delete_pattern(
-                    f"podcast:episode:detail:{episode_id}:*"
-                )
-            except Exception as e:
-                logger.warning(
-                    f"Cache invalidation skipped: op=generate_summary "
-                    f"cache=episode_detail episode_id={episode_id}: {e}"
-                )
-            return summary_result
-        finally:
-            await self.redis.release_lock(lock_name)
+
+    async def _generate_summary_locked(
+        self,
+        episode_id: int,
+        *,
+        model_name: str | None,
+        custom_prompt: str | None,
+    ) -> dict[str, Any]:
+        from sqlalchemy import select
+        from sqlalchemy.orm import selectinload
+
+        stmt = (
+            select(PodcastEpisode)
+            .where(PodcastEpisode.id == episode_id)
+            .options(selectinload(PodcastEpisode.transcript))
+        )
+        result = await self.db.execute(stmt)
+        episode = result.scalar_one_or_none()
+        if not episode:
+            raise ValidationError(f"Episode {episode_id} not found")
+
+        transcript_content = (
+            episode.transcript.transcript_content if episode.transcript else None
+        )
+        if not transcript_content:
+            raise ValidationError(
+                f"No transcript content available for episode {episode_id}",
+            )
+
+        episode_info = {
+            "title": episode.title,
+            "description": episode.description,
+            "duration": episode.audio_duration,
+        }
+        summary_result = await self.model_manager.generate_summary(
+            transcript=transcript_content,
+            episode_info=episode_info,
+            model_name=model_name,
+            custom_prompt=custom_prompt,
+        )
+        await self._update_episode_summary(episode_id, summary_result)
+        return summary_result
 
     async def _wait_for_existing_summary(self, episode_id: int) -> dict[str, Any]:
         from sqlalchemy import select

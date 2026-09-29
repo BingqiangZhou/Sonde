@@ -10,17 +10,16 @@ Docker 方案见 [DEPLOYMENT.md](DEPLOYMENT.md) 与 [docker/README.md](../docker
 
 ## 架构对照
 
-Docker Compose 启动 7 个服务，裸机部署需要自行承载其中每一个：
+Docker Compose 启动 4 个服务，裸机部署需要自行承载其中每一个：
 
 | Docker 服务 | 裸机对应 | 说明 |
 |---|---|---|
-| postgres (PostgreSQL 15) | 系统包 postgresql | 数据库 |
-| redis (Redis 7) | 系统包 redis-server | 缓存、锁、Celery broker |
-| backend (uvicorn ×1) | systemd: `sonde-api` | FastAPI API，独占执行 alembic 迁移 |
-| worker (Celery, concurrency=1) | systemd: `sonde-worker` | 后台任务（订阅刷新、转写、AI 摘要、日报） |
-| beat (Celery Beat) | systemd: `sonde-beat`（或并入 worker `-B`） | 定时调度 |
-| backup (pg_dump 侧车) | cron | 每日备份 |
-| nginx | 系统包 nginx（可选） | 反向代理 + SSL |
+| postgres (PostgreSQL 15) | 系统包 postgresql | 数据库 + procrastinate 任务队列存储 |
+| backend (uvicorn/gunicorn) | systemd: `sonde-api` | FastAPI API，独占执行 alembic 迁移 |
+| worker (procrastinate asyncio worker，TZ=UTC) | systemd: `sonde-worker` | 后台任务（订阅刷新、转写、AI 摘要、日报）兼跑周期调度（cron 在 worker 进程内触发） |
+| caddy (Caddy 2) | 系统包 caddy（可选） | 反向代理 + 自动 HTTPS |
+
+每日备份在两种方式下都不属于 Compose 服务，裸机用 cron 实现（见第 11 节）。
 
 ---
 
@@ -31,8 +30,7 @@ Docker Compose 启动 7 个服务，裸机部署需要自行承载其中每一�
 | OS | Ubuntu 22.04+ / Debian 12+（x86_64 / arm64） |
 | Python | 3.11+ |
 | PostgreSQL | 15+ |
-| Redis | 7+ |
-| 其他 | ffmpeg（音频转码/分片，转写功能必需）、nginx（可选） |
+| 其他 | ffmpeg（音频转码/分片，转写功能必需）、caddy（可选） |
 | 内存 | 最低 1.5GB + 2GB swap；推荐 2GB 及以上 |
 | 磁盘 | 10GB+（不含播客音频存储，转写音频会持续增长） |
 
@@ -40,8 +38,9 @@ Docker Compose 启动 7 个服务，裸机部署需要自行承载其中每一�
 
 ```bash
 sudo apt update
-sudo apt install -y postgresql redis-server ffmpeg nginx git curl
+sudo apt install -y postgresql ffmpeg git curl
 
+# 可选：Caddy 反向代理（官方仓库安装见 caddyserver.com/docs/install）
 # 可选：国内源加速可参考 docs/MIRRORS.md
 ```
 
@@ -97,9 +96,7 @@ ENVIRONMENT=production
 API_KEY=<openssl rand -hex 32>          # API 访问鉴权，生产必填
 SECRET_KEY=<openssl rand -hex 32>       # 加密已存储的 AI 密钥等，缺失则每次重启随机生成
 DATABASE_URL=postgresql+asyncpg://sonde:<密码>@localhost:5432/sonde
-REDIS_URL=redis://:<Redis密码>@localhost:6379        # 如 Redis 未设密码则去掉 :<密码>
-CELERY_BROKER_URL=redis://:<Redis密码>@localhost:6379/1
-CELERY_RESULT_BACKEND=redis://:<Redis密码>@localhost:6379/2
+WORKER_CONCURRENCY=1                    # 任务 worker 并发数（转写任务较重，默认 1）
 ALLOWED_HOSTS=["https://你的域名"]       # 生产必须改为实际域名
 ```
 
@@ -138,24 +135,7 @@ maintenance_work_mem = 64MB
 sudo systemctl restart postgresql
 ```
 
-## 7. 配置 Redis
-
-编辑 `/etc/redis/redis.conf`：
-
-```ini
-requirepass 改成强密码
-appendonly yes
-maxmemory 128mb
-maxmemory-policy allkeys-lru
-```
-
-```bash
-sudo systemctl restart redis-server
-```
-
-（与 Docker 版参数一致，仅把 maxmemory 从 230mb 降为 128mb —— 本应用 Redis 数据集很小，128mb 足够。）
-
-## 8. 执行数据库迁移
+## 7. 执行数据库迁移
 
 对应 Docker 版 `RUN_MIGRATIONS=1` 的行为。**首次启动前和每次升级代码后**，先停服务再执行：
 
@@ -167,6 +147,17 @@ sudo -u sonde .venv/bin/alembic upgrade head
 > alembic 的 `env.py` 会从工作目录自动读取 `.env`（同 pydantic-settings），因此必须先 `cd` 到 backend 目录。
 > 迁移由人工（或部署脚本）单点执行，避免 API 与 worker 并发跑 alembic —— 这正是 Docker 版让 backend 容器独占迁移的原因。
 
+## 8. 初始化任务队列 schema（procrastinate）
+
+任务队列由 procrastinate（Postgres 原生队列）承载，无需 Redis 等额外中间件。**首次部署在数据库迁移之后**应用一次其 schema（幂等，可重复执行）：
+
+```bash
+cd /opt/sonde/backend
+sudo -u sonde .venv/bin/python -m procrastinate -a app.core.jobs.procrastinate_app schema --apply
+```
+
+（Docker 版由 backend 容器入口在 `alembic upgrade head` 之后自动执行同一命令。）
+
 ## 9. systemd 服务
 
 ### `/etc/systemd/system/sonde-api.service`
@@ -174,7 +165,7 @@ sudo -u sonde .venv/bin/alembic upgrade head
 ```ini
 [Unit]
 Description=Sonde backend API (uvicorn)
-After=network-online.target postgresql.service redis-server.service
+After=network-online.target postgresql.service
 Wants=network-online.target
 
 [Service]
@@ -193,14 +184,14 @@ RestartSec=5
 WantedBy=multi-user.target
 ```
 
-> 监听 `127.0.0.1`，由 nginx 代理对外；若不用 nginx 需改成 `0.0.0.0` 并自行处理 TLS。
+> 监听 `127.0.0.1`，由 Caddy 代理对外；若不用 Caddy 需改成 `0.0.0.0` 并自行处理 TLS。
 
 ### `/etc/systemd/system/sonde-worker.service`
 
 ```ini
 [Unit]
-Description=Sonde Celery worker
-After=network-online.target postgresql.service redis-server.service sonde-api.service
+Description=Sonde procrastinate worker (jobs + periodic cron deferral)
+After=network-online.target postgresql.service sonde-api.service
 Wants=network-online.target
 
 [Service]
@@ -208,9 +199,10 @@ Type=simple
 User=sonde
 Group=sonde
 WorkingDirectory=/opt/sonde/backend
-Environment=PYTHONUTF8=1 TZ=Asia/Shanghai
-ExecStart=/opt/sonde/backend/.venv/bin/celery -A app.core.celery_app:celery_app \
-    worker --loglevel=info --concurrency=1 -Q default
+# TZ 必须为 UTC：procrastinate 的 cron 表达式按进程本地时区求值，
+# 固定 UTC 才能与原 Celery beat 的 UTC 调度时刻保持一致
+Environment=PYTHONUTF8=1 TZ=UTC WORKER_CONCURRENCY=1
+ExecStart=/opt/sonde/backend/.venv/bin/python -m app.bootstrap.worker
 Restart=always
 RestartSec=10
 
@@ -218,100 +210,44 @@ RestartSec=10
 WantedBy=multi-user.target
 ```
 
-### `/etc/systemd/system/sonde-beat.service`
-
-```ini
-[Unit]
-Description=Sonde Celery beat scheduler
-After=network-online.target redis-server.service sonde-api.service
-
-[Service]
-Type=simple
-User=sonde
-Group=sonde
-WorkingDirectory=/opt/sonde/backend
-Environment=PYTHONUTF8=1 TZ=Asia/Shanghai
-ExecStart=/opt/sonde/backend/.venv/bin/celery -A app.core.celery_app:celery_app \
-    beat --loglevel=info
-Restart=always
-RestartSec=10
-
-[Install]
-WantedBy=multi-user.target
-```
+> 周期调度（feed 刷新、待处理摘要、缓存清理、日报）由 worker 进程内 cron 触发，**无需独立的 beat 单元**。并发数用 `WORKER_CONCURRENCY` 控制（默认 1）。
 
 ### 启动
 
 ```bash
 sudo systemctl daemon-reload
-sudo systemctl enable --now sonde-api sonde-worker sonde-beat
-sudo systemctl status sonde-api sonde-worker sonde-beat
+sudo systemctl enable --now sonde-api sonde-worker
+sudo systemctl status sonde-api sonde-worker
 ```
 
-### 低内存变体：beat 内嵌进 worker
+## 10. Caddy 反向代理（可选但推荐）
 
-2GB 服务器可以不建 `sonde-beat`，把 worker 启动命令改为带 `-B`：
+`/etc/caddy/Caddyfile`（要点从 `docker/caddy/Caddyfile` 移植；Caddy 默认流式转发响应，无需针对流式接口单独关闭缓冲）：
 
-```
-... worker --loglevel=info --concurrency=1 -Q default -B
-```
+```caddyfile
+你的域名 {
+    tls internal
 
-省一个 Python 进程（约 50–80MB）。代价是调度器与 worker 绑定、不能再横向加 worker 实例 —— 个人单机部署没有影响。
+    encode zstd gzip
 
-## 10. Nginx 反向代理（可选但推荐）
-
-`/etc/nginx/sites-available/sonde`（要点从 `docker/nginx/` 模板移植，注意 **流式接口必须关 buffering**）：
-
-```nginx
-upstream sonde_backend {
-    server 127.0.0.1:8000;
-    keepalive 8;
-}
-
-server {
-    listen 80;
-    server_name 你的域名;
-    client_max_body_size 20M;
-
-    # 流式接口（SSE 等）：关闭缓冲
-    location ~* ^/api/v1/.*/stream {
-        proxy_pass http://sonde_backend;
-        proxy_http_version 1.1;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_connect_timeout 60s;
-        proxy_send_timeout 300s;
-        proxy_read_timeout 300s;
-        proxy_buffering off;
-        proxy_request_buffering off;
+    request_body {
+        max_size 20MB
     }
 
-    location / {
-        proxy_pass http://sonde_backend;
-        proxy_http_version 1.1;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_connect_timeout 60s;
-        proxy_send_timeout 60s;
-        proxy_read_timeout 60s;
-    }
+    reverse_proxy 127.0.0.1:8000
 }
 ```
 
 ```bash
-sudo ln -s /etc/nginx/sites-available/sonde /etc/nginx/sites-enabled/
-sudo nginx -t && sudo systemctl reload nginx
+sudo caddy validate --config /etc/caddy/Caddyfile
+sudo systemctl reload caddy
 ```
 
-HTTPS 用 certbot：`sudo apt install certbot python3-certbot-nginx && sudo certbot --nginx -d 你的域名`。
+公网域名下可切换为 ACME 自动证书（`tls 你的邮箱`）；本机/内网自用保持 `tls internal`（内置 CA）。TLS 模式与根证书信任见 [docker/caddy/README.md](../docker/caddy/README.md)。
 
-## 11. 每日备份（替代 backup 侧车）
+## 11. 每日备份（cron）
 
-`sudo crontab -e` 添加（保留 7 天，与 Docker 版一致）：
+`sudo crontab -e` 添加（保留 7 天）：
 
 ```cron
 10 4 * * * sudo -u postgres pg_dump -Fc -f /opt/sonde/backups/db_$(date +\%Y\%m\%d).dump sonde && find /opt/sonde/backups -name 'db_*.dump' -mtime +7 -delete
@@ -321,7 +257,7 @@ HTTPS 用 certbot：`sudo apt install certbot python3-certbot-nginx && sudo cert
 
 ```bash
 curl http://localhost:8000/api/v1/health        # {"status":"healthy"}
-curl http://localhost:8000/api/v1/health/ready  # 含数据库与 Redis 检查
+curl http://localhost:8000/api/v1/health/ready  # 就绪检查（数据库）
 # API 文档: http://localhost:8000/api/v1/docs（生产走域名 + HTTPS）
 
 journalctl -u sonde-api -f          # API 日志
@@ -333,35 +269,34 @@ journalctl -u sonde-worker -f       # worker 日志（RSS 刷新、转写、摘�
 ## 13. 升级流程
 
 ```bash
-sudo systemctl stop sonde-worker sonde-beat sonde-api
+sudo systemctl stop sonde-worker sonde-api
 cd /opt/sonde/backend && sudo -u sonde git pull
 sudo -u sonde env UV_INDEX_URL=https://mirrors.aliyun.com/pypi/web/simple uv sync --frozen --no-dev
 sudo -u sonde .venv/bin/alembic upgrade head
-sudo systemctl start sonde-api sonde-worker sonde-beat
+sudo -u sonde .venv/bin/python -m procrastinate -a app.core.jobs.procrastinate_app schema --apply
+sudo systemctl start sonde-api sonde-worker
 ```
 
 ---
 
 ## 内存占用对比：Docker vs 裸机
 
-容器不是虚拟机：同一个 PostgreSQL/Redis/Python 进程在容器内外内存基本相同。**差异来自三处**——Docker 守护进程本身、backup 常驻侧车（裸机用 cron 替代）、以及裸机可选的 beat 内嵌。
+容器不是虚拟机：同一个 PostgreSQL/Python 进程在容器内外内存基本相同。**差异主要来自 Docker 守护进程本身**；任务队列改为 Postgres 原生的 procrastinate 后，Redis 与独立 beat 进程均已移除，两种部署方式的进程集合一致。
 
 以下为个人使用规模（几个订阅、每天几十期转写）下的稳态 RSS 经验估算：
 
 | 组件 | Docker 部署 | 裸机部署 |
 |---|---:|---:|
 | dockerd + containerd | 120–250 MB | — |
-| PostgreSQL 15 | 150–250 MB | 150–250 MB（相同配置） |
-| Redis 7 | 30–80 MB（数据集很小，230mb 只是上限） | 30–80 MB |
-| Backend API（uvicorn ×1） | 150–250 MB | 150–250 MB |
-| Celery worker（父进程 + 1 子进程） | 200–350 MB | 200–350 MB |
-| Celery beat | 50–80 MB | 50–80 MB，或 0（`-B` 内嵌） |
-| Nginx | 10–20 MB | 10–20 MB |
-| backup 侧车 / cron | 5–10 MB 常驻（pg_dump 时短时 +50–100 MB） | 0 常驻（cron 瞬时） |
+| PostgreSQL 15（数据 + 任务队列） | 150–250 MB | 150–250 MB（相同配置） |
+| Backend API（uvicorn/gunicorn） | 150–250 MB | 150–250 MB |
+| worker（procrastinate asyncio，含周期调度） | 150–300 MB | 150–300 MB |
+| Caddy | 10–20 MB | 10–20 MB |
+| 每日备份 cron | 0 常驻（pg_dump 短时 +50–100 MB） | 0 常驻（cron 瞬时） |
 | 操作系统（最小安装） | 150–250 MB | 150–250 MB |
-| **稳态合计** | **约 0.9–1.4 GB** | **约 0.75–1.1 GB** |
+| **稳态合计** | **约 0.6–1.3 GB** | **约 0.5–1.0 GB** |
 
-**结论：两种方式相差约 200–350 MB（约为总占用的 15%–25%），主要就是 dockerd/containerd 常驻开销；裸机再用 `-B` 内嵌 beat 还能再省约 60 MB。** 除此之外各进程内存相同，不会有数量级差别。
+**结论：两种方式相差约 120–250 MB（主要就是 dockerd/containerd 常驻开销）。** 除此之外各进程内存相同，不会有数量级差别。
 
 另外两点顺带收益：裸机省去约 1–1.5 GB 磁盘镜像；少了容器层，`journalctl` 直接看日志。代价是需要自己维护 systemd 单元、升级脚本和依赖版本一致性（Docker 版由镜像锁死）。
 
@@ -375,7 +310,7 @@ sudo systemctl start sonde-api sonde-worker sonde-beat
 
 ## 2GB 内存服务器能否正常运行？
 
-**可以，两种方式都可以；裸机更宽裕。** 按上表，稳态占用约 0.9–1.4 GB（Docker）或 0.75–1.1 GB（裸机），2GB 有余量覆盖转写峰值的短时上涨。建议照以下清单收紧：
+**可以，两种方式都可以；裸机更宽裕。** 按上表，稳态占用约 0.6–1.3 GB（Docker）或 0.5–1.0 GB（裸机），2GB 有余量覆盖转写峰值的短时上涨。建议照以下清单收紧：
 
 1. **务必加 2GB swap**（转写 + 备份叠加的瞬时峰值安全网）：
 
@@ -388,10 +323,8 @@ sudo systemctl start sonde-api sonde-worker sonde-beat
 
 2. **`TRANSCRIPTION_MAX_THREADS=1`（最多 2）** —— 这是 2GB 机器上最关键的一项，默认 4 个并发 ffmpeg 容易在转写积压清空时把内存打满；
 3. PostgreSQL：`max_connections=30`、`shared_buffers=128MB`（见第 6 节）；
-4. Redis：`maxmemory 128mb`（见第 7 节）；
-5. Celery `--concurrency=1`（Docker 版默认已是）；
-6. beat 用 `-B` 内嵌进 worker，省一个进程；
-7. 保持 `DATABASE_POOL_SIZE=5` / `DATABASE_MAX_OVERFLOW=10` 默认值即可，不要调大。
+4. worker 并发 `WORKER_CONCURRENCY=1`（Docker 版默认已是）；
+5. 保持 `DATABASE_POOL_SIZE=5` / `DATABASE_MAX_OVERFLOW=10` 默认值即可，不要调大。
 
 不建议低于 2GB：1GB 机器即使裸机 + 全部调优，转写峰值也很容易触发 OOM killer（通常先杀 worker）。
 
@@ -400,10 +333,10 @@ sudo systemctl start sonde-api sonde-worker sonde-beat
 ## 常见问题
 
 **Q：服务起不来，报数据库连接失败？**
-先确认 `postgresql`、`redis-server` 处于 active 状态，再核对 `.env` 中 `DATABASE_URL`/`REDIS_URL` 的密码与第 6、7 节设置一致；`journalctl -u sonde-api -n 50` 看具体报错。
+先确认 `postgresql` 处于 active 状态，再核对 `.env` 中 `DATABASE_URL` 的密码与第 6 节设置一致；`journalctl -u sonde-api -n 50` 看具体报错。
 
 **Q：worker 日志里任务一直不执行？**
-检查 `sonde-beat` 是否运行（或 worker 是否带 `-B`），以及 Redis 密码是否一致 —— broker 连不上时 worker 会静默重连。
+检查 `sonde-worker` 是否运行、`journalctl -u sonde-worker` 有无数据库连接报错，并确认第 8 节的 procrastinate schema 已应用；周期任务由 worker 进程内 cron 触发，worker 的 `TZ` 必须为 `UTC` 才能按预期时刻运行。
 
 **Q：转写没有产物？**
 确认系统 `ffmpeg -version` 可用；转写依赖外部 API（密钥在后台管理面板 `/api/v1/admin/apikeys` 配置），本地只做下载、转码与分片。
@@ -415,4 +348,4 @@ sudo systemctl start sonde-api sonde-worker sonde-beat
 - [Docker 部署指南](DEPLOYMENT.md)
 - [docker/README.md](../docker/README.md)
 - [国内镜像源说明](MIRRORS.md)
-- [SSL 配置](../docker/nginx/SSL_SETUP.md)
+- [Caddy 配置](../docker/caddy/README.md)

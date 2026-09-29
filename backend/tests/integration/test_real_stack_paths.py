@@ -1,9 +1,9 @@
 """Real-stack integration tests for the previously broken hot paths.
 
 Drive the actual service/repository code against real postgres (FKs, unique
-constraints, row locks, JSON columns) and real redis (locks, dispatch
-claims, feed-count cache) — exactly the layer the sqlite+mock suite could
-not cover.
+constraints, row locks, JSON columns), the Postgres advisory locks and the
+procrastinate queue — exactly the layer the sqlite+mock suite could not
+cover.
 """
 
 from datetime import UTC, datetime
@@ -12,15 +12,18 @@ import pytest
 import pytest_asyncio
 from sqlalchemy import select
 
-from app.core.redis import RedisCache
 from app.domains.podcast.models import (
     PodcastEpisode,
     TranscriptionTask,
 )
+from app.domains.podcast.repositories.feed_repository import (
+    _feed_count_cache as feed_count_cache,
+)
 from app.domains.podcast.repositories.podcast_repository import PodcastRepository
 from app.domains.podcast.transcription.state import (
+    UNKNOWN_OWNER_TASK_ID,
+    TranscriptionStateManager,
     claim_task_dispatch,
-    clear_task_dispatch,
 )
 
 
@@ -90,9 +93,7 @@ async def test_atomic_ingest_on_real_postgres(db_session, seeded_user):
 
 
 @pytest.mark.integration
-async def test_dispatch_claim_duplicate_raises_then_recovers(
-    db_session, seeded_user, real_redis: RedisCache
-):
+async def test_dispatch_claim_status_semantics(db_session, seeded_user):
     repo = PodcastRepository(db_session)
     _, _, new = await repo.add_subscription_with_episodes(
         user_id=seeded_user,
@@ -113,20 +114,57 @@ async def test_dispatch_claim_duplicate_raises_then_recovers(
     await db_session.refresh(task)
     task_id = task.id
 
-    assert await claim_task_dispatch(real_redis, db_session, task_id) is True
+    # Pending tasks may execute.
+    assert await claim_task_dispatch(db_session, task_id) is True
 
-    with pytest.raises(RuntimeError, match="dispatch key exists"):
-        await claim_task_dispatch(real_redis, db_session, task_id)
+    # Live duplicates (task already running) raise.
+    task.status = "in_progress"
+    await db_session.commit()
+    with pytest.raises(RuntimeError, match="in_progress"):
+        await claim_task_dispatch(db_session, task_id)
 
-    await clear_task_dispatch(real_redis, task_id)
-    assert await claim_task_dispatch(real_redis, db_session, task_id) is True
+    # Terminal tasks are skipped.
+    task.status = "completed"
+    await db_session.commit()
+    assert await claim_task_dispatch(db_session, task_id) is False
 
 
 @pytest.mark.integration
-async def test_feed_count_cache_roundtrip_on_real_redis(
-    db_session, seeded_user, real_redis: RedisCache
+async def test_advisory_episode_lock_across_engines(
+    db_session, seeded_user, integration_engine
 ):
-    repo = PodcastRepository(db_session, redis=real_redis)
+    """Two managers on separate connections fence each other via pg_locks."""
+    from app.core.advisory_lock import string_lock_key
+
+    holder = TranscriptionStateManager(engine=integration_engine)
+    contender = TranscriptionStateManager(engine=integration_engine)
+
+    episode_id = 4242
+
+    assert await holder.acquire_task_lock(episode_id, task_id=1)
+    # Re-entrant for the same task.
+    assert await holder.acquire_task_lock(episode_id, task_id=1)
+    assert await holder.is_episode_locked(episode_id) == 1
+
+    # Another process cannot take or see the owner id.
+    assert await contender.acquire_task_lock(episode_id, task_id=2) is False
+    assert await contender.is_episode_locked(episode_id) == UNKNOWN_OWNER_TASK_ID
+
+    # Release by the wrong task is refused.
+    assert await contender.release_task_lock(episode_id, task_id=2) is False
+
+    assert await holder.release_task_lock(episode_id, task_id=1)
+    assert await contender.is_episode_locked(episode_id) is None
+
+    # Sanity: the lock key namespace is distinct per episode.
+    assert string_lock_key("transcription:episode:1") != string_lock_key(
+        "transcription:episode:2"
+    )
+
+
+@pytest.mark.integration
+async def test_feed_count_ttl_cache_roundtrip(db_session, seeded_user):
+    repo = PodcastRepository(db_session)
     subscription, _, _ = await repo.add_subscription_with_episodes(
         user_id=seeded_user,
         feed_url="https://example.com/int-feed-3.xml",
@@ -145,9 +183,19 @@ async def test_feed_count_cache_roundtrip_on_real_redis(
 
     assert total1 == total2 == 2
     assert len(page1) == len(page2) == 1
-    # The count cache key for this user must now exist in redis.
-    exists = await real_redis.exists(f"podcast:feed:count:{seeded_user}")
-    assert exists is True
+    # The in-process TTL cache now holds the count for this user.
+    assert seeded_user in feed_count_cache
+
+    # A cached entry with a future expiry short-circuits the query.
+    import time as time_module
+
+    expires_at, _value = feed_count_cache[seeded_user]
+    feed_count_cache[seeded_user] = (time_module.monotonic() + 60, 999)
+    _, total3, _, _ = await repo.get_feed_lightweight_cursor_paginated(
+        seeded_user, size=1
+    )
+    assert total3 == 999
+    feed_count_cache[seeded_user] = (expires_at, 2)
 
 
 @pytest.mark.integration

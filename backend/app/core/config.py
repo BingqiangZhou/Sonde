@@ -61,21 +61,14 @@ class Settings(BaseSettings):
     DATABASE_STATEMENT_TIMEOUT: int = 30000
     DATABASE_ECHO: bool = False
 
-    # Redis
-    REDIS_URL: str = "redis://localhost:6379"
-    REDIS_MAX_CONNECTIONS: int = 10
-
     # CORS
     ALLOWED_HOSTS: list[str] = []
 
     # Authentication
     API_KEY: str = ""
 
-    # Celery
-    CELERY_BROKER_URL: str = "redis://localhost:6379/1"
-    CELERY_RESULT_BACKEND: str = "redis://localhost:6379/2"
-    CELERY_WORKER_PREFETCH_MULTIPLIER: int = 1
-    CELERY_WORKER_MAX_TASKS_PER_CHILD: int = 100
+    # Task Queue (procrastinate worker)
+    WORKER_CONCURRENCY: int = 1
 
     # Podcast Processing Limits
     MAX_PODCAST_SUBSCRIPTIONS: int = 0

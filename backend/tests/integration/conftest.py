@@ -1,9 +1,9 @@
-"""Integration fixtures: real postgres + redis from the docker-compose stack.
+"""Integration fixtures: real postgres from the docker-compose stack.
 
-These tests create an isolated ``sonde_test_*`` database (dropped afterwards)
-and use redis DB 15 (flushed), so they never touch dev data. The whole module
-skips automatically when the local stack is not reachable — run the suite
-with ``docker compose up -d`` first when you want them included.
+These tests create an isolated ``sonde_test_*`` database (dropped afterwards),
+so they never touch dev data. The whole module skips automatically when the
+local stack is not reachable — run the suite with ``docker compose up -d``
+first when you want them included.
 """
 
 import asyncio
@@ -57,17 +57,9 @@ def _tcp_reachable(host: str, port: int) -> bool:
 
 def _stack_available() -> tuple[bool, str]:
     env = _load_docker_env()
-    pg_ok = _tcp_reachable("127.0.0.1", _pg_port(env))
-    redis_ok = _tcp_reachable("127.0.0.1", 6379)
-    if pg_ok and redis_ok:
+    if _tcp_reachable("127.0.0.1", _pg_port(env)):
         return True, ""
-    missing = []
-    if not pg_ok:
-        missing.append("postgres")
-    if not redis_ok:
-        missing.append("redis")
-    reason = "docker-compose stack not reachable: " + ", ".join(missing)
-    return False, reason
+    return False, "docker-compose stack not reachable: postgres"
 
 
 STACK_OK, STACK_REASON = _stack_available()
@@ -178,24 +170,10 @@ async def db_session(integration_engine) -> AsyncGenerator[AsyncSession, None]:
 
 
 @pytest_asyncio.fixture(autouse=True)
-async def real_redis():
-    """Point the shared RedisCache at compose redis DB 15 for the process."""
-    import app.core.redis as redis_module
-    from app.core.config import get_settings
+async def clean_feed_count_cache():
+    """Isolate the in-process feed-count TTL cache between tests."""
+    from app.domains.podcast.repositories import feed_repository
 
-    env = _load_docker_env()
-    password = env.get("REDIS_PASSWORD", "")
-    auth = f":{password}@" if password else ""
-    original_url = get_settings().REDIS_URL
-
-    get_settings().REDIS_URL = f"redis://{auth}127.0.0.1:6379/15"
-    redis_module._shared_redis = None
-
-    redis = redis_module.get_shared_redis()
-    client = await redis._get_client()
-    await client.flushdb()
-
-    yield redis
-
-    await redis_module.close_shared_redis()
-    get_settings().REDIS_URL = original_url
+    feed_repository._feed_count_cache.clear()
+    yield
+    feed_repository._feed_count_cache.clear()

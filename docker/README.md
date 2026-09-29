@@ -2,7 +2,7 @@
 
 Sonde（声读）的 Docker 部署配置。Compose 项目名固定为 `sonde`（容器 `sonde-*`、卷 `sonde_*`、网络 `sonde_network`），与目录名无关。
 
-6 个服务：postgres (PostgreSQL 15)、redis (Redis 7)、backend (FastAPI，独占执行 alembic 迁移)、worker (Celery 异步任务)、beat (独立调度器)、nginx (反向代理 + SSL)。
+4 个服务：postgres (PostgreSQL 15，数据 + procrastinate 任务队列)、backend (FastAPI，独占执行 alembic 迁移与 procrastinate schema 应用)、worker (procrastinate 异步任务 + 周期调度，容器固定 TZ=UTC)、caddy (反向代理 + 自动 HTTPS)。
 
 ---
 
@@ -21,6 +21,12 @@ nano .env
 # - POSTGRES_PASSWORD: 数据库密码
 # - SECRET_KEY: 密钥 (用 openssl rand -hex 32 生成)
 # - DOMAIN: 你的域名 (如果有)
+
+# 常用可选配置:
+# - WORKER_CONCURRENCY: 任务 worker 并发数 (默认 1)
+# - MAX_BODY_SIZE: 请求体大小上限 (默认 20MB)
+# - ACME_EMAIL: ACME 自动证书邮箱 (公网域名时使用)
+# - CADDY_CONF_DIR: Caddyfile 挂载目录 (默认 ./caddy)
 ```
 
 ### 2. 启动服务
@@ -36,11 +42,9 @@ docker compose up -d --build
 - API 文档: http://localhost:8000/api/v1/docs
 - 健康检查: http://localhost:8000/api/v1/health
 
-### SSL 证书（生产环境）
+### TLS 证书（生产环境）
 
-将 SSL 证书放到 `docker/nginx/cert/` 目录：
-- `fullchain.pem` - 证书链
-- `privkey.pem` - 私键
+Caddy 默认 `tls internal`（内置 CA 自动签发本地证书），零配置零续期。公网域名可切换 ACME 自动证书或挂载手动证书，见 [caddy/README.md](caddy/README.md)。
 
 ---
 
@@ -51,14 +55,9 @@ docker/
 ├── docker-compose.yml          # Docker Compose 配置
 ├── .env.example                # 环境配置模板
 ├── .env                        # 实际环境配置
-├── nginx/                      # Nginx 配置
-│   ├── nginx.conf
-│   ├── conf.d/
-│   │   └── default.conf.template  # HTTPS 模板
-│   ├── cert/                      # SSL 证书目录
-│   ├── logs/                      # Nginx 日志
-│   ├── README.md
-│   └── SSL_SETUP.md
+├── caddy/                      # Caddy 反向代理
+│   ├── Caddyfile               # 站点配置（环境变量占位符）
+│   └── README.md               # TLS 模式与运维说明
 └── README.md                   # 本文件
 ```
 
@@ -76,10 +75,13 @@ docker compose ps
 curl http://localhost:8000/api/v1/health
 # 预期: {"status": "healthy"}
 
-# 3. 就绪检查（含数据库和 Redis）
+# 3. 就绪检查（检查数据库）
 curl http://localhost:8000/api/v1/health/ready
 
-# 4. 访问 API 文档
+# 4. worker 健康检查
+docker compose exec worker python -m app.bootstrap.worker --healthcheck
+
+# 5. 访问 API 文档
 # 浏览器打开: http://localhost:8000/api/v1/docs
 ```
 
@@ -123,18 +125,17 @@ docker compose down -v
 docker compose exec postgres psql -U admin -d sonde
 ```
 
-### Nginx 管理
+### Caddy 管理
 
 ```bash
-# 测试配置
-docker compose exec nginx nginx -t
+# 校验配置（也是 caddy 容器的 healthcheck）
+docker compose exec caddy caddy validate --config /etc/caddy/Caddyfile
 
 # 重新加载配置
-docker compose exec nginx nginx -s reload
+docker compose exec caddy caddy reload --config /etc/caddy/Caddyfile
 
-# 查看 Nginx 日志
-tail -f nginx/logs/access.log
-tail -f nginx/logs/error.log
+# 查看 Caddy 日志（输出到容器 stdout）
+docker compose logs -f caddy
 ```
 
 ---
@@ -151,15 +152,15 @@ docker compose exec backend uv run pytest
 ## 部署成功检查清单
 
 - [ ] 配置 `docker/.env` 并修改密码、域名
-- [ ] 服务启动: `docker compose ps` 显示 5 个服务 **Up**
+- [ ] 服务启动: `docker compose ps` 显示 4 个服务 **Up**
 - [ ] 健康检查: `curl http://localhost:8000/api/v1/health` 返回健康
 - [ ] API 文档可访问: `http://localhost:8000/api/v1/docs` 正常显示
 - [ ] 功能测试: 能添加播客订阅
 
 ### 生产环境额外检查
 
-- [ ] 配置 SSL 证书到 `docker/nginx/cert/`
-- [ ] Nginx 配置测试通过
+- [ ] 按 [caddy/README.md](caddy/README.md) 确认 TLS 模式（默认 `tls internal`；公网域名可切 ACME 或手动证书）
+- [ ] Caddy 配置校验通过: `docker compose exec caddy caddy validate --config /etc/caddy/Caddyfile`
 - [ ] HTTPS 访问正常
 
 ---
@@ -167,5 +168,4 @@ docker compose exec backend uv run pytest
 ## 相关文档
 
 - **部署指南**: [docs/DEPLOYMENT.md](../docs/DEPLOYMENT.md)
-- **Nginx 配置**: [nginx/README.md](nginx/README.md)
-- **SSL 配置**: [nginx/SSL_SETUP.md](nginx/SSL_SETUP.md)
+- **Caddy 配置**: [caddy/README.md](caddy/README.md)

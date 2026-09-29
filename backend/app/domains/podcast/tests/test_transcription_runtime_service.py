@@ -15,7 +15,9 @@ class _FakeTaskOrchestrationService:
         self.db = db
         self.audio_transcription_calls = []
 
-    def enqueue_audio_transcription(self, *, task_id: int, config_db_id: int | None):
+    async def enqueue_audio_transcription(
+        self, *, task_id: int, config_db_id: int | None
+    ):
         self.audio_transcription_calls.append(
             {"task_id": task_id, "config_db_id": config_db_id},
         )

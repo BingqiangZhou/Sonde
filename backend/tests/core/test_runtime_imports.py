@@ -1,6 +1,7 @@
 """Import/runtime smoke tests for lazy startup boundaries."""
 
-from app.core.celery_app import create_celery_app
+import app.domains.podcast.tasks  # noqa: F401  (registers tasks + schedules)
+from app.core.jobs import procrastinate_app
 from app.domains.podcast.tasks.runtime import worker_session
 from app.main import app, create_application
 
@@ -18,10 +19,9 @@ def test_admin_router_import_smoke() -> None:
     assert router.routes
 
 
-def test_celery_app_lazy_creation_smoke() -> None:
-    celery_app = create_celery_app()
-    assert celery_app.conf.beat_schedule
-    assert len(celery_app.conf.beat_schedule) == 4
+def test_queue_app_task_registration_smoke() -> None:
+    assert len(procrastinate_app.periodic_registry.periodic_tasks) == 4
+    assert "podcast.transcription.process_audio" in procrastinate_app.tasks
 
 
 def test_worker_runtime_exports_session_factory() -> None:

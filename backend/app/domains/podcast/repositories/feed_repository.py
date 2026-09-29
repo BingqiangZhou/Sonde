@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import time
 from collections.abc import Mapping
 from datetime import UTC, datetime
 from typing import Any
@@ -17,6 +18,12 @@ from app.domains.podcast.repositories.base import (
 
 
 logger = logging.getLogger(__name__)
+
+# In-process TTL cache for feed total counts (replaces the former Redis
+# read-through cache). Single-replica deployment: acceptable per-process
+# staleness of up to 120 s.
+_FEED_COUNT_CACHE_TTL_SECONDS = 120.0
+_feed_count_cache: dict[int, tuple[float, int]] = {}
 
 
 def _as_utc(value: Any) -> Any:
@@ -39,13 +46,10 @@ class FeedQueryRepository(BasePodcastRepository):
         return f"podcast:feed:count:{user_id}"
 
     async def _get_feed_total_count(self, user_id: int) -> int:
-        cache_key = self._feed_count_cache_key(user_id)
-        cached_total = await self.redis.get(cache_key)
-        if cached_total is not None:
-            try:
-                return int(cached_total)
-            except (TypeError, ValueError):
-                logger.warning("Invalid cached feed total count for user %s", user_id)
+        cached = _feed_count_cache.get(user_id)
+        now = time.monotonic()
+        if cached is not None and cached[0] > now:
+            return cached[1]
 
         Subscription, UserSubscription = _get_subscription_models()
         count_query = (
@@ -57,7 +61,7 @@ class FeedQueryRepository(BasePodcastRepository):
         )
         total_result = await self.db.execute(count_query)
         total = int(total_result.scalar() or 0)
-        await self.redis.set(cache_key, str(total), ttl=120)
+        _feed_count_cache[user_id] = (now + _FEED_COUNT_CACHE_TTL_SECONDS, total)
         return total
 
     def _build_feed_lightweight_base_query(self, user_id: int):

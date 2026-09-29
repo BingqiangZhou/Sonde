@@ -1,43 +1,32 @@
-"""Celery tasks for podcast daily report generation."""
+"""Procrastinate tasks for podcast daily report generation."""
+
+from __future__ import annotations
 
 from datetime import date
+from typing import Any
 
-from app.core.celery_app import celery_app
-from app.domains.podcast.tasks.runtime import (
-    run_async,
-    worker_session,
-)
+from app.core.jobs import exponential_retry, procrastinate_app
+from app.domains.podcast.tasks.runtime import worker_session
 from app.domains.podcast.tasks.task_orchestration import (
     PodcastTaskOrchestrationService,
 )
 
 
-async def _generate_daily_reports_handler(
-    session,
-    target_date: date | None = None,
-) -> dict:
-    """Generate one daily report snapshot for each user with active subscriptions."""
-    return await PodcastTaskOrchestrationService(session).generate_daily_reports(
-        target_date=target_date,
-    )
-
-
-@celery_app.task(bind=True, max_retries=3)
-def generate_daily_podcast_reports(self, report_date: str | None = None):
-    try:
-        target_date = date.fromisoformat(report_date) if report_date else None
-        return run_async(
-            _generate_daily_reports_async(target_date=target_date),
-        )
-    except Exception as exc:
-        if self.request.retries < self.max_retries:
-            raise self.retry(countdown=60 * (2**self.request.retries)) from exc
-        raise
-
-
-async def _generate_daily_reports_async(target_date: date | None):
+@procrastinate_app.periodic(
+    cron="30 19 * * *",
+    periodic_id="generate-daily-podcast-reports",
+)
+@procrastinate_app.task(
+    name="podcast.report.generate_daily",
+    retry=exponential_retry(max_attempts=4),
+)
+async def generate_daily_podcast_reports(
+    timestamp: int,
+    report_date: str | None = None,
+) -> dict[str, Any]:
+    """Generate one daily report snapshot per user (daily 19:30 UTC)."""
+    target_date = date.fromisoformat(report_date) if report_date else None
     async with worker_session() as session:
-        return await _generate_daily_reports_handler(
-            session=session,
+        return await PodcastTaskOrchestrationService(session).generate_daily_reports(
             target_date=target_date,
         )

@@ -1,88 +1,48 @@
-"""Transcription State Manager - Redis-based locking and dispatch guards.
+"""Transcription State Manager - Postgres advisory locking.
 
-Redis responsibilities for transcription are deliberately minimal:
-- Episode locks prevent duplicate processing of the same episode
-- Dispatch claims prevent double-enqueue of the same task
+Episode locks prevent duplicate processing of the same episode: each lock is
+a session-scoped advisory lock held on a dedicated connection, released on
+completion and automatically freed when the owning process (or its DB
+connection) dies — crash-safe semantics that replace the former Redis TTL
+locks. Dispatch dedup is enforced by the task-status check below plus the
+queueing_lock taken at enqueue time.
 
 Progress and status are read from the database (the single source of
-truth); no redis mirrors are maintained for them.
+truth); no mirror state is maintained for them.
 """
 
 import logging
 
-import orjson
-import redis.exceptions
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine
 
-from app.core.redis import RedisCache, get_shared_redis
+from app.core.advisory_lock import (
+    advisory_lock_exists,
+    string_lock_key,
+    try_advisory_lock,
+)
+from app.core.database import get_engine
 
 
 logger = logging.getLogger(__name__)
 
-
-class TranscriptionStateKeys:
-    """Redis key patterns for transcription state"""
-
-    # Task lock: prevents duplicate processing for same episode
-    TASK_LOCK_NAME = "transcription:episode:{episode_id}"
-    TASK_LOCK = "podcast:lock:transcription:episode:{episode_id}"
-    LEGACY_TASK_LOCK_VALUE = "podcast:transcription:lock_value:{episode_id}"
+# Returned by is_episode_locked when the lock exists but is owned by another
+# process (advisory locks carry no owner payload). Never matches a real id,
+# so callers treat the episode as locked by another task.
+UNKNOWN_OWNER_TASK_ID = -1
 
 
 class TranscriptionStateManager:
-    """Redis-based lock manager for transcription tasks."""
+    """Postgres advisory-lock manager for transcription episode locks."""
 
-    def __init__(self):
-        self.redis = get_shared_redis()
-
-    @staticmethod
-    def _build_lock_owner_value(task_id: int) -> str:
-        return f"task:{task_id}"
+    def __init__(self, *, engine: AsyncEngine | None = None):
+        self.engine = engine or get_engine()
+        # episode_id -> (owner task_id, dedicated connection holding the lock)
+        self._held: dict[int, tuple[int, AsyncConnection]] = {}
 
     @staticmethod
-    def _parse_lock_owner_task_id(value: str | None) -> int | None:
-        if not value or not value.startswith("task:"):
-            return None
-        task_id_str = value.split(":", 1)[1]
-        return int(task_id_str) if task_id_str.isdigit() else None
-
-    @staticmethod
-    def _parse_legacy_owner_task_id(value: str | None) -> int | None:
-        if not value:
-            return None
-        return int(value) if value.isdigit() else None
-
-    @staticmethod
-    def _task_lock_name(episode_id: int) -> str:
-        return TranscriptionStateKeys.TASK_LOCK_NAME.format(episode_id=episode_id)
-
-    @staticmethod
-    def _task_lock_key(episode_id: int) -> str:
-        return TranscriptionStateKeys.TASK_LOCK.format(episode_id=episode_id)
-
-    @staticmethod
-    def _legacy_task_lock_value_key(episode_id: int) -> str:
-        return TranscriptionStateKeys.LEGACY_TASK_LOCK_VALUE.format(
-            episode_id=episode_id,
-        )
-
-    async def _resolve_lock_owner(
-        self,
-        episode_id: int,
-    ) -> tuple[int | None, str | None, str | None]:
-        lock_key = self._task_lock_key(episode_id)
-        lock_value = await self.redis.get(lock_key)
-        owner_task_id = self._parse_lock_owner_task_id(lock_value)
-        if owner_task_id is not None:
-            return owner_task_id, "task_lock", lock_value
-
-        legacy_key = self._legacy_task_lock_value_key(episode_id)
-        legacy_value = await self.redis.get(legacy_key)
-        legacy_owner = self._parse_legacy_owner_task_id(legacy_value)
-        if legacy_owner is not None:
-            return legacy_owner, "legacy_lock_value", lock_value
-
-        return None, None, lock_value
+    def _lock_key(episode_id: int) -> int:
+        return string_lock_key(f"transcription:episode:{episode_id}")
 
     # === Lock Operations ===
 
@@ -92,202 +52,154 @@ class TranscriptionStateManager:
         task_id: int,
         expire_seconds: int = 3600,
     ) -> bool:
-        """Acquire a lock for processing an episode
+        """Acquire a lock for processing an episode.
+
+        The lock is held on a dedicated connection until released (or until
+        the process dies); ``expire_seconds`` is accepted for signature
+        compatibility and ignored — crash-safety replaces fixed TTLs.
 
         Args:
             episode_id: Episode to lock
             task_id: Task ID that owns the lock
-            expire_seconds: Lock expiration time (default 1 hour)
+            expire_seconds: Unused (kept for call-site compatibility)
 
         Returns:
             True if lock acquired, False if already locked
 
         """
-        lock_value = self._build_lock_owner_value(task_id)
-        lock_name = self._task_lock_name(episode_id)
-        legacy_key = self._legacy_task_lock_value_key(episode_id)
-
-        try:
-            acquired = await self.redis.acquire_lock(
-                lock_name,
-                expire=expire_seconds,
-                value=lock_value,
-            )
-            if acquired:
-                await self.redis.delete_keys(legacy_key)
-                logger.info(
-                    "[LOCK] Acquired lock for episode %s, task %s",
-                    episode_id,
-                    task_id,
-                )
-                return True
-
-            (
-                owner_task_id,
-                owner_source,
-                raw_lock_value,
-            ) = await self._resolve_lock_owner(
-                episode_id,
-            )
-            if owner_task_id == task_id:
+        held = self._held.get(episode_id)
+        if held is not None:
+            if held[0] == task_id:
                 logger.info(
                     "[LOCK] Task %s already owns lock for episode %s",
                     task_id,
                     episode_id,
                 )
                 return True
-
-            if owner_task_id is not None:
-                logger.warning(
-                    "[LOCK] Episode %s already locked [owned_by_task=%s source=%s]",
-                    episode_id,
-                    owner_task_id,
-                    owner_source,
-                )
-                return False
-
-            if raw_lock_value is None:
-                logger.warning(
-                    "[LOCK] Episode %s lock conflict with no lock key present [owner_unknown_retry_failed]",
-                    episode_id,
-                )
-                return False
-
-            await self.redis.delete_keys(self._task_lock_key(episode_id), legacy_key)
             logger.warning(
-                "[LOCK] Episode %s lock had unknown owner metadata, reclaimed and retrying once [owner_unknown_reclaimed]",
+                "[LOCK] Episode %s already locked [owned_by_task=%s]",
                 episode_id,
+                held[0],
             )
-            retry_acquired = await self.redis.acquire_lock(
-                lock_name,
-                expire=expire_seconds,
-                value=lock_value,
-            )
-            if retry_acquired:
+            return False
+
+        key = self._lock_key(episode_id)
+        conn: AsyncConnection | None = None
+        try:
+            conn = await self.engine.connect()
+            acquired = await try_advisory_lock(conn, key)
+            if acquired:
+                self._held[episode_id] = (task_id, conn)
                 logger.info(
-                    "[LOCK] Re-acquired reclaimed lock for episode %s, task %s",
+                    "[LOCK] Acquired lock for episode %s, task %s",
                     episode_id,
                     task_id,
                 )
                 return True
-
-            owner_after_retry = await self.is_episode_locked(episode_id)
-            if owner_after_retry is not None:
-                logger.warning(
-                    "[LOCK] Episode %s still locked after reclaim retry [owner_unknown_retry_failed owned_by_task=%s]",
-                    episode_id,
-                    owner_after_retry,
-                )
-            else:
-                logger.warning(
-                    "[LOCK] Episode %s lock retry failed and owner remains unknown [owner_unknown_retry_failed]",
-                    episode_id,
-                )
+            await conn.close()
+            logger.warning(
+                "[LOCK] Episode %s already locked by another process",
+                episode_id,
+            )
             return False
-
-        except (
-            redis.exceptions.RedisError,
-            orjson.JSONDecodeError,
-            ValueError,
-            TypeError,
-            OSError,
-        ) as e:
-            logger.error(f"Failed to acquire lock for episode {episode_id}: {e}")
+        except Exception as e:
+            logger.error("Failed to acquire lock for episode %s: %s", episode_id, e)
+            if conn is not None:
+                try:
+                    await conn.close()
+                except Exception:
+                    logger.warning(
+                        "Failed closing lock connection for episode %s",
+                        episode_id,
+                        exc_info=True,
+                    )
             return False
 
     async def release_task_lock(self, episode_id: int, task_id: int) -> bool:
-        """Release a task lock
+        """Release a task lock.
 
         Args:
             episode_id: Episode to unlock
             task_id: Task ID that owns the lock
 
         Returns:
-            True if lock was released, False otherwise
+            True if the lock was released (or was not held), False if it is
+            owned by another process/task.
 
         """
         try:
-            lock_key = self._task_lock_key(episode_id)
-            legacy_key = self._legacy_task_lock_value_key(episode_id)
-            (
-                owner_task_id,
-                owner_source,
-                raw_lock_value,
-            ) = await self._resolve_lock_owner(
-                episode_id,
-            )
+            held = self._held.get(episode_id)
+            if held is None:
+                # Not held in this process: advisory locks cannot be
+                # released cross-process by design. Report foreign holders.
+                if await advisory_lock_exists(self.engine, self._lock_key(episode_id)):
+                    logger.warning(
+                        "[LOCK] Episode %s lock is held by another process; "
+                        "it frees when that process exits",
+                        episode_id,
+                    )
+                    return False
+                return True
 
-            if owner_task_id is not None and owner_task_id != task_id:
+            owner_task_id, conn = held
+            if owner_task_id != task_id:
                 logger.warning(
-                    "Cannot release lock for episode %s: owned by task %s (%s), not %s",
+                    "Cannot release lock for episode %s: owned by task %s, not %s",
                     episode_id,
                     owner_task_id,
-                    owner_source,
                     task_id,
                 )
                 return False
 
-            if owner_task_id is None and raw_lock_value is not None:
-                logger.warning(
-                    "Releasing lock for episode %s with unknown owner metadata [owner_unknown_reclaimed]",
-                    episode_id,
-                )
+            from sqlalchemy import text
 
-            await self.redis.delete_keys(lock_key, legacy_key)
+            await conn.execute(
+                text("SELECT pg_advisory_unlock(:key)"),
+                {"key": self._lock_key(episode_id)},
+            )
+            await conn.close()
+            del self._held[episode_id]
             logger.info(
                 "[LOCK] Released lock for episode %s, task %s", episode_id, task_id
             )
             return True
-
-        except (
-            redis.exceptions.RedisError,
-            orjson.JSONDecodeError,
-            ValueError,
-            TypeError,
-            OSError,
-        ) as e:
-            logger.error(f"Failed to release lock for episode {episode_id}: {e}")
+        except Exception as e:
+            logger.error("Failed to release lock for episode %s: %s", episode_id, e)
             return False
 
     async def is_episode_locked(self, episode_id: int) -> int | None:
-        """Check if an episode is locked and return the owning task ID
+        """Check if an episode is locked and return the owning task ID.
 
         Args:
             episode_id: Episode to check
 
         Returns:
-            Task ID if locked, None if not locked
+            Task ID if locked in this process, UNKNOWN_OWNER_TASK_ID if the
+            lock exists in another process, None if not locked.
 
         """
+        held = self._held.get(episode_id)
+        if held is not None:
+            return held[0]
         try:
-            owner_task_id, _, _ = await self._resolve_lock_owner(episode_id)
-            return owner_task_id
-        except (
-            redis.exceptions.RedisError,
-            orjson.JSONDecodeError,
-            ValueError,
-            TypeError,
-        ):
+            if await advisory_lock_exists(self.engine, self._lock_key(episode_id)):
+                return UNKNOWN_OWNER_TASK_ID
+            return None
+        except Exception:
+            logger.exception("Failed to check lock for episode %s", episode_id)
             return None
 
     # === Cleanup ===
 
     async def clear_task_state(self, task_id: int, episode_id: int) -> None:
-        """Clear redis state for a completed task (lock + dispatch claim)."""
+        """Clear lock state for a completed task."""
         try:
             await self.release_task_lock(episode_id, task_id)
-            await self.redis.delete_keys(_dispatch_key(task_id))
             logger.info(
-                f"[STATE] Cleared Redis state for task {task_id}, episode {episode_id}"
+                "[STATE] Cleared state for task %s, episode %s", task_id, episode_id
             )
-        except (
-            redis.exceptions.RedisError,
-            orjson.JSONDecodeError,
-            ValueError,
-            TypeError,
-            OSError,
-        ) as e:
-            logger.error(f"Failed to clear state for task {task_id}: {e}")
+        except Exception as e:
+            logger.error("Failed to clear state for task %s: %s", task_id, e)
 
     async def fail_task_state(
         self,
@@ -295,10 +207,9 @@ class TranscriptionStateManager:
         episode_id: int,
         error_message: str,
     ) -> None:
-        """Release locks and the dispatch claim for a failed task."""
+        """Release locks for a failed task."""
         await self.release_task_lock(episode_id, task_id)
-        await self.redis.delete_keys(_dispatch_key(task_id))
-        logger.error(f"[STATE] Task {task_id} failed: {error_message}")
+        logger.error("[STATE] Task %s failed: %s", task_id, error_message)
 
 
 # Singleton instance
@@ -313,29 +224,23 @@ async def get_transcription_state_manager() -> TranscriptionStateManager:
     return _state_manager
 
 
-# ── Dispatch guard (single source of truth for claim/clear semantics) ────────
-
-
-def _dispatch_key(task_id: int) -> str:
-    return f"podcast:transcription:dispatched:{task_id}"
+# ── Dispatch guard (single source of truth for claim semantics) ────────
 
 
 async def claim_task_dispatch(
-    redis: RedisCache,
     db,
     task_id: int,
 ) -> bool:
-    """Claim the dispatch right for a task.
+    """Claim the dispatch right for a task (replaces the Redis guard key).
 
-    Returns True when this caller wins the claim; False when the task is
-    already finished (guard key left over); raises when a live duplicate
-    dispatch is detected.
+    Queue-time dedup is the queueing_lock set by the enqueue helper; this
+    worker-side check guards execution: returns True when the task may
+    execute, False when it is already finished, and raises when a live
+    duplicate dispatch is detected. Concurrent execution is finally fenced
+    by the episode advisory lock taken right after this claim.
     """
     from app.domains.podcast.models import TranscriptionTask
     from app.domains.podcast.utils.status_helpers import status_value
-
-    if await redis.set_if_not_exists(_dispatch_key(task_id), "1", ttl=2 * 3600):
-        return True
 
     status_stmt = select(TranscriptionTask.status).where(
         TranscriptionTask.id == task_id
@@ -344,11 +249,8 @@ async def claim_task_dispatch(
     task_status_value = status_value(status_result.scalar_one_or_none())
     if task_status_value in {"completed", "failed", "cancelled"}:
         return False
-    raise RuntimeError(
-        f"Task {task_id} dispatch key exists while task status={task_status_value}",
-    )
-
-
-async def clear_task_dispatch(redis: RedisCache, task_id: int) -> None:
-    """Clear the dispatch flag for a task."""
-    await redis.delete_keys(_dispatch_key(task_id))
+    if task_status_value == "in_progress":
+        raise RuntimeError(
+            f"Task {task_id} dispatch detected while status=in_progress",
+        )
+    return True

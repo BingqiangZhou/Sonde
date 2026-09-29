@@ -8,7 +8,7 @@ consolidation removed domain-specific cache methods.
 import hashlib
 import hmac
 from datetime import UTC, datetime
-from unittest.mock import AsyncMock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -117,17 +117,34 @@ async def test_batch_upsert_new_episodes_completes(db_session) -> None:
 
 
 @pytest.mark.asyncio
-async def test_claim_task_dispatch_first_claim_wins(db_session) -> None:
-    """Regression: claim_task_dispatch crashed on CacheTTL.hours (missing attr)."""
-    redis = AsyncMock()
-    redis.set_if_not_exists.return_value = True
+async def test_claim_task_dispatch_status_semantics(db_session) -> None:
+    """The dispatch claim is decided by the task status row, not a guard key."""
+    from app.domains.podcast.models import TranscriptionTask
 
-    claimed = await claim_task_dispatch(redis, db_session, task_id=1)
+    # Unknown task rows behave like pending: allowed to proceed.
+    assert await claim_task_dispatch(db_session, task_id=1) is True
 
-    assert claimed is True
-    redis.set_if_not_exists.assert_awaited_once()
-    # TTL must be the 2h dispatch window expressed in seconds.
-    assert redis.set_if_not_exists.await_args.kwargs["ttl"] == 7200
+    _user_id, episode_id = await _seed_subscription_with_episode(db_session)
+    task = TranscriptionTask(
+        episode_id=episode_id,
+        status="pending",
+        current_step="not_started",
+        original_audio_url="https://example.com/x.mp3",
+    )
+    db_session.add(task)
+    await db_session.commit()
+    await db_session.refresh(task)
+
+    assert await claim_task_dispatch(db_session, task.id) is True
+
+    task.status = "in_progress"
+    await db_session.commit()
+    with pytest.raises(RuntimeError, match="in_progress"):
+        await claim_task_dispatch(db_session, task.id)
+
+    task.status = "completed"
+    await db_session.commit()
+    assert await claim_task_dispatch(db_session, task.id) is False
 
 
 def test_admin_session_hash_resolves_secret_key_lazily() -> None:

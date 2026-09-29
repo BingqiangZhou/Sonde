@@ -1,114 +1,59 @@
-"""Celery tasks for transcription flows."""
+"""Procrastinate tasks for transcription flows."""
 
-from celery.exceptions import SoftTimeLimitExceeded
+from __future__ import annotations
 
-from app.core.celery_app import celery_app
-from app.domains.podcast.tasks.runtime import (
-    run_async,
-    worker_session,
-)
+from typing import Any
+
+from app.core.jobs import exponential_retry, procrastinate_app
+from app.domains.podcast.tasks.runtime import worker_session
 from app.domains.podcast.tasks.task_orchestration import (
     PodcastTaskOrchestrationService,
 )
 
 
-async def process_audio_transcription_handler(
-    session,
+@procrastinate_app.task(
+    name="podcast.transcription.process_audio",
+    retry=exponential_retry(max_attempts=4),
+)
+async def process_audio_transcription(
     task_id: int,
     config_db_id: int | None = None,
-) -> dict:
-    """Execute transcription with lock + redis state updates."""
-    return await PodcastTaskOrchestrationService(
-        session,
-    ).process_audio_transcription_task(
-        task_id=task_id,
-        config_db_id=config_db_id,
-    )
-
-
-async def process_podcast_episode_with_transcription_handler(
-    session,
-    episode_id: int,
-    user_id: int,
-) -> dict:
-    """Dispatch the transcription pipeline and return immediately."""
-    return await PodcastTaskOrchestrationService(
-        session,
-    ).trigger_episode_transcription_pipeline(
-        episode_id=episode_id,
-        user_id=user_id,
-    )
-
-
-async def process_pending_transcriptions_handler(session) -> dict:
-    """Dispatch periodic backlog transcription tasks."""
-    return await PodcastTaskOrchestrationService(
-        session,
-    ).process_pending_transcriptions()
-
-
-@celery_app.task(bind=True, max_retries=3, soft_time_limit=25 * 60, time_limit=28 * 60)
-def process_audio_transcription(self, task_id: int, config_db_id: int | None = None):
-    try:
-        return run_async(
-            _process_audio_transcription_async(
-                task_id=task_id, config_db_id=config_db_id
-            ),
-        )
-    except SoftTimeLimitExceeded:
-        raise
-    except Exception as exc:
-        if self.request.retries < self.max_retries:
-            raise self.retry(countdown=60 * (2**self.request.retries)) from exc
-        raise
-
-
-async def _process_audio_transcription_async(task_id: int, config_db_id: int | None):
+) -> dict[str, Any]:
+    """Execute transcription with lock + state updates."""
     async with worker_session() as session:
-        return await process_audio_transcription_handler(
-            session=session,
+        return await PodcastTaskOrchestrationService(
+            session,
+        ).process_audio_transcription_task(
             task_id=task_id,
             config_db_id=config_db_id,
         )
 
 
-@celery_app.task(bind=True, max_retries=3)
-def process_podcast_episode_with_transcription(self, episode_id: int, user_id: int):
-    try:
-        return run_async(
-            _process_episode_with_transcription_async(
-                episode_id=episode_id, user_id=user_id
-            ),
-        )
-    except SoftTimeLimitExceeded:
-        raise
-    except Exception as exc:
-        if self.request.retries < self.max_retries:
-            raise self.retry(countdown=60 * (2**self.request.retries)) from exc
-        raise
-
-
-async def _process_episode_with_transcription_async(episode_id: int, user_id: int):
+@procrastinate_app.task(
+    name="podcast.transcription.process_episode",
+    retry=exponential_retry(max_attempts=4),
+)
+async def process_podcast_episode_with_transcription(
+    episode_id: int,
+    user_id: int,
+) -> dict[str, Any]:
+    """Dispatch the transcription pipeline and return immediately."""
     async with worker_session() as session:
-        return await process_podcast_episode_with_transcription_handler(
-            session=session,
+        return await PodcastTaskOrchestrationService(
+            session,
+        ).trigger_episode_transcription_pipeline(
             episode_id=episode_id,
             user_id=user_id,
         )
 
 
-@celery_app.task(bind=True, max_retries=3)
-def process_pending_transcriptions(self):
-    try:
-        return run_async(_process_pending_transcriptions_async())
-    except SoftTimeLimitExceeded:
-        raise
-    except Exception as exc:
-        if self.request.retries < self.max_retries:
-            raise self.retry(countdown=60 * (2**self.request.retries)) from exc
-        raise
-
-
-async def _process_pending_transcriptions_async():
+@procrastinate_app.task(
+    name="podcast.transcription.process_pending",
+    retry=exponential_retry(max_attempts=4),
+)
+async def process_pending_transcriptions() -> dict[str, Any]:
+    """Dispatch backlog transcription tasks (dormant: no schedule, no caller)."""
     async with worker_session() as session:
-        return await process_pending_transcriptions_handler(session)
+        return await PodcastTaskOrchestrationService(
+            session,
+        ).process_pending_transcriptions()

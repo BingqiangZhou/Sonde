@@ -200,10 +200,10 @@ async def generate_summary(
         )
 
         if not accepted["already_queued"]:
-            generate_episode_summary_task.delay(
-                episode_id,
-                request.summary_model,
-                request.custom_prompt,
+            await generate_episode_summary_task.defer_async(
+                episode_id=episode_id,
+                summary_model=request.summary_model,
+                custom_prompt=request.custom_prompt,
             )
 
         return PodcastSummaryStartResponse(

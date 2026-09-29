@@ -149,7 +149,7 @@ def setup_logging(
     logging.getLogger("gunicorn.access").setLevel(logging.WARNING)
     logging.getLogger("gunicorn.error").setLevel(logging.ERROR)
     logging.getLogger("sqlalchemy.engine").setLevel(logging.WARNING)
-    logging.getLogger("celery").setLevel(logging.WARNING)
+    logging.getLogger("procrastinate").setLevel(logging.INFO)
     logging.getLogger("httpx").setLevel(logging.WARNING)
     logging.getLogger("httpcore").setLevel(logging.WARNING)
 

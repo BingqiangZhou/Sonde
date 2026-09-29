@@ -1,6 +1,5 @@
-"""Podcast Celery task package."""
+"""Podcast queue task package (procrastinate, Postgres-backed)."""
 
-from app.core.celery_app import celery_app
 from app.domains.podcast.tasks.tasks_daily_report import generate_daily_podcast_reports
 from app.domains.podcast.tasks.tasks_maintenance import (
     auto_cleanup_cache_files,
@@ -22,7 +21,6 @@ from app.domains.podcast.tasks.tasks_transcription import (
 
 __all__ = [
     "auto_cleanup_cache_files",
-    "celery_app",
     "cleanup_old_playback_states",
     "cleanup_old_transcription_temp_files",
     "generate_daily_podcast_reports",

@@ -87,8 +87,7 @@
 - **框架**: FastAPI + Uvicorn/Gunicorn
 - **包管理**: uv
 - **数据库**: PostgreSQL 15 + SQLAlchemy 2.0 (Async)
-- **缓存/消息队列**: Redis 7
-- **异步任务**: Celery 5.x（单 `default` 队列，worker 内嵌 beat）
+- **异步任务**: procrastinate 3.9（Postgres 原生任务队列，无独立中间件；worker 兼跑周期调度）
 - **数据迁移**: Alembic（25 个迁移文件）
 - **架构**: DDD (Domain-Driven Design)
 
@@ -152,14 +151,14 @@ frontend/lib/
 ## 快速开始
 
 ### 前置要求
-- Docker & Docker Compose（运行 PostgreSQL、Redis）
+- Docker & Docker Compose（运行 PostgreSQL 等基础设施）
 - Python 3.11+
 - uv（包管理）
 - Flutter (Dart 3.8+)
 
 ### 1. 启动基础设施
 
-5 个 Docker 服务：postgres (PostgreSQL 15)、redis (Redis 7)、backend (FastAPI)、celery_worker (异步任务 + 内嵌 beat)、nginx (反向代理 + SSL)。
+4 个 Docker 服务：postgres (PostgreSQL 15，数据 + 任务队列)、backend (FastAPI，独占执行 alembic 迁移)、worker (procrastinate 异步任务 + 周期调度)、caddy (反向代理 + 自动 HTTPS)。
 
 ```bash
 cd docker
@@ -226,7 +225,7 @@ cd docker && docker compose build backend
 cd backend && uv run ruff check .
 uv run pytest
 ```
-测试组织：`tests/core/`（安全、日志、Redis）、`tests/podcast/`、`tests/tasks/`、`tests/integration/`、`tests/admin/`
+测试组织：`tests/core/`（安全、日志、就绪检查）、`tests/podcast/`、`tests/tasks/`、`tests/integration/`、`tests/admin/`
 
 ### 前端测试（92 个测试文件）
 ```bash
@@ -242,7 +241,7 @@ flutter test test/integration/        # 集成测试
 sonde/
 ├── backend/          # FastAPI 后端（121 Python 源文件，36 测试文件）
 ├── frontend/         # Flutter 前端（219 Dart 源文件，92 测试文件）
-├── docker/           # Docker 配置（5 服务）
+├── docker/           # Docker 配置（4 服务）
 ├── docs/             # 详细文档
 ├── scripts/          # 工具脚本
 ├── data/             # 密钥存储

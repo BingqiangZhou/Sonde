@@ -8,9 +8,8 @@ FastAPI 后端服务，提供播客订阅、AI 转录、管理面板等功能。
 |------|------|
 | FastAPI | 异步 Web 框架 |
 | SQLAlchemy | 异步 ORM |
-| PostgreSQL | 关系型数据库 |
-| Redis | 缓存和消息队列 |
-| Celery | 异步任务队列（单 `default` 队列，内嵌 beat） |
+| PostgreSQL | 关系型数据库（兼作任务队列存储） |
+| procrastinate | Postgres 原生异步任务队列（worker 内含周期调度） |
 | Alembic | 数据库迁移 |
 | uv | 包管理器 |
 
@@ -34,7 +33,6 @@ cp .env.example .env
 
 必须配置：
 - `DATABASE_URL` - PostgreSQL 连接字符串
-- `REDIS_URL` - Redis 连接字符串
 - `SECRET_KEY` - 密钥
 
 ### 3. 运行数据库迁移
@@ -52,15 +50,23 @@ uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
 API 文档: http://localhost:8000/api/v1/docs
 
-## Celery 任务
+## 后台任务（procrastinate）
 
-### 启动 Worker（内嵌 Beat）
+### 启动 Worker（含周期调度）
 
 ```bash
-uv run celery -A app.core.celery_app:celery_app worker -B --loglevel=info -Q default
+uv run python -m app.bootstrap.worker
 ```
 
-定时任务（均在 `default` 队列）：
+首次运行前需应用任务队列 schema（幂等，Docker 版由 backend 容器自动执行）：
+
+```bash
+uv run python -m procrastinate -a app.core.jobs.procrastinate_app schema --apply
+```
+
+周期任务由 worker 进程内 cron 触发（procrastinate 的 cron 表达式按进程本地时区求值，需 `TZ=UTC` 才能保持下述 UTC 时刻；worker 容器已固定 TZ=UTC）。并发数用 `WORKER_CONCURRENCY` 控制（默认 1）。
+
+定时任务：
 - 每小时刷新播客 Feed
 - 每 30 分钟生成待处理摘要
 - 每日 4:00 UTC 清理缓存
@@ -102,8 +108,8 @@ docker compose ps
 curl http://localhost:8000/api/v1/health
 ```
 
-验证 Celery 服务：
-- `celery_worker` - 单 worker（内嵌 beat），处理 `default` 队列
+验证 worker 服务：
+- `worker` - procrastinate asyncio worker（任务执行 + 周期调度），健康检查：`docker compose exec worker python -m app.bootstrap.worker --healthcheck`
 
 ## 项目结构
 
@@ -111,11 +117,12 @@ curl http://localhost:8000/api/v1/health
 backend/
 ├── app/
 │   ├── bootstrap/      # 应用初始化（路由注册、生命周期、缓存预热）
+│   │   └── worker.py       # procrastinate worker 入口（任务执行 + 周期调度）
 │   ├── core/           # 核心基础设施（配置、安全、数据库、中间件）
 │   │   ├── config.py
 │   │   ├── database.py
-│   │   ├── redis.py
-│   │   ├── celery_app.py
+│   │   ├── jobs.py
+│   │   ├── advisory_lock.py
 │   │   ├── auth.py
 │   │   ├── exceptions.py
 │   │   ├── security/       # 安全模块（加密、密码）

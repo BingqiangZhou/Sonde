@@ -1,8 +1,8 @@
 """Transcription workflow - lifecycle policy, scheduling, worker execution.
 
 Single orchestration service for transcription used by HTTP routes and
-Celery workers. Owns task reuse/redispatch policy, schedule facades, the
-worker execution flow (redis lock + dispatch claim), stale-task reset and
+queue workers. Owns task reuse/redispatch policy, schedule facades, the
+worker execution flow (episode lock + dispatch claim), stale-task reset and
 temp-file cleanup. The pipeline engine (``PodcastTranscriptionService``)
 and model resolution (``TranscriptionModelManager``) are composed.
 """
@@ -23,7 +23,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.core.exceptions import ValidationError
-from app.core.redis import RedisCache, get_shared_redis
 from app.domains.ai.key_resolver import resolve_api_key_with_fallback
 from app.domains.ai.models import ModelType
 from app.domains.ai.services.model_manager import BaseModelManager
@@ -36,7 +35,6 @@ from app.domains.podcast.models import (
 from app.domains.podcast.transcription import PodcastTranscriptionService
 from app.domains.podcast.transcription.state import (
     claim_task_dispatch,
-    clear_task_dispatch,
     get_transcription_state_manager,
 )
 from app.domains.podcast.utils.status_helpers import status_value
@@ -161,9 +159,7 @@ class TranscriptionWorkflowService:
         state_manager_factory: Callable[
             [], Awaitable[Any]
         ] = get_transcription_state_manager,
-        redis_factory: Callable[[], RedisCache] = get_shared_redis,
         claim_dispatched: Callable[[AsyncSession, int], Awaitable[bool]] | None = None,
-        clear_dispatched: Callable[[int], Awaitable[None]] | None = None,
     ):
         self.db = db
         self.engine = (
@@ -174,9 +170,7 @@ class TranscriptionWorkflowService:
         self.model_manager = TranscriptionModelManager(db)
         self._task_orchestration_service_factory = task_orchestration_service_factory
         self.state_manager_factory = state_manager_factory
-        self.redis_factory = redis_factory
         self._claim_dispatched_callback = claim_dispatched
-        self._clear_dispatched_callback = clear_dispatched
 
     def _task_orchestration_service(self):
         factory = self._task_orchestration_service_factory
@@ -194,14 +188,7 @@ class TranscriptionWorkflowService:
         """Claim dispatch right for a task. Returns True if claimed successfully."""
         if self._claim_dispatched_callback is not None:
             return await self._claim_dispatched_callback(self.db, task_id)
-        return await claim_task_dispatch(self.redis_factory(), self.db, task_id)
-
-    async def _clear_dispatch(self, task_id: int) -> None:
-        """Clear dispatch flag for a task."""
-        if self._clear_dispatched_callback is not None:
-            await self._clear_dispatched_callback(task_id)
-            return
-        await clear_task_dispatch(self.redis_factory(), task_id)
+        return await claim_task_dispatch(self.db, task_id)
 
     # ── Task lifecycle policy: start / reuse / redispatch ──
 
@@ -235,7 +222,7 @@ class TranscriptionWorkflowService:
                 config_db_id = await self._resolve_transcription_config_db_id(
                     model_name
                 )
-                self._task_orchestration_service().enqueue_audio_transcription(
+                await self._task_orchestration_service().enqueue_audio_transcription(
                     task_id=existing_task.id,
                     config_db_id=config_db_id,
                 )
@@ -267,7 +254,7 @@ class TranscriptionWorkflowService:
                         config_db_id = await self._resolve_transcription_config_db_id(
                             model_name,
                         )
-                        self._task_orchestration_service().enqueue_audio_transcription(
+                        await self._task_orchestration_service().enqueue_audio_transcription(
                             task_id=existing_task.id,
                             config_db_id=config_db_id,
                         )
@@ -283,7 +270,7 @@ class TranscriptionWorkflowService:
                 model_name,
                 force,
             )
-            self._task_orchestration_service().enqueue_audio_transcription(
+            await self._task_orchestration_service().enqueue_audio_transcription(
                 task_id=task.id,
                 config_db_id=config_db_id,
             )
@@ -306,7 +293,7 @@ class TranscriptionWorkflowService:
                 return {"task": task, "action": action}
             return {"task": task, "action": "locked_by_other_task"}
 
-        self._task_orchestration_service().enqueue_audio_transcription(
+        await self._task_orchestration_service().enqueue_audio_transcription(
             task_id=task.id,
             config_db_id=config_db_id,
         )
@@ -411,7 +398,7 @@ class TranscriptionWorkflowService:
         force_regenerate: bool = False,
         episode_lookup: Callable[[int], Awaitable[PodcastEpisode | None]],
     ) -> dict[str, Any]:
-        """Start or reuse a transcription task and update redis state."""
+        """Start or reuse a transcription task and update lock state."""
         episode = await episode_lookup(episode_id)
         if not episode:
             raise ValueError(f"Episode {episode_id} not found")
@@ -474,7 +461,7 @@ class TranscriptionWorkflowService:
         *,
         episode_lookup: Callable[[int], Awaitable[PodcastEpisode | None]],
     ) -> dict[str, Any]:
-        """Delete transcription task and cleanup redis state."""
+        """Delete transcription task and cleanup lock state."""
         episode = await episode_lookup(episode_id)
         if not episode:
             raise ValueError(f"Episode {episode_id} not found")
@@ -501,16 +488,16 @@ class TranscriptionWorkflowService:
             try:
                 await state_manager.release_task_lock(episode_id, task_id)
                 return
-            except Exception as redis_error:
-                logger.warning("[DELETE] Failed to cleanup redis: %s", redis_error)
+            except Exception as lock_error:
+                logger.warning("[DELETE] Failed to cleanup lock: %s", lock_error)
                 return
 
         try:
             locked_task_id = await state_manager.is_episode_locked(episode_id)
             if locked_task_id:
                 await state_manager.release_task_lock(episode_id, locked_task_id)
-        except Exception as redis_error:
-            logger.warning("[DELETE] Failed to cleanup stale locks: %s", redis_error)
+        except Exception as lock_error:
+            logger.warning("[DELETE] Failed to cleanup stale locks: %s", lock_error)
 
     async def get_transcription_task_status(
         self,
@@ -1098,7 +1085,7 @@ class TranscriptionWorkflowService:
             "freed_mb": round(freed_bytes / 1024 / 1024, 2),
         }
 
-    # ── Worker execution flow (redis lock + dispatch claim) ──
+    # ── Worker execution flow (episode lock + dispatch claim) ──
 
     async def execute_transcription_task(
         self,
@@ -1106,7 +1093,7 @@ class TranscriptionWorkflowService:
         *,
         config_db_id: int | None,
     ) -> dict[str, Any]:
-        """Worker-side transcription execution flow with redis lock/progress state."""
+        """Worker-side transcription execution flow with lock/progress state."""
         dispatch_claimed = await self._claim_dispatch(task_id)
         if not dispatch_claimed:
             return {
@@ -1120,7 +1107,6 @@ class TranscriptionWorkflowService:
         result = await self.db.execute(stmt)
         task = result.scalar_one_or_none()
         if task is None:
-            await self._clear_dispatch(task_id)
             return {"status": "error", "reason": "task_not_found", "task_id": task_id}
 
         episode_id = task.episode_id
@@ -1131,7 +1117,6 @@ class TranscriptionWorkflowService:
         )
         if not lock_acquired:
             locked_task_id = await state_manager.is_episode_locked(episode_id)
-            await self._clear_dispatch(task_id)
             lock_owner = (
                 str(locked_task_id) if locked_task_id is not None else "unknown_owner"
             )
@@ -1154,4 +1139,3 @@ class TranscriptionWorkflowService:
             raise
         finally:
             await state_manager.release_task_lock(episode_id, task_id)
-            await self._clear_dispatch(task_id)

@@ -8,8 +8,10 @@
 
 | 场景 | 配置文件 | 用途 |
 |------|----------|------|
-| 本地开发 | `docker-compose.podcast.yml` | 开发调试，直接访问后端 |
-| 生产部署 | `docker-compose.yml` | 生产环境，通过 Nginx 代理 |
+| 本地开发 | `docker-compose.yml` | 开发调试，`DOMAIN=localhost` 经 Caddy 本地证书访问 |
+| 生产部署 | `docker-compose.yml` | 生产环境，通过 Caddy 代理 + 自动 HTTPS |
+
+> 拓扑说明：自 2026-09 起编排精简为 4 容器（postgres / backend / worker / caddy；pg-boss 方案调研后落地 procrastinate，Redis / Celery beat / nginx 容器均已移除）。
 
 ### 开发环境 (3 步)
 
@@ -21,7 +23,7 @@ cd docker
 scripts\start.bat
 
 # Linux/Mac
-docker compose -f docker-compose.podcast.yml up -d --build
+docker compose up -d --build
 ```
 
 ### 生产环境 (3 步)
@@ -43,13 +45,9 @@ JWT_SECRET_KEY=$(openssl rand -hex 32)
 
 > AI 服务密钥（OpenAI / 转写等第三方 key）不在 `.env` 中配置：服务启动后登录后台管理面板 `/api/v1/admin`，在 **API Keys** 页面添加模型并填写密钥（加密存储，即时生效）。
 
-#### 步骤 2: 配置 SSL 证书
+#### 步骤 2: 确认 TLS 模式
 
-将证书放到 `docker/nginx/cert/` 目录：
-- `fullchain.pem` - 证书链
-- `privkey.pem` - 私钥
-
-获取证书参考 [SSL 设置](docker/nginx/SSL_SETUP.md)。
+Caddy 默认 `tls internal`（内置 CA 自动签发本地证书），零配置零续期，本机/内网自用即可直接用。公网域名部署可切换 ACME 自动证书或挂载手动证书，见 [Caddy 配置](docker/caddy/README.md)。
 
 #### 步骤 3: 启动服务
 
@@ -66,13 +64,11 @@ docker-compose --env-file ../backend/.env up -d
 
 ```
 docker/
-├── docker-compose.yml           # 生产环境
-├── docker-compose.podcast.yml  # 开发环境
+├── docker-compose.yml           # Docker 编排（4 服务，开发/生产共用）
 ├── .env.example                # 配置模板
-├── nginx/                      # Nginx 反向代理
-│   ├── cert/                  # SSL 证书
-│   ├── conf.d/                # 配置文件
-│   └── logs/                  # 日志
+├── caddy/                      # Caddy 反向代理
+│   ├── Caddyfile              # 站点配置（环境变量占位符）
+│   └── README.md              # TLS 模式与运维说明
 └── scripts/                   # 启动脚本
 ```
 
@@ -99,11 +95,10 @@ docker-compose down -v
 
 | 特性 | 开发环境 | 生产环境 |
 |------|----------|----------|
-| 访问方式 | 直接后端 8000 端口 | Nginx 反向代理 |
+| 访问方式 | 直连后端 8000 端口或经 Caddy | Caddy 反向代理 + HTTPS |
 | 日志级别 | DEBUG | INFO |
 | 数据库端口 | 暴露 5432 | 不暴露 |
-| Redis 端口 | 暴露 6379 | 不暴露 |
-| SSL/HTTPS | 无 | 有 |
+| SSL/HTTPS | Caddy 本地证书（tls internal） | Caddy 自动证书 |
 
 ---
 
@@ -131,40 +126,19 @@ curl https://your-domain.com/docs
 
 ---
 
-## SSL 证书配置
+## TLS 证书配置（Caddy）
 
-### Let's Encrypt (推荐)
+### tls internal（默认，零配置）
 
-```bash
-# 安装 certbot
-sudo apt install certbot
+Caddy 内置 CA 自动为站点签发本地证书并自动续期，无需任何配置。浏览器首次访问 HTTPS 提示"不受信任"时，导入 Caddy 根证书即可（导出与导入步骤见 [docker/caddy/README.md](docker/caddy/README.md)）。
 
-# 获取证书 (停止 Nginx)
-docker-compose stop nginx
-sudo certbot certonly --standalone -d your-domain.com
-docker-compose start nginx
+### ACME 自动证书（公网域名）
 
-# 复制证书
-sudo cp /etc/letsencrypt/live/your-domain.com/fullchain.pem docker/nginx/cert/
-sudo cp /etc/letsencrypt/live/your-domain.com/privkey.pem docker/nginx/cert/
-```
+公网域名解析到本机且 80/443 可达时，把 `docker/caddy/Caddyfile` 中的 `tls internal` 改为 `tls {$ACME_EMAIL}`，并在 `.env` 设置 `DOMAIN=your-domain.com` 和 `ACME_EMAIL=you@example.com`，然后 `docker compose restart caddy`。证书签发与续期全自动，无需 cron。
 
-### 自签名证书 (开发)
+### 手动证书
 
-```bash
-cd docker/nginx/cert
-openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
-  -keyout privkey.pem -out fullchain.pem \
-  -subj "/C=CN/ST=State/L=City/O=Organization/CN=localhost"
-```
-
-### 自动续期
-
-```bash
-sudo crontab -e
-# 添加每天凌晨 2 点检查续期
-0 2 * * * certbot renew --quiet --post-hook "cd /path/to/docker && docker-compose exec nginx nginx -s reload"
-```
+沿用 certbot 等外部签发的证书时，挂载证书目录后把 `tls internal` 改为 `tls /etc/caddy/cert/fullchain.pem /etc/caddy/cert/privkey.pem`（详见 [docker/caddy/README.md](docker/caddy/README.md)）。
 
 ---
 
@@ -189,12 +163,15 @@ docker ps | grep postgres
 docker logs postgres
 ```
 
-### Redis 连接失败
+### 后台任务不执行
 
 ```bash
-# 检查 Redis
-docker ps | grep redis
-docker start redis-podcast
+# 检查 worker 容器与日志
+docker compose ps worker
+docker compose logs -f worker
+
+# worker 健康检查
+docker compose exec worker python -m app.bootstrap.worker --healthcheck
 ```
 
 ---
@@ -220,11 +197,11 @@ docker start redis-podcast
 
 ## 安全建议
 
-1. 修改默认的强密码：JWT_SECRET_KEY、POSTGRES_PASSWORD、REDIS_PASSWORD
+1. 修改默认的强密码：JWT_SECRET_KEY、POSTGRES_PASSWORD
 2. 使用 HTTPS (必须)
 3. 配置防火墙，仅开放必要端口
 4. 定期更新 Docker 镜像
-5. 设置证书自动续期
+5. 证书续期：Caddy（tls internal / ACME）全自动续期，无需额外配置
 
 ---
 
@@ -232,6 +209,5 @@ docker start redis-podcast
 
 - [后端开发指南](backend/README.md)
 - [Flutter 开发指南](frontend/README.md)
-- [Nginx 配置](docker/nginx/README.md)
-- [SSL 设置](docker/nginx/SSL_SETUP.md)
+- [Caddy 配置](docker/caddy/README.md)
 - [认证系统](backend/docs/AUTHENTICATION.md)
