@@ -12,7 +12,6 @@ export {
 
 export {
   getPool,
-  setPool,
   sql,
   query,
   rows,
@@ -31,7 +30,7 @@ export { loadPromptFiles } from './prompts/loader.ts';
 
 export { recordReceipt, receiptsSummary } from './providers/receipts.ts';
 export type { ReceiptInput, ReceiptSummary } from './providers/receipts.ts';
-export { chatJson, chatText } from './providers/llm.ts';
+export { chatJson } from './providers/llm.ts';
 export type { ChatOptions, ChatJsonResult } from './providers/llm.ts';
 export { transcribeChunk } from './providers/transcription.ts';
 export type { TranscribeChunkOptions, TranscribeChunkResult } from './providers/transcription.ts';
@@ -44,7 +43,7 @@ export { fetchPodcastFeed, episodeInputsFromFeed, parseItunesDuration } from './
 export type { RssEpisodeInput, ParsedFeedItem, FeedFetchResult } from './sources/rss.ts';
 export { scanDueSources, fetchSource } from './sources/service.ts';
 
-export { transcribeEpisode, transcribeLimits } from './pipeline/transcribe.ts';
+export { transcribeEpisode } from './pipeline/transcribe.ts';
 export { analyzeEpisode, sweepPendingAnalyses } from './pipeline/analyze.ts';
 
 export {

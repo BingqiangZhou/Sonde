@@ -2,7 +2,7 @@
 
 import { timingSafeEqual } from 'node:crypto';
 
-import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
+import type { FastifyInstance, FastifyRequest } from 'fastify';
 
 import {
   loadConfig,
@@ -240,6 +240,3 @@ function clampInt(value: number | undefined, min: number, max: number, fallback:
   }
   return Math.min(Math.max(Math.round(value), min), max);
 }
-
-// 让 Fastify 类型检查知道 reply 参数可能未被使用
-export type AdminReply = FastifyReply;

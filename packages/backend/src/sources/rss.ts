@@ -111,7 +111,7 @@ export interface BackfillOptions {
   limit: number;
 }
 
-export const DEFAULT_BACKFILL: BackfillOptions = {
+const DEFAULT_BACKFILL: BackfillOptions = {
   firstImportLimit: 10,
   firstImportDays: 14,
   limit: 60,

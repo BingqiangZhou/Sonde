@@ -13,7 +13,7 @@
 - `industry/` — the customization pack (change config, not code): `site.ts`, `taxonomy.ts`, `selection.ts` (thresholds + interest profile), `sources.json` (seed subscriptions), `prompts/*.md` (all LLM prompts, `{{var}}` + `{{> include}}` templates).
 - `database/migrations/` — plain SQL migrations applied by `scripts/migrate.ts`.
 - `scripts/` — `init-env.ts`, `migrate.ts`, `seed.ts`.
-- `deploy/` — Caddyfile. `docs/` — design notes (historical docs are archives; current arch: `SONDE_TS_REWRITE_2026-09-29.md`).
+- `deploy/` — Caddyfile. `docs/` — design notes (`SONDE_TS_REWRITE_2026-09-29.md` is the current architecture doc; older Python/Flutter-era docs were removed, see git history).
 
 ## Build, Test, and Development Commands
 - Install: `npm install` (root, workspaces)

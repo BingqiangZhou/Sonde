@@ -87,7 +87,7 @@ export async function transcribeEpisode(episodeId: number): Promise<void> {
         fileName: `chunk-${String(i).padStart(3, '0')}.mp3`,
       });
       texts.push(text.trim());
-      await setProgress(episodeId, `transcribing (${i + 1}/${chunkFiles.length})`);
+      console.log(`[transcribe] episode=${episodeId} chunk ${i + 1}/${chunkFiles.length} done`);
     }
 
     // 5/5 合并保存 → 派发分析
@@ -222,10 +222,6 @@ async function setStatus(episodeId: number, status: string): Promise<void> {
   `);
 }
 
-async function setProgress(episodeId: number, _note: string): Promise<void> {
-  // transcribing 阶段内部进度；状态机保持 transcribing 不变
-  void episodeId;
-}
 
 async function markEpisode(episodeId: number, status: string, error: string | null): Promise<void> {
   await rows(sql`
@@ -237,9 +233,3 @@ async function markEpisode(episodeId: number, status: string, error: string | nu
   `);
 }
 
-// 供测试与未来 admin 手动触发使用
-export const transcribeLimits = {
-  maxDurationSeconds: MAX_DURATION_SECONDS,
-  maxAudioBytes: MAX_AUDIO_BYTES,
-  chunkSeconds: CHUNK_SECONDS,
-};

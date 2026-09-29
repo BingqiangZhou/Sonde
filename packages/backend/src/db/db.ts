@@ -24,11 +24,6 @@ export function getPool(): pg.Pool {
   return pool;
 }
 
-/** Replace an existing pool (used by tests to point at another database). */
-export function setPool(next: pg.Pool): void {
-  pool = next;
-}
-
 /** Tagged-template SQL builder: sql`SELECT * FROM t WHERE id = ${id}` */
 export function sql(strings: TemplateStringsArray, ...values: unknown[]): SqlFragment {
   let text = strings[0] ?? '';

@@ -38,21 +38,15 @@ interface ChatCompletionResponse {
 }
 
 export async function chatJson<T = unknown>(options: ChatOptions): Promise<ChatJsonResult<T>> {
-  const { data, rawText } = await chatWithRetry(options);
+  const { data, model } = await chatWithRetry(options);
   return {
     data: data as T,
-    model: resolveModel(options.model),
+    model,
     promptVersion: promptHash(options.system + '\n\n' + options.user),
   };
 }
 
-/** 纯文本补全（目前无调用方，保留给未来全文类需求）。 */
-export async function chatText(options: Omit<ChatOptions, 'schema'>): Promise<string> {
-  const { rawText } = await chatWithRetry({ ...options, schema: undefined });
-  return rawText;
-}
-
-async function chatWithRetry(options: ChatOptions): Promise<{ data: unknown; rawText: string }> {
+async function chatWithRetry(options: ChatOptions): Promise<{ data: unknown; model: string }> {
   const config = loadConfig();
   if (!config.llmBaseUrl || !config.llmApiKey || !resolveModel(options.model)) {
     throw new ProviderError('llm', 'LLM 未配置：请设置 LLM_BASE_URL / LLM_API_KEY / LLM_MODEL');
@@ -91,7 +85,7 @@ async function chatWithRetry(options: ChatOptions): Promise<{ data: unknown; raw
           ok: true,
           durationMs: Date.now() - startedAt,
         });
-        return { data: validated.data, rawText: text };
+        return { data: validated.data, model };
       }
 
       await recordReceipt({
@@ -103,7 +97,7 @@ async function chatWithRetry(options: ChatOptions): Promise<{ data: unknown; raw
         ok: true,
         durationMs: Date.now() - startedAt,
       });
-      return { data: parsed, rawText: text };
+      return { data: parsed, model };
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error));
       await recordReceipt({

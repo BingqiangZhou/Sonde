@@ -53,8 +53,7 @@ deploy/      Caddyfile
 
 ## 与历史文档的关系
 
-- `LOCAL_FIRST_REDESIGN_2026-08-21.md`（已取消）、`PER_USER_CONSOLE_PLAN_2026-08-21.md`（已搁置）、`SERVER_PIPELINE_ARCH_2026-08-21.md`（已被本重写取代）仅作历史存档
-- `INFRA_PGQUEUE_CADDY_2026-08-21 前后` 的 Postgres + Caddy 经验延续到新架构（pg-boss 同样跑在 Postgres 上）
+Python/Flutter 时代的全部设计文档（LOCAL_FIRST / PER_USER_CONSOLE / SERVER_PIPELINE / INFRA_PGQUEUE_CADDY / BACKEND_ARCH_ANALYSIS / FEATURES / DEPLOYMENT / EMULATOR_TEST_REPORT / MIRRORS / ANDROID_SIGNING / GITHUB_ACTIONS_GUIDE / RELEASE_QUICK_REF）已在本次清理中删除——它们描述的旧栈不复存在，需要时可从 git 历史查阅（`git log -- docs/`）。Postgres + Caddy 的部署经验延续到新架构（pg-boss 同样跑在 Postgres 上）。
 
 ## 实施记录（v1 完成态）
 
