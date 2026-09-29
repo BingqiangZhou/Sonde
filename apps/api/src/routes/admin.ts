@@ -51,14 +51,17 @@ export async function adminRoutes(app: FastifyInstance) {
     return { authenticated: true };
   });
 
-  // ── 以下全部要求登录 ──────────────────────────────────────
+  // ── 以下全部要求登录（login/logout/session 除外）─────────
   app.addHook('preHandler', async (request, reply) => {
-    if (request.url.startsWith('/login') || request.url.startsWith('/logout') || request.url.startsWith('/session')) {
+    // 注意：插件内 request.url 是带 /api/admin 前缀的完整路径
+    const url = request.url.split('?')[0] ?? '';
+    const exempt =
+      url.endsWith('/login') || url.endsWith('/logout') || url.endsWith('/session');
+    if (exempt) {
       return;
     }
     if (!isAdmin(request)) {
-      reply.code(401);
-      return { error: '未登录' };
+      return reply.code(401).send({ error: '未登录' });
     }
   });
 

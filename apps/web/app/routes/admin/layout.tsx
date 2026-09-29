@@ -24,8 +24,12 @@ export default function AdminLayout() {
 
   if (!authenticated) {
     return (
-      <section className="py-16 text-center text-stone-500">
-        <a href="/admin/login" className="text-stone-700 underline">
+      <section className="py-20 text-center text-stone-500">
+        <p className="font-serif text-xl">需要登录后访问</p>
+        <a
+          href="/admin/login"
+          className="mt-5 inline-block rounded-md bg-ink px-5 py-2 text-sm font-medium text-paper hover:bg-vermilion"
+        >
           前往登录
         </a>
       </section>
@@ -34,26 +38,42 @@ export default function AdminLayout() {
 
   return (
     <div className="py-6">
-      <div className="flex items-center justify-between border-b border-stone-200 pb-3">
-        <nav className="flex gap-4 text-sm">
-          {NAV.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.end}
-              className={({ isActive }) =>
-                isActive ? 'font-semibold text-stone-900' : 'text-stone-500 hover:text-stone-900'
-              }
-            >
-              {item.label}
-            </NavLink>
-          ))}
-        </nav>
-        <a href="/" className="text-xs text-stone-400 hover:text-stone-600">
-          返回站点 ↗
-        </a>
+      {/* 控制台顶栏 */}
+      <div className="-mx-4 -mt-8 mb-6 border-b border-stone-700 bg-ink px-4 py-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <span className="font-serif text-lg font-bold text-paper">声读控制台</span>
+            <span className="rounded-sm bg-vermilion px-1.5 py-px text-[10px] font-medium tracking-widest text-white">
+              ADMIN
+            </span>
+          </div>
+          <nav className="flex flex-wrap gap-1">
+            {NAV.map((item) => (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                end={item.end}
+                className={({ isActive }) =>
+                  `rounded-md px-3 py-1.5 text-sm transition-colors ${
+                    isActive
+                      ? 'bg-paper font-semibold text-ink'
+                      : 'text-stone-300 hover:bg-stone-800 hover:text-paper'
+                  }`
+                }
+              >
+                {item.label}
+              </NavLink>
+            ))}
+          </nav>
+        </div>
+        <div className="mt-2 flex justify-end">
+          <a href="/" className="text-xs text-stone-400 hover:text-paper">
+            返回站点 ↗
+          </a>
+        </div>
       </div>
-      <div className={navigation.state === 'loading' ? 'opacity-50' : ''}>
+
+      <div className={navigation.state === 'loading' ? 'opacity-50 transition-opacity' : 'transition-opacity'}>
         <Outlet />
       </div>
     </div>

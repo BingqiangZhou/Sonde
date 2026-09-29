@@ -12,6 +12,7 @@ import stylesheet from './app.css?url';
 
 export const links: LinksFunction = () => [
   { rel: 'stylesheet', href: stylesheet },
+  { rel: 'icon', href: '/favicon.svg', type: 'image/svg+xml' },
 ];
 
 export const meta: MetaFunction = () => [
@@ -28,26 +29,33 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Meta />
         <Links />
       </head>
-      <body className="min-h-screen bg-stone-50 text-stone-900 antialiased">
-        <header className="border-b border-stone-200 bg-white">
+      <body className="min-h-screen bg-paper font-sans text-ink antialiased">
+        <header className="sticky top-0 z-40 border-b border-stone-300/80 bg-paper/90 backdrop-blur">
           <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-3">
-            <Link to="/" className="text-lg font-bold tracking-wide">
-              声读 <span className="text-sm font-normal text-stone-400">Sonde</span>
+            <Link to="/" className="group flex items-baseline gap-1.5">
+              <span className="font-serif text-xl font-bold tracking-wide">声读</span>
+              <span className="text-xs font-medium tracking-widest text-stone-400 transition-colors group-hover:text-vermilion">
+                SONDE
+              </span>
             </Link>
-            <nav className="flex gap-4 text-sm text-stone-600">
-              <Link to="/" className="hover:text-stone-900">首页</Link>
-              <Link to="/daily" className="hover:text-stone-900">日报</Link>
-              <Link to="/archive" className="hover:text-stone-900">全部</Link>
-              <Link to="/about" className="hover:text-stone-900">关于</Link>
+            <nav className="flex gap-5 text-sm text-stone-600">
+              <Link to="/" className="hover:text-ink">首页</Link>
+              <Link to="/daily" className="hover:text-ink">日报</Link>
+              <Link to="/archive" className="hover:text-ink">全部</Link>
+              <Link to="/about" className="hover:text-ink">关于</Link>
             </nav>
           </div>
+          <div className="border-t border-stone-200" />
         </header>
         <main className="mx-auto max-w-3xl px-4 py-8">{children}</main>
-        <footer className="border-t border-stone-200 py-6 text-center text-xs text-stone-400">
-          声读 · 个人播客知识库 · 内容版权归原作者所有 ·{' '}
-          <a href="/admin" className="hover:text-stone-600">
-            后台
-          </a>
+        <footer className="mt-16 border-t border-stone-300 py-8">
+          <div className="mx-auto max-w-3xl px-4 text-center text-xs leading-relaxed text-stone-400">
+            <div className="rule-double mx-auto mb-3 w-16" />
+            声读 · 个人播客知识库 · 内容版权归原作者所有 ·{' '}
+            <a href="/admin" className="hover:text-stone-600">
+              后台
+            </a>
+          </div>
         </footer>
         <ScrollRestoration />
         <Scripts />

@@ -16,20 +16,31 @@ export default function Archive() {
   const { episodes } = useLoaderData<typeof loader>();
   return (
     <section className="py-8">
-      <h1 className="text-2xl font-bold text-stone-900">全部精选</h1>
+      <header className="rule-double pb-4 text-center">
+        <h1 className="font-serif text-2xl font-bold tracking-wide">全部精选</h1>
+        <p className="mt-2 text-xs tracking-widest text-stone-400">共 {episodes.length} 集</p>
+      </header>
       {episodes.length === 0 ? (
-        <p className="mt-10 text-center text-stone-400">还没有入选的单集。</p>
+        <p className="mt-12 border border-dashed border-stone-300 bg-white/50 py-12 text-center text-stone-400">
+          还没有入选的单集。
+        </p>
       ) : (
-        <ul className="mt-6 divide-y divide-stone-100 rounded-lg border border-stone-200 bg-white">
+        <ul className="mt-8 divide-y divide-stone-200 border-y border-stone-300">
           {episodes.map((episode) => (
             <li key={episode.id}>
-              <Link to={`/episodes/${episode.id}`} className="block px-5 py-4 hover:bg-stone-50">
+              <Link to={`/episodes/${episode.id}`} className="group block py-4 hover:bg-white">
                 <div className="flex items-center gap-2 text-xs text-stone-400">
-                  <span className="rounded bg-stone-100 px-1.5 py-0.5 text-stone-500">{episode.categoryLabel}</span>
+                  <span className="rounded-sm border border-stone-300 px-1.5 py-px text-stone-500">
+                    {episode.categoryLabel}
+                  </span>
                   <span>{episode.podcast}</span>
+                  <span aria-hidden>·</span>
                   <span>{formatDate(episode.publishedAt)}</span>
+                  <span className="ml-auto font-serif text-sm font-semibold text-vermilion">{episode.score}</span>
                 </div>
-                <div className="mt-1.5 font-semibold text-stone-900">{episode.titleZh || episode.originalTitle}</div>
+                <div className="mt-1.5 font-serif text-lg font-semibold leading-snug group-hover:text-vermilion">
+                  {episode.titleZh || episode.originalTitle}
+                </div>
                 <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-stone-500">{episode.summaryZh}</p>
               </Link>
             </li>

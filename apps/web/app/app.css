@@ -1,5 +1,45 @@
 @import "tailwindcss";
 
+@theme {
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC",
+    sans-serif;
+  --font-serif: "Songti SC", "STSong", "SimSun", "Noto Serif SC",
+    "Source Han Serif SC", serif;
+
+  --color-paper: #faf8f3;
+  --color-ink: #1c1917;
+  --color-vermilion: #b91c1c;
+}
+
 :root {
   color-scheme: light;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+::selection {
+  background-color: #fde68a;
+}
+
+/* 报刊风双细线（用于刊头上下） */
+.rule-double {
+  border-top: 3px double var(--color-ink, #1c1917);
+}
+
+/* 卡片 hover 的统一动效 */
+.card-lift {
+  transition: box-shadow 150ms ease, transform 150ms ease;
+}
+.card-lift:hover {
+  box-shadow: 0 4px 16px rgba(28, 25, 23, 0.08);
+  transform: translateY(-1px);
+}
+
+/* 焦点可见性 */
+:where(a, button, input, select, textarea):focus-visible {
+  outline: 2px solid #b91c1c;
+  outline-offset: 2px;
 }
