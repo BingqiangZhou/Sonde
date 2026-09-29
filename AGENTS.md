@@ -23,7 +23,7 @@
 - Run api locally: `npm run dev -w apps/api` (tsx watch)
 - Run worker locally: `npm run dev -w apps/worker`
 - Run web locally: `npm run dev -w apps/web`
-- Full stack via Docker (required verification before finishing a task): `docker compose up -d --build`, then `curl http://localhost:3000/api/health`
+- Full stack via Docker (required verification before finishing a task): `docker compose up -d --build`, then `curl http://localhost:3000/` (web) and `curl http://127.0.0.1:3001/api/health` (api, localhost-only port mapping)
 
 ## Coding Style & Conventions
 - TypeScript strict mode everywhere; ESM modules (`"type": "module"`), `.ts` extensions in relative imports where used by tsx.

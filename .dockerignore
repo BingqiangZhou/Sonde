@@ -1,0 +1,16 @@
+node_modules
+**/node_modules
+.env
+.env.*
+!.env.example
+data
+logs
+*.log
+.git
+.github
+docs
+.vscode
+.idea
+coverage
+**/build
+.react-router

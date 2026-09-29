@@ -1,0 +1,110 @@
+name: sonde
+
+x-app: &app
+  build:
+    context: .
+    dockerfile: Dockerfile
+  environment: &app-env
+    DATABASE_URL: postgres://sonde:${POSTGRES_PASSWORD:-sonde}@db:5432/sonde
+    LLM_BASE_URL: ${LLM_BASE_URL:-}
+    LLM_API_KEY: ${LLM_API_KEY:-}
+    LLM_MODEL: ${LLM_MODEL:-}
+    TRANSCRIPTION_BASE_URL: ${TRANSCRIPTION_BASE_URL:-}
+    TRANSCRIPTION_API_KEY: ${TRANSCRIPTION_API_KEY:-}
+    TRANSCRIPTION_MODEL: ${TRANSCRIPTION_MODEL:-}
+    ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+    SESSION_SECRET: ${SESSION_SECRET:-sonde-dev-secret}
+    WORK_CONCURRENCY: ${WORK_CONCURRENCY:-2}
+    REPORT_TIMEZONE: ${REPORT_TIMEZONE:-Asia/Shanghai}
+    DATA_DIR: /data
+  volumes:
+    - data:/data
+  restart: unless-stopped
+
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: sonde
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-sonde}
+      POSTGRES_DB: sonde
+    volumes:
+      - db:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U sonde -d sonde']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  setup:
+    <<: *app
+    command: sh -c "node scripts/migrate.ts && node scripts/seed.ts"
+    volumes: []
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: 'no'
+
+  api:
+    <<: *app
+    command: ['node', 'apps/api/src/main.ts']
+    ports:
+      # 仅本机暴露，便于调试；公网入口走 web（caddy）
+      - '127.0.0.1:${API_PORT:-3001}:3001'
+    depends_on:
+      db:
+        condition: service_healthy
+      setup:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ['CMD', 'node', 'scripts/health-http.mjs', 'http://localhost:3001/api/health']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  worker:
+    <<: *app
+    command: ['node', 'apps/worker/src/main.ts']
+    depends_on:
+      db:
+        condition: service_healthy
+      setup:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ['CMD', 'node', 'scripts/health-db.mjs']
+      interval: 60s
+      timeout: 5s
+      retries: 3
+
+  web:
+    <<: *app
+    command: ['sh', '-c', 'npm run start -w apps/web -- --port ${WEB_PORT:-3000}']
+    environment:
+      <<: *app-env
+      API_URL: http://api:3001
+      SITE_URL: ${SITE_URL:-http://localhost:3000}
+    ports:
+      - '${WEB_PORT:-3000}:3000'
+    depends_on:
+      - api
+
+  caddy:
+    profiles: ['https']
+    image: caddy:2-alpine
+    ports:
+      - '80:80'
+      - '443:443'
+    environment:
+      SITE_DOMAIN: ${SITE_DOMAIN:-localhost}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    restart: unless-stopped
+
+volumes:
+  db:
+  data:
+  caddy_data:
+  caddy_config:

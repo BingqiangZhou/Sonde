@@ -1,0 +1,35 @@
+{
+  "name": "sonde",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "声读 Sonde — personal podcast daily-digest site",
+  "engines": {
+    "node": ">=24"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "industry"
+  ],
+  "scripts": {
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm test --workspaces --if-present",
+    "init-env": "node scripts/init-env.ts",
+    "db:migrate": "node --env-file-if-exists=.env scripts/migrate.ts",
+    "db:seed": "node --env-file-if-exists=.env scripts/seed.ts",
+    "db:setup": "npm run db:migrate && npm run db:seed",
+    "dev:api": "npm run dev -w apps/api",
+    "dev:worker": "npm run dev -w apps/worker",
+    "dev:web": "npm run dev -w apps/web",
+    "build:web": "npm run build -w apps/web"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.0",
+    "vitest": "^3.2.0"
+  },
+  "allowScripts": {
+    "esbuild@0.25.12": true,
+    "esbuild@0.28.2": true
+  }
+}
