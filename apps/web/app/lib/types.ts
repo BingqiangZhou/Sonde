@@ -64,3 +64,7 @@ export interface DailyReport {
   revision: number;
   content: DailyReportContent;
 }
+
+/** 报刊种类：daily | weekly | monthly（正文结构与 DailyReport 一致） */
+export type ReportKind = 'daily' | 'weekly' | 'monthly';
+export type PeriodicReport = DailyReport;

@@ -1,6 +1,7 @@
 import type { MetaFunction } from 'react-router';
 import { Link, useLoaderData } from 'react-router';
 
+import { FavoriteButton } from '~/components/FavoriteButton.tsx';
 import { apiGet } from '~/lib/api.server.ts';
 import { formatDate, formatDuration } from '~/lib/format.ts';
 import type { AnalyzedEpisodeItem } from '~/lib/types.ts';
@@ -66,6 +67,17 @@ export default function AllFeed() {
                   {item.score}
                   {item.selected && <span className="text-[10px]">★</span>}
                 </span>
+                {item.selected && (
+                  <FavoriteButton
+                    episode={{
+                      id: item.id,
+                      title: item.titleZh || item.originalTitle,
+                      podcast: item.podcast,
+                      url: item.url,
+                    }}
+                    variant="icon"
+                  />
+                )}
               </div>
 
               {item.selected ? (

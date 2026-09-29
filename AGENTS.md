@@ -1,14 +1,14 @@
 # Repository Guidelines
 
 ## Project Overview
-- **Sonde (声读)** — personal podcast daily-digest site: podcast RSS → transcription → AI scoring/filtering → daily report. Learning the architecture of AIHOT (self-collecting, self-writing digest framework), implemented from scratch for podcasts.
+- **Sonde (声读)** — personal podcast knowledge base: podcast RSS → transcription → AI scoring/filtering → daily report (08:00), weekly report (Mon 08:30), monthly report (1st 08:30). Learning the architecture of AIHOT (self-collecting, self-writing digest framework), implemented from scratch for podcasts.
 - Stack: Node 24, TypeScript (strict), npm workspaces monorepo, Fastify, pg-boss, PostgreSQL 17, React Router 8 (SSR, framework mode), Tailwind CSS, Docker Compose.
 - The workspace directory is still named `PodcastInsight` (historical); the product name is 声读 Sonde.
 
 ## Project Structure
 - `apps/api/` — Fastify HTTP service: site read API (`/api/site/*`), admin API (`/api/admin/*`, session auth), health.
 - `apps/worker/` — pg-boss worker: queue consumers + cron schedules (fetch/transcribe/analyze/report).
-- `apps/web/` — React Router 8 SSR web app (Chinese UI). Reads ONLY via HTTP from api, never touches the DB directly.
+- `apps/web/` — React Router 8 SSR web app (Chinese UI). Reads ONLY via HTTP from api, never touches the DB directly. Client-only features (no backend): favorites (localStorage), theme mode, `/changelog` (renders the bundled Chinese `CHANGELOG.md` via `?raw` import).
 - `packages/backend/` — all business logic: `db` (raw tagged-template SQL, no ORM), `sources`, `pipeline`, `reports`, `providers` (llm/transcription + receipts), `prompts` renderer.
 - `industry/` — the customization pack (change config, not code): `site.ts`, `taxonomy.ts`, `selection.ts` (thresholds + interest profile), `sources.json` (seed subscriptions), `prompts/*.md` (all LLM prompts, `{{var}}` + `{{> include}}` templates).
 - `database/migrations/` — plain SQL migrations applied by `scripts/migrate.ts`.
@@ -42,7 +42,7 @@
 
 ## Testing Guidelines
 - vitest, colocated tests (`*.test.ts`) or under `packages/backend/test/`.
-- Unit tests are mandatory for: prompt renderer, JSON-tolerant parsing, threshold/selection logic, daily-report window computation, RSS new-episode detection.
+- Unit tests are mandatory for: prompt renderer, JSON-tolerant parsing, threshold/selection logic, report window computation (daily/weekly/monthly), RSS new-episode detection.
 - api route tests use `fastify.inject` with a test schema; provider tests mock fetch.
 - A task is NOT COMPLETE until: typecheck passes, `npm test` passes, and the touched flow works end-to-end (Docker compose when infra is involved).
 

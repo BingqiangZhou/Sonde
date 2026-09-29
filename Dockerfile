@@ -7,6 +7,7 @@ COPY packages ./packages
 COPY industry ./industry
 COPY scripts ./scripts
 COPY database ./database
+COPY CHANGELOG.md ./
 COPY tsconfig.base.json ./
 RUN npm ci
 RUN npm run build -w apps/web

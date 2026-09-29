@@ -1,6 +1,7 @@
 import type { MetaFunction } from 'react-router';
 import { Link, useLoaderData } from 'react-router';
 
+import { FavoriteButton } from '~/components/FavoriteButton.tsx';
 import { apiGet } from '~/lib/api.server.ts';
 import { formatDate, formatDuration } from '~/lib/format.ts';
 import type { EpisodeItem } from '~/lib/types.ts';
@@ -67,6 +68,15 @@ export default function EpisodeDetail() {
             </div>
             <p className="mt-1.5 text-[11px] tracking-widest text-stone-400">注意力价值分</p>
           </div>
+          <FavoriteButton
+            episode={{
+              id: episode.id,
+              title: episode.titleZh || episode.originalTitle,
+              podcast: episode.podcast,
+              url: episode.url,
+            }}
+            variant="full"
+          />
           {episode.url && (
             <a
               href={episode.url}
