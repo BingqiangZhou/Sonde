@@ -40,6 +40,8 @@ description: 发布新版本 - 生成CHANGELOG（含中英双语AI摘要）、�
 - Full diff 链接不用写在摘要里——版本标题行已带 compare 链接
 - 用 Edit 工具做精确替换，保持占位符前后的空行不变
 - 替换后校验：`grep -c 'AI_SUMMARY' CHANGELOG.md` 必须为 0
+- 手工增补/修改条目时，完整 commit 哈希必须取自 `git rev-parse <短哈希>`，禁止凭记忆拼接
+  （v1.1.0 曾因手写哈希错误导致链接 404，事后修正）
 
 ## 步骤2: 更新版本号
 1. 读取根目录 `package.json` 的 `version` 字段（当前 1.0.0）

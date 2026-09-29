@@ -22,7 +22,7 @@ All notable changes to this project will be documented in this file.
 
 ### 🐛 Bug Fixes
 
-- *(web)* Typecheck on fresh checkout without build artifacts ([90880f1](https://github.com/BingqiangZhou/Sonde/commit/90880f10b28c1b59772bc69d11e5e45e58eb8d55))
+- *(web)* Typecheck on fresh checkout without build artifacts ([90880f1](https://github.com/BingqiangZhou/Sonde/commit/90880f10d6ab9227c37d1da0387e28e5c6d6f844))
 
 
 
