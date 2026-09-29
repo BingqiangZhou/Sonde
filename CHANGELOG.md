@@ -6,11 +6,11 @@ All notable changes to this project will be documented in this file.
 
 ## [1.1.0](https://github.com/BingqiangZhou/Sonde/compare/v1.0.1...v1.1.0) - 2026-09-29 ([📥](https://github.com/BingqiangZhou/Sonde/releases/tag/v1.1.0))
 
-> v1.1.0 将 Web 端升级到 React Router 8.4.0，并新增「全部动态」页（/all）：所有完成评分的单集（含未过门槛者）统一在此浏览——入选条目链接到单集详情，未入选条目展示灰色评分与筛选理由；同时补齐 GitHub Actions CI 与推送 v* 标签后自动验证并创建 GitHub Release 的发版流水线。
+> v1.1.0 将 Web 端升级到 React Router 8.4.0，并新增「全部动态」页（/all）：所有完成评分的单集（含未过门槛者）统一在此浏览——入选条目链接到单集详情，未入选条目展示灰色评分与筛选理由；同时补齐 GitHub Actions CI 与推送 v* 标签后自动验证并创建 GitHub Release 的发版流水线，并修复了全新 checkout 上 server.ts 因引用构建产物导致 typecheck 失败的问题。
 >
-> Sonde v1.1.0 upgrades the web app to React Router 8.4.0 and adds the "All Episodes" feed (/all): every scored episode, including those below the selection threshold, is listed in one place — selected items link to the episode detail page while unselected ones show their gray score and the reason they were filtered out. This release also adds GitHub Actions CI and a release pipeline that verifies the build and publishes the GitHub Release automatically when a v* tag is pushed.
+> Sonde v1.1.0 upgrades the web app to React Router 8.4.0 and adds the "All Episodes" feed (/all): every scored episode, including those below the selection threshold, is listed in one place — selected items link to the episode detail page while unselected ones show their gray score and the reason they were filtered out. This release also adds GitHub Actions CI and a release pipeline that verifies the build and publishes the GitHub Release automatically when a v* tag is pushed, plus a fix so typecheck passes on a fresh checkout without build artifacts.
 >
-> 共 2 commits：🚀 Features 1 | ⚙️ Miscellaneous Tasks 1
+> 共 3 commits：🚀 Features 1 | ⚙️ Miscellaneous Tasks 1 | 🐛 Bug Fixes 1
 
 ### ⚙️ Miscellaneous Tasks
 
@@ -19,6 +19,10 @@ All notable changes to this project will be documented in this file.
 ### 🚀 Features
 
 - *(web)* Upgrade to React Router 8 and add /all feed (全部动态) ([8599b4f](https://github.com/BingqiangZhou/Sonde/commit/8599b4f082f95cf22f627092360376ca18caf8f0))
+
+### 🐛 Bug Fixes
+
+- *(web)* Typecheck on fresh checkout without build artifacts ([90880f1](https://github.com/BingqiangZhou/Sonde/commit/90880f10b28c1b59772bc69d11e5e45e58eb8d55))
 
 
 
