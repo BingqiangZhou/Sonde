@@ -79,7 +79,7 @@ services:
 
   web:
     <<: *app
-    command: ['sh', '-c', 'npm run start -w apps/web -- --port ${WEB_PORT:-3000}']
+    command: ['npm', 'run', 'start', '-w', 'apps/web']
     environment:
       <<: *app-env
       API_URL: http://api:3001

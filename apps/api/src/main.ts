@@ -5,6 +5,7 @@ import cookie from '@fastify/cookie';
 
 import { AppError, closeDb, loadConfig, ping } from '@sonde/backend';
 
+import { adminRoutes } from './routes/admin.ts';
 import { siteRoutes } from './routes/site.ts';
 
 const config = loadConfig();
@@ -13,7 +14,9 @@ const app = Fastify({
   logger: { level: process.env.LOG_LEVEL ?? 'info' },
 });
 
-await app.register(cookie);
+await app.register(cookie, {
+  secret: config.sessionSecret || 'sonde-insecure-dev-secret',
+});
 
 app.get('/api/health', async () => ({ status: 'ok', service: 'sonde-api' }));
 
@@ -32,6 +35,7 @@ app.get('/api/health/ready', async (_request, reply) => {
 });
 
 await app.register(siteRoutes, { prefix: '/api/site' });
+await app.register(adminRoutes, { prefix: '/api/admin' });
 
 app.setErrorHandler((error, request, reply) => {
   if (error instanceof AppError) {

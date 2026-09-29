@@ -44,7 +44,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
         </header>
         <main className="mx-auto max-w-3xl px-4 py-8">{children}</main>
         <footer className="border-t border-stone-200 py-6 text-center text-xs text-stone-400">
-          声读 · 个人播客知识库 · 内容版权归原作者所有
+          声读 · 个人播客知识库 · 内容版权归原作者所有 ·{' '}
+          <a href="/admin" className="hover:text-stone-600">
+            后台
+          </a>
         </footer>
         <ScrollRestoration />
         <Scripts />
