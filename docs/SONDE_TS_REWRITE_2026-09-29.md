@@ -59,7 +59,7 @@ Python/Flutter 时代的全部设计文档（LOCAL_FIRST / PER_USER_CONSOLE / SE
 
 | 阶段 | 内容 | 验证方式 |
 |---|---|---|
-| 清理 | 删除 backend/ frontend/ docker/ .github，重写 README/AGENTS/.gitignore | git 941ff6ba |
+| 清理 | 删除 backend/ frontend/ docker/ .github，重写 README/AGENTS/.gitignore | 重写链首个提交（git log 可查） |
 | 脚手架 | npm workspaces 三进程、0001_init.sql、Dockerfile(ffmpeg)、compose 五容器 | Docker 端到端健康检查 |
 | 核心包 | chatJson（重试/校验/记账）、transcribeChunk、prompt 渲染器、时区/JSON 工具 | 51 个单测 |
 | 采集+转写 | 条件 GET 抓取、首导 14 天/10 条截断、六步转写（下载/ffmpeg 16k/分块/逐块转写/合并/派发） | Docker 真实 feed 实测 |

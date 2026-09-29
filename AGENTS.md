@@ -52,7 +52,6 @@
 |-------|---------|
 | Inline prompt strings in TS | `industry/prompts/*.md` + renderer |
 | ORM / query builder | Raw SQL tagged templates in `packages/backend/src/db/` |
-| Alembic / Python anything | Plain SQL migrations + `scripts/migrate.ts` (旧 Python 栈已全部移除) |
 | Web querying Postgres directly | Web only calls api over HTTP |
 | LLM call without receipt | Always via provider layer (`chatJson`/`transcribeAudio`) |
 | Un-transcribed episode judged by title only | Scoring always runs on full transcript (`episodes.body_text`) |

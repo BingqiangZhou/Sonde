@@ -5,9 +5,13 @@
 *.sh text eol=lf
 docker-entrypoint.sh text eol=lf
 
-# Python files use LF
-*.py text eol=lf
-pyproject.toml text eol=lf
+# TypeScript / JavaScript files use LF
+*.ts text eol=lf
+*.tsx text eol=lf
+*.mjs text eol=lf
+
+# SQL files use LF
+*.sql text eol=lf
 
 # Docker files use LF
 Dockerfile text eol=lf
