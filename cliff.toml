@@ -7,6 +7,7 @@ header = """
 # Changelog
 
 All notable changes to this project will be documented in this file.
+This is the English edition — see [CHANGELOG.md](CHANGELOG.md) for the Chinese one.
 
 """
 # template for the changelog body

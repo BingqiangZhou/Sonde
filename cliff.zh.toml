@@ -1,0 +1,62 @@
+# git-cliff 中文版配置 — prepend 到 CHANGELOG.md（中文版更新日志）
+# 英文版用 cliff.toml → CHANGELOG_EN.md；两份配置的模板保持一致，仅分组名/头部不同。
+
+[changelog]
+header = """
+# 更新日志
+
+本文件记录声读（Sonde）所有重要变更；英文版见 [CHANGELOG_EN.md](CHANGELOG_EN.md)。
+
+"""
+body = """
+{% set remote_url = "https://github.com/BingqiangZhou/Sonde" %}
+
+{% if version %}\
+    {% if previous %}\
+    ## [{{ version | trim_start_matches(pat="v") }}]({{ remote_url }}/compare/{{ previous.version }}...{{ version }}) - {{ timestamp | date(format="%Y-%m-%d") }} ([📥]({{ remote_url }}/releases/tag/{{ version }}))
+    {% else %}\
+    ## [{{ version | trim_start_matches(pat="v") }}]({{ remote_url }}/releases/tag/{{ version }}) - {{ timestamp | date(format="%Y-%m-%d") }} ([📥]({{ remote_url }}/releases/tag/{{ version }}))
+    {% endif %}\
+{% else %}\
+    ## [Unreleased]
+{% endif %}\
+<!-- AI_SUMMARY -->
+{% for group, commits in commits | group_by(attribute="group") %}
+    ### {{ group | upper_first }}
+    {% for commit in commits %}
+        - {% if commit.scope %}*({{ commit.scope }})* {% endif %}{{ commit.message | upper_first }} ([{{ commit.id | truncate(length=7, end="") }}]({{ remote_url }}/commit/{{ commit.id }}))\
+    {% endfor %}
+{% endfor %}\n
+"""
+footer = """
+---
+> 基线说明：v1.0.x 起为 TS 重写版（声读 Sonde 播客日报站，Node/React 架构）。
+> v0.x（Python/Flutter 时代）的发版历史见远程仓库的 v0.x 标签与 `git log`。
+"""
+trim = true
+
+[git]
+conventional_commits = true
+filter_unconventional = true
+split_commits = false
+commit_preprocessors = [
+]
+commit_parsers = [
+    { message = "^feat", group = "🚀 新功能" },
+    { message = "^fix", group = "🐛 问题修复" },
+    { message = "^doc", group = "📚 文档" },
+    { message = "^perf", group = "⚡ 性能" },
+    { message = "^refactor", group = "🚜 重构" },
+    { message = "^style", group = "🎨 样式" },
+    { message = "^test", group = "🧪 测试" },
+    { message = "^chore\\(release\\)", skip = true },
+    { message = "^chore", group = "⚙️ 其他事务" },
+    { body = ".*security", group = "🛡️ 安全" },
+]
+protect_breaking_commits = false
+filter_commits = false
+tag_pattern = "v[0-9]*"
+skip_tags = "v0.1.0-beta.1"
+ignore_tags = ""
+topology_sort = false
+sort_commits = "oldest"

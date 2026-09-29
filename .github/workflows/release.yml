@@ -1,7 +1,8 @@
 name: Release
 
-# Tag 推送触发：验证构建/测试，用 git-cliff 生成该版本说明并创建 GitHub Release。
-# 本地流程见 .zcode/skills/release/SKILL.md（CHANGELOG.md 与版本号在推送 tag 前已就位）。
+# Tag 推送触发：验证构建/测试，然后从 CHANGELOG.md（中文版）与 CHANGELOG_EN.md（英文版）
+# 提取该版本段落，拼成中英双语正文并创建 GitHub Release。
+# 本地流程见 .zcode/skills/release/SKILL.md（两份 CHANGELOG 与版本号在推送 tag 前已就位）。
 
 on:
   push:
@@ -15,8 +16,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0 # git-cliff 需要完整历史与相邻 tag
       - uses: actions/setup-node@v4
         with:
           node-version: 24
@@ -25,17 +24,27 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run build:web
-      - name: Generate release notes
-        uses: orhun/git-cliff-action@v4
-        with:
-          config: cliff.toml
-          args: --latest --strip all
-        env:
-          OUTPUT: CHANGES.md
-          GITHUB_REPO: ${{ github.repository }}
-      - name: Strip AI summary placeholder
-        run: sed -i '/<!-- AI_SUMMARY -->/d' CHANGES.md
+      - name: Build bilingual release notes
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          extract() {
+            awk -v ver="## [${VERSION}]" '
+              index($0, ver) == 1 { in_section = 1 }
+              in_section && /^## \[/ && index($0, ver) != 1 { exit }
+              in_section { print }
+            ' "$1"
+          }
+          {
+            echo "## 🇨🇳 中文"
+            extract CHANGELOG.md
+            echo ""
+            echo "---"
+            echo ""
+            echo "## 🇬🇧 English"
+            extract CHANGELOG_EN.md
+          } | sed '/<!-- AI_SUMMARY -->/d' > RELEASE_BODY.md
+          head -c 400 RELEASE_BODY.md
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          body_path: CHANGES.md
+          body_path: RELEASE_BODY.md
