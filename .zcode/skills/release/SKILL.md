@@ -56,7 +56,12 @@ chore(release): update version to <版本号> and generate changelog
 
 ## 步骤5: 创建并推送 Tag
 创建 tag（格式: v<版本号>），例如: v1.0.0，推送到远程仓库。
-注意：仓库当前没有 CI（旧 release.yml 已随旧栈删除），GitHub Release 如需发布需手动创建。
+推送 `v*` tag 后 `.github/workflows/release.yml` 自动触发：typecheck/test/build →
+git-cliff 生成该版本说明 → 创建 GitHub Release（无需手动创建）。
+发版后用 `https://api.github.com/repos/BingqiangZhou/Sonde/actions/runs?per_page=3` 或
+仓库 Actions 页确认运行成功、Release 已生成。
+
+注意：**tag 必须指向包含 workflow 文件的提交**（首次给仓库加 workflow 后发版时，先推 workflow 提交再打 tag）。
 
 ## 示例
 输入: `/release 1.0.0`
