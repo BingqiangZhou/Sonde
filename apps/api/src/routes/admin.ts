@@ -5,6 +5,7 @@ import { timingSafeEqual } from 'node:crypto';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 
 import {
+  isReportKind,
   loadConfig,
   receiptsSummary,
   rows,
@@ -183,13 +184,20 @@ export async function adminRoutes(app: FastifyInstance) {
     };
   });
 
-  // ── 日报 ──────────────────────────────────────────────────
+  // ── 报刊 ──────────────────────────────────────────────────
   app.post('/reports/generate', async (request) => {
-    const body = (request.body ?? {}) as { reportKey?: string };
-    if (body.reportKey && !/^\d{4}-\d{2}-\d{2}$/.test(body.reportKey)) {
-      throw new ValidationError('reportKey 格式应为 YYYY-MM-DD');
+    const body = (request.body ?? {}) as { kind?: string; reportKey?: string };
+    const kind = body.kind ?? 'daily';
+    if (!isReportKind(kind)) {
+      throw new ValidationError('kind 应为 daily | weekly | monthly');
     }
-    await sendJob('reports.daily', body.reportKey ? { reportKey: body.reportKey } : {});
+    const keyRe = kind === 'monthly' ? /^\d{4}-\d{2}$/ : /^\d{4}-\d{2}-\d{2}$/;
+    if (body.reportKey && !keyRe.test(body.reportKey)) {
+      throw new ValidationError(
+        kind === 'monthly' ? '月报 reportKey 格式应为 YYYY-MM' : 'reportKey 格式应为 YYYY-MM-DD',
+      );
+    }
+    await sendJob(`reports.${kind}`, body.reportKey ? { reportKey: body.reportKey } : {});
     return { ok: true };
   });
 

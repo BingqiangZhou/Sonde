@@ -23,7 +23,16 @@ export {
 export type { SqlFragment } from './db/db.ts';
 
 export { extractJsonPayload, parseJsonLoose, stripThinking } from './util/json.ts';
-export { todayKeyInTz, yesterdayKeyInTz, dayWindowUtc } from './util/time.ts';
+export {
+  todayKeyInTz,
+  yesterdayKeyInTz,
+  dayWindowUtc,
+  lastWeekMondayKeyInTz,
+  weekWindowUtc,
+  lastMonthKeyInTz,
+  monthWindowUtc,
+  isMondayKey,
+} from './util/time.ts';
 
 export { renderPrompt, PromptError } from './prompts/renderer.ts';
 export { loadPromptFiles } from './prompts/loader.ts';
@@ -47,12 +56,14 @@ export { transcribeEpisode } from './pipeline/transcribe.ts';
 export { analyzeEpisode, sweepPendingAnalyses } from './pipeline/analyze.ts';
 
 export {
+  generateReport,
   generateDailyReport,
-  getDailyReport,
-  getLatestDailyReport,
-  listDailyReportKeys,
+  getReport,
+  getLatestReport,
+  listReportKeys,
+  isReportKind,
 } from './reports/daily.ts';
-export type { DailyReportOptions } from './reports/daily.ts';
+export type { ReportKind, ReportOptions, ReportRow } from './reports/daily.ts';
 
 export { listSelectedEpisodes, getSelectedEpisode, listAllAnalyzedEpisodes } from './publication/read.ts';
 export type { SelectedEpisodeItem, AnalyzedEpisodeItem } from './publication/read.ts';

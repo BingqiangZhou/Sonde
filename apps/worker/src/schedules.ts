@@ -13,4 +13,8 @@ export async function registerSchedules(boss: PgBoss): Promise<void> {
   await boss.schedule('episodes.analyze', '*/30 * * * *', { sweep: true });
   // 每天 08:00（站点时区，默认北京）成刊昨日日报；force 重新生成（修订+1）
   await boss.schedule('reports.daily', '0 8 * * *', {}, { tz: config.reportTimezone });
+  // 每周一 08:30 成刊上周周报（覆盖上周一至周日）
+  await boss.schedule('reports.weekly', '30 8 * * 1', {}, { tz: config.reportTimezone });
+  // 每月 1 日 08:30 成刊上月月报
+  await boss.schedule('reports.monthly', '30 8 1 * *', {}, { tz: config.reportTimezone });
 }

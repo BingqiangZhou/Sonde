@@ -21,6 +21,10 @@ export const QUEUES = {
   'episodes.analyze': { retryLimit: 3, retryBackoff: true, expireInSeconds: 600 },
   /** 生成/补发日报（data: { reportKey? }，缺省为昨天） */
   'reports.daily': { retryLimit: 2, retryBackoff: true, retryDelay: 60, expireInSeconds: 1800 },
+  /** 生成/补发周报（data: { reportKey? }，缺省为上周一；每周一 08:30 定时） */
+  'reports.weekly': { retryLimit: 2, retryBackoff: true, retryDelay: 60, expireInSeconds: 1800 },
+  /** 生成/补发月报（data: { reportKey? }，缺省为上个自然月；每月 1 日 08:30 定时） */
+  'reports.monthly': { retryLimit: 2, retryBackoff: true, retryDelay: 60, expireInSeconds: 1800 },
 } as const satisfies Record<string, QueueDef>;
 
 export type QueueName = keyof typeof QUEUES;

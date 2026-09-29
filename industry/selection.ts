@@ -13,6 +13,10 @@ export const SELECTION = {
   defaultThreshold: 70,
   /** 每日日报最多收录条目数 */
   maxReportItems: 10,
+  /** 周报最多收录条目数（从上一周入选单集中取分数最高者） */
+  maxWeeklyItems: 16,
+  /** 月报最多收录条目数 */
+  maxMonthlyItems: 24,
   /** 兴趣画像（中文，一句话到一段话均可） */
   interestProfile: '',
 } as const;

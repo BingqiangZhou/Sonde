@@ -23,10 +23,12 @@ const server = createServer(async (req, res) => {
     const userPrompt = body.messages?.find((m) => m.role === 'user')?.content ?? '';
 
     let payload;
-    if (userPrompt.includes('日报主编')) {
+    if (userPrompt.includes('报主编')) {
+      // 日报/周报/月报的刊头分支（「日报主编」「周报主编」「月报主编」；
+      // 不能只匹配「主编」——scoring.md 里也有「播客主编」）
       payload = {
-        title: '模型边界与落地经验成为今日主线',
-        leadParagraph: '今天入选的单集集中讨论模型能力的真实边界与落地经验。多位主播不约而同提到数据回流被低估，值得关注的还有三个具体案例的成败复盘。',
+        title: '模型边界与落地经验成为本期主线',
+        leadParagraph: '本期入选的单集集中讨论模型能力的真实边界与落地经验。多位主播不约而同提到数据回流被低估，值得关注的还有三个具体案例的成败复盘。',
         highlights: ['模型长任务规划仍有明显边界', '数据回流环节最容易被低估', '三个落地案例的成败复盘'],
       };
     } else if (userPrompt.includes('titleZh')) {

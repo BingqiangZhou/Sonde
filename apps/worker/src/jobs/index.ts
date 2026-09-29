@@ -5,7 +5,7 @@ import type PgBoss from 'pg-boss';
 import {
   analyzeEpisode,
   fetchSource,
-  generateDailyReport,
+  generateReport,
   scanDueSources,
   sweepPendingAnalyses,
   transcribeEpisode,
@@ -43,7 +43,21 @@ export function registerJobs(boss: PgBoss): void {
   void boss.work('reports.daily', { batchSize: 1 }, async (jobs) => {
     for (const job of jobs) {
       const data = job.data as { reportKey?: string };
-      await generateDailyReport({ reportKey: data?.reportKey, force: true });
+      await generateReport('daily', { reportKey: data?.reportKey, force: true });
+    }
+  });
+
+  void boss.work('reports.weekly', { batchSize: 1 }, async (jobs) => {
+    for (const job of jobs) {
+      const data = job.data as { reportKey?: string };
+      await generateReport('weekly', { reportKey: data?.reportKey, force: true });
+    }
+  });
+
+  void boss.work('reports.monthly', { batchSize: 1 }, async (jobs) => {
+    for (const job of jobs) {
+      const data = job.data as { reportKey?: string };
+      await generateReport('monthly', { reportKey: data?.reportKey, force: true });
     }
   });
 }
