@@ -1,75 +1,60 @@
 # Repository Guidelines
 
 ## Project Overview
-- **Sonde (声读)** — personal podcast knowledge base: subscribe, transcribe, AI summaries, daily briefs; local-first deployment.
-- The workspace directory is still named `PodcastInsight` (historical), but everything is rebranded: frontend imports use `package:sonde/...`, backend package is `sonde-backend`.
+- **Sonde (声读)** — personal podcast daily-digest site: podcast RSS → transcription → AI scoring/filtering → daily report. Learning the architecture of AIHOT (self-collecting, self-writing digest framework), implemented from scratch for podcasts.
+- Stack: Node 24, TypeScript (strict), npm workspaces monorepo, Fastify, pg-boss, PostgreSQL 17, React Router 7 (SSR, framework mode), Tailwind CSS, Docker Compose.
+- The workspace directory is still named `PodcastInsight` (historical); the product name is 声读 Sonde.
 
-## Project Structure & Module Organization
-- `backend/`: FastAPI service (DDD layout) with `core`, `shared`, `admin`, `http`, `bootstrap`, and 2 domain modules (`ai`, `podcast`) under `backend/app/` (`domains/`).
-- `backend/alembic/`: database migrations (27 migrations).
-- `backend/tests/` and `backend/app/**/tests/`: backend test suites.
-- `frontend/`: Flutter app with feature modules in `frontend/lib/` and tests in `frontend/test/`.
-- `docker/`: Docker Compose files and deployment assets (4 services: postgres, backend, worker, caddy; compose project pinned to `sonde`; only backend runs alembic migrations + the procrastinate queue schema).
-- `docs/`: detailed design notes.
+## Project Structure
+- `apps/api/` — Fastify HTTP service: site read API (`/api/site/*`), admin API (`/api/admin/*`, session auth), health.
+- `apps/worker/` — pg-boss worker: queue consumers + cron schedules (fetch/transcribe/analyze/report).
+- `apps/web/` — React Router 7 SSR web app (Chinese UI). Reads ONLY via HTTP from api, never touches the DB directly.
+- `packages/backend/` — all business logic: `db` (raw tagged-template SQL, no ORM), `sources`, `pipeline`, `reports`, `providers` (llm/transcription + receipts), `prompts` renderer.
+- `industry/` — the customization pack (change config, not code): `site.ts`, `taxonomy.ts`, `selection.ts` (thresholds + interest profile), `sources.json` (seed subscriptions), `prompts/*.md` (all LLM prompts, `{{var}}` + `{{> include}}` templates).
+- `database/migrations/` — plain SQL migrations applied by `scripts/migrate.ts`.
+- `scripts/` — `init-env.ts`, `migrate.ts`, `seed.ts`.
+- `deploy/` — Caddyfile. `docs/` — design notes (historical docs are archives; current arch: `SONDE_TS_REWRITE_2026-09-29.md`).
 
 ## Build, Test, and Development Commands
-- Backend dependencies: `cd backend && uv sync --extra dev`
-- Migrations: `uv run alembic upgrade head`
-- Run API locally: `uv run uvicorn app.main:app --reload`
-- Lint/format (backend): `uv run ruff check .` and `uv run ruff format .`
-- Backend tests: `uv run pytest`
-- Frontend deps: `cd frontend && flutter pub get`
-- Frontend code gen: `cd frontend && dart run build_runner build` (required after modifying `@riverpod`, `@RestApi`, `@JsonSerializable`, or Drift files)
-- Frontend tests: `flutter test` (unit: `test/unit/`, widget: `test/widget/`, integration: `test/integration/`)
-- Frontend l10n: `flutter gen-l10n` (after editing both `app_localizations_en.arb` and `app_localizations_zh.arb` in `lib/core/localization/`)
-- Docker backend verification (required): `cd docker && docker compose up -d`
+- Install: `npm install` (root, workspaces)
+- Typecheck: `npm run typecheck`
+- Tests: `npm test` (vitest, workspaces-wide)
+- Migrate + seed: `npm run db:setup` (needs Postgres running)
+- Run api locally: `npm run dev -w apps/api` (tsx watch)
+- Run worker locally: `npm run dev -w apps/worker`
+- Run web locally: `npm run dev -w apps/web`
+- Full stack via Docker (required verification before finishing a task): `docker compose up -d --build`, then `curl http://localhost:3000/api/health`
 
-## Coding Style & Naming Conventions
-- Backend uses `ruff` for linting/formatting; do not use `black`, `isort`, or `flake8`.
-- Use `uv` for Python package management; avoid `pip install`.
-- Follow async/await patterns for I/O in the backend (SQLAlchemy async, aiohttp, psycopg).
-- Frontend uses Material 3 (`useMaterial3: true`) and `CustomAdaptiveNavigation` with `Breakpoints` class.
-- Frontend uses platform-adaptive UI: CupertinoTheme wrapper and `.adaptive()` widgets for iOS-native feel.
-- Use `AppColors`, `AppRadius`, and `AppSpacing` tokens — no hardcoded colors, radii, or spacing.
-- Use `Color.withValues(alpha:)` instead of deprecated `Color.withOpacity()`.
-
-## Testing Guidelines
-- Backend: pytest with async tests; run `uv run pytest` before PRs (in-memory SQLite via aiosqlite, no Docker needed).
-- Frontend: widget tests are mandatory for page functionality; run `flutter test test/widget/`.
-- Verify backend via Docker (not only local uvicorn).
-- A task is NOT COMPLETE until: code compiles, tests pass, modified functionality works end-to-end.
-
-## Commit & Pull Request Guidelines
-- Commit messages follow a Conventional Commits style: `feat:`, `fix:`, `refactor:`, `chore:`, `style:` (examples in history).
-- PRs should include: a clear description, linked issues, and test evidence (commands + results). Add screenshots for UI changes.
+## Coding Style & Conventions
+- TypeScript strict mode everywhere; ESM modules (`"type": "module"`), `.ts` extensions in relative imports where used by tsx.
+- No ORM: raw SQL via tagged templates in `packages/backend/src/db/`. Migrations are plain SQL files, numbered (`0001_*.sql`).
+- All LLM prompts live in `industry/prompts/*.md` — never inline prompt text in TS code. Renderer supports `{{var}}` substitution and `{{> file}}` includes; a missing value or file is a hard error.
+- Industry config (`industry/*.ts`, `sources.json`) is the intended customization surface — framework code reads it, never hardcodes site specifics.
+- Every paid call (LLM, transcription) goes through the provider layer which writes a `receipts` row (model, tokens/audio seconds, ok/fail) before business writes.
+- Node-side errors: throw typed `AppError` subclasses from `packages/backend/src/errors.ts`; api maps them to HTTP status codes.
+- Date/time: DB stores timestamptz (UTC); daily report windows are computed on the Asia/Shanghai calendar.
+- Web: React Router 7 framework mode (`app/routes.ts`), Tailwind for styling, no component library. Chinese-first UI copy.
+- Commits follow Conventional Commits: `feat:`, `fix:`, `refactor:`, `chore:` (see history).
 
 ## Environment & Secrets
-- Backend config lives in `backend/.env` (start from `.env.example`); never commit secrets.
-- Local infrastructure is expected to run via Docker Compose in `docker/` (PostgreSQL; the queue is procrastinate on the same Postgres).
-- Use the health check once running: `curl http://localhost:8000/api/v1/health`.
+- Config via `.env` (from `.env.example`; generated by `node scripts/init-env.ts --llm-key <key>`). Never commit secrets.
+- Key vars: `DATABASE_URL`, `LLM_BASE_URL`/`LLM_API_KEY`/`LLM_MODEL`, `TRANSCRIPTION_BASE_URL`/`TRANSCRIPTION_API_KEY`/`TRANSCRIPTION_MODEL`, `ADMIN_PASSWORD`, `SESSION_SECRET`, `WORK_CONCURRENCY`.
 
-## Configuration & Requirements Notes
-- All API routes live under `/api/v1/` (including `/api/v1/` root info and `/api/v1/docs` Swagger UI); errors carry bilingual fields `{message_en, message_zh}` on BaseCustomError responses (overridable via `details`).
-- Rate limiting: 60 req/min, 1000 req/hour.
-- Health: `GET /api/v1/health` (liveness), `GET /api/v1/health/ready` (readiness).
-
-## Backend Architecture Notes
-- DI: FastAPI `Depends()`. Migrations: `backend/alembic/`.
-- Exceptions: service layer raises `BaseCustomError`; routes use `HTTPException` from `app.http.errors`.
-- Job queue: procrastinate on Postgres (`app/core/jobs.py`); single `default` queue; periodic schedules are `@procrastinate_app.periodic` crons (UTC) executed by the worker (`python -m app.bootstrap.worker`, container pins TZ=UTC).
+## Testing Guidelines
+- vitest, colocated tests (`*.test.ts`) or under `packages/backend/test/`.
+- Unit tests are mandatory for: prompt renderer, JSON-tolerant parsing, threshold/selection logic, daily-report window computation, RSS new-episode detection.
+- api route tests use `fastify.inject` with a test schema; provider tests mock fetch.
+- A task is NOT COMPLETE until: typecheck passes, `npm test` passes, and the touched flow works end-to-end (Docker compose when infra is involved).
 
 ## Gotchas
 
 | Wrong | Correct |
 |-------|---------|
-| `pip install` | `uv add` or `uv sync` |
-| flutter_adaptive_scaffold | `CustomAdaptiveNavigation` + `Breakpoints` |
-| Hardcoded colors/radii/spacing | `AppColors`, `AppRadius`, and `AppSpacing` tokens |
-| Edit `.g.dart` by hand | Edit source, re-run `dart run build_runner build` |
-| Bare ValueError for errors | `BaseCustomError` (service) or `HTTPException` (route) |
-| `Color.withOpacity()` | `Color.withValues(alpha:)` (former is deprecated) |
-| Skip widget tests | Required for all pages |
-| `admin` is under `domains/` | `admin/` is a separate top-level module at `app/admin/` |
-| Generated `AppLocalizations.localizationsDelegates` | Use app-owned `appLocalizationsDelegates` from `lib/core/localization/l10n_delegates.dart` (generated getter references old `flutter_localizations` delegates; incompatible with `material_ui`/`cupertino_ui`) |
-| Hand-edit generated `app_localizations*.dart` | Edit the `.arb` sources, re-run `flutter gen-l10n` |
-| Hand-rolled dialog shells (`AlertDialog`, raw `Dialog`, custom Containers) | `showAppDialog` + `AppDialog` shell from `lib/core/widgets/` (confirmations via `showAppConfirmationDialog`) |
+| Inline prompt strings in TS | `industry/prompts/*.md` + renderer |
+| ORM / query builder | Raw SQL tagged templates in `packages/backend/src/db/` |
+| Alembic / Python anything | Plain SQL migrations + `scripts/migrate.ts` (旧 Python 栈已全部移除) |
+| Web querying Postgres directly | Web only calls api over HTTP |
+| LLM call without receipt | Always via provider layer (`chatJson`/`transcribeAudio`) |
+| Un-transcribed episode judged by title only | Scoring always runs on full transcript (`episodes.body_text`) |
+| `docker/` compose files | Root `docker-compose.yml`（旧 docker/ 目录已删除） |
+| Assume report dates in UTC | Daily windows are Asia/Shanghai calendar days |

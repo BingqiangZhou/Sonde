@@ -1,39 +1,33 @@
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-dist/
+# Node
+node_modules/
+npm-debug.log*
+.npm/
+*.tsbuildinfo
 
-# Virtual environments (uv creates .venv)
-venv/
-.venv/
+# Build output
+dist/
+build/
+.cache/
+.turbo/
+.react-router/
 
 # Environment files (templates are negated back in)
 .env*
 !.env.example
-!.env.production.template
 
 # Secrets & credentials
-**/.secret_key
-backend/data/.rsa_keys
-credentials.txt*
 *.pem
+*.key
 *.keystore
 *.p12
-*.key
 *.jks
-frontend/android/release.keystore.b64
+credentials.txt*
 
-# Database
-*.db
-*.sqlite3
-backend/data/*.sql
-
-# Logs
+# Runtime artifacts
+/data/
 *.log
 logs/
+tmp/
 
 # OS / IDE
 .DS_Store
@@ -41,7 +35,6 @@ Thumbs.db
 desktop.ini
 .vscode/
 .idea/
-.trae/
 *.swp
 *.swo
 *~
@@ -52,31 +45,9 @@ desktop.ini
 *.temp
 *.bak
 *.backup
-*.backup_*
 
-# Flutter (build output; generated *.g.dart / *.freezed.dart stay tracked)
-build/
-.dart_tool/
-.flutter-plugins
-.flutter-plugins-dependencies
-pub-cache/
-.pub-cache/
-.fvm/
-
-# Android
-android/app/release/
-android/app/profile/
-android/app/debug/
-
-# iOS
-ios/Flutter/flutter_assets/
-ios/Flutter/flutter_export_environment.sh
-ios/Pods/
-ios/.symlinks/
-ios/Podfile.lock
-
-# Backend runtime artifacts
-backend/celerybeat-schedule
+# Test coverage
+coverage/
 
 # Agent tooling
 .worktrees/
