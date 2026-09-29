@@ -2,7 +2,14 @@
 
 import type PgBoss from 'pg-boss';
 
-import { fetchSource, scanDueSources, transcribeEpisode } from '@sonde/backend';
+import {
+  analyzeEpisode,
+  fetchSource,
+  generateDailyReport,
+  scanDueSources,
+  sweepPendingAnalyses,
+  transcribeEpisode,
+} from '@sonde/backend';
 
 export function registerJobs(boss: PgBoss): void {
   void boss.work('sources.fetch', { batchSize: 1 }, async (jobs) => {
@@ -22,5 +29,21 @@ export function registerJobs(boss: PgBoss): void {
     }
   });
 
-  // episodes.analyze / reports.daily 在后续阶段注册
+  void boss.work('episodes.analyze', { batchSize: 2 }, async (jobs) => {
+    for (const job of jobs) {
+      const data = job.data as { episodeId?: number; sweep?: boolean };
+      if (data?.sweep) {
+        await sweepPendingAnalyses();
+      } else if (data?.episodeId) {
+        await analyzeEpisode(data.episodeId);
+      }
+    }
+  });
+
+  void boss.work('reports.daily', { batchSize: 1 }, async (jobs) => {
+    for (const job of jobs) {
+      const data = job.data as { reportKey?: string };
+      await generateDailyReport({ reportKey: data?.reportKey, force: true });
+    }
+  });
 }

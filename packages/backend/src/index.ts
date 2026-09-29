@@ -45,3 +45,12 @@ export type { RssEpisodeInput, ParsedFeedItem, FeedFetchResult } from './sources
 export { scanDueSources, fetchSource } from './sources/service.ts';
 
 export { transcribeEpisode, transcribeLimits } from './pipeline/transcribe.ts';
+export { analyzeEpisode, sweepPendingAnalyses } from './pipeline/analyze.ts';
+
+export {
+  generateDailyReport,
+  getDailyReport,
+  getLatestDailyReport,
+  listDailyReportKeys,
+} from './reports/daily.ts';
+export type { DailyReportOptions } from './reports/daily.ts';

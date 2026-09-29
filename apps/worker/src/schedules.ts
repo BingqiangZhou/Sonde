@@ -1,9 +1,16 @@
-/** cron 注册（worker 独有；processor 就绪一个注册一个，避免无消费者时积压）。 */
+/** cron 注册（worker 独有）。全部处理器已就绪。 */
 
 import type PgBoss from 'pg-boss';
 
+import { loadConfig } from '@sonde/backend';
+
 export async function registerSchedules(boss: PgBoss): Promise<void> {
-  // 每分钟扫描到期源（fetch 处理器已就绪）
+  const config = loadConfig();
+
+  // 每分钟扫描到期源
   await boss.schedule('sources.fetch', '* * * * *', {});
-  // reports.daily 的 cron（08:00 成刊 + 每小时补发）在分析/成刊阶段开启
+  // 每半小时兜底扫描：转写完成但丢失分析任务的单集
+  await boss.schedule('episodes.analyze', '*/30 * * * *', { sweep: true });
+  // 每天 08:00（站点时区，默认北京）成刊昨日日报；force 重新生成（修订+1）
+  await boss.schedule('reports.daily', '0 8 * * *', {}, { tz: config.reportTimezone });
 }
