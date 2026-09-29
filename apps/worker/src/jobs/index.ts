@@ -1,20 +1,26 @@
-/** job 处理器与 cron 注册表（后续阶段逐个填充实现）。 */
+/** job 处理器注册（worker 进程装配点）。 */
 
 import type PgBoss from 'pg-boss';
 
-export function registerJobs(boss: PgBoss): void {
-  // 阶段 4/5 填充：
-  //   boss.work('sources.fetch', handler)
-  //   boss.work('episodes.transcribe', handler)
-  //   boss.work('episodes.analyze', handler)
-  //   boss.work('reports.daily', handler)
-  void boss;
-}
+import { fetchSource, scanDueSources, transcribeEpisode } from '@sonde/backend';
 
-export async function registerSchedules(boss: PgBoss): Promise<void> {
-  // 阶段 4/5 填充（注：先有处理器再注册 cron，避免积压）：
-  //   await boss.schedule('sources.fetch', '* * * * *')
-  //   await boss.schedule('reports.daily', '0 8 * * *', {}, { tz: config.reportTimezone })
-  //   await boss.schedule('reports.daily', '15 * * * *')   // 每小时补发
-  void boss;
+export function registerJobs(boss: PgBoss): void {
+  void boss.work('sources.fetch', { batchSize: 1 }, async (jobs) => {
+    for (const job of jobs) {
+      const data = job.data as { sourceId?: number };
+      if (data?.sourceId) {
+        await fetchSource(data.sourceId);
+      } else {
+        await scanDueSources();
+      }
+    }
+  });
+
+  void boss.work('episodes.transcribe', { batchSize: 1 }, async (jobs) => {
+    for (const job of jobs) {
+      await transcribeEpisode((job.data as { episodeId: number }).episodeId);
+    }
+  });
+
+  // episodes.analyze / reports.daily 在后续阶段注册
 }

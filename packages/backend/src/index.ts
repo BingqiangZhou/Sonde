@@ -35,3 +35,13 @@ export { chatJson, chatText } from './providers/llm.ts';
 export type { ChatOptions, ChatJsonResult } from './providers/llm.ts';
 export { transcribeChunk } from './providers/transcription.ts';
 export type { TranscribeChunkOptions, TranscribeChunkResult } from './providers/transcription.ts';
+
+export { getBoss, sendJob, shutdownBoss } from './queue/boss.ts';
+export { QUEUE_NAMES, QUEUES } from './queue/queues.ts';
+export type { QueueDef, QueueName } from './queue/queues.ts';
+
+export { fetchPodcastFeed, episodeInputsFromFeed, parseItunesDuration } from './sources/rss.ts';
+export type { RssEpisodeInput, ParsedFeedItem, FeedFetchResult } from './sources/rss.ts';
+export { scanDueSources, fetchSource } from './sources/service.ts';
+
+export { transcribeEpisode, transcribeLimits } from './pipeline/transcribe.ts';

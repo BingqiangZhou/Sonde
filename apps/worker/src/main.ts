@@ -1,35 +1,25 @@
 /** 声读 worker 进程：pg-boss 队列消费 + 定时调度。
- *  job 处理器与 cron 注册在 jobs/ 模块，main.ts 只负责装配。 */
+ *  main.ts 只负责装配；job 处理器在 jobs/，cron 在 schedules.ts。 */
 
-import PgBoss from 'pg-boss';
+import { closeDb, getBoss, loadConfig } from '@sonde/backend';
 
-import { closeDb, loadConfig } from '@sonde/backend';
-
-import { QUEUES } from './queues.ts';
-import { registerJobs, registerSchedules } from './jobs/index.ts';
+import { registerJobs } from './jobs/index.ts';
+import { registerSchedules } from './schedules.ts';
 
 const config = loadConfig();
 
-const boss = new PgBoss({
-  connectionString: config.databaseUrl,
-});
-
 async function main() {
-  for (const [name, def] of Object.entries(QUEUES)) {
-    await boss.createQueue(name, { name, ...def });
-  }
-
+  const boss = await getBoss();
   registerJobs(boss);
-  await boss.start();
   await registerSchedules(boss);
-
   console.log(`[sonde-worker] started (concurrency=${config.workConcurrency})`);
 }
 
 const shutdown = async (signal: string) => {
   console.log(`[sonde-worker] ${signal} received, shutting down`);
   const timer = setTimeout(() => process.exit(1), 15_000);
-  await boss.stop({ graceful: true, timeout: 10_000 }).catch(() => {});
+  const { shutdownBoss } = await import('@sonde/backend');
+  await shutdownBoss();
   await closeDb();
   clearTimeout(timer);
   process.exit(0);
