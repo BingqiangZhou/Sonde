@@ -1,6 +1,6 @@
 # Phase A · 基线收尾
 
-> 状态：🔄 进行中（A1 docker 栈验证中）　|　前置：Phase 0（已完成）　|　下一步：Phase B
+> 状态：✅ 完成（2026-10-28）　|　前置：Phase 0（已完成）　|　下一步：Phase B
 
 ## 目标
 
@@ -13,8 +13,8 @@ v0 基线在本机完全跑通并打扫干净，迁入 web/ 与 industry 两块 
 - [x] `cd backend && uv run ruff check .` 通过（必要时最小修复）
 - [x] `uv run pytest -q` 通过（记录基线失败项，若为历史遗留问题记录于本文"注意事项"而非大改）
 - [x] 停掉并清理 TS 旧容器：`docker compose -p sonde down`（或 `docker stop sonde-web-1 sonde-api-1 sonde-worker-1 sonde-db-1` + 删除）
-- [ ] 用 `docker/docker-compose.yml` 起 v0 栈（postgres/redis/backend/celery/nginx），`curl /api/v1/health` 绿
-- [ ] alembic 从零建库验证（`docker compose down -v` 后重起，entrypoint 自动迁移成功）
+- [x] 用 `docker/docker-compose.yml` 起 v0 栈（postgres/redis/backend/celery/nginx），`curl /api/v1/health` 绿
+- [x] alembic 从零建库验证（`docker compose down -v` 后重起，entrypoint 自动迁移成功；head=f5b233bd4e12）
 - [x] `cd frontend && flutter pub get && flutter analyze` 通过（记录基线警告数）
 
 ### A2 清理问题清单（01 文档 §4）
