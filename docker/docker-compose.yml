@@ -100,6 +100,10 @@ services:
     build:
       context: ${BACKEND_SRC_DIR:-../backend}
       dockerfile: Dockerfile
+      args:
+        # 构建期代理（可选；本地网络不畅时在 docker/.env 设 http://host.docker.internal:7897）
+        http_proxy: ${BUILD_HTTP_PROXY:-}
+        https_proxy: ${BUILD_HTTP_PROXY:-}
     container_name: ${PROJECT_NAME:-personal_ai}_backend
     env_file:
       - ${BACKEND_ENV_FILE:-../backend/.env}
@@ -153,6 +157,9 @@ services:
     build:
       context: ${BACKEND_SRC_DIR:-../backend}
       dockerfile: Dockerfile
+      args:
+        http_proxy: ${BUILD_HTTP_PROXY:-}
+        https_proxy: ${BUILD_HTTP_PROXY:-}
     container_name: ${PROJECT_NAME:-personal_ai}_celery_worker
     env_file:
       - ${BACKEND_ENV_FILE:-../backend/.env}

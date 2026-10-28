@@ -14,9 +14,11 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     UV_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple \
     UV_EXTRA_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple
 
-# 配置国内 Debian 镜像源（清华大学）
-RUN sed -i 's/deb.debian.org/mirrors.tuna.tsinghua.edu.cn/g' /etc/apt/sources.list.d/debian.sources \
-    && sed -i 's/security.debian.org/mirrors.tuna.tsinghua.edu.cn/g' /etc/apt/sources.list.d/debian.sources
+# 配置 apt 镜像源：默认官方源；国内网络可构建时传 --build-arg APT_MIRROR=mirrors.tuna.tsinghua.edu.cn
+# （tuna 的 debian-security 路径对部分网络返回 403，故不用默认值）
+ARG APT_MIRROR=deb.debian.org
+RUN sed -i "s/deb.debian.org/${APT_MIRROR}/g" /etc/apt/sources.list.d/debian.sources \
+    && sed -i "s/security.debian.org/${APT_MIRROR}/g" /etc/apt/sources.list.d/debian.sources
 
 # Configure apt to use mirrors and retry on failure
 RUN echo "Acquire::Retries \"3\";" > /etc/apt/apt.conf.d/80-retries \
