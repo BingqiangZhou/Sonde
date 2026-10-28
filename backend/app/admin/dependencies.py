@@ -70,3 +70,12 @@ def get_admin_users_service(
     from app.admin.services.users_service import AdminUsersService
 
     return AdminUsersService(db)
+
+
+def get_admin_insight_service(
+    db: AsyncSession = Depends(get_db_session_dependency),
+):
+    """Provide request-scoped admin insight service."""
+    from app.admin.services.insight_service import AdminInsightService
+
+    return AdminInsightService(db)

@@ -5,7 +5,7 @@ from __future__ import annotations
 import contextlib
 import logging
 
-from sqlalchemy import func, insert, select
+from sqlalchemy import case, func, insert, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domains.insight.models import AiReceipt
@@ -66,7 +66,7 @@ async def receipts_summary(db: AsyncSession, days: int = 30) -> dict:
                     + func.coalesce(AiReceipt.completion_tokens, 0)
                 ).label("tokens"),
                 func.sum(func.coalesce(AiReceipt.audio_seconds, 0)).label("audio_seconds"),
-                func.sum(func.case((AiReceipt.ok.is_(False), 1), else_=0)).label("failures"),
+                func.sum(case((AiReceipt.ok.is_(False), 1), else_=0)).label("failures"),
             )
             .where(AiReceipt.created_at >= cutoff)
             .group_by(AiReceipt.service, AiReceipt.operation, AiReceipt.model)

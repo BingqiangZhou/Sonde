@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block title %}三刊管理{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="flex items-center justify-between mb-6">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">三刊管理</h1>
+            <p class="mt-1 text-sm text-gray-500">日 08:00 / 周一 08:30 / 每月 1 日 08:30（Asia/Shanghai）自动成刊</p>
+        </div>
+        <form id="gen-form" class="flex items-end gap-2">
+            <div>
+                <label class="block text-xs font-medium text-gray-700 mb-1">刊种</label>
+                <select name="kind" class="border border-gray-300 rounded-md px-2 py-1.5 text-sm">
+                    <option value="daily">日报</option>
+                    <option value="weekly">周报</option>
+                    <option value="monthly">月报</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-700 mb-1">report_key（留空=默认窗口）</label>
+                <input name="report_key" placeholder="2026-10-27 / 2026-10" class="border border-gray-300 rounded-md px-2 py-1.5 text-sm w-48">
+            </div>
+            <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm px-4 py-2 rounded-md">生成 / 重生成</button>
+        </form>
+    </div>
+    <p id="gen-result" class="text-sm hidden mb-4"></p>
+
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        {% for kind, reports in reports_by_kind.items() %}
+        <div class="bg-white shadow rounded-lg overflow-hidden">
+            <div class="px-4 py-3 bg-gray-50 text-sm font-medium text-gray-900 border-b">
+                {% if kind == 'daily' %}日报{% elif kind == 'weekly' %}周报{% else %}月报{% endif %}
+                <span class="text-gray-400 font-normal">（{{ reports | length }}）</span>
+            </div>
+            <ul class="divide-y divide-gray-100 max-h-96 overflow-y-auto">
+                {% for r in reports %}
+                <li class="px-4 py-2.5 flex items-center justify-between text-sm">
+                    <span class="font-mono">{{ r.report_key }}</span>
+                    <span class="text-xs text-gray-400">rev {{ r.revision }} · {{ r.items }} 条</span>
+                </li>
+                {% else %}
+                <li class="px-4 py-6 text-center text-xs text-gray-400">暂无刊物</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+document.getElementById('gen-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const body = new URLSearchParams({
+        kind: form.kind.value,
+        report_key: form.report_key.value || '',
+    });
+    const res = await fetch(window.location.pathname + '/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body,
+    });
+    const json = await res.json();
+    const el = document.getElementById('gen-result');
+    el.textContent = json.message;
+    el.className = 'text-sm mb-4 ' + (json.success ? 'text-green-600' : 'text-red-600');
+    el.classList.remove('hidden');
+    if (json.success) setTimeout(() => window.location.reload(), 1200);
+});
+</script>
+{% endblock %}
