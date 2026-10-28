@@ -20,9 +20,9 @@ class AppConfig {
 
     switch (environment) {
       case 'production':
-        return 'https://api.personalai.app';
+        return 'https://api.sonde.app';
       case 'staging':
-        return 'https://api-staging.personalai.app';
+        return 'https://api-staging.sonde.app';
       default:
         // Android emulator needs 10.0.2.2 to access host localhost
         if (Platform.isAndroid) {
@@ -45,7 +45,7 @@ class AppConfig {
   }
 
   // App Configuration
-  static const String appName = 'Personal AI Assistant';
+  static const String appName = '声读 Sonde';
   static const String appVersion = '1.0.0';
 
   // Timeouts - Reduced from 300s to 60s for better responsiveness

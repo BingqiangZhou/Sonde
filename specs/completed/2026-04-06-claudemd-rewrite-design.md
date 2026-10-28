@@ -39,7 +39,7 @@ Rewrite CLAUDE.md following best practices from Anthropic official docs and comm
 ## Proposed CLAUDE.md Structure
 
 ```markdown
-# Stella — Personal AI Assistant
+# Stella — 声读 Sonde
 
 FastAPI + Flutter podcast app with AI features. Backend: Python/FastAPI/PostgreSQL/Redis. Frontend: Flutter/Material 3/Riverpod.
 

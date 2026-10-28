@@ -281,7 +281,7 @@ In `frontend/lib/core/router/app_router.dart`:
 
 Add import:
 ```dart
-import 'package:personal_ai_assistant/core/platform/adaptive_page_route.dart';
+import 'package:sonde/core/platform/adaptive_page_route.dart';
 ```
 
 Replace `_buildPageWithTransition` function:
@@ -340,7 +340,7 @@ Replace the `showAppDialog` function in `app_dialog_helper.dart`:
 
 ```dart
 import 'package:flutter/cupertino.dart';
-import 'package:personal_ai_assistant/core/platform/platform_helper.dart';
+import 'package:sonde/core/platform/platform_helper.dart';
 
 /// Show a platform-adaptive dialog.
 ///
@@ -504,7 +504,7 @@ In `adaptive_sheet_helper.dart`, add imports and iOS path:
 
 ```dart
 import 'package:flutter/cupertino.dart';
-import 'package:personal_ai_assistant/core/platform/platform_helper.dart';
+import 'package:sonde/core/platform/platform_helper.dart';
 ```
 
 Insert an iOS mobile check before the `screenWidth >= 600` check:
@@ -586,7 +586,7 @@ git commit -m "feat(sheet): use showCupertinoModalPopup on iOS mobile"
 // frontend/lib/core/platform/adaptive_app_bar.dart
 import 'package:flutter/material.dart';
 
-import 'package:personal_ai_assistant/core/platform/platform_helper.dart';
+import 'package:sonde/core/platform/platform_helper.dart';
 
 /// Build a platform-adaptive AppBar.
 ///
@@ -715,7 +715,7 @@ git commit -m "feat(adaptive): replace Switch, Slider, CircularProgressIndicator
 
 In `custom_adaptive_navigation.dart`, add import:
 ```dart
-import 'package:personal_ai_assistant/core/platform/platform_helper.dart';
+import 'package:sonde/core/platform/platform_helper.dart';
 ```
 
 Modify `_buildMobileLayout` to use a platform check for the bottom dock style. On iOS, replace the `_CleanDock` frosted glass dock with a `CupertinoTabBar`-inspired style:
@@ -821,7 +821,7 @@ This task provides an `adaptiveSnackBar` helper that callers can use.
 Add to `frontend/lib/core/platform/platform_helper.dart`:
 
 ```dart
-import 'package:personal_ai_assistant/core/widgets/top_floating_notice.dart';
+import 'package:sonde/core/widgets/top_floating_notice.dart';
 
 /// Show an adaptive feedback message.
 ///

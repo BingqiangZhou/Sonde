@@ -2274,7 +2274,7 @@
     "@podcast_highlights_empty_subtitle":  {
                                                 "description":  "Subtitle for empty highlights state"
                                             },
-    "auth_brand_name":  "Personal AI Workspace",
+    "auth_brand_name":  "声读 Sonde",
     "auth_agree_prefix":  "I agree to the ",
     "auth_reset_email_sent_to":  "We've sent a password reset link to\n{email}",
     "@auth_reset_email_sent_to":  {

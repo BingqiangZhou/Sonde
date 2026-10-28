@@ -2228,7 +2228,7 @@
     "podcast_transcript_view_highlights":  "高亮",
     "podcast_highlights_empty_title":  "暂无高亮",
     "podcast_highlights_empty_subtitle":  "从本期播客中提取关键见解",
-    "auth_brand_name":  "个人 AI 工作空间",
+    "auth_brand_name":  "声读 Sonde",
     "auth_agree_prefix":  "我同意 ",
     "auth_reset_email_sent_to":  "密码重置链接已发送至\n{email}",
     "@auth_reset_email_sent_to":  {

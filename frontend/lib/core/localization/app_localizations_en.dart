@@ -1715,7 +1715,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Extract key insights from this episode';
 
   @override
-  String get auth_brand_name => 'Personal AI Workspace';
+  String get auth_brand_name => '声读 Sonde';
 
   @override
   String get auth_agree_prefix => 'I agree to the ';

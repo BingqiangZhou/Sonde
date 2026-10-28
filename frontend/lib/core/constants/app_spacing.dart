@@ -2,7 +2,7 @@ import 'package:flutter/widgets.dart';
 
 import 'package:sonde/core/constants/breakpoints.dart';
 
-/// Spacing system for the Personal AI Assistant.
+/// Spacing system for Sonde (声读).
 ///
 /// Follows a 4-point grid scale for consistent, predictable spacing.
 class AppSpacing {

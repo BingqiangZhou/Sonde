@@ -56,7 +56,7 @@ void main() {
         platformAudioHandler = await AudioService.init(
           builder: PodcastAudioHandler.new,
           config: const AudioServiceConfig(
-            androidNotificationChannelId: 'com.personal_ai_assistant.audio',
+            androidNotificationChannelId: 'app.sonde.audio',
             androidNotificationChannelName: 'Podcast Playback',
             androidNotificationChannelDescription:
                 'Podcast audio playback controls',

@@ -1646,7 +1646,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get podcast_highlights_empty_subtitle => '从本期播客中提取关键见解';
 
   @override
-  String get auth_brand_name => '个人 AI 工作空间';
+  String get auth_brand_name => '声读 Sonde';
 
   @override
   String get auth_agree_prefix => '我同意 ';

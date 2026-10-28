@@ -3191,7 +3191,7 @@ abstract class AppLocalizations {
   /// No description provided for @auth_brand_name.
   ///
   /// In en, this message translates to:
-  /// **'Personal AI Workspace'**
+  /// **'声读 Sonde'**
   String get auth_brand_name;
 
   /// No description provided for @auth_agree_prefix.

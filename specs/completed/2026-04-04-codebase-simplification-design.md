@@ -7,7 +7,7 @@
 
 ## Problem Statement
 
-The codebase is ~2.5x over-built for its purpose (a personal AI assistant shared with a small group). Enterprise patterns (DDD bounded contexts, circuit breakers, Prometheus metrics, distributed rate limiting, multi-queue Celery) add complexity without proportional value. The podcast domain alone accounts for ~50% of both frontend and backend code, with significant boilerplate and over-abstraction.
+The codebase is ~2.5x over-built for its purpose (a personal podcast assistant shared with a small group). Enterprise patterns (DDD bounded contexts, circuit breakers, Prometheus metrics, distributed rate limiting, multi-queue Celery) add complexity without proportional value. The podcast domain alone accounts for ~50% of both frontend and backend code, with significant boilerplate and over-abstraction.
 
 ## Current State
 

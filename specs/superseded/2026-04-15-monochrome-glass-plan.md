@@ -154,7 +154,7 @@ Verify that `GlassTokens` has `overlayFill`, `standardFill`, `overlayBorder`, `s
 
 - [ ] **Step 5: Run existing tests**
 
-Run: `cd /Users/bingqiangzhou/Workspaces/Projects/Personal-AI-Assistant/frontend && flutter test`
+Run: `cd /Users/bingqiangzhou/Workspaces/Projects/Sonde/frontend && flutter test`
 Expected: All tests pass. No behavioral changes, only color values.
 
 - [ ] **Step 6: Commit**
@@ -237,7 +237,7 @@ Replace these 6 occurrences:
 
 - [ ] **Step 4: Run existing tests**
 
-Run: `cd /Users/bingqiangzhou/Workspaces/Projects/Personal-AI-Assistant/frontend && flutter test`
+Run: `cd /Users/bingqiangzhou/Workspaces/Projects/Sonde/frontend && flutter test`
 Expected: All tests pass.
 
 - [ ] **Step 5: Commit**
@@ -312,7 +312,7 @@ Ensure `Theme.of(context)` is available in the relevant build methods.
 
 - [ ] **Step 4: Run existing tests**
 
-Run: `cd /Users/bingqiangzhou/Workspaces/Projects/Personal-AI-Assistant/frontend && flutter test`
+Run: `cd /Users/bingqiangzhou/Workspaces/Projects/Sonde/frontend && flutter test`
 Expected: All tests pass.
 
 - [ ] **Step 5: Commit**
@@ -346,7 +346,7 @@ Or keep the hash logic — it will resolve to the same gray gradient regardless.
 
 - [ ] **Step 2: Run existing tests**
 
-Run: `cd /Users/bingqiangzhou/Workspaces/Projects/Personal-AI-Assistant/frontend && flutter test`
+Run: `cd /Users/bingqiangzhou/Workspaces/Projects/Sonde/frontend && flutter test`
 Expected: All tests pass.
 
 - [ ] **Step 3: Commit**
@@ -364,12 +364,12 @@ After all 4 tasks are complete:
 
 - [ ] **Step 1: Run full test suite**
 
-Run: `cd /Users/bingqiangzhou/Workspaces/Projects/Personal-AI-Assistant/frontend && flutter test`
+Run: `cd /Users/bingqiangzhou/Workspaces/Projects/Sonde/frontend && flutter test`
 Expected: All tests pass.
 
 - [ ] **Step 2: Visual verification**
 
-Run the app with `cd /Users/bingqiangzhou/Workspaces/Projects/Personal-AI-Assistant/frontend && flutter run` and verify:
+Run the app with `cd /Users/bingqiangzhou/Workspaces/Projects/Sonde/frontend && flutter run` and verify:
 
 1. Background orbs are gray (no colored tint)
 2. Mini player dock is non-gradient SurfaceCard style (no colorful background)
