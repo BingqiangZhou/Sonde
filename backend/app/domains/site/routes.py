@@ -1,6 +1,6 @@
-"""站点公开读 API（Phase D）：/api/v1/site/*，无鉴权。
+"""站点读 API（Phase D 建；Phase G 起随 Web 阅读站退役转为登录态）：/api/v1/site/*。
 
-形状契约见 web/app/lib/types.ts（自 ts-era 平移）。
+形状契约沿用 ts-era /api/site/*（App 阅读功能消费），全部端点需 JWT。
 """
 
 from __future__ import annotations
@@ -10,11 +10,11 @@ from typing import Any
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.auth import get_db_session_dependency
+from app.core.auth import get_db_session_dependency, require_user
 from app.domains.site.service import SiteReadService, site_meta
 
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(require_user)])
 
 
 def get_site_service(

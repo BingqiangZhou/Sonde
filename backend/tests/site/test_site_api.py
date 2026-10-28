@@ -1,4 +1,4 @@
-"""Site 公开读 API 测试（Phase D）。"""
+"""Site 读 API 测试（Phase D 建；Phase G 起端点需登录态）。"""
 
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ import app.domains.insight.analyze_service as analyze_mod
 import app.domains.insight.report_service as report_mod
 import app.domains.podcast.models  # noqa: F401
 import app.domains.user.models  # noqa: F401
-from app.core.auth import get_db_session_dependency
+from app.core.auth import get_db_session_dependency, require_user
 from app.core.database import Base
 from app.domains.insight.analyze_service import AnalyzeService
 from app.domains.insight.models import AiAnalysis
@@ -35,13 +35,39 @@ async def env() -> AsyncGenerator[tuple[AsyncSession, AsyncClient], None]:
     from app.main import app
 
     async with maker() as session:
+
+        async def _override():
+            yield session
+
+        app.dependency_overrides[get_db_session_dependency] = _override
+        app.dependency_overrides[require_user] = lambda: 1
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            yield session, client
+        app.dependency_overrides.pop(get_db_session_dependency, None)
+        app.dependency_overrides.pop(require_user, None)
+    await engine.dispose()
+
+
+@pytest.fixture
+async def anon_client() -> AsyncGenerator[AsyncClient, None]:
+    """未认证客户端：site 端点（Phase G 起挂 require_user）应拒以 401。"""
+    engine = create_async_engine("sqlite+aiosqlite:///:memory:")
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    maker = async_sessionmaker(engine, expire_on_commit=False)
+
+    from app.main import app
+
+    async with maker() as session:
+
         async def _override():
             yield session
 
         app.dependency_overrides[get_db_session_dependency] = _override
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url="http://test") as client:
-            yield session, client
+            yield client
         app.dependency_overrides.pop(get_db_session_dependency, None)
     await engine.dispose()
 
@@ -49,19 +75,31 @@ async def env() -> AsyncGenerator[tuple[AsyncSession, AsyncClient], None]:
 def _llm_outputs():
     async def fake(db, *, prompt, schema, operation, ai_client=None, **kw):
         if schema is ScoreOutput:
-            return ScoreOutput(score=90, reason="高分理由", category="tech-ai", tags=["AI"])
+            return ScoreOutput(
+                score=90, reason="高分理由", category="tech-ai", tags=["AI"]
+            )
         if schema is WriteOutput:
             return WriteOutput.model_validate(
-                {"titleZh": "中文题", "summaryZh": "中文摘要，足够长。" * 3, "reasonZh": "推荐"}
+                {
+                    "titleZh": "中文题",
+                    "summaryZh": "中文摘要，足够长。" * 3,
+                    "reasonZh": "推荐",
+                }
             )
         return ReportLeadOutput.model_validate(
-            {"title": "刊头", "leadParagraph": "导语足够长。" * 3, "highlights": ["a", "b"]}
+            {
+                "title": "刊头",
+                "leadParagraph": "导语足够长。" * 3,
+                "highlights": ["a", "b"],
+            }
         )
 
     return fake
 
 
-async def _seed_analyzed(db: AsyncSession, *, title: str, published, selected: bool = True):
+async def _seed_analyzed(
+    db: AsyncSession, *, title: str, published, selected: bool = True
+):
     sub = Subscription(
         title=f"播客-{title}",
         source_type="podcast-rss",
@@ -108,6 +146,18 @@ async def _seed_analyzed(db: AsyncSession, *, title: str, published, selected: b
     finally:
         mp.undo()
     return ep
+
+
+async def test_requires_auth(anon_client):
+    """Phase G 起 site 端点不再公开：无凭据一律 401。"""
+    for path in (
+        "/api/v1/site/meta",
+        "/api/v1/site/episodes",
+        "/api/v1/site/episodes/all",
+        "/api/v1/site/episodes/1",
+        "/api/v1/site/reports/daily/latest",
+    ):
+        assert (await anon_client.get(path)).status_code == 401, path
 
 
 async def test_meta_and_timeline(env):
@@ -179,7 +229,10 @@ async def test_reports_flow(env):
     assert latest["content"]["title"] == "刊头"
     assert latest["content"]["stats"]["selected"] == 1
     section = latest["content"]["sections"][0]
-    assert section["items"][0]["episodeId"] == latest["content"]["sections"][0]["items"][0]["id"]
+    assert (
+        section["items"][0]["episodeId"]
+        == latest["content"]["sections"][0]["items"][0]["id"]
+    )
     assert "summaryZh" in section["items"][0]
 
     by_key = (
@@ -188,7 +241,9 @@ async def test_reports_flow(env):
     assert by_key["reportKey"] == latest["reportKey"]
 
     archive = (await client.get("/api/v1/site/reports/daily?size=10")).json()
-    assert archive["total"] == 1 and archive["keys"][0]["reportKey"] == latest["reportKey"]
+    assert (
+        archive["total"] == 1 and archive["keys"][0]["reportKey"] == latest["reportKey"]
+    )
 
     assert (
         await client.get("/api/v1/site/reports/quarterly/latest")

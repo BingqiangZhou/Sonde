@@ -1,6 +1,6 @@
-"""站点公开读服务（Phase D）：episodes / reports / meta。
+"""站点读服务（Phase D 建，Phase G 起由 App 消费）：episodes / reports / meta。
 
-响应形状与 ts-era /api/site/* 契约对齐（web/app/lib/types.ts），仅读、无鉴权。
+响应形状与 ts-era /api/site/* 契约对齐，仅读（鉴权在路由层，Phase G 起登录态）。
 """
 
 from __future__ import annotations
@@ -55,7 +55,9 @@ def _validate_key(kind: str, key: str) -> None:
         raise ValidationError(f"Invalid report key for {kind}: {key}")
 
 
-def _item_from_row(analysis: AiAnalysis, episode: PodcastEpisode, subscription: Subscription) -> dict:
+def _item_from_row(
+    analysis: AiAnalysis, episode: PodcastEpisode, subscription: Subscription
+) -> dict:
     return {
         "id": episode.id,
         "podcast": subscription.title,
@@ -67,7 +69,9 @@ def _item_from_row(analysis: AiAnalysis, episode: PodcastEpisode, subscription: 
         "categoryLabel": category_label(analysis.category),
         "score": analysis.score,
         "url": episode.item_link,
-        "publishedAt": episode.published_at.isoformat() if episode.published_at else None,
+        "publishedAt": episode.published_at.isoformat()
+        if episode.published_at
+        else None,
         "durationSeconds": episode.audio_duration,
     }
 
@@ -132,7 +136,9 @@ class SiteReadService:
             "pages": (total + size - 1) // size if size else 1,
         }
 
-    async def episode_detail(self, episode_id: int, *, include_transcript: bool = True) -> dict:
+    async def episode_detail(
+        self, episode_id: int, *, include_transcript: bool = True
+    ) -> dict:
         from app.domains.podcast.models import PodcastEpisodeTranscript
 
         row = (
@@ -150,7 +156,7 @@ class SiteReadService:
             raise NotFoundError("Episode not found or not analyzed")
         analysis, episode, subscription = row
         item = _item_from_row(analysis, episode, subscription)
-        # 播放与转录（App/详情用；web 阅读页不消费这两个字段）
+        # 播放与转录（App 详情页消费；报告正文不引用这两个字段）
         item["audioUrl"] = episode.audio_url
         if include_transcript:
             ts = (
@@ -176,7 +182,7 @@ class SiteReadService:
         ).scalar_one_or_none()
         if row is None:
             raise NotFoundError(f"Report {kind}/{key} not found")
-        return self._report_to_web(row)
+        return self._report_to_api(row)
 
     async def latest_report(self, kind: str) -> dict:
         _validate_kind(kind)
@@ -190,7 +196,7 @@ class SiteReadService:
         ).scalar_one_or_none()
         if row is None:
             raise NotFoundError(f"No {kind} report yet")
-        return self._report_to_web(row)
+        return self._report_to_api(row)
 
     async def report_keys(self, kind: str, page: int = 1, size: int = 30) -> dict:
         _validate_kind(kind)
@@ -201,19 +207,25 @@ class SiteReadService:
             )
         ).scalar_one()
         rows = (
-            await self.db.execute(
-                select(Report)
-                .where(Report.kind == kind)
-                .order_by(Report.report_key.desc())
-                .limit(size)
-                .offset((page - 1) * size)
+            (
+                await self.db.execute(
+                    select(Report)
+                    .where(Report.kind == kind)
+                    .order_by(Report.report_key.desc())
+                    .limit(size)
+                    .offset((page - 1) * size)
+                )
             )
-        ).scalars().all()
+            .scalars()
+            .all()
+        )
         return {
             "keys": [
                 {
                     "reportKey": r.report_key,
-                    "generatedAt": r.generated_at.isoformat() if r.generated_at else None,
+                    "generatedAt": r.generated_at.isoformat()
+                    if r.generated_at
+                    else None,
                     "revision": r.revision,
                 }
                 for r in rows
@@ -222,8 +234,8 @@ class SiteReadService:
         }
 
     @staticmethod
-    def _report_to_web(report: Report) -> dict:
-        """存储 content（sections 引用条目 id）→ web 形状（sections 内嵌完整条目）。"""
+    def _report_to_api(report: Report) -> dict:
+        """存储 content（sections 引用条目 id）→ 响应形状（sections 内嵌完整条目）。"""
         content = report.content or {}
         items_by_id = {i["id"]: i for i in content.get("items", [])}
         sections = []
@@ -236,7 +248,9 @@ class SiteReadService:
             sections.append({"section": section.get("section"), "items": entries})
         return {
             "reportKey": report.report_key,
-            "generatedAt": report.generated_at.isoformat() if report.generated_at else None,
+            "generatedAt": report.generated_at.isoformat()
+            if report.generated_at
+            else None,
             "revision": report.revision,
             "content": {
                 "title": content.get("title"),
