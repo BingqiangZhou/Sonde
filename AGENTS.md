@@ -13,7 +13,7 @@
 - `backend/tests/` and `backend/app/**/tests/`: backend test suites.
 - `frontend/`: Flutter app in `frontend/lib/`（`core/`：database (Drift)、theme、network (Dio + token refresh)、widgets (adaptive/)；`features/`：auth, podcast, profile, settings, splash, home）with tests in `frontend/test/`. Dart 包名为 `sonde`，平台标识统一 `app.sonde`（v2.0.1 起，旧名 personal_ai_assistant/com.opc.stella 已全量移除）。阅读站功能（三刊/归档/全部动态）在 App「阅读」Tab 内（Phase G；原 `web/` React 阅读站已退役删除）。
 - `docker/`: Docker Compose files and deployment assets (postgres, redis, backend, celery_worker, nginx).
-- `docs/` and `specs/`: design notes; `docs/v2-pivot/` is the active v2 pivot doc set.
+- `docs/`: design notes; `docs/v2-pivot/` is the active v2 pivot doc set.
 
 ## Build, Test, and Development Commands
 - Backend dependencies: `cd backend && uv sync --extra dev`

@@ -58,7 +58,6 @@ backend/app/industry/   站点定制层：site/taxonomy/selection 配置 + promp
 frontend/           Flutter 客户端（Riverpod 3 + GoRouter + Drift + audio_service；阅读 Tab 含三刊/归档/全部动态）
 docker/             Docker Compose（postgres / redis / backend / celery_worker / nginx）
 docs/               设计文档；docs/v2-pivot/ 为 v2 转向文档集（当前开发依据）
-specs/              历史规格记录
 ```
 
 ## 文档
