@@ -72,7 +72,7 @@ specs/              历史规格记录
 
 - 📋 [CHANGELOG.md](CHANGELOG.md) — 更新历史（v1.x TS 版见 ts-era 分支）
 - 🗂 [docs/v2-pivot/](docs/v2-pivot/README.md) — v2 转向决策、基线盘点、目标架构与 Phase A–F 实施计划
-- 🔧 [AGENTS.md](AGENTS.md) / [CLAUDE.md](CLAUDE.md) — 仓库开发约定
+- 🔧 [AGENTS.md](AGENTS.md) — 仓库开发约定（agent 工作区入口；项目级 skill `/commit`、`/release` 见 `.agents/skills/`）
 
 ## License
 
