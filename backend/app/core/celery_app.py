@@ -35,9 +35,33 @@ def _build_beat_schedule() -> dict[str, Any]:
             "schedule": crontab(hour=4, minute=0),
             "options": {"queue": "default"},
         },
-        "generate-daily-podcast-reports": {
-            "task": "app.domains.podcast.tasks.tasks_daily_report.generate_daily_podcast_reports",
-            "schedule": crontab(hour=19, minute=30),
+        # ── Phase C：评分兜底 + 三刊（Asia/Shanghai 时区，见 conf.timezone）──
+        "insight-analyze-sweep": {
+            "task": "app.domains.insight.tasks.sweep_analyses_task",
+            "schedule": 1800.0,
+            "options": {"queue": "default"},
+        },
+        "insight-reports-daily": {
+            "task": "app.domains.insight.tasks.generate_report_task",
+            "schedule": crontab(hour=8, minute=0),
+            "args": ("daily",),
+            "options": {"queue": "default"},
+        },
+        "insight-reports-weekly": {
+            "task": "app.domains.insight.tasks.generate_report_task",
+            "schedule": crontab(day_of_week=1, hour=8, minute=30),
+            "args": ("weekly",),
+            "options": {"queue": "default"},
+        },
+        "insight-reports-monthly": {
+            "task": "app.domains.insight.tasks.generate_report_task",
+            "schedule": crontab(day_of_month=1, hour=8, minute=30),
+            "args": ("monthly",),
+            "options": {"queue": "default"},
+        },
+        "insight-reports-catchup": {
+            "task": "app.domains.insight.tasks.reports_catchup_task",
+            "schedule": crontab(minute=30),
             "options": {"queue": "default"},
         },
     }
@@ -59,7 +83,8 @@ def create_celery_app() -> Celery:
         task_serializer="json",
         accept_content=["json"],
         result_serializer="json",
-        timezone="UTC",
+        # 报告窗口/cron 统一按站点时区（Phase C，吸取旧日报 19:30 UTC 的教训）
+        timezone="Asia/Shanghai",
         enable_utc=True,
         task_track_started=True,
         task_time_limit=30 * 60,
@@ -72,6 +97,7 @@ def create_celery_app() -> Celery:
     _celery_app = celery
 
     # Ensure task modules are imported so Celery registers them.
+    import app.domains.insight.tasks  # noqa: F401
     import app.domains.podcast.tasks  # noqa: F401
 
     return celery

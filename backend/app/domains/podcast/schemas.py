@@ -51,6 +51,11 @@ class PodcastSubscriptionCreate(PodcastBaseSchema):
         min_length=10,
         max_length=500,
     )
+    tier: str = Field(
+        "T2",
+        description="源分级（T1 精选/T2 普通），决定评分入选门槛",
+        pattern="^(T1|T2)$",
+    )
 
     @field_validator("feed_url")
     @classmethod
@@ -267,50 +272,8 @@ class PodcastFeedResponse(PodcastBaseSchema):
 # === Daily Report相关 ===
 
 
-class DailyReportItem(PodcastBaseSchema):
-    """Daily report item snapshot."""
-
-    episode_id: int
-    subscription_id: int
-    episode_title: str
-    subscription_title: str | None = None
-    one_line_summary: str
-    is_carryover: bool = False
-    episode_created_at: datetime
-    episode_published_at: datetime | None = None
 
 
-class PodcastDailyReportResponse(PodcastBaseSchema):
-    """Daily report response."""
-
-    available: bool
-    report_date: date | None = None
-    timezone: str
-    schedule_time_local: str
-    generated_at: datetime | None = None
-    total_items: int = 0
-    items: list[DailyReportItem] = Field(default_factory=list)
-
-
-class DailyReportDateItem(PodcastBaseSchema):
-    """Available report date item."""
-
-    report_date: date
-    total_items: int = 0
-    generated_at: datetime | None = None
-
-
-class PodcastDailyReportDatesResponse(PodcastBaseSchema):
-    """Paginated report date list response -- unified with PaginatedResponse shape."""
-
-    items: list[DailyReportDateItem] = Field(default_factory=list)
-    total: int
-    page: int
-    size: int
-    pages: int
-
-
-# === Playback相关 ===
 
 
 class PodcastPlaybackUpdate(PodcastBaseSchema):
@@ -526,7 +489,6 @@ class PodcastProfileStatsResponse(PodcastBaseSchema):
     summaries_generated: int
     pending_summaries: int
     played_episodes: int
-    latest_daily_report_date: str | None = None
     total_highlights: int = 0
 
 

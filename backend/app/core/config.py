@@ -76,6 +76,8 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     # 注册开放开关：默认关闭；关闭时 register 返回 403，由管理员建号（面板/CLI）
     REGISTRATION_OPEN: bool = False
+    # 旧自动摘要/高亮流水线（Phase C 起默认关闭：评分→过线写作接管；手动单集摘要接口保留）
+    AUTO_SUMMARY_ENABLED: bool = False
 
     # Celery
     CELERY_BROKER_URL: str = "redis://localhost:6379/1"
