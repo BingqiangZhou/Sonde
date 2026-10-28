@@ -43,7 +43,7 @@ v0 基线在本机完全跑通并打扫干净，迁入 web/ 与 industry 两块 
 ### A5 提交与推送
 
 - [x] 按任务组分 Conventional Commits（`chore: ...` / `docs: ...` / `feat(web): ...` 等）
-- [ ] 网络恢复时执行推送待办（00 文档 §3），并更新 README 状态看板
+- [x] 网络恢复时执行推送待办（00 文档 §3），并更新 README 状态看板（ts-era 与 main 均已同步远程）
 
 ## 验收标准
 
