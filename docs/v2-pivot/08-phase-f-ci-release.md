@@ -1,6 +1,11 @@
 # Phase F · CI 与发布 v2.0.0
 
-> 状态：✅ 完成（2026-10-28，tag v2.0.0）　|　前置：Phase A–E　|　终点：v2.0.0 Release
+> 状态：✅ 完成（2026-10-28，Release v2.0.0 已发布，5 平台产物）　|　前置：Phase A–E　|　终点：v2.0.0 Release
+
+> 实施注记：Windows 构建因 permission_handler_windows 插件的 <experimental/coroutine> 被新 MSVC 14.51
+> 升级为硬错误（STL1011），frontend/windows/CMakeLists.txt 全局定义
+> _SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS 解决。CI（backend ruff+pytest / web build /
+> flutter analyze）与 Release 流水线均绿；产物：Android APK 34MB、iOS IPA 13MB、Linux 14MB、macOS 32MB、Windows 17MB。
 
 ## 目标
 
