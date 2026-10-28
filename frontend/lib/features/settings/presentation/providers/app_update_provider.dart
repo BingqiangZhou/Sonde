@@ -1,5 +1,5 @@
-import 'package:personal_ai_assistant/core/services/app_update_service.dart';
-import 'package:personal_ai_assistant/shared/models/github_release.dart';
+import 'package:sonde/core/services/app_update_service.dart';
+import 'package:sonde/shared/models/github_release.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'app_update_provider.g.dart';

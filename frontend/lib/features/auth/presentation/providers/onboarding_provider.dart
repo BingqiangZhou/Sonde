@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:personal_ai_assistant/core/constants/app_constants.dart';
-import 'package:personal_ai_assistant/core/storage/local_storage_service.dart';
+import 'package:sonde/core/constants/app_constants.dart';
+import 'package:sonde/core/storage/local_storage_service.dart';
 
 /// Pre-loaded at startup with the value from SharedPreferences.
 /// Override this provider in main() with the value read during initialization.

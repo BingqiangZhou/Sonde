@@ -3,7 +3,7 @@
 ## Executive Summary
 
 This report documents comprehensive backend stability and performance optimizations
-implemented for the Personal AI Assistant application, based on multi-agent analysis.
+implemented for the 声读 Sonde application, based on multi-agent analysis.
 
 **Total Improvements**: 20+ optimizations across 3 phases
 **Impact**: Improved stability, reduced latency, better resource utilization
@@ -204,7 +204,7 @@ curl -s http://localhost:8000/api/v1/health/db | jq .
 ### 3. Resource Limits Verification
 ```bash
 docker stats --no-stream
-docker inspect personal_ai_backend | jq '.[0].HostConfig.LogConfig'
+docker inspect sonde_backend | jq '.[0].HostConfig.LogConfig'
 ```
 
 ### 4. Prometheus Metrics

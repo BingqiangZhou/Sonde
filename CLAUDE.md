@@ -93,7 +93,7 @@ web/              React Router 8 SSR 阅读站（独立 npm 项目；app/routes.
 | `Color.withOpacity()` | `Color.withValues(alpha:)` (former is deprecated) |
 | Inline LLM prompts in Python | `backend/app/industry/prompts/*.md` |
 | `admin` under `domains/` | `admin/` is a separate top-level module at `app/admin/` |
-| 改 frontend Dart 包名 | 保持 `personal_ai_assistant`，只改用户可见品牌 |
+| 使用旧包名 personal_ai_assistant | Dart 包名已改为 `sonde`（v2.0.1），Bundle ID 统一 `app.sonde` |
 
 ## Testing & Completion
 

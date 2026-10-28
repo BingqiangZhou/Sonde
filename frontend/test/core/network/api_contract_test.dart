@@ -4,13 +4,13 @@ import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:personal_ai_assistant/core/network/dio_client.dart';
-import 'package:personal_ai_assistant/core/storage/secure_storage_service.dart';
-import 'package:personal_ai_assistant/features/auth/data/repositories/auth_repository_impl.dart';
-import 'package:personal_ai_assistant/features/auth/domain/models/auth_request.dart';
-import 'package:personal_ai_assistant/features/podcast/data/models/podcast_queue_model.dart';
-import 'package:personal_ai_assistant/features/podcast/data/models/podcast_transcription_model.dart';
-import 'package:personal_ai_assistant/features/podcast/data/services/podcast_api_service.dart';
+import 'package:sonde/core/network/dio_client.dart';
+import 'package:sonde/core/storage/secure_storage_service.dart';
+import 'package:sonde/features/auth/data/repositories/auth_repository_impl.dart';
+import 'package:sonde/features/auth/domain/models/auth_request.dart';
+import 'package:sonde/features/podcast/data/models/podcast_queue_model.dart';
+import 'package:sonde/features/podcast/data/models/podcast_transcription_model.dart';
+import 'package:sonde/features/podcast/data/services/podcast_api_service.dart';
 
 void main() {
   group('Frontend API contract', () {

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'package:personal_ai_assistant/core/theme/app_colors.dart';
+import 'package:sonde/core/theme/app_colors.dart';
 
 /// ============================================================
 /// Arc+Linear Design System - 形状与圆角系统

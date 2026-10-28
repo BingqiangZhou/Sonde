@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
-import 'package:personal_ai_assistant/core/localization/app_localizations.dart';
+import 'package:sonde/core/localization/app_localizations.dart';
 
 /// Creates a test-friendly MaterialApp.router with required localizations.
 ///

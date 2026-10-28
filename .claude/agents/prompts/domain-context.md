@@ -1,14 +1,14 @@
 ---
 name: "Domain Context"
-description: "Domain-specific context for all agents in the Personal AI Assistant project"
+description: "Domain-specific context for all agents in the 声读 Sonde project"
 version: "1.0.0"
 ---
 
-# Personal AI Assistant - Domain Context
+# 声读 Sonde - Domain Context
 
 ## Domain Overview
 
-The Personal AI Assistant is organized into five core domains following Domain-Driven Design principles. Each domain represents a distinct business area with its own models, rules, and boundaries.
+The 声读 Sonde is organized into five core domains following Domain-Driven Design principles. Each domain represents a distinct business area with its own models, rules, and boundaries.
 
 ## 1. User Management Domain
 

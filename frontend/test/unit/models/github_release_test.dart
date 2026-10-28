@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:personal_ai_assistant/shared/models/github_release.dart';
+import 'package:sonde/shared/models/github_release.dart';
 
 void main() {
   GitHubRelease buildReleaseWithAssets(List<GitHubAsset> assets) {

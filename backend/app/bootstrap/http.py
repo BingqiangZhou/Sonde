@@ -55,7 +55,7 @@ def register_internal_routes(app: FastAPI) -> None:
     @app.get("/")
     async def root():
         return {
-            "message": "Personal AI Assistant API is running",
+            "message": "声读 Sonde API is running",
             "status": "healthy",
             "version": settings.VERSION,
             "docs": "/api/v1/docs",

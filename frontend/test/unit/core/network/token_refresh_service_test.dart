@@ -5,7 +5,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:personal_ai_assistant/core/network/token_refresh_service.dart';
+import 'package:sonde/core/network/token_refresh_service.dart';
 
 class _MockSecureStorage extends Mock implements FlutterSecureStorage {}
 

@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:personal_ai_assistant/core/storage/local_storage_service.dart';
-import 'package:personal_ai_assistant/core/utils/app_logger.dart' as logger;
+import 'package:sonde/core/storage/local_storage_service.dart';
+import 'package:sonde/core/utils/app_logger.dart' as logger;
 
 /// Manages the notification toggle preference stored in local storage.
 class NotificationPreferenceNotifier extends Notifier<bool> {

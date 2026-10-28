@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:personal_ai_assistant/core/network/dio_client.dart';
+import 'package:sonde/core/network/dio_client.dart';
 
 void main() {
   // Note: ApiResponseNormalizer tests removed — the class was deleted

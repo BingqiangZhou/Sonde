@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:personal_ai_assistant/core/providers/route_provider.dart';
+import 'package:sonde/core/providers/route_provider.dart';
 
 void main() {
   group('RouteProvider Unit Tests', () {

@@ -2,10 +2,10 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:personal_ai_assistant/core/theme/app_colors.dart';
-import 'package:personal_ai_assistant/features/podcast/data/models/site_report_model.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/navigation/podcast_navigation.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/providers/site_report_providers.dart';
+import 'package:sonde/core/theme/app_colors.dart';
+import 'package:sonde/features/podcast/data/models/site_report_model.dart';
+import 'package:sonde/features/podcast/presentation/navigation/podcast_navigation.dart';
+import 'package:sonde/features/podcast/presentation/providers/site_report_providers.dart';
 
 class SiteReportsPage extends ConsumerWidget {
   const SiteReportsPage({super.key, this.initialKind});

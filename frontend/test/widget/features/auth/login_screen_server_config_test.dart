@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:personal_ai_assistant/core/localization/app_localizations.dart';
-import 'package:personal_ai_assistant/core/storage/local_storage_service.dart';
-import 'package:personal_ai_assistant/shared/widgets/server_config_dialog.dart';
+import 'package:sonde/core/localization/app_localizations.dart';
+import 'package:sonde/core/storage/local_storage_service.dart';
+import 'package:sonde/shared/widgets/server_config_dialog.dart';
 import '../../../helpers/mock_local_storage_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 

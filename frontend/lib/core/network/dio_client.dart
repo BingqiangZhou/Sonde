@@ -5,11 +5,11 @@ import 'package:dio_cache_interceptor/dio_cache_interceptor.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:personal_ai_assistant/core/app/config/app_config.dart' as config;
-import 'package:personal_ai_assistant/core/network/exceptions/network_exceptions.dart';
-import 'package:personal_ai_assistant/core/network/token_refresh_service.dart';
-import 'package:personal_ai_assistant/core/utils/app_logger.dart' as logger;
-import 'package:personal_ai_assistant/core/utils/url_normalizer.dart';
+import 'package:sonde/core/app/config/app_config.dart' as config;
+import 'package:sonde/core/network/exceptions/network_exceptions.dart';
+import 'package:sonde/core/network/token_refresh_service.dart';
+import 'package:sonde/core/utils/app_logger.dart' as logger;
+import 'package:sonde/core/utils/url_normalizer.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 typedef SavedServerBaseUrlLoader = Future<String?> Function();

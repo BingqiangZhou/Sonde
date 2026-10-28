@@ -1,9 +1,9 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:personal_ai_assistant/core/constants/app_radius.dart';
-import 'package:personal_ai_assistant/core/constants/app_spacing.dart';
-import 'package:personal_ai_assistant/core/platform/platform_helper.dart';
-import 'package:personal_ai_assistant/core/theme/app_colors.dart';
+import 'package:sonde/core/constants/app_radius.dart';
+import 'package:sonde/core/constants/app_spacing.dart';
+import 'package:sonde/core/platform/platform_helper.dart';
+import 'package:sonde/core/theme/app_colors.dart';
 
 /// Button style variants for [AdaptiveButton].
 enum AdaptiveButtonStyle {

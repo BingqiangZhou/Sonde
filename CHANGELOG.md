@@ -7,6 +7,16 @@ All notable changes to this project will be documented in this file.
 > v1.x（Node/TS 日报站时期，2026-09）的发版历史见 [`ts-era` 分支](https://github.com/BingqiangZhou/Sonde/blob/ts-era/CHANGELOG.md)；
 > 更早的 v0.x 历史即本文件以下条目（原 Personal AI Assistant 时期）。
 
+## [2.0.1](https://github.com/BingqiangZhou/Sonde/compare/v2.0.0...v2.0.1) - 2026-10-28 ([📥](https://github.com/BingqiangZhou/Sonde/releases/tag/v2.0.1))
+
+> v2.0.1 全库去 "Personal AI Assistant / Stella" 化，统一为声读 Sonde 标识：Dart 包名 personal_ai_assistant → `sonde`（全部导入与生成代码同步），Android/macOS 包名 com.opc.stella 与 iOS com.example.personalAiAssistant 统一为 `app.sonde`，Windows/Linux 二进制名与发布产物名改为 `sonde-*`，后端项目名 sonde-backend、Celery 应用 sonde_tasks；本地数据库 stella.db → sonde.db；发布产物以新命名重新构建。
+
+### 🚜 重构
+
+- 全库命名统一：Dart 包 `sonde`、平台 Bundle ID `app.sonde`、产物名 `sonde-<平台>-<版本>`
+- 修复基线失败的启动页测试（旧品牌文案期待值更新）
+
+
 ## [2.0.0](https://github.com/BingqiangZhou/Sonde/compare/v0.52.0...v2.0.0) - 2026-10-28 ([📥](https://github.com/BingqiangZhou/Sonde/releases/tag/v2.0.0))
 
 > v2.0.0 是声读的第二次形态转向：回归 Python(FastAPI) + Flutter 多端客户端，并把 v1.x TS 版的核心流水线移植回来——多用户邮箱注册/JWT 登录、订阅全局去重、转写后 LLM 评分门槛筛选（T1/T2 分级）与过线中文写作、全局日/周/月三刊（Asia/Shanghai 自动成刊）、per-user 收藏云同步、iTunes 发现走后端代理（多国合并搜索 + 热门榜，支持代理出站）、成本台账（LLM/转写每次调用入账）与管理面板扩展（用户管理/三刊/成本/单集诊断）；Web 报刊风阅读站保留并切换到新的公开读 API。CI 新增 backend（uv ruff+pytest）与 web 构建，发版流水线沿用多平台 App 构建。

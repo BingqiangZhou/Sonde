@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:personal_ai_assistant/features/podcast/core/utils/html_sanitizer.dart';
+import 'package:sonde/features/podcast/core/utils/html_sanitizer.dart';
 
 void main() {
   group('HtmlSanitizer', () {

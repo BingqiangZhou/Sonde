@@ -3,8 +3,8 @@ import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:personal_ai_assistant/features/podcast/data/models/podcast_search_model.dart';
-import 'package:personal_ai_assistant/features/podcast/data/services/apple_podcast_rss_service.dart';
+import 'package:sonde/features/podcast/data/models/podcast_search_model.dart';
+import 'package:sonde/features/podcast/data/services/apple_podcast_rss_service.dart';
 
 void main() {
   group('ApplePodcastRssService', () {

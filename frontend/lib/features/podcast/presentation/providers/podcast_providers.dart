@@ -4,19 +4,19 @@ import 'dart:collection';
 import 'package:clock/clock.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:personal_ai_assistant/core/constants/cache_constants.dart';
-import 'package:personal_ai_assistant/core/providers/core_providers.dart';
-import 'package:personal_ai_assistant/core/utils/app_logger.dart' as logger;
-import 'package:personal_ai_assistant/features/podcast/data/models/playback_history_lite_model.dart';
-import 'package:personal_ai_assistant/features/podcast/data/models/podcast_episode_model.dart';
-import 'package:personal_ai_assistant/features/podcast/data/models/podcast_playback_model.dart';
-import 'package:personal_ai_assistant/features/podcast/data/models/podcast_state_models.dart';
-import 'package:personal_ai_assistant/features/podcast/data/models/podcast_subscription_model.dart';
-import 'package:personal_ai_assistant/features/podcast/data/models/profile_stats_model.dart';
-import 'package:personal_ai_assistant/features/podcast/data/repositories/podcast_repository.dart';
-import 'package:personal_ai_assistant/features/podcast/data/services/podcast_api_service.dart';
-import 'package:personal_ai_assistant/features/podcast/data/utils/podcast_url_utils.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_playback_providers.dart';
+import 'package:sonde/core/constants/cache_constants.dart';
+import 'package:sonde/core/providers/core_providers.dart';
+import 'package:sonde/core/utils/app_logger.dart' as logger;
+import 'package:sonde/features/podcast/data/models/playback_history_lite_model.dart';
+import 'package:sonde/features/podcast/data/models/podcast_episode_model.dart';
+import 'package:sonde/features/podcast/data/models/podcast_playback_model.dart';
+import 'package:sonde/features/podcast/data/models/podcast_state_models.dart';
+import 'package:sonde/features/podcast/data/models/podcast_subscription_model.dart';
+import 'package:sonde/features/podcast/data/models/profile_stats_model.dart';
+import 'package:sonde/features/podcast/data/repositories/podcast_repository.dart';
+import 'package:sonde/features/podcast/data/services/podcast_api_service.dart';
+import 'package:sonde/features/podcast/data/utils/podcast_url_utils.dart';
+import 'package:sonde/features/podcast/presentation/providers/podcast_playback_providers.dart';
 
 // =============================================================================
 // Core Providers (from podcast_core_providers.dart)

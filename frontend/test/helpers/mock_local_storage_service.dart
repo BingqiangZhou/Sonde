@@ -1,4 +1,4 @@
-import 'package:personal_ai_assistant/core/storage/local_storage_service.dart';
+import 'package:sonde/core/storage/local_storage_service.dart';
 
 class MockLocalStorageService implements LocalStorageService {
   MockLocalStorageService();

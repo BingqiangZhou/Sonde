@@ -406,7 +406,7 @@ class NoteService:
 ```python
 from celery import Celery
 
-celery_app = Celery("personal_ai_assistant")
+celery_app = Celery("sonde")
 
 @celery_app.task(bind=True, max_retries=3)
 def process_note_content(self, note_id: str):

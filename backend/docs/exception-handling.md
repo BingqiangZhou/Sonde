@@ -1,6 +1,6 @@
 # Exception Handling Guide
 
-This document describes the exception handling architecture for the Personal AI Assistant backend.
+This document describes the exception handling architecture for the 声读 Sonde backend.
 
 ## Architecture Overview
 

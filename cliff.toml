@@ -12,7 +12,7 @@ All notable changes to this project will be documented in this file.
 # template for the changelog body
 # https://keats.github.io/tera/docs/#introduction
 body = """
-{% set remote_url = "https://github.com/BingqiangZhou/Personal-AI-Assistant" %}
+{% set remote_url = "https://github.com/BingqiangZhou/Sonde" %}
 
 {% if version %}\
     {% if previous %}\

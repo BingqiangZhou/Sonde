@@ -1,17 +1,17 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:personal_ai_assistant/core/app/config/app_config.dart';
-import 'package:personal_ai_assistant/core/network/dio_client.dart';
-import 'package:personal_ai_assistant/core/utils/url_normalizer.dart';
-import 'package:personal_ai_assistant/core/network/server_health_service.dart';
-import 'package:personal_ai_assistant/core/services/app_cache_service.dart';
-import 'package:personal_ai_assistant/core/storage/local_storage_service.dart';
-import 'package:personal_ai_assistant/features/auth/presentation/providers/auth_provider.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_episodes_providers.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_feed_providers.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_highlights_providers.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_providers.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_search_provider.dart';
+import 'package:sonde/core/app/config/app_config.dart';
+import 'package:sonde/core/network/dio_client.dart';
+import 'package:sonde/core/utils/url_normalizer.dart';
+import 'package:sonde/core/network/server_health_service.dart';
+import 'package:sonde/core/services/app_cache_service.dart';
+import 'package:sonde/core/storage/local_storage_service.dart';
+import 'package:sonde/features/auth/presentation/providers/auth_provider.dart';
+import 'package:sonde/features/podcast/presentation/providers/podcast_episodes_providers.dart';
+import 'package:sonde/features/podcast/presentation/providers/podcast_feed_providers.dart';
+import 'package:sonde/features/podcast/presentation/providers/podcast_highlights_providers.dart';
+import 'package:sonde/features/podcast/presentation/providers/podcast_providers.dart';
+import 'package:sonde/features/podcast/presentation/providers/podcast_search_provider.dart';
 
 // Dio Client Provider
 final dioClientProvider = Provider<DioClient>((ref) {

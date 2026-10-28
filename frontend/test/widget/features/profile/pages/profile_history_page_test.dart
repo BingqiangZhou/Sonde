@@ -3,11 +3,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:personal_ai_assistant/core/localization/app_localizations.dart';
-import 'package:personal_ai_assistant/features/podcast/data/models/playback_history_lite_model.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_providers.dart';
-import 'package:personal_ai_assistant/features/profile/presentation/pages/profile_history_page.dart';
-import 'package:personal_ai_assistant/shared/widgets/loading_widget.dart';
+import 'package:sonde/core/localization/app_localizations.dart';
+import 'package:sonde/features/podcast/data/models/playback_history_lite_model.dart';
+import 'package:sonde/features/podcast/presentation/providers/podcast_providers.dart';
+import 'package:sonde/features/profile/presentation/pages/profile_history_page.dart';
+import 'package:sonde/shared/widgets/loading_widget.dart';
 
 class _FixedPlaybackHistoryLiteNotifier
     extends PlaybackHistoryLiteNotifier {

@@ -2,12 +2,12 @@ import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:personal_ai_assistant/core/database/app_database.dart';
-import 'package:personal_ai_assistant/core/localization/app_localizations.dart';
-import 'package:personal_ai_assistant/core/services/audio_download_service.dart';
-import 'package:personal_ai_assistant/core/services/download_provider.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/pages/podcast_downloads_page.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_episodes_providers.dart';
+import 'package:sonde/core/database/app_database.dart';
+import 'package:sonde/core/localization/app_localizations.dart';
+import 'package:sonde/core/services/audio_download_service.dart';
+import 'package:sonde/core/services/download_provider.dart';
+import 'package:sonde/features/podcast/presentation/pages/podcast_downloads_page.dart';
+import 'package:sonde/features/podcast/presentation/providers/podcast_episodes_providers.dart';
 
 // ---------------------------------------------------------------------------
 // Fakes & helpers (must be top-level — Dart does not allow classes inside

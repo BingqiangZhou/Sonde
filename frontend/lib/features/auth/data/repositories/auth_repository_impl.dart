@@ -1,12 +1,12 @@
 import 'package:dio/dio.dart';
-import 'package:personal_ai_assistant/core/network/dio_client.dart';
-import 'package:personal_ai_assistant/core/network/exceptions/network_exceptions.dart';
-import 'package:personal_ai_assistant/core/storage/secure_storage_service.dart';
-import 'package:personal_ai_assistant/core/utils/app_logger.dart' as logger;
-import 'package:personal_ai_assistant/features/auth/domain/models/auth_request.dart';
-import 'package:personal_ai_assistant/features/auth/domain/models/auth_response.dart';
-import 'package:personal_ai_assistant/features/auth/domain/models/user.dart';
-import 'package:personal_ai_assistant/features/auth/domain/repositories/auth_repository.dart';
+import 'package:sonde/core/network/dio_client.dart';
+import 'package:sonde/core/network/exceptions/network_exceptions.dart';
+import 'package:sonde/core/storage/secure_storage_service.dart';
+import 'package:sonde/core/utils/app_logger.dart' as logger;
+import 'package:sonde/features/auth/domain/models/auth_request.dart';
+import 'package:sonde/features/auth/domain/models/auth_response.dart';
+import 'package:sonde/features/auth/domain/models/user.dart';
+import 'package:sonde/features/auth/domain/repositories/auth_repository.dart';
 
 class AuthRepositoryImpl implements AuthRepository {
 

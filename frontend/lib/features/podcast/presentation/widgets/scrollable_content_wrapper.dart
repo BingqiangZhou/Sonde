@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 
-import 'package:personal_ai_assistant/core/constants/app_durations.dart';
+import 'package:sonde/core/constants/app_durations.dart';
 
 /// A wrapper widget that provides scroll-to-top functionality for its child content.
 ///

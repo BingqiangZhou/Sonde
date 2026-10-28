@@ -1,4 +1,4 @@
-import 'package:personal_ai_assistant/features/podcast/data/models/podcast_highlight_model.dart';
+import 'package:sonde/features/podcast/data/models/podcast_highlight_model.dart';
 
 /// Represents a matched highlight within a text segment
 class MatchedHighlight {

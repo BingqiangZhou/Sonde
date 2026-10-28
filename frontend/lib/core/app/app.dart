@@ -6,22 +6,22 @@ import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:personal_ai_assistant/core/constants/app_spacing.dart';
-import 'package:personal_ai_assistant/core/localization/app_localizations.dart';
-import 'package:personal_ai_assistant/core/localization/locale_provider.dart';
-import 'package:personal_ai_assistant/core/providers/route_provider.dart';
-import 'package:personal_ai_assistant/core/router/app_router.dart';
-import 'package:personal_ai_assistant/core/theme/app_theme.dart';
-import 'package:personal_ai_assistant/core/theme/theme_provider.dart';
-import 'package:personal_ai_assistant/core/utils/app_logger.dart' as logger;
+import 'package:sonde/core/constants/app_spacing.dart';
+import 'package:sonde/core/localization/app_localizations.dart';
+import 'package:sonde/core/localization/locale_provider.dart';
+import 'package:sonde/core/providers/route_provider.dart';
+import 'package:sonde/core/router/app_router.dart';
+import 'package:sonde/core/theme/app_theme.dart';
+import 'package:sonde/core/theme/theme_provider.dart';
+import 'package:sonde/core/utils/app_logger.dart' as logger;
 
-import 'package:personal_ai_assistant/features/auth/data/events/auth_event.dart';
-import 'package:personal_ai_assistant/features/auth/presentation/providers/auth_provider.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_providers.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_playback_providers.dart';
-import 'package:personal_ai_assistant/features/settings/presentation/providers/app_update_provider.dart';
-import 'package:personal_ai_assistant/features/settings/presentation/widgets/update_dialog.dart';
-import 'package:personal_ai_assistant/shared/widgets/loading_widget.dart';
+import 'package:sonde/features/auth/data/events/auth_event.dart';
+import 'package:sonde/features/auth/presentation/providers/auth_provider.dart';
+import 'package:sonde/features/podcast/presentation/providers/podcast_providers.dart';
+import 'package:sonde/features/podcast/presentation/providers/podcast_playback_providers.dart';
+import 'package:sonde/features/settings/presentation/providers/app_update_provider.dart';
+import 'package:sonde/features/settings/presentation/widgets/update_dialog.dart';
+import 'package:sonde/shared/widgets/loading_widget.dart';
 
 /// Splash screen widget that matches the Mindriver brand style
 class _SplashScreenWidget extends StatelessWidget {
@@ -106,16 +106,16 @@ Widget _wrapAppChild(BuildContext context, Widget child) {
   );
 }
 
-class PersonalAIAssistantApp extends ConsumerStatefulWidget {
-  const PersonalAIAssistantApp({super.key});
+class SondeApp extends ConsumerStatefulWidget {
+  const SondeApp({super.key});
 
   @override
-  ConsumerState<PersonalAIAssistantApp> createState() =>
-      _PersonalAIAssistantAppState();
+  ConsumerState<SondeApp> createState() =>
+      _SondeAppState();
 }
 
-class _PersonalAIAssistantAppState
-    extends ConsumerState<PersonalAIAssistantApp> {
+class _SondeAppState
+    extends ConsumerState<SondeApp> {
   bool _isInitialized = false;
   GoRouter? _routeSyncRouter;
   VoidCallback? _routeSyncListener;

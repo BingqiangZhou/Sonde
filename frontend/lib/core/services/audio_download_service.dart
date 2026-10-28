@@ -5,9 +5,9 @@ import 'package:drift/drift.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
-import 'package:personal_ai_assistant/core/database/app_database.dart';
-import 'package:personal_ai_assistant/core/database/dao/download_dao.dart';
-import 'package:personal_ai_assistant/core/utils/app_logger.dart' as logger;
+import 'package:sonde/core/database/app_database.dart';
+import 'package:sonde/core/database/dao/download_dao.dart';
+import 'package:sonde/core/utils/app_logger.dart' as logger;
 
 /// Manages audio file downloads for offline playback.
 ///

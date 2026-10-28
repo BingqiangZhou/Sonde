@@ -1,14 +1,14 @@
 ---
 name: "Claude Code Subagent System"
-description: "Personal AI Assistant - Multi-agent collaboration system"
+description: "声读 Sonde - Multi-agent collaboration system"
 version: "2.0.0"
 ---
 
-# Personal AI Assistant - Claude Code Subagent System (Product-Driven Development)
+# 声读 Sonde - Claude Code Subagent System (Product-Driven Development)
 
 ## 系统概述
 
-这是一个为Personal AI Assistant项目设计的Claude Code subagent系统，**采用产品驱动开发模式（Product-Driven Development）**，包含7个专业工程师角色，由产品经理主导，支持并行开发和协作完成项目任务。
+这是一个为声读 Sonde项目设计的Claude Code subagent系统，**采用产品驱动开发模式（Product-Driven Development）**，包含7个专业工程师角色，由产品经理主导，支持并行开发和协作完成项目任务。
 
 **🚨 重要更新（v2.0.0）**：
 - ✅ 强化了产品经理的核心领导地位

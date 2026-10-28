@@ -4,18 +4,18 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:personal_ai_assistant/core/network/exceptions/network_exceptions.dart';
-import 'package:personal_ai_assistant/core/network/token_refresh_service.dart';
-import 'package:personal_ai_assistant/core/providers/core_providers.dart';
-import 'package:personal_ai_assistant/core/storage/local_storage_service.dart';
-import 'package:personal_ai_assistant/core/storage/secure_storage_service.dart';
-import 'package:personal_ai_assistant/core/utils/app_logger.dart' as logger;
-import 'package:personal_ai_assistant/features/auth/data/events/auth_event.dart';
-import 'package:personal_ai_assistant/features/auth/data/repositories/auth_repository_impl.dart';
-import 'package:personal_ai_assistant/features/auth/domain/models/auth_request.dart';
-import 'package:personal_ai_assistant/features/auth/domain/models/user.dart';
-import 'package:personal_ai_assistant/features/auth/domain/repositories/auth_repository.dart';
-import 'package:personal_ai_assistant/shared/constants/storage_keys.dart';
+import 'package:sonde/core/network/exceptions/network_exceptions.dart';
+import 'package:sonde/core/network/token_refresh_service.dart';
+import 'package:sonde/core/providers/core_providers.dart';
+import 'package:sonde/core/storage/local_storage_service.dart';
+import 'package:sonde/core/storage/secure_storage_service.dart';
+import 'package:sonde/core/utils/app_logger.dart' as logger;
+import 'package:sonde/features/auth/data/events/auth_event.dart';
+import 'package:sonde/features/auth/data/repositories/auth_repository_impl.dart';
+import 'package:sonde/features/auth/domain/models/auth_request.dart';
+import 'package:sonde/features/auth/domain/models/user.dart';
+import 'package:sonde/features/auth/domain/repositories/auth_repository.dart';
+import 'package:sonde/shared/constants/storage_keys.dart';
 
 // Token refresh constants
 const int _tokenRefreshBufferMinutes = 5; // Refresh 5 minutes before expiry

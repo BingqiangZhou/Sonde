@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:personal_ai_assistant/core/constants/app_spacing.dart';
-import 'package:personal_ai_assistant/core/localization/app_localizations_extension.dart';
-import 'package:personal_ai_assistant/core/widgets/adaptive/adaptive.dart';
+import 'package:sonde/core/constants/app_spacing.dart';
+import 'package:sonde/core/localization/app_localizations_extension.dart';
+import 'package:sonde/core/widgets/adaptive/adaptive.dart';
 
-import 'package:personal_ai_assistant/core/theme/app_colors.dart';
-import 'package:personal_ai_assistant/features/podcast/data/models/podcast_discover_chart_model.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/widgets/podcast_image_widget.dart';
+import 'package:sonde/core/theme/app_colors.dart';
+import 'package:sonde/features/podcast/data/models/podcast_discover_chart_model.dart';
+import 'package:sonde/features/podcast/presentation/widgets/podcast_image_widget.dart';
 
 /// Chart row widget for displaying a single discover item with rank and actions.
 ///

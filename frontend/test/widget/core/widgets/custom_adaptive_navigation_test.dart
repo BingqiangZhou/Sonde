@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:personal_ai_assistant/core/localization/app_localizations.dart';
-import 'package:personal_ai_assistant/core/widgets/custom_adaptive_navigation.dart';
+import 'package:sonde/core/localization/app_localizations.dart';
+import 'package:sonde/core/widgets/custom_adaptive_navigation.dart';
 
 void main() {
   group('CustomAdaptiveNavigation bottomAccessory layout', () {

@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 
-import 'package:personal_ai_assistant/core/widgets/top_floating_notice.dart';
+import 'package:sonde/core/widgets/top_floating_notice.dart';
 
 class PlatformHelper {
   PlatformHelper._();

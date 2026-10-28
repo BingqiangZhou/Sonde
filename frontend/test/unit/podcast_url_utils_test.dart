@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:personal_ai_assistant/features/podcast/data/utils/podcast_url_utils.dart';
+import 'package:sonde/features/podcast/data/utils/podcast_url_utils.dart';
 
 void main() {
   group('PodcastUrlUtils', () {

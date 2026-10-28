@@ -4,7 +4,7 @@
 > 当前后端为单用户 API Key（`app/core/auth.py`）。本文保留作为 **Phase B 恢复该系统的接口契约**（见
 > `docs/v2-pivot/04-phase-b-multiuser-auth.md`）；下文按历史状态撰写。
 
-This document describes the authentication system implemented for the Personal AI Assistant backend.
+This document describes the authentication system implemented for the 声读 Sonde backend.
 
 ## Overview
 

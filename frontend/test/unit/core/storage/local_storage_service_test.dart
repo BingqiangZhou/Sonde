@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:personal_ai_assistant/core/storage/local_storage_service.dart';
+import 'package:sonde/core/storage/local_storage_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {

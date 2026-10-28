@@ -75,7 +75,7 @@ def create_celery_app() -> Celery:
 
     settings = get_settings()
     celery = Celery(
-        "personal_ai_tasks",
+        "sonde_tasks",
         broker=settings.CELERY_BROKER_URL,
         backend=settings.CELERY_RESULT_BACKEND,
     )

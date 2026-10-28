@@ -39,7 +39,7 @@ author: "Development Team"
 ## Project-Specific Responsibilities
 
 ### 1. Domain Architecture
-- Design and maintain the domain model for the Personal AI Assistant
+- Design and maintain the domain model for the 声读 Sonde
 - Define bounded contexts for different domains (Notes, Reminders, Tasks, etc.)
 - Establish domain entities, value objects, and aggregates
 - Ensure proper domain layer separation from infrastructure

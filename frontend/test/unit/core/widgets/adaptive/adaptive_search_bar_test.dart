@@ -1,7 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:personal_ai_assistant/core/widgets/adaptive/adaptive_search_bar.dart';
+import 'package:sonde/core/widgets/adaptive/adaptive_search_bar.dart';
 
 void main() {
   group('AdaptiveSearchBar', () {

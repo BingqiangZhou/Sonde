@@ -1,14 +1,14 @@
 import 'package:fake_async/fake_async.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:personal_ai_assistant/core/storage/local_storage_service.dart';
-import 'package:personal_ai_assistant/features/podcast/data/models/podcast_search_model.dart';
-import 'package:personal_ai_assistant/features/podcast/data/services/itunes_search_service.dart';
-import 'package:personal_ai_assistant/features/podcast/data/models/site_report_model.dart';
-import 'package:personal_ai_assistant/features/podcast/data/repositories/podcast_repository.dart';
-import 'package:personal_ai_assistant/features/podcast/data/services/podcast_api_service.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_providers.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_search_provider.dart';
+import 'package:sonde/core/storage/local_storage_service.dart';
+import 'package:sonde/features/podcast/data/models/podcast_search_model.dart';
+import 'package:sonde/features/podcast/data/services/itunes_search_service.dart';
+import 'package:sonde/features/podcast/data/models/site_report_model.dart';
+import 'package:sonde/features/podcast/data/repositories/podcast_repository.dart';
+import 'package:sonde/features/podcast/data/services/podcast_api_service.dart';
+import 'package:sonde/features/podcast/presentation/providers/podcast_providers.dart';
+import 'package:sonde/features/podcast/presentation/providers/podcast_search_provider.dart';
 import '../../../../helpers/mock_local_storage_service.dart';
 
 void main() {

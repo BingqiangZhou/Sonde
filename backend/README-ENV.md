@@ -13,7 +13,7 @@
 
 #### 数据库配置
 ```env
-POSTGRES_DB=personal_ai
+POSTGRES_DB=sonde
 POSTGRES_USER=admin
 POSTGRES_PASSWORD=MySecurePass2024!
 DATABASE_URL=postgresql+asyncpg://admin:MySecurePass2024!@postgres:5432/personal_ai

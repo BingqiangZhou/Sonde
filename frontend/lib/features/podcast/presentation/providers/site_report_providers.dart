@@ -3,9 +3,9 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:personal_ai_assistant/core/utils/app_logger.dart' as logger;
-import 'package:personal_ai_assistant/features/podcast/data/models/site_report_model.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_providers.dart';
+import 'package:sonde/core/utils/app_logger.dart' as logger;
+import 'package:sonde/features/podcast/data/models/site_report_model.dart';
+import 'package:sonde/features/podcast/presentation/providers/podcast_providers.dart';
 
 final selectedReportKindProvider =
     NotifierProvider<SelectedReportKindNotifier, SiteReportKind>(

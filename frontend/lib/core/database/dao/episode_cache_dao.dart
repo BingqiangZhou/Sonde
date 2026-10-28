@@ -1,6 +1,6 @@
 import 'package:drift/drift.dart';
 
-import 'package:personal_ai_assistant/core/database/app_database.dart';
+import 'package:sonde/core/database/app_database.dart';
 
 part 'episode_cache_dao.g.dart';
 

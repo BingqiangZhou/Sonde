@@ -7,14 +7,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:personal_ai_assistant/core/app/app.dart';
-import 'package:personal_ai_assistant/core/app/config/app_config.dart';
-import 'package:personal_ai_assistant/core/storage/local_storage_service.dart';
-import 'package:personal_ai_assistant/core/theme/theme_provider.dart';
-import 'package:personal_ai_assistant/core/utils/app_logger.dart' as logger;
-import 'package:personal_ai_assistant/features/auth/presentation/providers/onboarding_provider.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_playback_providers.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_providers.dart';
+import 'package:sonde/core/app/app.dart';
+import 'package:sonde/core/app/config/app_config.dart';
+import 'package:sonde/core/storage/local_storage_service.dart';
+import 'package:sonde/core/theme/theme_provider.dart';
+import 'package:sonde/core/utils/app_logger.dart' as logger;
+import 'package:sonde/features/auth/presentation/providers/onboarding_provider.dart';
+import 'package:sonde/features/podcast/presentation/providers/podcast_playback_providers.dart';
+import 'package:sonde/features/podcast/presentation/providers/podcast_providers.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:window_manager/window_manager.dart';
 
@@ -173,6 +173,6 @@ class _AppWithSplashScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const PersonalAIAssistantApp();
+    return const SondeApp();
   }
 }

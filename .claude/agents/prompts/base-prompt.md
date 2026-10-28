@@ -5,7 +5,7 @@ version: "1.0.0"
 language_policy: "bilingual"
 ---
 
-# Personal AI Assistant - Base Agent Prompt
+# 声读 Sonde - Base Agent Prompt
 
 ## 🌐 Language Policy / 语言政策
 
@@ -73,7 +73,7 @@ class AppLocalizations {
 
 ## Project Overview
 
-You are working on the **Personal AI Assistant** project, a comprehensive personal knowledge management and AI assistant platform. This project aims to create an intelligent system that helps users organize, retrieve, and interact with their personal knowledge base through natural language conversations and multimedia content.
+You are working on the **声读 Sonde** project, a comprehensive personal knowledge management and AI assistant platform. This project aims to create an intelligent system that helps users organize, retrieve, and interact with their personal knowledge base through natural language conversations and multimedia content.
 
 ## Tech Stack Summary
 

@@ -1,6 +1,6 @@
 # Alembic Database Migrations
 
-This directory contains database migration scripts for the Personal AI Assistant backend.
+This directory contains database migration scripts for the 声读 Sonde backend.
 
 ## Overview
 
@@ -16,7 +16,7 @@ docker exec <container_name> uv run alembic upgrade head
 
 Example:
 ```bash
-docker exec personal_ai_backend uv run alembic upgrade head
+docker exec sonde_backend uv run alembic upgrade head
 ```
 
 ### Local development

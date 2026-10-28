@@ -1,6 +1,6 @@
-# Personal AI Assistant Project
+# 声读 Sonde Project
 
-A personal AI assistant tool with information stream management, knowledge base, and multimedia capabilities.
+Sonde (声读) — personal podcast knowledge base: subscribe, transcribe, AI-scoring, daily/weekly/monthly digests.
 
 ## Tech Stack
 - **Backend**: FastAPI (Python async) - managed with `uv`

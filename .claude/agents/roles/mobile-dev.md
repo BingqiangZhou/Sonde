@@ -256,7 +256,7 @@ Dio dio(DioRef ref) {
 
   // Configure base URL and timeout
   dio.options = BaseOptions(
-    baseUrl: 'https://api.personalai.app',
+    baseUrl: 'https://api.sonde.app',
     connectTimeout: const Duration(seconds: 10),
     receiveTimeout: const Duration(seconds: 10),
   );

@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:personal_ai_assistant/core/localization/app_localizations.dart';
-import 'package:personal_ai_assistant/core/widgets/app_shells.dart';
-import 'package:personal_ai_assistant/features/auth/presentation/providers/auth_provider.dart';
-import 'package:personal_ai_assistant/features/podcast/data/models/podcast_search_model.dart';
-import 'package:personal_ai_assistant/features/podcast/data/models/podcast_state_models.dart';
-import 'package:personal_ai_assistant/features/podcast/data/models/profile_stats_model.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/pages/podcast_feed_page.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/pages/podcast_list_page.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_feed_providers.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_providers.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_search_provider.dart';
-import 'package:personal_ai_assistant/features/profile/presentation/pages/profile_page.dart';
+import 'package:sonde/core/localization/app_localizations.dart';
+import 'package:sonde/core/widgets/app_shells.dart';
+import 'package:sonde/features/auth/presentation/providers/auth_provider.dart';
+import 'package:sonde/features/podcast/data/models/podcast_search_model.dart';
+import 'package:sonde/features/podcast/data/models/podcast_state_models.dart';
+import 'package:sonde/features/podcast/data/models/profile_stats_model.dart';
+import 'package:sonde/features/podcast/presentation/pages/podcast_feed_page.dart';
+import 'package:sonde/features/podcast/presentation/pages/podcast_list_page.dart';
+import 'package:sonde/features/podcast/presentation/providers/podcast_feed_providers.dart';
+import 'package:sonde/features/podcast/presentation/providers/podcast_providers.dart';
+import 'package:sonde/features/podcast/presentation/providers/podcast_search_provider.dart';
+import 'package:sonde/features/profile/presentation/pages/profile_page.dart';
 
 void main() {
   testWidgets(

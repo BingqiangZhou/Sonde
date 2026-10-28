@@ -4,11 +4,11 @@ description: "Task tracking and assignment system for agent coordination"
 version: "1.0.0"
 ---
 
-# Personal AI Assistant - Task Board
+# 声读 Sonde - Task Board
 
 ## Task Tracking System
 
-This task board coordinates work between specialized agents in the Personal AI Assistant project. Each agent can view, claim, and update tasks within their domain expertise.
+This task board coordinates work between specialized agents in the 声读 Sonde project. Each agent can view, claim, and update tasks within their domain expertise.
 
 ## Task Template
 

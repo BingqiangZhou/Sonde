@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:personal_ai_assistant/core/services/app_update_service.dart';
-import 'package:personal_ai_assistant/shared/models/github_release.dart';
+import 'package:sonde/core/services/app_update_service.dart';
+import 'package:sonde/shared/models/github_release.dart';
 
 GitHubRelease _makeRelease({
   String tagName = 'v1.0.0',

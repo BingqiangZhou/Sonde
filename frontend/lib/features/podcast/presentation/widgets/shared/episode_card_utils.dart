@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:personal_ai_assistant/core/constants/app_text_styles.dart';
+import 'package:sonde/core/constants/app_text_styles.dart';
 
-import 'package:personal_ai_assistant/core/constants/app_spacing.dart';
-import 'package:personal_ai_assistant/core/theme/app_theme.dart';
-import 'package:personal_ai_assistant/core/utils/time_formatter.dart';
+import 'package:sonde/core/constants/app_spacing.dart';
+import 'package:sonde/core/theme/app_theme.dart';
+import 'package:sonde/core/utils/time_formatter.dart';
 
 /// Shared utilities for episode card widgets.
 ///

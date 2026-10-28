@@ -480,7 +480,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.opc.stella.RunnerTests;
+				PRODUCT_BUNDLE_IDENTIFIER = app.sonde.RunnerTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/personal_ai_assistant.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/personal_ai_assistant";
@@ -495,7 +495,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.opc.stella.RunnerTests;
+				PRODUCT_BUNDLE_IDENTIFIER = app.sonde.RunnerTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/personal_ai_assistant.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/personal_ai_assistant";
@@ -510,7 +510,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.opc.stella.RunnerTests;
+				PRODUCT_BUNDLE_IDENTIFIER = app.sonde.RunnerTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/personal_ai_assistant.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/personal_ai_assistant";

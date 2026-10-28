@@ -115,7 +115,7 @@
 
         <!-- Download Service for APK updates -->
         <service
-            android:name="com.opc.stella.DownloadService"
+            android:name="app.sonde.DownloadService"
             android:foregroundServiceType="dataSync"
             android:exported="false"
             tools:ignore="Instantiatable" />

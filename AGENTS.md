@@ -7,7 +7,7 @@
 - `backend/app/industry/`: 声读定制层 — `site.py` / `taxonomy.py` / `selection.py` 常量 + `prompts/*.md`（LLM prompt 模板，`{{var}}` + `{{> include}}`）。站点个性改这里，不改代码；prompt 文本永不内联进 Python。
 - `backend/alembic/`: database migrations.
 - `backend/tests/` and `backend/app/**/tests/`: backend test suites.
-- `frontend/`: Flutter app with feature modules in `frontend/lib/` and tests in `frontend/test/`. Dart 包名保持 `personal_ai_assistant`（历史命名），用户可见品牌为"声读 Sonde"。
+- `frontend/`: Flutter app with feature modules in `frontend/lib/` and tests in `frontend/test/`. Dart 包名为 `sonde`，平台标识统一 `app.sonde`（v2.0.1 起，旧名 personal_ai_assistant/com.opc.stella 已全量移除）。
 - `web/`: React Router 8 SSR 阅读站（独立 npm 项目，无 workspace）。
 - `docker/`: Docker Compose files and deployment assets (postgres, redis, backend, celery_worker, nginx).
 - `docs/` and `specs/`: design notes; `docs/v2-pivot/` is the active v2 pivot doc set.

@@ -26,7 +26,7 @@ services:
   # =============================================================================
   postgres:
     image: postgres:15-alpine
-    container_name: ${PROJECT_NAME:-personal_ai}_postgres
+    container_name: ${PROJECT_NAME:-sonde}_postgres
     environment:
       - POSTGRES_DB=${POSTGRES_DB:-personal_ai}
       - POSTGRES_USER=${POSTGRES_USER:-admin}
@@ -59,7 +59,7 @@ services:
   # =============================================================================
   redis:
     image: redis:7-alpine
-    container_name: ${PROJECT_NAME:-personal_ai}_redis
+    container_name: ${PROJECT_NAME:-sonde}_redis
     command: >
       sh -c 'if [ -z "$REDIS_PASSWORD" ]; then
                redis-server --appendonly yes --maxmemory 230mb --maxmemory-policy allkeys-lru;
@@ -104,7 +104,7 @@ services:
         # 构建期代理（可选；本地网络不畅时在 docker/.env 设 http://host.docker.internal:7897）
         http_proxy: ${BUILD_HTTP_PROXY:-}
         https_proxy: ${BUILD_HTTP_PROXY:-}
-    container_name: ${PROJECT_NAME:-personal_ai}_backend
+    container_name: ${PROJECT_NAME:-sonde}_backend
     env_file:
       - ${BACKEND_ENV_FILE:-../backend/.env}
     environment:
@@ -160,7 +160,7 @@ services:
       args:
         http_proxy: ${BUILD_HTTP_PROXY:-}
         https_proxy: ${BUILD_HTTP_PROXY:-}
-    container_name: ${PROJECT_NAME:-personal_ai}_celery_worker
+    container_name: ${PROJECT_NAME:-sonde}_celery_worker
     env_file:
       - ${BACKEND_ENV_FILE:-../backend/.env}
     environment:
@@ -206,7 +206,7 @@ services:
       args:
         http_proxy: ${BUILD_HTTP_PROXY:-}
         https_proxy: ${BUILD_HTTP_PROXY:-}
-    container_name: ${PROJECT_NAME:-personal_ai}_web
+    container_name: ${PROJECT_NAME:-sonde}_web
     environment:
       - API_URL=http://backend:8000
       - PORT=3000
@@ -227,7 +227,7 @@ services:
   # =============================================================================
   nginx:
     image: nginx:stable-alpine
-    container_name: ${PROJECT_NAME:-personal_ai}_nginx
+    container_name: ${PROJECT_NAME:-sonde}_nginx
     restart: always
     ports:
       - "${HTTP_PORT:-80}:80"

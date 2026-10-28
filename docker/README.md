@@ -120,7 +120,7 @@ docker compose logs --tail=20 backend
 docker compose down -v
 
 # 查看数据库
-docker compose exec postgres psql -U admin -d personal_ai
+docker compose exec postgres psql -U admin -d sonde
 ```
 
 ### Nginx 管理

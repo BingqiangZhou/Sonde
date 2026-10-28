@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:personal_ai_assistant/core/localization/app_localizations.dart';
-import 'package:personal_ai_assistant/features/auth/presentation/pages/auth_verify_page.dart';
+import 'package:sonde/core/localization/app_localizations.dart';
+import 'package:sonde/features/auth/presentation/pages/auth_verify_page.dart';
 
 /// A mock notifier that avoids creating a real Dio instance.
 /// Extends [AuthVerifyNotifier] so Riverpod can use it as an override.

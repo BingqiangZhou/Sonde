@@ -1,6 +1,6 @@
 # 功能说明
 
-本文档介绍 Personal AI Assistant 的核心功能实现。
+本文档介绍 声读 Sonde 的核心功能实现。
 
 ---
 
