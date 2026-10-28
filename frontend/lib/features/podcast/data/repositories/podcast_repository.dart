@@ -96,6 +96,24 @@ class PodcastRepository {
       _apiCall(() => _apiService.getSiteReportArchive(kind,
           page: page, size: size));
 
+  /// 站点动态（Phase G）：meta / 入选时间线 / 全部动态分页 / 单集阅读详情
+  Future<SiteMeta> getSiteMeta() => _apiCall(() => _apiService.getSiteMeta());
+
+  Future<SiteSelectedEpisodesResponse> getSiteSelectedEpisodes({
+    int limit = 20,
+  }) =>
+      _apiCall(() => _apiService.getSiteSelectedEpisodes(limit: limit));
+
+  Future<SiteAllEpisodesResponse> getSiteAllEpisodes({
+    int page = 1,
+    int size = 50,
+  }) =>
+      _apiCall(() => _apiService.getSiteAllEpisodes(page: page, size: size));
+
+  Future<SiteEpisodeDetail> getSiteEpisodeDetail(int episodeId) async =>
+      (await _apiCall(() => _apiService.getSiteEpisodeDetail(episodeId)))
+          .episode;
+
   /// 发现（后端代理 iTunes）
   Future<DiscoverSearchResponse> discoverSearch(String query, {int? limit}) =>
       _apiCall(() => _apiService.discoverSearch(query, limit: limit));

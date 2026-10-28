@@ -2197,4 +2197,85 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get time_unknown => '--:--';
+
+  @override
+  String get site_reading_tab => 'Reading';
+
+  @override
+  String get site_reading_title => 'Reading';
+
+  @override
+  String get site_report_daily => 'Daily';
+
+  @override
+  String get site_report_weekly => 'Weekly';
+
+  @override
+  String get site_report_monthly => 'Monthly';
+
+  @override
+  String get site_report_highlights => 'Highlights';
+
+  @override
+  String get site_report_archive => 'Archive';
+
+  @override
+  String get site_report_all_episodes => 'All Episodes';
+
+  @override
+  String get site_report_refresh => 'Refresh';
+
+  @override
+  String get site_report_not_published =>
+      'This issue hasn\'t been published yet. Check back later.';
+
+  @override
+  String site_report_load_failed(String error) {
+    return 'Failed to load: $error';
+  }
+
+  @override
+  String site_report_revision(int revision) {
+    return 'Rev. $revision';
+  }
+
+  @override
+  String site_report_item_count(int count) {
+    return '$count episodes';
+  }
+
+  @override
+  String get site_report_why_worth_listening => 'Why it\'s worth listening';
+
+  @override
+  String get site_archive_title => 'Report Archive';
+
+  @override
+  String get site_archive_empty => 'No published reports yet';
+
+  @override
+  String get site_all_episodes_title => 'All Episodes';
+
+  @override
+  String site_all_episodes_total(int count) {
+    return '$count in total';
+  }
+
+  @override
+  String get site_all_episodes_unselected => 'Not selected';
+
+  @override
+  String get site_all_episodes_reason_label => 'Reason';
+
+  @override
+  String get site_all_episodes_open_original => 'Open original episode';
+
+  @override
+  String get site_all_episodes_empty => 'No analyzed episodes yet';
+
+  @override
+  String get site_all_episodes_load_more => 'Load more';
+
+  @override
+  String get site_all_episodes_no_more => 'You\'re all caught up';
 }

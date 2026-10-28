@@ -2796,5 +2796,121 @@
     "time_unknown":  "--:--",
     "@time_unknown":  {
                         "description":  "未知时间或时长的占位符"
+                    },
+    "site_reading_tab":  "阅读",
+    "@site_reading_tab":  {
+                        "description":  "底部导航「阅读」标签"
+                    },
+    "site_reading_title":  "阅读",
+    "@site_reading_title":  {
+                        "description":  "阅读 Tab 页面标题"
+                    },
+    "site_report_daily":  "日报",
+    "@site_report_daily":  {
+                        "description":  "日报刊种标签"
+                    },
+    "site_report_weekly":  "周报",
+    "@site_report_weekly":  {
+                        "description":  "周报刊种标签"
+                    },
+    "site_report_monthly":  "月报",
+    "@site_report_monthly":  {
+                        "description":  "月报刊种标签"
+                    },
+    "site_report_highlights":  "看点",
+    "@site_report_highlights":  {
+                        "description":  "刊物正文「看点」区块标题"
+                    },
+    "site_report_archive":  "归档",
+    "@site_report_archive":  {
+                        "description":  "阅读页「归档」入口"
+                    },
+    "site_report_all_episodes":  "全部动态",
+    "@site_report_all_episodes":  {
+                        "description":  "阅读页「全部动态」入口"
+                    },
+    "site_report_refresh":  "刷新",
+    "@site_report_refresh":  {
+                        "description":  "阅读页「刷新」操作"
+                    },
+    "site_report_not_published":  "本期尚未成刊，请稍后再来。",
+    "@site_report_not_published":  {
+                        "description":  "所请求刊物不存在时的空态文案"
+                    },
+    "site_report_load_failed":  "加载失败：{error}",
+    "@site_report_load_failed":  {
+                        "description":  "刊物加载失败的错误文案",
+                        "placeholders":  {
+                            "error":  {
+                                "type":  "String"
+                            }
+                        }
+                    },
+    "site_report_revision":  "第 {revision} 版",
+    "@site_report_revision":  {
+                        "description":  "刊物版次",
+                        "placeholders":  {
+                            "revision":  {
+                                "type":  "int"
+                            }
+                        }
+                    },
+    "site_report_item_count":  "{count} 条",
+    "@site_report_item_count":  {
+                        "description":  "刊物入选条目数",
+                        "placeholders":  {
+                            "count":  {
+                                "type":  "int"
+                            }
+                        }
+                    },
+    "site_report_why_worth_listening":  "为什么值得听",
+    "@site_report_why_worth_listening":  {
+                        "description":  "刊物条目「为什么值得听」小标题"
+                    },
+    "site_archive_title":  "刊物归档",
+    "@site_archive_title":  {
+                        "description":  "刊物归档页标题"
+                    },
+    "site_archive_empty":  "还没有成刊记录",
+    "@site_archive_empty":  {
+                        "description":  "刊物归档页空态文案"
+                    },
+    "site_all_episodes_title":  "全部动态",
+    "@site_all_episodes_title":  {
+                        "description":  "全部动态页标题"
+                    },
+    "site_all_episodes_total":  "共 {count} 条",
+    "@site_all_episodes_total":  {
+                        "description":  "已分析单集总数",
+                        "placeholders":  {
+                            "count":  {
+                                "type":  "int"
+                            }
+                        }
+                    },
+    "site_all_episodes_unselected":  "未入选",
+    "@site_all_episodes_unselected":  {
+                        "description":  "落选单集徽标"
+                    },
+    "site_all_episodes_reason_label":  "落选原因",
+    "@site_all_episodes_reason_label":  {
+                        "description":  "落选原因标签"
+                    },
+    "site_all_episodes_open_original":  "去原始单集",
+    "@site_all_episodes_open_original":  {
+                        "description":  "跳转原始单集外链的操作"
+                    },
+    "site_all_episodes_empty":  "暂无已分析的单集",
+    "@site_all_episodes_empty":  {
+                        "description":  "全部动态页空态文案"
+                    },
+    "site_all_episodes_load_more":  "加载更多",
+    "@site_all_episodes_load_more":  {
+                        "description":  "全部动态页「加载更多」操作"
+                    },
+    "site_all_episodes_no_more":  "已经到底了",
+    "@site_all_episodes_no_more":  {
+                        "description":  "全部动态页全部加载完毕的提示"
                     }
 }

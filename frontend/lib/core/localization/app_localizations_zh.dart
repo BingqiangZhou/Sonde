@@ -2100,4 +2100,84 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get time_unknown => '--:--';
+
+  @override
+  String get site_reading_tab => '阅读';
+
+  @override
+  String get site_reading_title => '阅读';
+
+  @override
+  String get site_report_daily => '日报';
+
+  @override
+  String get site_report_weekly => '周报';
+
+  @override
+  String get site_report_monthly => '月报';
+
+  @override
+  String get site_report_highlights => '看点';
+
+  @override
+  String get site_report_archive => '归档';
+
+  @override
+  String get site_report_all_episodes => '全部动态';
+
+  @override
+  String get site_report_refresh => '刷新';
+
+  @override
+  String get site_report_not_published => '本期尚未成刊，请稍后再来。';
+
+  @override
+  String site_report_load_failed(String error) {
+    return '加载失败：$error';
+  }
+
+  @override
+  String site_report_revision(int revision) {
+    return '第 $revision 版';
+  }
+
+  @override
+  String site_report_item_count(int count) {
+    return '$count 条';
+  }
+
+  @override
+  String get site_report_why_worth_listening => '为什么值得听';
+
+  @override
+  String get site_archive_title => '刊物归档';
+
+  @override
+  String get site_archive_empty => '还没有成刊记录';
+
+  @override
+  String get site_all_episodes_title => '全部动态';
+
+  @override
+  String site_all_episodes_total(int count) {
+    return '共 $count 条';
+  }
+
+  @override
+  String get site_all_episodes_unselected => '未入选';
+
+  @override
+  String get site_all_episodes_reason_label => '落选原因';
+
+  @override
+  String get site_all_episodes_open_original => '去原始单集';
+
+  @override
+  String get site_all_episodes_empty => '暂无已分析的单集';
+
+  @override
+  String get site_all_episodes_load_more => '加载更多';
+
+  @override
+  String get site_all_episodes_no_more => '已经到底了';
 }

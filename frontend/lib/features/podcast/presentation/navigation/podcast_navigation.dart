@@ -148,13 +148,13 @@ class PodcastNavigation {
     );
   }
 
-  /// Navigate to the global three-kind reports page (v2)
+  /// Navigate to the reading tab (Phase G：三刊 + 归档 + 全部动态)
   static void goToReports(BuildContext context) {
     final routingContext = _resolveRoutingContext(context);
     if (routingContext == null) {
       return;
     }
-    GoRouter.of(routingContext).pushNamed('reports');
+    GoRouter.of(routingContext).go('/reading');
   }
 
   /// Navigate to highlights page

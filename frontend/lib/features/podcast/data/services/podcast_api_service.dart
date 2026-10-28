@@ -75,7 +75,10 @@ abstract class PodcastApiService {
     @Query('cursor') String? cursor,
   );
 
-  // === 三刊（全局，读 /api/v1/site；公开） ===
+  // === 三刊与站点动态（读 /api/v1/site；Phase G 起需登录态，JWT 由 Dio 拦截器附加） ===
+
+  @GET('/site/meta')
+  Future<SiteMeta> getSiteMeta();
 
   @GET('/site/reports/{kind}/latest')
   Future<SiteReport> getLatestSiteReport(@Path('kind') String kind);
@@ -92,6 +95,22 @@ abstract class PodcastApiService {
     @Query('page') int? page,
     @Query('size') int? size,
   });
+
+  @GET('/site/episodes')
+  Future<SiteSelectedEpisodesResponse> getSiteSelectedEpisodes({
+    @Query('limit') int? limit,
+  });
+
+  @GET('/site/episodes/all')
+  Future<SiteAllEpisodesResponse> getSiteAllEpisodes({
+    @Query('page') int? page,
+    @Query('size') int? size,
+  });
+
+  @GET('/site/episodes/{episodeId}')
+  Future<SiteEpisodeDetailResponse> getSiteEpisodeDetail(
+    @Path('episodeId') int episodeId,
+  );
 
   // === 发现（后端代理 iTunes，Phase E） ===
 

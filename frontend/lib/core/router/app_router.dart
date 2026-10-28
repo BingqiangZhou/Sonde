@@ -16,8 +16,11 @@ import 'package:sonde/features/auth/presentation/providers/auth_provider.dart';
 import 'package:sonde/features/auth/presentation/providers/onboarding_provider.dart';
 import 'package:sonde/features/home/presentation/pages/home_page.dart';
 import 'package:sonde/features/podcast/presentation/navigation/podcast_navigation.dart';
+import 'package:sonde/features/podcast/presentation/pages/site_all_episodes_page.dart';
+import 'package:sonde/features/podcast/presentation/pages/site_archive_page.dart';
 import 'package:sonde/features/podcast/presentation/pages/site_favorites_page.dart';
-import 'package:sonde/features/podcast/presentation/pages/site_reports_page.dart';
+import 'package:sonde/features/podcast/presentation/pages/site_reading_page.dart';
+import 'package:sonde/features/podcast/presentation/pages/site_report_issue_page.dart';
 import 'package:sonde/features/podcast/presentation/pages/podcast_downloads_page.dart';
 import 'package:sonde/features/podcast/presentation/pages/podcast_episode_detail_page.dart';
 import 'package:sonde/features/podcast/presentation/pages/podcast_episodes_page.dart';
@@ -166,7 +169,20 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               ),
             ],
           ),
-          // Branch 2: Profile (previously Branch 3)
+          // Branch 2: Reading (three-kind reports, Phase G)
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/reading',
+                name: 'reading',
+                pageBuilder: (context, state) => _buildPageWithTransition(
+                  state: state,
+                  child: const SiteReadingPage(),
+                ),
+              ),
+            ],
+          ),
+          // Branch 3: Profile
           StatefulShellBranch(
             routes: [
               GoRoute(
@@ -251,14 +267,59 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         ),
       ),
 
-      // Global three-kind reports (v2)
+      // Legacy reports deep link → reading tab (Phase G)
       GoRoute(
         path: '/reports',
-        name: 'reports',
+        redirect: (context, state) => '/reading',
+      ),
+
+      // Reading sub-pages (pushed over the shell)
+      GoRoute(
+        path: '/reading/archive',
+        name: 'reading-archive',
         pageBuilder: (context, state) => _buildModalPage(
           state: state,
-          child: _PlayerAwareRouteFrame(child: const SiteReportsPage()),
+          child: _PlayerAwareRouteFrame(
+            child: SiteArchivePage(
+              initialKind: SiteReportIssuePage.parseKind(
+                state.uri.queryParameters['kind'],
+              ),
+            ),
+          ),
         ),
+      ),
+      GoRoute(
+        path: '/reading/all',
+        name: 'reading-all',
+        pageBuilder: (context, state) => _buildModalPage(
+          state: state,
+          child: const _PlayerAwareRouteFrame(child: SiteAllEpisodesPage()),
+        ),
+      ),
+      GoRoute(
+        path: '/reading/issue/:kind/:key',
+        name: 'reading-issue',
+        pageBuilder: (context, state) {
+          final kind = SiteReportIssuePage.parseKind(
+            state.pathParameters['kind'],
+          );
+          final key = state.pathParameters['key'] ?? '';
+          if (kind == null || key.isEmpty) {
+            final l10n = context.l10n;
+            return _buildPageWithTransition(
+              state: state,
+              child: Scaffold(
+                body: Center(child: Text(l10n.invalid_navigation_arguments)),
+              ),
+            );
+          }
+          return _buildModalPage(
+            state: state,
+            child: _PlayerAwareRouteFrame(
+              child: SiteReportIssuePage(kind: kind, reportKey: key),
+            ),
+          );
+        },
       ),
 
       // Highlights

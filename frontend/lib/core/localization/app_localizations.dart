@@ -4027,6 +4027,150 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'--:--'**
   String get time_unknown;
+
+  /// Bottom navigation tab label for the reading section
+  ///
+  /// In en, this message translates to:
+  /// **'Reading'**
+  String get site_reading_tab;
+
+  /// AppBar title of the reading tab page
+  ///
+  /// In en, this message translates to:
+  /// **'Reading'**
+  String get site_reading_title;
+
+  /// Daily report kind label
+  ///
+  /// In en, this message translates to:
+  /// **'Daily'**
+  String get site_report_daily;
+
+  /// Weekly report kind label
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly'**
+  String get site_report_weekly;
+
+  /// Monthly report kind label
+  ///
+  /// In en, this message translates to:
+  /// **'Monthly'**
+  String get site_report_monthly;
+
+  /// Highlights section title in a report
+  ///
+  /// In en, this message translates to:
+  /// **'Highlights'**
+  String get site_report_highlights;
+
+  /// Archive entry action on the reading page
+  ///
+  /// In en, this message translates to:
+  /// **'Archive'**
+  String get site_report_archive;
+
+  /// All analyzed episodes entry action on the reading page
+  ///
+  /// In en, this message translates to:
+  /// **'All Episodes'**
+  String get site_report_all_episodes;
+
+  /// Refresh action on the reading page
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh'**
+  String get site_report_refresh;
+
+  /// Empty state when the requested report doesn't exist
+  ///
+  /// In en, this message translates to:
+  /// **'This issue hasn\'t been published yet. Check back later.'**
+  String get site_report_not_published;
+
+  /// Error message when loading a report fails
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load: {error}'**
+  String site_report_load_failed(String error);
+
+  /// Revision number of a report issue
+  ///
+  /// In en, this message translates to:
+  /// **'Rev. {revision}'**
+  String site_report_revision(int revision);
+
+  /// Number of selected episodes in a report
+  ///
+  /// In en, this message translates to:
+  /// **'{count} episodes'**
+  String site_report_item_count(int count);
+
+  /// Per-item recommendation reason title in reports
+  ///
+  /// In en, this message translates to:
+  /// **'Why it\'s worth listening'**
+  String get site_report_why_worth_listening;
+
+  /// Title of the report archive page
+  ///
+  /// In en, this message translates to:
+  /// **'Report Archive'**
+  String get site_archive_title;
+
+  /// Empty state of the report archive page
+  ///
+  /// In en, this message translates to:
+  /// **'No published reports yet'**
+  String get site_archive_empty;
+
+  /// Title of the all analyzed episodes page
+  ///
+  /// In en, this message translates to:
+  /// **'All Episodes'**
+  String get site_all_episodes_title;
+
+  /// Total count of analyzed episodes
+  ///
+  /// In en, this message translates to:
+  /// **'{count} in total'**
+  String site_all_episodes_total(int count);
+
+  /// Badge for episodes that failed selection
+  ///
+  /// In en, this message translates to:
+  /// **'Not selected'**
+  String get site_all_episodes_unselected;
+
+  /// Label before the selection rejection reason
+  ///
+  /// In en, this message translates to:
+  /// **'Reason'**
+  String get site_all_episodes_reason_label;
+
+  /// Action to open the original episode in an external browser
+  ///
+  /// In en, this message translates to:
+  /// **'Open original episode'**
+  String get site_all_episodes_open_original;
+
+  /// Empty state of the all episodes page
+  ///
+  /// In en, this message translates to:
+  /// **'No analyzed episodes yet'**
+  String get site_all_episodes_empty;
+
+  /// Load next page action on the all episodes page
+  ///
+  /// In en, this message translates to:
+  /// **'Load more'**
+  String get site_all_episodes_load_more;
+
+  /// Footer note when all pages are loaded
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re all caught up'**
+  String get site_all_episodes_no_more;
 }
 
 class _AppLocalizationsDelegate

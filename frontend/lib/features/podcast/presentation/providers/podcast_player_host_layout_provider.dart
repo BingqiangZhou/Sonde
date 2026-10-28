@@ -190,6 +190,8 @@ bool isHomeShellRoute(String route) {
       route.startsWith('/discover?') ||
       route == '/feed' ||
       route.startsWith('/feed?') ||
+      route == '/reading' ||
+      route.startsWith('/reading?') ||
       route == '/profile' ||
       route.startsWith('/profile?');
 }

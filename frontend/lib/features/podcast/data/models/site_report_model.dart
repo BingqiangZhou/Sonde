@@ -1,5 +1,33 @@
 /** 全局三刊与发现/收藏模型（v2 Phase E；对齐 /api/v1/site 与 /api/v1/discover）。
- *  手写 fromJson（结构稳定、避免 codegen 面扩大）。 */
+ *  手写 fromJson（结构稳定、避免 codegen 面扩大）。
+ *  Phase G：新增站点 meta / 入选时间线 / 全部动态 / 单集阅读详情模型。 */
+
+class SiteMeta {
+  const SiteMeta({
+    required this.name,
+    required this.nameEn,
+    required this.subject,
+    this.homeTitle,
+    this.description,
+    this.tagline,
+  });
+
+  factory SiteMeta.fromJson(Map<String, dynamic> json) => SiteMeta(
+        name: json['name'] as String? ?? '',
+        nameEn: json['nameEn'] as String? ?? '',
+        subject: json['subject'] as String? ?? '',
+        homeTitle: json['homeTitle'] as String?,
+        description: json['description'] as String?,
+        tagline: json['tagline'] as String?,
+      );
+
+  final String name;
+  final String nameEn;
+  final String subject;
+  final String? homeTitle;
+  final String? description;
+  final String? tagline;
+}
 
 class SiteReportItem {
   const SiteReportItem({
@@ -18,7 +46,8 @@ class SiteReportItem {
   });
 
   factory SiteReportItem.fromJson(Map<String, dynamic> json) => SiteReportItem(
-        episodeId: (json['episodeId'] as num).toInt(),
+        // 报告 sections 内嵌条目带 episodeId；site/episodes 列表用 id（BIGINT 经 JSON 归一为 num/String）
+        episodeId: ((json['episodeId'] ?? json['id']) as num?)?.toInt() ?? 0,
         podcast: json['podcast'] as String? ?? '',
         originalTitle: json['originalTitle'] as String? ?? '',
         titleZh: json['titleZh'] as String?,
@@ -26,10 +55,10 @@ class SiteReportItem {
         reasonZh: json['reasonZh'] as String?,
         category: json['category'] as String?,
         categoryLabel: json['categoryLabel'] as String?,
-        score: json['score'] as int?,
+        score: (json['score'] as num?)?.toInt(),
         url: json['url'] as String?,
         publishedAt: json['publishedAt'] as String?,
-        durationSeconds: json['durationSeconds'] as int?,
+        durationSeconds: (json['durationSeconds'] as num?)?.toInt(),
       );
 
   final int episodeId;
@@ -152,6 +181,108 @@ class SiteReportArchiveResponse {
 
 /// 报刊种类
 enum SiteReportKind { daily, weekly, monthly }
+
+// ── 站点动态（Phase G：/site/episodes*）───────────────────────────────
+
+class SiteSelectedEpisodesResponse {
+  const SiteSelectedEpisodesResponse({required this.items});
+
+  factory SiteSelectedEpisodesResponse.fromJson(Map<String, dynamic> json) =>
+      SiteSelectedEpisodesResponse(
+        items: (json['items'] as List<dynamic>? ?? [])
+            .whereType<Map<String, dynamic>>()
+            .map(SiteReportItem.fromJson)
+            .toList(),
+      );
+
+  final List<SiteReportItem> items;
+}
+
+/// 全部动态条目：入选/落选均含，落选带 reason（筛选理由，中文）。
+class AnalyzedSiteEpisodeItem {
+  const AnalyzedSiteEpisodeItem({
+    required this.item,
+    required this.selected,
+    this.reason,
+  });
+
+  factory AnalyzedSiteEpisodeItem.fromJson(Map<String, dynamic> json) =>
+      AnalyzedSiteEpisodeItem(
+        item: SiteReportItem.fromJson(json),
+        selected: json['selected'] as bool? ?? false,
+        reason: json['reason'] as String?,
+      );
+
+  final SiteReportItem item;
+  final bool selected;
+  final String? reason;
+
+  String get displayTitle => item.displayTitle;
+  String get podcast => item.podcast;
+  int? get score => item.score;
+}
+
+class SiteAllEpisodesResponse {
+  const SiteAllEpisodesResponse({
+    required this.items,
+    required this.total,
+    required this.page,
+    required this.pages,
+  });
+
+  factory SiteAllEpisodesResponse.fromJson(Map<String, dynamic> json) =>
+      SiteAllEpisodesResponse(
+        items: (json['items'] as List<dynamic>? ?? [])
+            .whereType<Map<String, dynamic>>()
+            .map(AnalyzedSiteEpisodeItem.fromJson)
+            .toList(),
+        total: (json['total'] as num?)?.toInt() ?? 0,
+        page: (json['page'] as num?)?.toInt() ?? 1,
+        pages: (json['pages'] as num?)?.toInt() ?? 1,
+      );
+
+  final List<AnalyzedSiteEpisodeItem> items;
+  final int total;
+  final int page;
+  final int pages;
+}
+
+/// 单集阅读详情（/site/episodes/{id}）：基础条目 + 播放与转录。
+class SiteEpisodeDetail {
+  const SiteEpisodeDetail({
+    required this.item,
+    this.audioUrl,
+    this.transcript,
+    this.tags = const [],
+  });
+
+  factory SiteEpisodeDetail.fromJson(Map<String, dynamic> json) =>
+      SiteEpisodeDetail(
+        item: SiteReportItem.fromJson(json),
+        audioUrl: json['audioUrl'] as String?,
+        transcript: json['transcript'] as String?,
+        tags: (json['tags'] as List<dynamic>? ?? []).cast<String>(),
+      );
+
+  final SiteReportItem item;
+  final String? audioUrl;
+  final String? transcript;
+  final List<String> tags;
+
+  String get displayTitle => item.displayTitle;
+}
+
+class SiteEpisodeDetailResponse {
+  const SiteEpisodeDetailResponse({required this.episode});
+
+  factory SiteEpisodeDetailResponse.fromJson(Map<String, dynamic> json) =>
+      SiteEpisodeDetailResponse(
+        episode: SiteEpisodeDetail.fromJson(
+            json['episode'] as Map<String, dynamic>? ?? {}),
+      );
+
+  final SiteEpisodeDetail episode;
+}
 
 // ── 发现（后端代理 iTunes）──────────────────────────────────────────
 
