@@ -1,13 +1,13 @@
 """Podcast domain services."""
 
 from .content_service import (
-    DailyReportService,
     HighlightExtractionService,
     HighlightService,
     PodcastSummaryGenerationService,
     SummaryWorkflowService,
 )
 from .episode_service import PodcastEpisodeService, PodcastSubscriptionService
+from .favorites_service import FavoritesService
 from .playback_service import PodcastPlaybackService, PodcastQueueService
 from .schedule_service import PodcastScheduleService
 from .search_service import PodcastSearchService
@@ -20,7 +20,7 @@ from .transcription_service import (
 
 
 __all__ = [
-    "DailyReportService",
+    "FavoritesService",
     "HighlightExtractionService",
     "HighlightService",
     "PodcastEpisodeService",

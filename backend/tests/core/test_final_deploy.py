@@ -32,7 +32,7 @@ def test_api_routes_shape() -> None:
 
     paths = [route.path for route in router.routes]
     assert any("/episodes" in path for path in paths)
-    assert any("/reports" in path for path in paths)
+    assert any("/favorites" in path for path in paths)
     assert any("/queue" in path for path in paths)
 
 

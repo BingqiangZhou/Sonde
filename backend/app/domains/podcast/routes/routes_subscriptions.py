@@ -46,6 +46,7 @@ async def add_subscription(
     try:
         subscription, new_episodes = await service.add_subscription(
             feed_url=subscription_data.feed_url,
+            tier=subscription_data.tier,
         )
 
         # Extract metadata from config

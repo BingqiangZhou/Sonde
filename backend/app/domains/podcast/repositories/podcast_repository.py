@@ -28,7 +28,6 @@ from app.core.exceptions import (
 from app.core.redis import RedisCache, get_shared_redis
 from app.domains.podcast.models import (
     EpisodeHighlight,
-    PodcastDailyReport,
     PodcastEpisode,
     PodcastPlaybackState,
     PodcastQueue,
@@ -179,6 +178,7 @@ class PodcastRepository:
         description: str = "",
         custom_name: str | None = None,
         metadata: dict | None = None,
+        tier: str = "T2",
     ):
         """Create or update a podcast subscription.
 
@@ -254,6 +254,7 @@ class PodcastRepository:
                 fetch_interval=3600,
                 image_url=(metadata or {}).get("image_url"),
                 config=metadata or {},
+                tier=tier,
             )
             self.db.add(subscription)
             await self.db.flush()
@@ -1626,15 +1627,6 @@ class PodcastRepository:
         )
         episode_stats = episode_stats_result.one()
 
-        latest_report_stmt = (
-            select(PodcastDailyReport.report_date)
-            .where(PodcastDailyReport.user_id == user_id)
-            .order_by(PodcastDailyReport.report_date.desc())
-            .limit(1)
-        )
-        latest_report_result = await self.db.execute(latest_report_stmt)
-        latest_report_date = latest_report_result.scalar_one_or_none()
-
         # Count highlights from user's active subscriptions
         highlight_count_stmt = (
             select(func.count(EpisodeHighlight.id))
@@ -1660,9 +1652,6 @@ class PodcastRepository:
             "summaries_generated": episode_stats.summaries_generated or 0,
             "pending_summaries": episode_stats.pending_summaries or 0,
             "played_episodes": episode_stats.played_episodes or 0,
-            "latest_daily_report_date": latest_report_date.isoformat()
-            if latest_report_date
-            else None,
             "total_highlights": total_highlights,
         }
 

@@ -12,6 +12,11 @@ from app.domains.podcast.tasks.runtime import (
 
 async def generate_pending_summaries_handler(session) -> dict:
     """Generate summaries for pending episodes."""
+    from app.core.config import get_settings
+
+    # v2 默认关闭批量自动摘要（评分流水线接管；AUTO_SUMMARY_ENABLED=true 恢复旧行为）
+    if not get_settings().AUTO_SUMMARY_ENABLED:
+        return {"skipped": "auto summary disabled (AUTO_SUMMARY_ENABLED=false)"}
     workflow = SummaryWorkflowService(session)
     return await workflow.generate_pending_summaries_run()
 

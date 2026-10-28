@@ -29,8 +29,17 @@ async def test_handler_delegates_to_summary_workflow(monkeypatch):
         _FakeWorkflow,
     )
 
+    import app.core.config as cfg
+
+    # AUTO_SUMMARY_ENABLED=true 时委托工作流（v2 默认关闭）
+    monkeypatch.setattr(cfg.get_settings(), "AUTO_SUMMARY_ENABLED", True, raising=False)
     result = await generate_pending_summaries_handler(object())
     assert result == {"status": "success", "processed": 1, "failed": 0}
+
+    # 默认关闭时直接跳过
+    monkeypatch.setattr(cfg.get_settings(), "AUTO_SUMMARY_ENABLED", False, raising=False)
+    skipped = await generate_pending_summaries_handler(object())
+    assert skipped == {"skipped": "auto summary disabled (AUTO_SUMMARY_ENABLED=false)"}
 
 
 def test_generate_pending_summaries_retries_on_failure(monkeypatch):

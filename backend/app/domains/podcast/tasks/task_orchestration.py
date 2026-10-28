@@ -40,7 +40,6 @@ from app.domains.podcast.models import (
     UserSubscription,
 )
 from app.domains.podcast.repositories import PodcastSubscriptionRepository  # noqa: F401
-from app.domains.podcast.services.content_service import DailyReportService
 from app.domains.podcast.services.transcription_service import (  # noqa: F401
     TranscriptionWorkflowService,
 )
@@ -592,83 +591,6 @@ class TranscriptionOrchestrator(BaseOrchestrator):
 # ── Report orchestrator (merged from orchestration/report.py) ──
 
 
-class ReportOrchestrator(BaseOrchestrator):
-    """Orchestrate daily report generation tasks."""
-
-    async def generate_daily_reports(self, *, target_date=None) -> dict:
-        """Generate daily reports for all podcast users."""
-        batch_size = max(1, settings.TASK_ORCHESTRATION_USER_BATCH_SIZE)
-        max_concurrent = min(10, batch_size)
-        last_user_id = 0
-        processed_users = 0
-        success_count = 0
-        failed_count = 0
-
-        semaphore = asyncio.Semaphore(max_concurrent)
-
-        async def process_user_report(user_id: int) -> bool:
-            async with semaphore:
-                try:
-                    session_factory = get_async_session_factory()
-                    async with session_factory() as session:
-                        service = DailyReportService(session, user_id=user_id)
-                        await service.generate_daily_report(target_date=target_date)
-                        return True
-                except (aiohttp.ClientError, TimeoutError, ValueError, RuntimeError, OSError):
-                    logger.exception(
-                        "Failed to generate daily report for user=%s",
-                        user_id,
-                    )
-                    return False
-
-        while True:
-            users_stmt = (
-                select(UserSubscription.user_id)
-                .join(Subscription, UserSubscription.subscription_id == Subscription.id)
-                .where(
-                    and_(
-                        Subscription.source_type == "podcast-rss",
-                        Subscription.status == SubscriptionStatus.ACTIVE.value,
-                        UserSubscription.is_archived == False,  # noqa: E712
-                        UserSubscription.user_id > last_user_id,
-                    ),
-                )
-                .distinct()
-                .order_by(UserSubscription.user_id.asc())
-                .limit(batch_size)
-            )
-            user_ids = list((await self.session.execute(users_stmt)).scalars().all())
-            if not user_ids:
-                break
-
-            results = await asyncio.gather(
-                *[process_user_report(user_id) for user_id in user_ids],
-                return_exceptions=True,
-            )
-
-            for result in results:
-                if isinstance(result, Exception):
-                    failed_count += 1
-                elif result is True:
-                    success_count += 1
-                else:
-                    failed_count += 1
-
-            processed_users += len(user_ids)
-            last_user_id = user_ids[-1]
-
-        return {
-            "status": "success",
-            "processed_users": processed_users,
-            "successful_users": success_count,
-            "failed_users": failed_count,
-            "report_date": target_date.isoformat() if target_date else None,
-            "processed_at": datetime.now(UTC).isoformat(),
-        }
-
-
-# ── Maintenance orchestrator (merged from orchestration/maintenance.py) ──
-
 
 class MaintenanceOrchestrator(BaseOrchestrator):
     """Orchestrate maintenance and housekeeping tasks."""
@@ -782,7 +704,6 @@ class PodcastTaskOrchestrationService:
         self.redis = get_shared_redis()
         self._feed_sync = FeedSyncOrchestrator(session)
         self._transcription = TranscriptionOrchestrator(session)
-        self._report = ReportOrchestrator(session)
         self._maintenance = MaintenanceOrchestrator(session)
 
     # ── Feed sync ──────────────────────────────────────────────────────────
@@ -811,8 +732,6 @@ class PodcastTaskOrchestrationService:
 
     # ── Reporting ──────────────────────────────────────────────────────────
 
-    async def generate_daily_reports(self, **kwargs) -> dict:
-        return await self._report.generate_daily_reports(**kwargs)
 
     # ── Maintenance ────────────────────────────────────────────────────────
 

@@ -289,6 +289,7 @@ class AdminSubscriptionsService:
         sub_id: int,
         title: str | None,
         source_url: str | None,
+        tier: str | None = None,
     ) -> dict | None:
         result = await self.db.execute(
             select(Subscription).where(Subscription.id == sub_id),
@@ -301,6 +302,8 @@ class AdminSubscriptionsService:
             subscription.title = title
         if source_url is not None:
             subscription.source_url = source_url
+        if tier in ("T1", "T2"):
+            subscription.tier = tier
 
         from app.domains.podcast.parsers.feed_parser import (
             FeedParserConfig,

@@ -7,12 +7,10 @@ from typing import Any
 from app.domains.podcast.schemas import (
     ConversationSessionListResponse,
     ConversationSessionResponse,
-    DailyReportDateItem,
     HighlightListResponse,
     HighlightResponse,
     PodcastConversationHistoryResponse,
     PodcastConversationMessage,
-    PodcastDailyReportDatesResponse,
     PodcastEpisodeListResponse,
     PodcastEpisodeResponse,
     PodcastFeedResponse,
@@ -112,19 +110,6 @@ def build_conversation_history_response(
         total=len(message_responses),
     )
 
-
-def build_daily_report_dates_response(
-    payload: dict[str, Any],
-) -> PodcastDailyReportDatesResponse:
-    """Build the report dates response."""
-    items = [DailyReportDateItem(**item) for item in payload.get("dates", [])]
-    return PodcastDailyReportDatesResponse(
-        items=items,
-        total=payload["total"],
-        page=payload["page"],
-        size=payload["size"],
-        pages=payload["pages"],
-    )
 
 
 def build_summary_response(

@@ -11,7 +11,7 @@ async def test_routes_aggregator_exports_endpoints() -> None:
 
     paths = {route.path for route in router.routes}
     assert any("/episodes" in path for path in paths)
-    assert any("/reports" in path for path in paths)
+    assert any("/favorites" in path for path in paths)
     assert any("/queue" in path for path in paths)
 
 

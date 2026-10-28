@@ -16,7 +16,6 @@ from app.domains.podcast.repositories.content_repository import (
     SubscriptionRepository,
 )
 from app.domains.podcast.services.content_service import (
-    DailyReportService,
     HighlightService,
     SummaryWorkflowService,
 )
@@ -228,12 +227,6 @@ def get_podcast_stats_service(
     )
 
 
-def get_daily_report_service(
-    db: AsyncSession = Depends(get_db_session_dependency),
-    user_id: int = Depends(require_user),
-) -> DailyReportService:
-    """Provide request-scoped podcast daily report service."""
-    return DailyReportService(db, user_id)
 
 
 def get_highlight_service(
@@ -275,7 +268,6 @@ def get_conversation_service(
 
 __all__ = [
     "get_conversation_service",
-    "get_daily_report_service",
     "get_highlight_service",
     "get_podcast_episode_repository",
     "get_podcast_episode_service",

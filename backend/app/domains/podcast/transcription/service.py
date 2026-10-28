@@ -1259,21 +1259,53 @@ class PodcastTranscriptionService:
                 task_id,
             )
 
-            # AI
-            log_with_timestamp(
-                "INFO",
-                f"[AI SUMMARY] Scheduling AI summary for episode {task.episode_id}",
-                task_id,
-            )
-            await self._schedule_ai_summary(session, task_id)
+            # 成本台账（Phase C）：转写成功也记账；失败由下方 except 统一记
+            from app.domains.insight.receipts import record_receipt
 
-            # Highlight extraction
+            await record_receipt(
+                session,
+                service="transcription",
+                operation="transcribe",
+                model=getattr(task, "model_used", None),
+                audio_seconds=getattr(task, "transcript_duration", None),
+                ok=True,
+                duration_ms=int(total_time * 1000),
+            )
+
+            # AI 评分（Phase C 接管转写后的默认动作：评分 → 门槛 → 过线写作）
             log_with_timestamp(
                 "INFO",
-                f"[HIGHLIGHT] Scheduling highlight extraction for episode {task.episode_id}",
+                f"[INSIGHT] Dispatching analyze task for episode {task.episode_id}",
                 task_id,
             )
-            await self._schedule_highlight_extraction(session, task_id)
+            try:
+                from app.domains.insight.tasks import analyze_episode_task
+
+                analyze_episode_task.delay(task.episode_id)
+            except Exception as analyze_err:  # noqa: BLE001 —— 派发失败不回滚转写结果
+                logger.warning(
+                    "Failed to dispatch analyze task for episode %s: %s",
+                    task.episode_id,
+                    analyze_err,
+                )
+
+            # 旧自动摘要/高亮（v2 默认关闭：写作由评分流水线承担；单集手动摘要接口保留）
+            from app.core.config import get_settings
+
+            if get_settings().AUTO_SUMMARY_ENABLED:
+                log_with_timestamp(
+                    "INFO",
+                    f"[AI SUMMARY] Scheduling AI summary for episode {task.episode_id}",
+                    task_id,
+                )
+                await self._schedule_ai_summary(session, task_id)
+
+                log_with_timestamp(
+                    "INFO",
+                    f"[HIGHLIGHT] Scheduling highlight extraction for episode {task.episode_id}",
+                    task_id,
+                )
+                await self._schedule_highlight_extraction(session, task_id)
         except Exception as e:
             import traceback
 
@@ -1282,6 +1314,19 @@ class PodcastTranscriptionService:
                 f"[EXECUTE ERROR] Transcription failed for task {task_id}: {e!s}",
             )
             logger.error(f"[EXECUTE ERROR] Traceback:\n{error_trace}")
+
+            # 成本台账（Phase C）：失败也记
+            from app.domains.insight.receipts import record_receipt
+
+            await record_receipt(
+                session,
+                service="transcription",
+                operation="transcribe",
+                model=getattr(task, "model_used", None),
+                ok=False,
+                error=f"{type(e).__name__}: {e}",
+            )
+
             status_stmt = select(TranscriptionTask.status).where(
                 TranscriptionTask.id == task_id,
             )

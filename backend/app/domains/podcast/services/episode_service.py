@@ -602,6 +602,7 @@ class PodcastSubscriptionService:
     async def add_subscription(
         self,
         feed_url: str,
+        tier: str = "T2",
     ) -> tuple[Subscription, list[PodcastEpisode]]:
         """Add a new podcast subscription.
 
@@ -650,6 +651,7 @@ class PodcastSubscriptionService:
             feed.description,
             None,  # custom_name
             metadata=metadata,
+            tier=tier,
         )
 
         # 4. Save episodes in one transaction.
