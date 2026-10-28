@@ -15,6 +15,7 @@
 | [06-phase-d-site-web.md](06-phase-d-site-web.md) | Phase D：站点读 API 与 Web 切换 | 按阶段读 |
 | [07-phase-e-flutter-app.md](07-phase-e-flutter-app.md) | Phase E：Flutter 核心版 | 按阶段读 |
 | [08-phase-f-ci-release.md](08-phase-f-ci-release.md) | Phase F：CI 与发布 v2.0.0 | 按阶段读 |
+| [09-phase-g-app-reading.md](09-phase-g-app-reading.md) | Phase G：退役 Web 阅读站，阅读并入 App | 按阶段读 |
 
 ## 阶段状态看板
 
@@ -29,10 +30,11 @@
 | Phase D | 站点读 API 与 Web 阅读站切换 | ✅ 完成 |
 | Phase E | Flutter 核心版客户端 | ✅ 完成 |
 | Phase F | CI 与发布 v2.0.0  | ✅ 完成 |
+| Phase G | 退役 Web 阅读站，阅读并入 Flutter App（site API 收紧登录态） | ✅ 完成 |
 
 ## 总原则
 
-1. **串行推进**：Phase A→F 依次进行，每阶段完成后更新看板，不跳阶段。
+1. **串行推进**：Phase A→G 依次进行，每阶段完成后更新看板，不跳阶段。
 2. **每阶段一组 Conventional Commits**（feat/fix/docs/chore...），不混阶段提交。
 3. **完成定义**：阶段文档中的验收标准全部满足（pytest/ruff、Flutter analyze、Docker 端到端等），才允许进入下一阶段。
 4. **活文档**：设计变更必须回写本目录对应文件，文档与代码不允许长期脱节。

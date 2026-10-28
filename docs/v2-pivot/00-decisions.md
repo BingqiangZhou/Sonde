@@ -25,6 +25,7 @@
 | 9 | 首版暂缓 | 播放队列管理、收听历史/统计、离线下载、睡眠定时、AI 对话、高亮提取（代码都在 v0，后续按需开放） |
 | 10 | 版本 | 转向完成发布 **v2.0.0** |
 | 11 | 命名（2026-10-28 追加） | 全库弃用 "Personal AI Assistant" 与 "Stella"：Dart 包名 `sonde`、Bundle ID 统一 `app.sonde`、产物名 `sonde-*`（v2.0.1 起生效；历史文档中的旧名仅作记录保留） |
+| 12 | Web 阅读站退役（2026-10-28 追加，Phase G） | 删除 `web/` React 阅读站，阅读功能并入 Flutter App「阅读」Tab（Material 3，非报刊风）；`/api/v1/site/*` 由公开无鉴权收紧为 `require_user` 登录态；web/compose/nginx/CI 同批清理。设计见 [09-phase-g-app-reading.md](09-phase-g-app-reading.md) |
 
 ## 3. 分支布局与推送待办
 
