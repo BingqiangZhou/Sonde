@@ -2,7 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
-
+> **基线说明（2026-10-28，v2 转向）**：声读 Sonde 回归 Python + Flutter 多用户形态，当前 CHANGELOG 自 v0 基线继续记录，
+> 转向完成将发布 v2.0.0（设计见 `docs/v2-pivot/`）。
+> v1.x（Node/TS 日报站时期，2026-09）的发版历史见 [`ts-era` 分支](https://github.com/BingqiangZhou/Sonde/blob/ts-era/CHANGELOG.md)；
+> 更早的 v0.x 历史即本文件以下条目（原 Personal AI Assistant 时期）。
 
 ## [0.52.0](https://github.com/BingqiangZhou/Personal-AI-Assistant/compare/v0.51.1...v0.52.0) - 2026-04-21 ([📥](https://github.com/BingqiangZhou/Personal-AI-Assistant/releases/tag/v0.52.0))
 

@@ -1,6 +1,6 @@
-# Stella — Personal AI Assistant
+# 声读 Sonde v2
 
-FastAPI + Flutter podcast app with AI features. Backend: Python/FastAPI/PostgreSQL/Redis. Frontend: Flutter/Material 3/Riverpod.
+Python FastAPI + Flutter 播客知识库（多用户，v2 转向实施中）。转向文档集：`docs/v2-pivot/`（开发必读）。
 
 ## Commands
 
@@ -23,10 +23,19 @@ flutter test                           # All tests
 flutter gen-l10n                       # After editing both en.arb and zh.arb
 ```
 
+### Web (React Router SSR)
+```bash
+cd web
+npm install
+npm run build && npm run typecheck     # Build + typecheck
+API_URL=http://127.0.0.1:8000 npm run start   # 生产 server（/api 反代到后端）
+```
+
 ### Docker (full-stack verification)
 ```bash
-cd docker && docker compose up -d      # Start all 5 services
+cd docker && docker compose up -d --build
 curl http://localhost:8000/api/v1/health
+# 国内网络构建失败时：docker/.env 设 BUILD_HTTP_PROXY=http://host.docker.internal:7897
 ```
 
 ## Project Structure
@@ -37,23 +46,15 @@ backend/app/
   core/           Config, database, redis, security, auth, exceptions, celery, ai_client, http_client, middleware
   shared/         Cross-domain utilities (repository helpers, schemas)
   domains/        podcast (episodes, subscriptions, transcriptions, summaries, conversations, highlights), ai (model config, providers)
+  industry/       声读定制层：site/taxonomy/selection 常量 + prompts/*.md（LLM 模板；改配置不改代码）
   http/           Error helpers, route decorators
-  admin/          Admin panel (separate auth, 2FA, CSRF, server-rendered HTML templates)
+  admin/          Admin panel (server-rendered HTML templates, API-Key auth)
 
 frontend/lib/
-  core/
-    database/       Drift ORM (AppDatabase, DownloadDao, PlaybackDao, EpisodeCacheDao)
-    theme/          AppTheme, AppColors (design tokens), ThemeProvider, CupertinoTheme for iOS
-    constants/      AppRadius, AppSpacing (4-point grid), AppDurations, Breakpoints, ScrollConstants
-    widgets/        CustomAdaptiveNavigation (NOT flutter_adaptive_scaffold), 14 .adaptive() widgets in adaptive/
-    platform/       Platform-aware page transitions, adaptive haptics, PlatformHelper
-    network/        Dio client with ETag caching, token refresh, retry
-    services/       Cache, update check, download management, home widget, macOS Spotlight indexing
-    storage/        SharedPreferences + SecureStorage wrappers
-    offline/        ConnectivityProvider for offline-aware UI
-    utils/          AppLogger, Debounce, resource cleanup mixin, URL normalizer
-  features/        auth, podcast (largest), profile, settings, splash, home
-  shared/          Cross-feature models, widgets
+  core/           database (Drift), theme (AppColors), constants, widgets (adaptive/), platform, network (Dio + token refresh), services, storage, utils
+  features/       auth, podcast (largest), profile, settings, splash, home
+
+web/              React Router 8 SSR 阅读站（独立 npm 项目；app/routes.ts 定义页面；server.ts 反代 /api）
 ```
 
 ## Conventions
@@ -62,27 +63,23 @@ frontend/lib/
 - **uv only** (NEVER pip). **ruff only** for lint/format (NOT black/isort/flake8)
 - All I/O is async (SQLAlchemy async, aiohttp, redis)
 - Exceptions: Service layer raises `BaseCustomError`. Routes use `HTTPException` from `app.http.errors`
-- DI: FastAPI `Depends()`. Migrations: `backend/alembic/` (25 migrations)
+- DI: FastAPI `Depends()`. Migrations: `backend/alembic/`
 - Celery: single `default` queue, worker runs with embedded beat (`-B` flag)
+- LLM prompt 文本只放 `backend/app/industry/prompts/*.md`，渲染支持 `{{var}}` + `{{> include}}`，缺失即硬错误（Phase C 接入）
 
 ### Frontend
-- **Material 3 only** (`useMaterial3: true`)
-- Use `CustomAdaptiveNavigation` + `Breakpoints` (NOT flutter_adaptive_scaffold)
-- Platform-adaptive UI: CupertinoTheme wrapper + `.adaptive()` widgets for iOS-native feel
+- **Material 3 only**; platform-adaptive UI (CupertinoTheme wrapper + `.adaptive()` widgets)
 - Responsive: mobile <600 | tablet 600-1200 | desktop >=1200
-- Theme tokens in `AppColors`, spacing tokens in `AppSpacing` (4-point grid scale)
-- Run `dart run build_runner build` after modifying `@riverpod`, `@RestApi`, `@JsonSerializable`, or Drift files
-- i18n: Edit both `app_localizations_en.arb` and `app_localizations_zh.arb`, then `flutter gen-l10n`
-- Widget tests MANDATORY for all pages
+- Theme tokens in `AppColors`, spacing in `AppSpacing`; run `dart run build_runner build` after codegen-annotated files
+- i18n: edit both ARB files then `flutter gen-l10n`; widget tests mandatory for pages
 
 ### API
-- Endpoints: `/api/v1/` prefix. Standard HTTPException error responses
-- Rate limiting: 60 req/min, 1000 req/hour
+- Endpoints: `/api/v1/` prefix. 当前为单用户 API Key 认证（`app/core/auth.py`）；多用户 JWT Phase B 恢复
 - Health: `GET /health` and `GET /api/v1/health` (liveness), `GET /api/v1/health/ready` (readiness)
 
 ### General
-- Check `specs/active/` before implementing new features
-- Conventional Commits: `feat:`, `fix:`, `refactor:`, `chore:`, `style:`
+- Conventional Commits: `feat:`, `fix:`, `refactor:`, `chore:`, `style:`, `docs:`
+- 报告窗口时区 Asia/Shanghai；DB timestamptz (UTC)
 
 ## Gotchas
 
@@ -94,12 +91,13 @@ frontend/lib/
 | Edit `.g.dart` by hand | Edit source, re-run `dart run build_runner build` |
 | Bare ValueError for errors | `BaseCustomError` (service) or `HTTPException` (route) |
 | `Color.withOpacity()` | `Color.withValues(alpha:)` (former is deprecated) |
-| Skip widget tests | Required for all pages |
-| `admin` is under `domains/` | `admin/` is a separate top-level module at `app/admin/` |
+| Inline LLM prompts in Python | `backend/app/industry/prompts/*.md` |
+| `admin` under `domains/` | `admin/` is a separate top-level module at `app/admin/` |
+| 改 frontend Dart 包名 | 保持 `personal_ai_assistant`，只改用户可见品牌 |
 
 ## Testing & Completion
 
-- **Backend**: `uv run pytest` (SQLite in-memory via aiosqlite, 36 test files across core/podcast/tasks/integration/admin)
-- **Frontend**: `flutter test` (unit, widget, and integration tests)
-- **Full-stack**: `cd docker && docker compose up -d` then verify health endpoint
+- **Backend**: `uv run pytest` (SQLite in-memory via aiosqlite)
+- **Frontend**: `flutter test`; **Web**: `npm run build && npm run typecheck`
+- **Full-stack**: `cd docker && docker compose up -d --build` then verify health endpoint
 - A task is NOT COMPLETE until: code compiles, tests pass, modified functionality works end-to-end
