@@ -48,8 +48,19 @@ export { getBoss, sendJob, shutdownBoss } from './queue/boss.ts';
 export { QUEUE_NAMES, QUEUES } from './queue/queues.ts';
 export type { QueueDef, QueueName } from './queue/queues.ts';
 
-export { fetchPodcastFeed, episodeInputsFromFeed, parseItunesDuration } from './sources/rss.ts';
+export {
+  fetchPodcastFeed,
+  episodeInputsFromFeed,
+  parseItunesDuration,
+  FeedNotModifiedError,
+} from './sources/rss.ts';
 export type { RssEpisodeInput, ParsedFeedItem, FeedFetchResult } from './sources/rss.ts';
+export {
+  searchItunesPodcasts,
+  fetchItunesTopPodcasts,
+  clearItunesCache,
+} from './sources/itunes.ts';
+export type { DiscoveredPodcast } from './sources/itunes.ts';
 export { scanDueSources, fetchSource } from './sources/service.ts';
 
 export { transcribeEpisode } from './pipeline/transcribe.ts';

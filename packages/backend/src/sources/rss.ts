@@ -66,6 +66,8 @@ export async function fetchPodcastFeed(
     lastModified?: string | null;
     /** 首次导入时为 true：按 firstImportDays/Limit 截断，避免转写整个存档 */
     firstImport?: boolean;
+    /** 整体超时毫秒数，交互式验证可用较短值 */
+    timeoutMs?: number;
   } = {},
 ): Promise<FeedFetchResult> {
   const res = await fetch(feedUrl, {
@@ -76,7 +78,7 @@ export async function fetchPodcastFeed(
       ...(options.lastModified ? { 'if-modified-since': options.lastModified } : {}),
     },
     redirect: 'follow',
-    signal: AbortSignal.timeout(60_000),
+    signal: AbortSignal.timeout(options.timeoutMs ?? 60_000),
   });
 
   if (res.status === 304) {

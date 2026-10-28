@@ -17,6 +17,9 @@ x-app: &app
     WORK_CONCURRENCY: ${WORK_CONCURRENCY:-2}
     REPORT_TIMEZONE: ${REPORT_TIMEZONE:-Asia/Shanghai}
     DATA_DIR: /data
+    ITUNES_COUNTRIES: ${ITUNES_COUNTRIES:-CN,US}
+    ITUNES_DNS: ${ITUNES_DNS:-}
+    ITUNES_PROXY_URL: ${ITUNES_PROXY_URL:-}
   volumes:
     - data:/data
   restart: unless-stopped

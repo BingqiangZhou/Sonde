@@ -17,6 +17,12 @@ export interface Config {
   workConcurrency: number;
   reportTimezone: string;
   dataDir: string;
+  /** 播客发现（iTunes Search API）使用的国家商店码 */
+  itunesCountries: string[];
+  /** 仅 iTunes 客户端使用的自定义 DNS（如 1.1.1.1），空 = 系统默认 */
+  itunesDns: string;
+  /** 仅 iTunes 客户端使用的 HTTP 代理（如 http://host.docker.internal:7897），空 = 直连 */
+  itunesProxyUrl: string;
 }
 
 function str(env: NodeJS.ProcessEnv, key: string, fallback = ''): string {
@@ -27,6 +33,19 @@ function str(env: NodeJS.ProcessEnv, key: string, fallback = ''): string {
 function num(env: NodeJS.ProcessEnv, key: string, fallback: number): number {
   const parsed = Number.parseInt(env[key] ?? '', 10);
   return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function countryCodes(env: NodeJS.ProcessEnv, key: string, fallback: string): string[] {
+  const raw = env[key] && env[key] !== '' ? env[key] : fallback;
+  const codes = [
+    ...new Set(
+      raw
+        .split(',')
+        .map((code) => code.trim().toUpperCase())
+        .filter((code) => /^[A-Z]{2}$/.test(code)),
+    ),
+  ];
+  return codes.length > 0 ? codes : ['CN'];
 }
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
@@ -52,5 +71,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     workConcurrency: num(env, 'WORK_CONCURRENCY', 2),
     reportTimezone: str(env, 'REPORT_TIMEZONE', 'Asia/Shanghai'),
     dataDir: str(env, 'DATA_DIR', './data'),
+    itunesCountries: countryCodes(env, 'ITUNES_COUNTRIES', 'CN,US'),
+    itunesDns: str(env, 'ITUNES_DNS'),
+    itunesProxyUrl: str(env, 'ITUNES_PROXY_URL'),
   };
 }

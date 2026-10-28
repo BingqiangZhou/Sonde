@@ -5,14 +5,20 @@ import { timingSafeEqual } from 'node:crypto';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 
 import {
+  ConflictError,
+  fetchItunesTopPodcasts,
+  fetchPodcastFeed,
+  FeedNotModifiedError,
   isReportKind,
   loadConfig,
   receiptsSummary,
   rows,
+  searchItunesPodcasts,
   sendJob,
   sql,
   ValidationError,
 } from '@sonde/backend';
+import type { DiscoveredPodcast } from '@sonde/backend';
 
 const COOKIE_NAME = 'sonde_admin';
 
@@ -110,13 +116,83 @@ export async function adminRoutes(app: FastifyInstance) {
     if (!body.name || !body.feedUrl) {
       throw new ValidationError('name 与 feedUrl 必填');
     }
-    const tier = body.tier === 'T1' ? 'T1' : 'T2';
-    const interval = clampInt(body.intervalMinutes, 5, 1440, 60);
-    await rows(sql`
-      INSERT INTO sources (name, config, tier, interval_minutes)
-      VALUES (${body.name}, jsonb_build_object('feedUrl', ${body.feedUrl}::text), ${tier}, ${interval})
-    `);
+    await insertSource({
+      name: body.name,
+      feedUrl: body.feedUrl,
+      tier: body.tier === 'T1' ? 'T1' : 'T2',
+      intervalMinutes: clampInt(body.intervalMinutes, 5, 1440, 60),
+    });
     return { ok: true };
+  });
+
+  // ── 播客发现（iTunes Search API，多国商店）────────────────
+  app.get('/sources/discover', async (request) => {
+    const query = request.query as { q?: string; chart?: string; country?: string; limit?: string };
+    const countries = loadConfig().itunesCountries;
+    const term = (query.q ?? '').trim();
+    const wantsChart = query.chart === 'top';
+    if (!wantsChart && !term) {
+      throw new ValidationError('缺少搜索关键词 q，或使用 chart=top 获取热门榜');
+    }
+
+    let list: DiscoveredPodcast[];
+    let limit: number;
+    if (wantsChart) {
+      const country = (query.country ?? countries[0] ?? 'CN').trim().toUpperCase();
+      if (!countries.includes(country)) {
+        throw new ValidationError(`country 仅支持：${countries.join(' / ')}`);
+      }
+      limit = clampInt(Number.parseInt(query.limit ?? '50', 10), 1, 50, 50);
+      list = await fetchItunesTopPodcasts({ country, limit });
+    } else {
+      limit = clampInt(Number.parseInt(query.limit ?? '20', 10), 1, 50, 20);
+      list = await searchItunesPodcasts({ term, countries, limit });
+    }
+
+    const subscribedFeeds = new Set(
+      (
+        await rows<{ feed: string }>(sql`
+          SELECT lower(config->>'feedUrl') AS feed FROM sources WHERE config->>'feedUrl' IS NOT NULL
+        `)
+      ).map((r) => r.feed),
+    );
+    return {
+      countries,
+      total: list.length,
+      results: list.map((podcast) => ({
+        ...podcast,
+        subscribed: podcast.feedUrl ? subscribedFeeds.has(podcast.feedUrl.toLowerCase()) : false,
+      })),
+    };
+  });
+
+  app.post('/sources/subscribe', async (request) => {
+    const body = (request.body ?? {}) as {
+      name?: string;
+      feedUrl?: string;
+      tier?: string;
+      intervalMinutes?: number;
+    };
+    if (!body.name || !body.feedUrl) {
+      throw new ValidationError('name 与 feedUrl 必填');
+    }
+    try {
+      await fetchPodcastFeed(body.feedUrl, { timeoutMs: 20_000 });
+    } catch (err) {
+      if (err instanceof FeedNotModifiedError) {
+        // 304 同样证明 feed 存活且可达
+      } else {
+        throw new ValidationError(`RSS 无法访问或解析：${err instanceof Error ? err.message : '未知错误'}`);
+      }
+    }
+    const sourceId = await insertSource({
+      name: body.name,
+      feedUrl: body.feedUrl,
+      tier: body.tier === 'T1' ? 'T1' : 'T2',
+      intervalMinutes: clampInt(body.intervalMinutes, 5, 1440, 60),
+    });
+    await sendJob('sources.fetch', { sourceId });
+    return { ok: true, sourceId };
   });
 
   app.patch('/sources/:id', async (request) => {
@@ -240,6 +316,35 @@ function parseId(value: string): number {
     throw new ValidationError('invalid id');
   }
   return id;
+}
+
+/** 插入订阅源；feedUrl 唯一索引冲突（pg 23505）转为 409。 */
+async function insertSource(input: {
+  name: string;
+  feedUrl: string;
+  tier: string;
+  intervalMinutes: number;
+}): Promise<number> {
+  let inserted: { id: number }[];
+  try {
+    inserted = await rows<{ id: number }>(sql`
+      INSERT INTO sources (name, config, tier, interval_minutes)
+      VALUES (${input.name}, jsonb_build_object('feedUrl', ${input.feedUrl}::text), ${input.tier}, ${input.intervalMinutes})
+      RETURNING id
+    `);
+  } catch (err) {
+    if (isUniqueViolation(err)) {
+      throw new ConflictError('该播客已在订阅中');
+    }
+    throw err;
+  }
+  return inserted[0]?.id ?? 0;
+}
+
+function isUniqueViolation(err: unknown): boolean {
+  return (
+    typeof err === 'object' && err !== null && (err as { code?: string }).code === '23505'
+  );
 }
 
 function clampInt(value: number | undefined, min: number, max: number, fallback: number): number {
