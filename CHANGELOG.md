@@ -27,6 +27,18 @@ All notable changes to this project will be documented in this file.
 - `web/` React Router SSR 阅读站（git 历史可追溯）；docker compose web 服务、nginx 根路径 web 分流、CI web 构建 job 同步移除
 
 
+## [2.0.2](https://github.com/BingqiangZhou/Sonde/compare/v2.0.1...v2.0.2) - 2026-10-29 ([📥](https://github.com/BingqiangZhou/Sonde/releases/tag/v2.0.2))
+
+> v2.0.2 完成 Android 构建链现代化并闭环 AGP 9 迁移：Gradle 9.3.1 + AGP 9.1.1 + Kotlin 2.3.20（Flutter 3.47 兼容表内最高线），plus 家族等 7 个插件升级到 Built-in Kotlin 适配版，KGP 弃用警告清零；share_plus 13 API 适配（SharePlus.instance.share）。本地（Java 25）与 CI（Java 21）双端验证。
+
+### 🚜 重构
+
+- Android 构建链：Gradle 9.1.0 → 9.3.1、AGP 9.0.1 → 9.1.1、Kotlin 2.2.20 → 2.3.20
+- 插件：package_info_plus 10.2.2 / share_plus 13.3.1 / wakelock_plus 1.8.2 / audioplayers 6.8.x /
+  audio_session 0.2.4 / video_player 2.14.1 / shared_preferences 2.5.6 —— 全部适配 AGP 9 内置 Kotlin
+- adaptive_share 迁移到 share_plus 13 新 API；关闭 Kotlin 增量编译（Java 25/Windows 兼容）
+
+
 ## [2.0.1](https://github.com/BingqiangZhou/Sonde/compare/v2.0.0...v2.0.1) - 2026-10-28 ([📥](https://github.com/BingqiangZhou/Sonde/releases/tag/v2.0.1))
 
 > v2.0.1 全库去 "Personal AI Assistant / Stella" 化，统一为声读 Sonde 标识：Dart 包名 personal_ai_assistant → `sonde`（全部导入与生成代码同步），Android/macOS 包名 com.opc.stella 与 iOS com.example.personalAiAssistant 统一为 `app.sonde`，Windows/Linux 二进制名与发布产物名改为 `sonde-*`，后端项目名 sonde-backend、Celery 应用 sonde_tasks；本地数据库 stella.db → sonde.db；发布产物以新命名重新构建。
