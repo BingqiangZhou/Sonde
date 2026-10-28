@@ -16,7 +16,7 @@ struct NowPlayingProvider: TimelineProvider {
         NowPlayingWidgetEntry(
             date: Date(),
             title: "Not Playing",
-            podcastName: "Stella",
+            podcastName: "Sonde",
             imageUrl: "",
             isPlaying: false
         )
@@ -38,7 +38,7 @@ struct NowPlayingProvider: TimelineProvider {
         return NowPlayingWidgetEntry(
             date: Date(),
             title: defaults.string(forKey: "now_playing_title") ?? "Not Playing",
-            podcastName: defaults.string(forKey: "now_playing_podcast") ?? "Stella",
+            podcastName: defaults.string(forKey: "now_playing_podcast") ?? "Sonde",
             imageUrl: defaults.string(forKey: "now_playing_image") ?? "",
             isPlaying: defaults.bool(forKey: "now_playing_is_playing")
         )
@@ -144,7 +144,7 @@ struct NowPlayingWidget: Widget {
             NowPlayingWidgetEntryView(entry: entry)
         }
         .configurationDisplayName("Now Playing")
-        .description("See what's currently playing in Stella.")
+        .description("See what's currently playing in Sonde.")
         .supportedFamilies([.systemSmall, .systemMedium])
     }
 }

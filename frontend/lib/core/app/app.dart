@@ -53,7 +53,7 @@ class _SplashScreenWidget extends StatelessWidget {
                   ),
                   const SizedBox(height: AppSpacing.lg),
                   Text(
-                    l10n?.appTitle ?? 'Stella',
+                    l10n?.appTitle ?? '声读',
                     style: Theme.of(context).textTheme.headlineLarge,
                   ),
                   const SizedBox(height: AppSpacing.smLg),
@@ -369,7 +369,7 @@ class _PersonalAIAssistantAppState
     if (!_isInitialized) {
       return MaterialApp(
         key: const ValueKey('app_splash_shell'),
-        title: 'Stella',
+        title: '声读 Sonde',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.lightTheme,
         darkTheme: AppTheme.darkTheme,
@@ -398,7 +398,7 @@ class _PersonalAIAssistantAppState
     // Show main app after initialization
     return MaterialApp.router(
       key: const ValueKey('app_router_shell'),
-      title: 'Stella',
+      title: '声读 Sonde',
       debugShowCheckedModeBanner: false,
 
       // Theme configuration

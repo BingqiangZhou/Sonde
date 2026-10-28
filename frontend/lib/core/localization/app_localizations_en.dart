@@ -9,7 +9,7 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
-  String get appTitle => 'Stella';
+  String get appTitle => 'Sonde';
 
   @override
   String get appSlogan => 'Your personal assistant for everything you follow.';
@@ -1918,7 +1918,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sleep_timer_after_episode => 'After current episode';
 
   @override
-  String get onboarding_welcome_title => 'Welcome to Stella';
+  String get onboarding_welcome_title => 'Welcome to Sonde';
 
   @override
   String get onboarding_welcome_subtitle => 'Your AI-Powered Podcast Assistant';
@@ -1961,7 +1961,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get terms_section_acceptance_body =>
-      'By accessing and using Stella (\"the Service\"), you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use the Service.';
+      'By accessing and using Sonde (\"the Service\"), you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use the Service.';
 
   @override
   String get terms_section_use => '2. Use of the Service';
@@ -1975,7 +1975,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get terms_section_ip_body =>
-      'All content, features, and functionality of the Service, including but not limited to text, graphics, logos, and software, are the property of Stella and are protected by copyright, trademark, and other intellectual property laws. Podcast content belongs to their respective creators.';
+      'All content, features, and functionality of the Service, including but not limited to text, graphics, logos, and software, are the property of Sonde and are protected by copyright, trademark, and other intellectual property laws. Podcast content belongs to their respective creators.';
 
   @override
   String get terms_section_liability => '4. Limitation of Liability';
@@ -2016,7 +2016,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get privacy_section_intro_body =>
-      'Stella (\"we\", \"our\", \"us\") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, and safeguard your personal information when you use our Service.';
+      'Sonde (\"we\", \"our\", \"us\") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, and safeguard your personal information when you use our Service.';
 
   @override
   String get privacy_section_collection => '2. Information We Collect';

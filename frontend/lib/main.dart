@@ -98,7 +98,7 @@ void main() {
           Platform.isWindows || Platform.isMacOS || Platform.isLinux;
       if (isDesktop) {
         await WindowManager.instance.ensureInitialized();
-        await WindowManager.instance.setTitle('Stella');
+        await WindowManager.instance.setTitle('声读 Sonde');
         await WindowManager.instance.setSize(const Size(1280, 720));
         await WindowManager.instance.setMinimumSize(const Size(800, 600));
         // Desktop windows support all orientations natively;
