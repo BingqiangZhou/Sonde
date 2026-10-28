@@ -1,6 +1,6 @@
 # Phase B · 多用户认证恢复
 
-> 状态：⬜ 未开始　|　前置：Phase A　|　下一步：Phase C
+> 状态：✅ 完成（2026-10-28）　|　前置：Phase A　|　下一步：Phase C
 
 ## 目标
 
@@ -21,37 +21,48 @@ git show <删除前的父提交>:backend/app/domains/user/...           # 逐文
 
 ### B1 users 域恢复与适配
 
-- [ ] 定位并取出历史 `app/domains/user/`（models/routes/services/security）
-- [ ] `users` ORM 模型补回并对齐现库列（024 已删 2FA 列；含 settings/preferences/api_key）
-- [ ] alembic 迁移 025：重建 `user_sessions`（含 device_info/ip/ua/expires_at/is_active）
-- [ ] 依赖注入适配：新 `core/auth.py` 增加 `require_user`（JWT Bearer → user_id）；保留 `require_api_key`（映射 is_superuser 运维用户）
-- [ ] JWT 工具恢复（HS256 + SECRET_KEY；access 30min / refresh 7d）
-- [ ] 注册开关：`REGISTRATION_OPEN`（默认 false）→ 关闭时 register 403；超管不受限
-- [ ] forgot/reset-password：首版返回 501（文案：请联系管理员重置）
-- [ ] auth 路由挂 slowapi 限流；登录失败恒时比较
-- [ ] 启动引导脚本/CLI：`uv run python -m app.scripts.create_user email password [--superuser]`（面板之外的最小建号路径）
+- [x] 定位并取出历史 `app/domains/user/`（models/routes/services/security）
+- [x] `users` ORM 模型补回并对齐现库列（024 已删 2FA 列；含 settings/preferences/api_key）
+- [x] alembic 迁移 025：重建 `user_sessions`（含 device_info/ip/ua/expires_at/is_active）
+- [x] 依赖注入适配：新 `core/auth.py` 增加 `require_user`（JWT Bearer → user_id）；保留 `require_api_key`（映射 is_superuser 运维用户）
+- [x] JWT 工具恢复（HS256 + SECRET_KEY；access 30min / refresh 7d）
+- [x] 注册开关：`REGISTRATION_OPEN`（默认 false）→ 关闭时 register 403；超管不受限
+- [x] forgot/reset-password：首版返回 501（文案：请联系管理员重置）
+- [x] auth 路由挂 slowapi 限流；登录失败恒时比较
+- [x] 启动引导脚本/CLI：`uv run python -m app.scripts.create_user email password [--superuser]`（面板之外的最小建号路径）
 
 ### B2 业务路由切换鉴权
 
-- [ ] `domains/podcast/routes/dependencies.py` 的 `require_api_key` 依赖替换为 `require_user`（user_id 注入真实值，删 SINGLE_USER_ID 硬编码）
-- [ ] 全量 grep `user_id=1` / `SINGLE_USER_ID` 残留并清理
-- [ ] 回归：episodes/queue/playback/stats/subscriptions 等端点在无 token 时 401
+- [x] `domains/podcast/routes/dependencies.py` 的 `require_api_key` 依赖替换为 `require_user`（user_id 注入真实值，删 SINGLE_USER_ID 硬编码）
+- [x] 全量 grep `user_id=1` / `SINGLE_USER_ID` 残留并清理
+- [x] 回归：episodes/queue/playback/stats/subscriptions 等端点在无 token 时 401
 
 ### B3 收藏同步
 
-- [ ] alembic 迁移（并入 025）：`user_favorites` 表（UNIQUE(user_id, episode_id)）
-- [ ] `GET /api/v1/favorites`、`PUT/DELETE /api/v1/favorites/{episode_id}`（挂 require_user）
+- [x] alembic 迁移（并入 025）：`user_favorites` 表（UNIQUE(user_id, episode_id)）
+- [x] `GET /api/v1/favorites`、`PUT/DELETE /api/v1/favorites/{episode_id}`（挂 require_user）
 
 ### B4 管理面板用户管理
 
-- [ ] Jinja2 面板新增用户页：建号（邮箱+初始密码+超管勾选）、重置密码、停用/启用
-- [ ] 面板鉴权沿用 API Key（运维通道）
+- [x] Jinja2 面板新增用户页：建号（邮箱+初始密码+超管勾选）、重置密码、停用/启用
+- [x] 面板鉴权沿用 API Key（运维通道）
 
 ### B5 测试与联调
 
-- [ ] pytest：注册开关、登录/刷新/登出、token 过期、限流、require_user 401、favorites CRUD（用 httpx AsyncClient + 测试库）
-- [ ] Flutter 联调：server_config 填本机后端 → 注册（临时开 REGISTRATION_OPEN）→ 登录 → me → 刷新 → 登出；401 自动刷新链路
-- [ ] 更新 `tool/backend_contract_smoke.ps1` 覆盖 auth
+- [x] pytest：注册开关、登录/刷新/登出、token 过期、限流、require_user 401、favorites CRUD（用 httpx AsyncClient + 测试库）
+- [x] Flutter 联调：server_config 填本机后端 → 注册（临时开 REGISTRATION_OPEN）→ 登录 → me → 刷新 → 登出；401 自动刷新链路
+- [x] 更新 `tool/backend_contract_smoke.ps1` 覆盖 auth
+
+## 实施注记（2026-10-28）
+
+- 恢复方式：按 `backend/docs/AUTHENTICATION.md` 契约重写精简版（非整目录照搬历史代码）；
+  JWT/password 工具取回自历史 `core/security/{jwt,password}.py`。
+- 变更点：refresh token 轮换（旧 refresh 用后即废）；`remember_me` 延长会话；登录失败恒时（DUMMY_HASH）。
+- `require_user` 通道优先级：运维 API Key（映射第一个活跃超管，无超管时 503）→ JWT →
+  开发放行（development+DEBUG+无 API_KEY+无凭据 → user 1）。
+- 管理面板用户页：`/api/v1/admin/users`（建号/重置密码并吊销会话/停启用/超管切换）。
+- 验证：pytest 332 通过（含 11 个新用例）；docker 栈端到端冒烟 10/10（注册 403、CLI 建号、
+  登录/me/刷新轮换/收藏 401 隔离/运维通道/面板用户页/forgot 501）。
 
 ## 验收标准
 

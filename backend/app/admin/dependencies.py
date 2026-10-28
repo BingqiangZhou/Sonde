@@ -61,3 +61,12 @@ __all__ = [
     "get_admin_setup_auth_service",
     "get_admin_subscriptions_service",
 ]
+
+
+def get_admin_users_service(
+    db: AsyncSession = Depends(get_db_session_dependency),
+):
+    """Provide request-scoped admin users service."""
+    from app.admin.services.users_service import AdminUsersService
+
+    return AdminUsersService(db)

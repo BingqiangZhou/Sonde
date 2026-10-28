@@ -6,7 +6,7 @@ All endpoints here are mounted under:
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Query, status
 
-from app.core.auth import require_api_key
+from app.core.auth import require_user
 from app.core.exceptions import SubscriptionNotFoundError
 from app.domains.podcast.routes.dependencies import (
     get_podcast_schedule_service,
@@ -41,7 +41,7 @@ router = APIRouter()
 async def add_subscription(
     subscription_data: PodcastSubscriptionCreate,
     service: PodcastSubscriptionService = Depends(get_podcast_subscription_service),
-    user_id: int = Depends(require_api_key),
+    user_id: int = Depends(require_user),
 ):
     try:
         subscription, new_episodes = await service.add_subscription(

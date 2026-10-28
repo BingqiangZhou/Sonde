@@ -44,8 +44,8 @@ class Settings(BaseSettings):
     """Application settings."""
 
     # Basic
-    PROJECT_NAME: str = "Personal AI Assistant"
-    VERSION: str = "1.0.0"
+    PROJECT_NAME: str = "Sonde"
+    VERSION: str = "2.0.0-dev"
     API_V1_STR: str = "/api/v1"
     SECRET_KEY: str | None = None
     ENVIRONMENT: str = "development"
@@ -70,6 +70,12 @@ class Settings(BaseSettings):
 
     # Authentication
     API_KEY: str = ""
+    # ── 多用户 JWT（Phase B 恢复，契约见 backend/docs/AUTHENTICATION.md）──
+    ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 7
+    # 注册开放开关：默认关闭；关闭时 register 返回 403，由管理员建号（面板/CLI）
+    REGISTRATION_OPEN: bool = False
 
     # Celery
     CELERY_BROKER_URL: str = "redis://localhost:6379/1"

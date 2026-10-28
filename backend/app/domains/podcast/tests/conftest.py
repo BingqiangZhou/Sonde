@@ -102,10 +102,10 @@ def mock_schedule_service(mock_service_factory):
 @pytest.fixture(autouse=True)
 def override_auth_dependencies():
     """Override authentication for routes requiring auth."""
-    from app.core.auth import require_api_key
+    from app.core.auth import require_user
 
-    app.dependency_overrides[require_api_key] = lambda: 1
+    app.dependency_overrides[require_user] = lambda: 1
     try:
         yield
     finally:
-        app.dependency_overrides.pop(require_api_key, None)
+        app.dependency_overrides.pop(require_user, None)

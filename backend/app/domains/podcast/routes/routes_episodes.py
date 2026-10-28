@@ -5,7 +5,7 @@ from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from app.core.auth import require_api_key
+from app.core.auth import require_user
 from app.core.config import settings
 from app.core.exceptions import (
     EpisodeNotFoundError,
@@ -432,7 +432,7 @@ async def apply_playback_rate_preference(
     summary="List pending summaries",
 )
 async def get_pending_summaries(
-    user_id: int = Depends(require_api_key),
+    user_id: int = Depends(require_user),
     summary_workflow: SummaryWorkflowService = Depends(get_summary_workflow_service),
 ):
     pending = await summary_workflow.list_pending_summaries_for_user(user_id)

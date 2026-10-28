@@ -1096,6 +1096,33 @@ class EpisodeHighlight(Base):
         return f"<EpisodeHighlight(id={self.id}, episode_id={self.episode_id}, overall_score={self.overall_score})>"
 
 
+class UserFavorite(Base):
+    """Per-user 单集收藏（025 迁移；替代 web localStorage 收藏与 is_user_favorited）。"""
+
+    __tablename__ = "user_favorites"
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
+    episode_id = Column(
+        Integer,
+        ForeignKey("podcast_episodes.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
+
+    episode = relationship("PodcastEpisode", lazy="joined")
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "episode_id", name="uq_user_favorites"),
+        Index("ix_user_favorites_user_created", "user_id", "created_at"),
+    )
+
+    def __repr__(self):
+        return f"<UserFavorite(id={self.id}, user_id={self.user_id}, episode_id={self.episode_id})>"
+
+
 __all__ = [
     # Podcast domain
     "PodcastEpisode",
@@ -1121,4 +1148,6 @@ __all__ = [
     "PodcastDailyReportItem",
     "EpisodeHighlight",
     "HighlightExtractionTask",
+    # User domain (Phase B)
+    "UserFavorite",
 ]

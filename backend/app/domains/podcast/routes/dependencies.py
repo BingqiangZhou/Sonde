@@ -9,7 +9,7 @@ from __future__ import annotations
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.auth import get_db_session_dependency, get_redis_client, require_api_key
+from app.core.auth import get_db_session_dependency, get_redis_client, require_user
 from app.core.redis import RedisCache
 from app.domains.podcast.conversation_service import ConversationService
 from app.domains.podcast.repositories.content_repository import (
@@ -130,7 +130,7 @@ def get_podcast_summary_repository(
 
 
 def get_podcast_parser(
-    user_id: int = Depends(require_api_key),
+    user_id: int = Depends(require_user),
 ):
     """Provide the podcast RSS parser for the current user."""
     from app.domains.podcast.integration.secure_rss_parser import SecureRSSParser
@@ -147,7 +147,7 @@ def get_subscription_repository(
 
 def get_podcast_subscription_service(
     db: AsyncSession = Depends(get_db_session_dependency),
-    user_id: int = Depends(require_api_key),
+    user_id: int = Depends(require_user),
     repo=Depends(get_podcast_subscription_repository),
     subscription_repo=Depends(get_subscription_repository),
     redis: RedisCache = Depends(get_redis_client),
@@ -166,7 +166,7 @@ def get_podcast_subscription_service(
 
 def get_podcast_episode_service(
     db: AsyncSession = Depends(get_db_session_dependency),
-    user_id: int = Depends(require_api_key),
+    user_id: int = Depends(require_user),
     repo=Depends(get_podcast_episode_repository),
     redis: RedisCache = Depends(get_redis_client),
 ) -> PodcastEpisodeService:
@@ -176,7 +176,7 @@ def get_podcast_episode_service(
 
 def get_podcast_playback_service(
     db: AsyncSession = Depends(get_db_session_dependency),
-    user_id: int = Depends(require_api_key),
+    user_id: int = Depends(require_user),
     repo=Depends(get_podcast_playback_repository),
     redis: RedisCache = Depends(get_redis_client),
 ) -> PodcastPlaybackService:
@@ -186,7 +186,7 @@ def get_podcast_playback_service(
 
 def get_podcast_queue_service(
     db: AsyncSession = Depends(get_db_session_dependency),
-    user_id: int = Depends(require_api_key),
+    user_id: int = Depends(require_user),
     repo=Depends(get_podcast_queue_repository),
 ) -> PodcastQueueService:
     """Provide request-scoped podcast queue service."""
@@ -195,7 +195,7 @@ def get_podcast_queue_service(
 
 def get_podcast_schedule_service(
     db: AsyncSession = Depends(get_db_session_dependency),
-    user_id: int = Depends(require_api_key),
+    user_id: int = Depends(require_user),
 ) -> PodcastScheduleService:
     """Provide request-scoped podcast schedule service."""
     return PodcastScheduleService(db, user_id)
@@ -203,7 +203,7 @@ def get_podcast_schedule_service(
 
 def get_podcast_search_service(
     db: AsyncSession = Depends(get_db_session_dependency),
-    user_id: int = Depends(require_api_key),
+    user_id: int = Depends(require_user),
     repo=Depends(get_podcast_search_repository),
     redis: RedisCache = Depends(get_redis_client),
 ) -> PodcastSearchService:
@@ -213,7 +213,7 @@ def get_podcast_search_service(
 
 def get_podcast_stats_service(
     db: AsyncSession = Depends(get_db_session_dependency),
-    user_id: int = Depends(require_api_key),
+    user_id: int = Depends(require_user),
     repo=Depends(get_podcast_stats_repository),
     redis: RedisCache = Depends(get_redis_client),
     playback_service: PodcastPlaybackService = Depends(get_podcast_playback_service),
@@ -230,7 +230,7 @@ def get_podcast_stats_service(
 
 def get_daily_report_service(
     db: AsyncSession = Depends(get_db_session_dependency),
-    user_id: int = Depends(require_api_key),
+    user_id: int = Depends(require_user),
 ) -> DailyReportService:
     """Provide request-scoped podcast daily report service."""
     return DailyReportService(db, user_id)
@@ -238,7 +238,7 @@ def get_daily_report_service(
 
 def get_highlight_service(
     db: AsyncSession = Depends(get_db_session_dependency),
-    user_id: int = Depends(require_api_key),
+    user_id: int = Depends(require_user),
     redis: RedisCache = Depends(get_redis_client),
 ) -> HighlightService:
     """Provide request-scoped podcast highlight service."""
@@ -294,6 +294,6 @@ __all__ = [
     "get_podcast_summary_repository",
     "get_podcast_task_orchestration_service",
     "get_summary_workflow_service",
-    "require_api_key",
+    "require_user",
     "get_transcription_workflow_service",
 ]
