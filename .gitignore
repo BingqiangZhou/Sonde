@@ -149,3 +149,5 @@ docs/superpowers/
 # Worktrees
 .worktrees/
 .superpowers/
+# ZCode session state
+.zcode/

@@ -1,5 +1,9 @@
 # Authentication System Documentation
 
+> ⚠️ **状态注记（2026-10-28，v2 转向）**：本文描述的多用户 JWT 系统已在 2026-04"后端简化"中从代码中删除，
+> 当前后端为单用户 API Key（`app/core/auth.py`）。本文保留作为 **Phase B 恢复该系统的接口契约**（见
+> `docs/v2-pivot/04-phase-b-multiuser-auth.md`）；下文按历史状态撰写。
+
 This document describes the authentication system implemented for the Personal AI Assistant backend.
 
 ## Overview
