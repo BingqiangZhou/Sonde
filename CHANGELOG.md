@@ -7,6 +7,31 @@ All notable changes to this project will be documented in this file.
 > v1.x（Node/TS 日报站时期，2026-09）的发版历史见 [`ts-era` 分支](https://github.com/BingqiangZhou/Sonde/blob/ts-era/CHANGELOG.md)；
 > 更早的 v0.x 历史即本文件以下条目（原 Personal AI Assistant 时期）。
 
+## [2.0.0](https://github.com/BingqiangZhou/Sonde/compare/v0.52.0...v2.0.0) - 2026-10-28 ([📥](https://github.com/BingqiangZhou/Sonde/releases/tag/v2.0.0))
+
+> v2.0.0 是声读的第二次形态转向：回归 Python(FastAPI) + Flutter 多端客户端，并把 v1.x TS 版的核心流水线移植回来——多用户邮箱注册/JWT 登录、订阅全局去重、转写后 LLM 评分门槛筛选（T1/T2 分级）与过线中文写作、全局日/周/月三刊（Asia/Shanghai 自动成刊）、per-user 收藏云同步、iTunes 发现走后端代理（多国合并搜索 + 热门榜，支持代理出站）、成本台账（LLM/转写每次调用入账）与管理面板扩展（用户管理/三刊/成本/单集诊断）；Web 报刊风阅读站保留并切换到新的公开读 API。CI 新增 backend（uv ruff+pytest）与 web 构建，发版流水线沿用多平台 App 构建。
+
+### 🚀 新功能
+
+- 多用户认证域恢复（JWT 双 token、注册开关、会话轮换与设备管理、CLI 建号）
+- AI 评分与三刊成刊流水线（insight 域：评分/门槛/写作、日周月成刊、成本台账）
+- 站点公开读 API（/api/v1/site）与 Web 阅读站容器化接入（nginx 分流）
+- iTunes 发现后端代理（/api/v1/discover）与 Flutter 发现页切换
+- per-user 收藏云同步（表 + 接口 + App 星标与收藏页）
+- Flutter 三刊阅读页；单集 feed/详情评分徽标数据
+- 管理面板：用户管理、三刊管理（手动重生成）、成本台账、单集诊断
+
+### 🐛 问题修复
+
+- 修复 v0 遗留的 episode 详情 500（redis.get_episode_detail 在后端简化中被删但调用未删）
+- Docker 构建网络：apt/PyPI 源可配置 + 构建期代理参数；榜单出站走 ITUNES_PROXY_URL
+
+### ⚙️ 其他事务
+
+- 旧 per-user 日报与自动摘要流水线移除（被全局三刊与评分写作取代，可用 AUTO_SUMMARY_ENABLED 恢复）
+- 新增 CI（backend/web/flutter-analyze）；文档集 docs/v2-pivot/（决策/基线/架构/六阶段）
+
+
 ## [0.52.0](https://github.com/BingqiangZhou/Personal-AI-Assistant/compare/v0.51.1...v0.52.0) - 2026-04-21 ([📥](https://github.com/BingqiangZhou/Personal-AI-Assistant/releases/tag/v0.52.0))
 
 ### ⚙️ Miscellaneous Tasks

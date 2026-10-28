@@ -11,7 +11,7 @@
 - **frontend/** — Flutter 多端客户端（Android / iOS / 桌面 / Web）：登录、订阅管理、发现、播放、三刊阅读
 - **web/** — 报刊风中文阅读站（React Router SSR），只经 HTTP 读后端
 
-> **v2 转向（2026-10-28）**：项目自 Node/TS 日报站形态回归 Python + Flutter 多用户形态，并把 TS 版的 AI 评分/三刊流水线移植进来。转向设计文档见 [`docs/v2-pivot/`](docs/v2-pivot/README.md)；TS 版本（v1.x）完整存档于 [`ts-era`](https://github.com/BingqiangZhou/Sonde/tree/ts-era) 分支。
+> **v2（2026-10-28）**：回归 Python + Flutter 多用户形态，移植 v1.x TS 版的 AI 评分/三刊流水线，六阶段转向已全部完成（决策与实施记录见 [`docs/v2-pivot/`](docs/v2-pivot/README.md)）；v1.x TS 版完整存档于 [`ts-era`](https://github.com/BingqiangZhou/Sonde/tree/ts-era) 分支。
 
 ## 功能
 
@@ -20,7 +20,8 @@
 - **转写**：音频下载 → ffmpeg → 分块 → OpenAI 兼容 ASR → 全文转录
 - **AI 评分筛选**：LLM 按注意力价值为单集打分（0-100），按源分级门槛（T1/T2）入选；落选保留分数与理由
 - **三刊**：日报（每天 08:00）、周报（周一 08:30）、月报（每月 1 日 08:30，Asia/Shanghai）；主编 prompt 成刊，报刊风排版
-- **发现**：iTunes 多国搜索 + 热门榜（经后端代理出站，支持自定义 DNS/HTTP 代理）
+- **发现**：iTunes 多国搜索 + 热门榜（经后端代理出站；`ITUNES_PROXY_URL` 走 HTTP 代理，容器直连不稳时推荐）
+- **收藏**：per-user 云同步（App 星标 + 收藏页）
 - **播放**：后台播放、锁屏控制、倍速、进度续播（per-user 云同步）
 - **成本台账**：每次 LLM/转写调用入 receipts，面板可查
 
