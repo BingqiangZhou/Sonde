@@ -2,6 +2,9 @@
 FROM python:3.11-slim
 
 # Set environment variables
+# PyPI 索引默认官方源；国内网络可构建时传 --build-arg PYPI_INDEX=https://pypi.tuna.tsinghua.edu.cn/simple
+# （部分代理/网络环境下 tuna 会 403/无版本，官方源 + 构建代理更稳）
+ARG PYPI_INDEX=https://pypi.org/simple
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PYTHONPATH=/app \
@@ -11,8 +14,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     UV_LINK_MODE=copy \
     UV_PYTHON=/usr/local/bin/python3.11 \
     UV_PYTHON_DOWNLOADS=never \
-    UV_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple \
-    UV_EXTRA_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple
+    UV_INDEX_URL=${PYPI_INDEX}
 
 # 配置 apt 镜像源：默认官方源；国内网络可构建时传 --build-arg APT_MIRROR=mirrors.tuna.tsinghua.edu.cn
 # （tuna 的 debian-security 路径对部分网络返回 403，故不用默认值）
@@ -39,9 +41,8 @@ WORKDIR /app
 # Copy dependency metadata first
 COPY pyproject.toml uv.lock ./
 
-# Configure pip to use Chinese mirrors for faster downloads
-RUN pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple \
-    && pip config set global.trusted-host pypi.tuna.tsinghua.edu.cn
+# Configure pip to use the same index as uv (default: official PyPI)
+RUN pip config set global.index-url ${PYPI_INDEX}
 
 # Install uv first (faster than regular pip for Python package management)
 RUN pip install --no-cache-dir uv

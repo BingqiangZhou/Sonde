@@ -105,8 +105,8 @@
 
 | 项 | 状态 |
 |---|---|
-| `uv sync --extra dev`（uv 0.11.0） | ✅ 2026-10-28 通过 |
-| `uv run pytest` | ⏸ 未完成（中断，Phase A 补齐） |
-| `uv run ruff check .` | ⬜ 未跑 |
-| v0 docker 栈 | ⬜ 未起 |
-| `flutter pub get` / `flutter analyze` | ⬜ 未跑 |
+| `uv sync --extra dev`（uv 0.11.0） | ✅ 2026-10-28 通过（本机 uv 配了阿里云镜像，锁文件会被重写 URL——仓库保持 pypi.org 官方锁，本地操作一律 `--frozen`） |
+| `uv run ruff check .` | ✅ 清零（修 SIM117×2/E402/未用导入；N806 配置忽略；见提交 9f02e3ef） |
+| `uv run pytest -q` | ✅ 321 passed, 1 skipped（2026-10-28） |
+| v0 docker 栈 | 🔄 构建中（apt 走 `BUILD_HTTP_PROXY` 代理构建参数） |
+| `flutter pub get` / `flutter analyze` | ✅ 1111 个历史问题（1 error 在测试文件；基线不动） |

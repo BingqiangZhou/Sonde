@@ -50,3 +50,4 @@ Flutter 端对齐 v2 后端：登录、订阅管理、发现（改走后端）�
 - Drift 本地缓存表（episodes_cache）继续用于 feed 离线浏览；不新增表。
 - 发现页改后端后，原 16 国枚举与后端 ITUNES_COUNTRIES 取并集展示（后端为准）。
 - 播放音频源直连 enclosure URL（audio_url），不经后端转发。
+- **出站经验值（来自 ts-era 部署）**：本机/国内 Docker NAT 访问 iTunes 中国 CDN 会被重置，`ITUNES_DNS=1.1.1.1` 可解析到全球 CDN 解决；代理场景用 `ITUNES_PROXY_URL`。
