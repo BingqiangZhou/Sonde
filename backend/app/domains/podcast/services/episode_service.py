@@ -186,8 +186,10 @@ class PodcastEpisodeService:
                 cursor_published_at=cursor_published_at,
                 cursor_episode_id=cursor_episode_id,
             )
+            normalized = [self._normalize_feed_item(item) for item in items]
+            normalized = await self._merge_insight_fields(normalized)
             return (
-                [self._normalize_feed_item(item) for item in items],
+                normalized,
                 total,
                 has_more,
                 next_cursor_values,
@@ -211,6 +213,7 @@ class PodcastEpisodeService:
             episode_ids,
         )
         results = self._build_episode_dicts(episodes, playback_states)
+        results = await self._merge_insight_fields(results)
         results = [
             self._rewrite_feed_item_description(item, hide_ai_summary=False)
             for item in results
@@ -229,7 +232,9 @@ class PodcastEpisodeService:
                 page=page,
                 size=size,
             )
-            return [self._normalize_feed_item(item) for item in items], total
+            normalized = [self._normalize_feed_item(item) for item in items]
+            normalized = await self._merge_insight_fields(normalized)
+            return normalized, total
 
         episodes, total = await self.repo.get_episodes_paginated(
             self.user_id,
@@ -243,6 +248,7 @@ class PodcastEpisodeService:
             episode_ids,
         )
         results = self._build_episode_dicts(episodes, playback_states)
+        results = await self._merge_insight_fields(results)
         results = [
             self._rewrite_feed_item_description(item, hide_ai_summary=False)
             for item in results
@@ -417,7 +423,11 @@ class PodcastEpisodeService:
                 "related_episodes": [],
             }
 
-        return await self.redis.get_episode_detail(episode_id, _load_from_db)
+        # v2：直查 DB 并叠加评分字段（原 redis.get_episode_detail 在后端简化中被删，为基线缺口）
+        detail = await _load_from_db()
+        if detail is not None:
+            detail = (await self._merge_insight_fields([detail]))[0]
+        return detail
 
     async def _get_transcription_task(
         self,
@@ -478,6 +488,27 @@ class PodcastEpisodeService:
     def _normalize_feed_item(self, item: dict[str, Any]) -> dict[str, Any]:
         """Normalize lightweight feed payload fields for stable frontend semantics."""
         return self._rewrite_feed_item_description(item, hide_ai_summary=True)
+
+
+    async def _merge_insight_fields(self, items: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        """合并当前 AI 判定字段（Phase E：App feed/详情展示评分与中文三件套）。"""
+        ids = [i.get("id") for i in items if i.get("id") is not None]
+        if not ids:
+            return items
+        by_id = await self.repo.get_current_analyses(ids)
+        for item in items:
+            a = by_id.get(item.get("id"))
+            item.update(
+                {
+                    "insight_score": a.score if a else None,
+                    "insight_selected": a.selected if a else None,
+                    "insight_category": a.category if a else None,
+                    "title_zh": a.title_zh if a else None,
+                    "summary_zh": a.summary_zh if a else None,
+                    "reason_zh": a.reason_zh if a else None,
+                }
+            )
+        return items
 
     def _rewrite_feed_item_description(
         self,

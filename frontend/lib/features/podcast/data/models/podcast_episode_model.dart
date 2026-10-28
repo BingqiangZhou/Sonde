@@ -40,6 +40,12 @@ class PodcastEpisodeModel extends Equatable {
     this.summaryProcessingTime,
     this.subscription,
     this.relatedEpisodes,
+    this.insightScore,
+    this.insightSelected,
+    this.insightCategory,
+    this.titleZh,
+    this.summaryZh,
+    this.reasonZh,
   });
 
   factory PodcastEpisodeModel.fromJson(Map<String, dynamic> json) =>
@@ -114,6 +120,20 @@ class PodcastEpisodeModel extends Equatable {
   @JsonKey(name: 'related_episodes')
   final List<dynamic>? relatedEpisodes;
 
+  // AI 判定（v2 Phase E：insight 域当前判定；未分析为 null）
+  @JsonKey(name: 'insight_score')
+  final int? insightScore;
+  @JsonKey(name: 'insight_selected')
+  final bool? insightSelected;
+  @JsonKey(name: 'insight_category')
+  final String? insightCategory;
+  @JsonKey(name: 'title_zh')
+  final String? titleZh;
+  @JsonKey(name: 'summary_zh')
+  final String? summaryZh;
+  @JsonKey(name: 'reason_zh')
+  final String? reasonZh;
+
   Map<String, dynamic> toJson() => _$PodcastEpisodeModelToJson(this);
 
   PodcastEpisodeModel copyWith({
@@ -153,6 +173,12 @@ class PodcastEpisodeModel extends Equatable {
     double? summaryProcessingTime,
     Map<String, dynamic>? subscription,
     List<dynamic>? relatedEpisodes,
+    int? insightScore,
+    bool? insightSelected,
+    String? insightCategory,
+    String? titleZh,
+    String? summaryZh,
+    String? reasonZh,
   }) {
     return PodcastEpisodeModel(
       id: id ?? this.id,
@@ -192,6 +218,12 @@ class PodcastEpisodeModel extends Equatable {
           summaryProcessingTime ?? this.summaryProcessingTime,
       subscription: subscription ?? this.subscription,
       relatedEpisodes: relatedEpisodes ?? this.relatedEpisodes,
+      insightScore: insightScore ?? this.insightScore,
+      insightSelected: insightSelected ?? this.insightSelected,
+      insightCategory: insightCategory ?? this.insightCategory,
+      titleZh: titleZh ?? this.titleZh,
+      summaryZh: summaryZh ?? this.summaryZh,
+      reasonZh: reasonZh ?? this.reasonZh,
     );
   }
 

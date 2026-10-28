@@ -209,6 +209,14 @@ class PodcastEpisodeResponse(PodcastTimestampedSchema):
     playback_rate: float = 1.0
     is_played: bool | None = None
 
+    # AI 判定（Phase E：来自 insight 域当前判定；未分析为 null）
+    insight_score: int | None = None
+    insight_selected: bool | None = None
+    insight_category: str | None = None
+    title_zh: str | None = None
+    summary_zh: str | None = None
+    reason_zh: str | None = None
+
 
 class PodcastEpisodeListResponse(PodcastBaseSchema):
     """播客单集列表响应 -- unified with PaginatedResponse shape."""

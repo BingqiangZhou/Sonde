@@ -263,7 +263,7 @@ void main() {
       final list = tester.widget<ReorderableListView>(
         find.byType(ReorderableListView),
       );
-      list.onReorder(0, 2);
+      list.onReorder?.call(0, 2);
       await tester.pumpAndSettle();
 
       expect(controller.reorderedEpisodeIds, <int>[2, 1, 3]);

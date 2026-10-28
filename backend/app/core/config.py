@@ -78,6 +78,13 @@ class Settings(BaseSettings):
     REGISTRATION_OPEN: bool = False
     # 旧自动摘要/高亮流水线（Phase C 起默认关闭：评分→过线写作接管；手动单集摘要接口保留）
     AUTO_SUMMARY_ENABLED: bool = False
+    # ── iTunes 发现（Phase E；免费官方接口，经后端代理出站）──
+    ITUNES_COUNTRIES: str = "CN,US"
+    # 自定义 DNS（如 1.1.1.1 解析全球 CDN；容器 NAT 直连国内 CDN 会被重置）。空=系统默认
+    ITUNES_DNS: str = ""
+    # HTTP 代理出站（如 http://host.docker.internal:7897）；设置后忽略 ITUNES_DNS
+    ITUNES_PROXY_URL: str = ""
+    ITUNES_TIMEOUT_SECONDS: float = 10.0
 
     # Celery
     CELERY_BROKER_URL: str = "redis://localhost:6379/1"

@@ -20,9 +20,7 @@ void main() {
       final repository = _FakePodcastRepository(
         addDelay: const Duration(milliseconds: 80),
       );
-      final container = ProviderContainer(
-        overrides: _testOverrides(repository: repository),
-      );
+      final container = _testContainer(repository: repository);
       addTearDown(container.dispose);
 
       final notifier = container.read(podcastQueueControllerProvider.notifier);
@@ -55,8 +53,9 @@ void main() {
           currentEpisode: _episode(1),
         ),
       );
-      final container = ProviderContainer(
-        overrides: _testOverrides(repository: repository, audioNotifier: audioNotifier),
+      final container = _testContainer(
+        repository: repository,
+        audioNotifier: audioNotifier,
       );
       addTearDown(container.dispose);
 
@@ -89,9 +88,10 @@ void main() {
             currentEpisode: _episode(1),
           ),
         );
-        final container = ProviderContainer(
-          overrides: _testOverrides(repository: repository, audioNotifier: audioNotifier),
-        );
+        final container = _testContainer(
+        repository: repository,
+        audioNotifier: audioNotifier,
+      );
         addTearDown(container.dispose);
 
         final notifier = container.read(
@@ -124,9 +124,10 @@ void main() {
         final audioNotifier = _FakeAudioPlayerNotifier(
 
         );
-        final container = ProviderContainer(
-          overrides: _testOverrides(repository: repository, audioNotifier: audioNotifier),
-        );
+        final container = _testContainer(
+        repository: repository,
+        audioNotifier: audioNotifier,
+      );
         addTearDown(container.dispose);
 
         final notifier = container.read(
@@ -144,8 +145,9 @@ void main() {
     test('activates queue item once before playback', () async {
       final repository = _FakePodcastRepository();
       final audioNotifier = _FakeAudioPlayerNotifier();
-      final container = ProviderContainer(
-        overrides: _testOverrides(repository: repository, audioNotifier: audioNotifier),
+      final container = _testContainer(
+        repository: repository,
+        audioNotifier: audioNotifier,
       );
       addTearDown(container.dispose);
 
@@ -179,9 +181,10 @@ void main() {
             currentEpisode: _episode(1),
           ),
         );
-        final container = ProviderContainer(
-          overrides: _testOverrides(repository: repository, audioNotifier: audioNotifier),
-        );
+        final container = _testContainer(
+        repository: repository,
+        audioNotifier: audioNotifier,
+      );
         addTearDown(container.dispose);
 
         final controller = container.read(
@@ -212,9 +215,10 @@ void main() {
             currentEpisode: _episode(1),
           ),
         );
-        final container = ProviderContainer(
-          overrides: _testOverrides(repository: repository, audioNotifier: audioNotifier),
-        );
+        final container = _testContainer(
+        repository: repository,
+        audioNotifier: audioNotifier,
+      );
         addTearDown(container.dispose);
 
         final controller = container.read(
@@ -244,9 +248,10 @@ void main() {
             currentEpisode: _episode(1),
           ),
         );
-        final container = ProviderContainer(
-          overrides: _testOverrides(repository: repository, audioNotifier: audioNotifier),
-        );
+        final container = _testContainer(
+        repository: repository,
+        audioNotifier: audioNotifier,
+      );
         addTearDown(container.dispose);
 
         final controller = container.read(
@@ -266,8 +271,9 @@ void main() {
       repository.removeCompleter = Completer<void>();
       repository.reorderCompleter = Completer<void>();
       final audioNotifier = _FakeAudioPlayerNotifier();
-      final container = ProviderContainer(
-        overrides: _testOverrides(repository: repository, audioNotifier: audioNotifier),
+      final container = _testContainer(
+        repository: repository,
+        audioNotifier: audioNotifier,
       );
       addTearDown(container.dispose);
 
@@ -299,9 +305,7 @@ void main() {
         ],
         reorderQueueResult: _queue(revision: 2, currentEpisodeId: 2),
       );
-      final container = ProviderContainer(
-        overrides: _testOverrides(repository: repository),
-      );
+      final container = _testContainer(repository: repository);
       addTearDown(container.dispose);
 
       final controller = container.read(
@@ -341,9 +345,7 @@ void main() {
         repository.reorderCompleter = Completer<void>();
         repository.reorderError = StateError('reorder failed');
 
-        final container = ProviderContainer(
-          overrides: _testOverrides(repository: repository),
-        );
+        final container = _testContainer(repository: repository);
         addTearDown(container.dispose);
 
         final controller = container.read(
@@ -391,9 +393,7 @@ void main() {
         repository.removeCompleter = Completer<void>();
         repository.removeError = StateError('remove failed');
 
-        final container = ProviderContainer(
-          overrides: _testOverrides(repository: repository),
-        );
+        final container = _testContainer(repository: repository);
         addTearDown(container.dispose);
 
         final controller = container.read(
@@ -431,9 +431,9 @@ void main() {
     test('moves to async error when queue request times out', () async {
       final repository = _FakePodcastRepository()
         ..getQueueCompleter = Completer<void>();
-      final container = ProviderContainer(
-        overrides: [
-          ..._testOverrides(repository: repository),
+      final container = _testContainer(
+        repository: repository,
+        extraOverrides: [
           podcastQueueControllerProvider.overrideWith(
             _TimeoutPodcastQueueController.new,
           ),
@@ -527,18 +527,22 @@ class _FakeAudioDownloadService implements AudioDownloadService {
 }
 
 /// Common provider overrides shared by all queue-controller tests.
-_testOverrides({
+ProviderContainer _testContainer({
   required PodcastRepository repository,
   AudioPlayerNotifier? audioNotifier,
+  List<dynamic> extraOverrides = const [],
 }) {
-  return [
-    podcastRepositoryProvider.overrideWithValue(repository),
-    downloadManagerProvider.overrideWithValue(_FakeAudioDownloadService()),
-    if (audioNotifier != null)
-      audioPlayerProvider.overrideWith(() => audioNotifier)
-    else
-      audioPlayerProvider.overrideWith(_FakeAudioPlayerNotifier.new),
-  ];
+  return ProviderContainer(
+    overrides: [
+      podcastRepositoryProvider.overrideWithValue(repository),
+      downloadManagerProvider.overrideWithValue(_FakeAudioDownloadService()),
+      if (audioNotifier != null)
+        audioPlayerProvider.overrideWith(() => audioNotifier)
+      else
+        audioPlayerProvider.overrideWith(_FakeAudioPlayerNotifier.new),
+      ...extraOverrides.cast(),
+    ],
+  );
 }
 
 class _FakePodcastRepository extends PodcastRepository {

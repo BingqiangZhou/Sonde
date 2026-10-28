@@ -4,13 +4,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:personal_ai_assistant/core/localization/app_localizations.dart';
 import 'package:personal_ai_assistant/core/widgets/app_shells.dart';
 import 'package:personal_ai_assistant/features/auth/presentation/providers/auth_provider.dart';
-import 'package:personal_ai_assistant/features/podcast/data/models/podcast_daily_report_model.dart';
 import 'package:personal_ai_assistant/features/podcast/data/models/podcast_search_model.dart';
 import 'package:personal_ai_assistant/features/podcast/data/models/podcast_state_models.dart';
 import 'package:personal_ai_assistant/features/podcast/data/models/profile_stats_model.dart';
 import 'package:personal_ai_assistant/features/podcast/presentation/pages/podcast_feed_page.dart';
 import 'package:personal_ai_assistant/features/podcast/presentation/pages/podcast_list_page.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_daily_report_providers.dart';
 import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_feed_providers.dart';
 import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_providers.dart';
 import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_search_provider.dart';
@@ -98,9 +96,6 @@ void main() {
               ),
             ),
           ),
-          dailyReportDatesProvider.overrideWith(
-            () => _FixedDailyReportDatesNotifier(_emptyDailyReportDates),
-          ),
         ],
       );
 
@@ -116,15 +111,6 @@ const _profileStats = ProfileStatsModel(
   summariesGenerated: 8,
   pendingSummaries: 1,
   playedEpisodes: 5,
-  latestDailyReportDate: '2026-03-05',
-);
-
-const _emptyDailyReportDates = PodcastDailyReportDatesResponse(
-  dates: [],
-  total: 0,
-  page: 1,
-  size: 100,
-  pages: 0,
 );
 
 class _FixedCountrySelectorNotifier extends CountrySelectorNotifier {
@@ -256,27 +242,3 @@ class _FixedProfileStatsNotifier extends ProfileStatsNotifier {
   Future<ProfileStatsModel?> load({bool forceRefresh = false}) async => _stats;
 }
 
-class _FixedDailyReportDatesNotifier extends DailyReportDatesNotifier {
-  _FixedDailyReportDatesNotifier(this._value);
-
-  final PodcastDailyReportDatesResponse _value;
-
-  @override
-  Future<PodcastDailyReportDatesResponse?> build() async => _value;
-
-  @override
-  Future<PodcastDailyReportDatesResponse?> load({
-    int page = 1,
-    int size = 100,
-    bool forceRefresh = false,
-  }) async {
-    return _value;
-  }
-
-  @override
-  Future<PodcastDailyReportDatesResponse?> ensureMonthCoverage(
-    DateTime focusedMonth,
-  ) async {
-    return _value;
-  }
-}

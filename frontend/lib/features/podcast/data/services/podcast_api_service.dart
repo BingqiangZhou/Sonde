@@ -1,7 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:personal_ai_assistant/features/podcast/data/models/playback_history_lite_model.dart';
 import 'package:personal_ai_assistant/features/podcast/data/models/podcast_conversation_model.dart';
-import 'package:personal_ai_assistant/features/podcast/data/models/podcast_daily_report_model.dart';
 import 'package:personal_ai_assistant/features/podcast/data/models/podcast_episode_model.dart';
 import 'package:personal_ai_assistant/features/podcast/data/models/podcast_highlight_model.dart';
 import 'package:personal_ai_assistant/features/podcast/data/models/podcast_playback_model.dart';
@@ -10,6 +9,7 @@ import 'package:personal_ai_assistant/features/podcast/data/models/podcast_subsc
 import 'package:personal_ai_assistant/features/podcast/data/models/podcast_transcription_model.dart';
 import 'package:personal_ai_assistant/features/podcast/data/models/profile_stats_model.dart';
 import 'package:personal_ai_assistant/features/podcast/data/models/schedule_config_model.dart';
+import 'package:personal_ai_assistant/features/podcast/data/models/site_report_model.dart';
 import 'package:retrofit/retrofit.dart';
 
 part 'podcast_api_service.g.dart';
@@ -75,21 +75,57 @@ abstract class PodcastApiService {
     @Query('cursor') String? cursor,
   );
 
-  @GET('/podcasts/reports/daily')
-  Future<PodcastDailyReportResponse> getDailyReport(
-    @Query('date') String? date,
+  // === 三刊（全局，读 /api/v1/site；公开） ===
+
+  @GET('/site/reports/{kind}/latest')
+  Future<SiteReport> getLatestSiteReport(@Path('kind') String kind);
+
+  @GET('/site/reports/{kind}/{reportKey}')
+  Future<SiteReport> getSiteReport(
+    @Path('kind') String kind,
+    @Path('reportKey') String reportKey,
   );
 
-  @POST('/podcasts/reports/daily/generate')
-  Future<PodcastDailyReportResponse> generateDailyReport(
-    @Query('date') String? date,
-    @Query('rebuild') bool rebuild,
+  @GET('/site/reports/{kind}')
+  Future<SiteReportArchiveResponse> getSiteReportArchive(
+    @Path('kind') String kind, {
+    @Query('page') int? page,
+    @Query('size') int? size,
+  });
+
+  // === 发现（后端代理 iTunes，Phase E） ===
+
+  @GET('/discover')
+  Future<DiscoverSearchResponse> discoverSearch(
+    @Query('q') String query, {
+    @Query('limit') int? limit,
+  });
+
+  @GET('/discover/charts')
+  Future<DiscoverChartsResponse> discoverCharts(
+    @Query('country') String country, {
+    @Query('limit') int? limit,
+  });
+
+  // === 收藏同步（per-user，Phase E） ===
+
+  @GET('/podcasts/favorites')
+  Future<FavoritesListResponse> listFavorites({
+    @Query('page') int? page,
+    @Query('size') int? size,
+  });
+
+  @GET('/podcasts/favorites/{episodeId}/status')
+  Future<FavoriteStatusResponse> getFavoriteStatus(
+    @Path('episodeId') int episodeId,
   );
 
-  @GET('/podcasts/reports/daily/dates')
-  Future<PodcastDailyReportDatesResponse> getDailyReportDates(
-    @Query('page') int page,
-    @Query('size') int size,
+  @PUT('/podcasts/favorites/{episodeId}')
+  Future<FavoriteStatusResponse> addFavorite(@Path('episodeId') int episodeId);
+
+  @DELETE('/podcasts/favorites/{episodeId}')
+  Future<FavoriteStatusResponse> removeFavorite(
+    @Path('episodeId') int episodeId,
   );
 
   @GET('/podcasts/episodes')

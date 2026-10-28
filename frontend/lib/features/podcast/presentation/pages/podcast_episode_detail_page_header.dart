@@ -151,6 +151,8 @@ extension _PodcastEpisodeDetailPageHeader on _PodcastEpisodeDetailPageState {
         SizedBox(width: context.spacing.xs),
         _buildDownloadButton(episode),
         SizedBox(width: context.spacing.xs),
+        _buildFavoriteButton(episode),
+        SizedBox(width: context.spacing.xs),
         _buildShareButton(episode),
         if (episode.itemLink != null &&
             episode.itemLink!.trim().isNotEmpty) ...[
@@ -247,13 +249,14 @@ extension _PodcastEpisodeDetailPageHeader on _PodcastEpisodeDetailPageState {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          Row(
-            mainAxisSize: MainAxisSize.min,
+          Wrap(
+            spacing: context.spacing.sm,
+            runSpacing: context.spacing.xs,
+            alignment: WrapAlignment.end,
             children: [
               _buildDownloadButton(episode),
-              SizedBox(width: context.spacing.sm),
               _buildQueueButton(),
-              SizedBox(width: context.spacing.sm),
+              _buildFavoriteButton(episode),
               _buildShareButton(episode),
             ],
           ),
@@ -633,6 +636,21 @@ extension _PodcastEpisodeDetailPageHeader on _PodcastEpisodeDetailPageState {
       padHours: false,
     );
   }
+  Widget _buildFavoriteButton(PodcastEpisodeModel episode) {
+    final favorited = ref.watch(favoriteStatusProvider(episode.id)).value ?? false;
+    return HeaderCapsuleActionButton(
+      tooltip: favorited ? '取消收藏' : '收藏',
+      icon: favorited ? Icons.star_rounded : Icons.star_outline_rounded,
+      onPressed: () => toggleFavorite(
+        ref: ref,
+        episodeId: episode.id,
+        current: favorited,
+      ),
+      circular: true,
+      density: _buttonDensity,
+    );
+  }
+
   Widget _buildShareButton(PodcastEpisodeModel episode) {
     final l10n = AppLocalizations.of(context) ?? AppLocalizationsEn();
     return HeaderCapsuleActionButton(

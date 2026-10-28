@@ -4,6 +4,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:personal_ai_assistant/core/storage/local_storage_service.dart';
 import 'package:personal_ai_assistant/features/podcast/data/models/podcast_search_model.dart';
 import 'package:personal_ai_assistant/features/podcast/data/services/itunes_search_service.dart';
+import 'package:personal_ai_assistant/features/podcast/data/models/site_report_model.dart';
+import 'package:personal_ai_assistant/features/podcast/data/repositories/podcast_repository.dart';
+import 'package:personal_ai_assistant/features/podcast/data/services/podcast_api_service.dart';
+import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_providers.dart';
 import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_search_provider.dart';
 import '../../../../helpers/mock_local_storage_service.dart';
 
@@ -17,6 +21,7 @@ void main() {
             MockLocalStorageService(),
           ),
           iTunesSearchServiceProvider.overrideWithValue(service),
+          podcastRepositoryProvider.overrideWithValue(_BackendDownRepo()),
         ],
       );
       final subscription = container.listen(
@@ -48,6 +53,21 @@ void main() {
       expect(container.read(podcastSearchProvider).currentQuery, 'flutter riverpod');
     });
   });
+}
+
+class _NoopApiService implements PodcastApiService {
+  @override
+  dynamic noSuchMethod(Invocation invocation) => throw UnimplementedError();
+}
+
+/// 后端 discover 不可用 → provider 应回退 iTunes 直连（本测试的既有断言）
+class _BackendDownRepo extends PodcastRepository {
+  _BackendDownRepo() : super(_NoopApiService());
+
+  @override
+  Future<DiscoverSearchResponse> discoverSearch(String query, {int? limit}) async {
+    throw Exception('backend discover unavailable in test');
+  }
 }
 
 class _FakeITunesSearchService extends ITunesSearchService {

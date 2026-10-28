@@ -33,6 +33,7 @@ dependencies = [
     "bcrypt>=5.0.0",
     "pyjwt>=2.15.1",
     "email-validator>=2.3.0",
+    "aiodns>=4.0.4",
 ]
 
 [project.optional-dependencies]

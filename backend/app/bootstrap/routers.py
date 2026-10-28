@@ -10,6 +10,7 @@ def include_application_routers(app: FastAPI) -> None:
     settings = get_settings()
 
     from app.admin.router import router as admin_router
+    from app.domains.discover.routes import router as discover_router
     from app.domains.podcast.routes.routes import router as podcast_router
     from app.domains.podcast.routes.routes_subscriptions import (
         router as podcast_subscription_router,
@@ -21,6 +22,11 @@ def include_application_routers(app: FastAPI) -> None:
         auth_router,
         prefix=f"{settings.API_V1_STR}/auth",
         tags=["auth"],
+    )
+    app.include_router(
+        discover_router,
+        prefix=settings.API_V1_STR,
+        tags=["discover"],
     )
     app.include_router(
         site_router,

@@ -49,6 +49,12 @@ PodcastEpisodeModel _$PodcastEpisodeModelFromJson(Map<String, dynamic> json) =>
           ?.toDouble(),
       subscription: json['subscription'] as Map<String, dynamic>?,
       relatedEpisodes: json['related_episodes'] as List<dynamic>?,
+      insightScore: (json['insight_score'] as num?)?.toInt(),
+      insightSelected: json['insight_selected'] as bool?,
+      insightCategory: json['insight_category'] as String?,
+      titleZh: json['title_zh'] as String?,
+      summaryZh: json['summary_zh'] as String?,
+      reasonZh: json['reason_zh'] as String?,
     );
 
 Map<String, dynamic> _$PodcastEpisodeModelToJson(
@@ -90,6 +96,12 @@ Map<String, dynamic> _$PodcastEpisodeModelToJson(
   'summary_processing_time': instance.summaryProcessingTime,
   'subscription': instance.subscription,
   'related_episodes': instance.relatedEpisodes,
+  'insight_score': instance.insightScore,
+  'insight_selected': instance.insightSelected,
+  'insight_category': instance.insightCategory,
+  'title_zh': instance.titleZh,
+  'summary_zh': instance.summaryZh,
+  'reason_zh': instance.reasonZh,
 };
 
 PodcastEpisodeListResponse _$PodcastEpisodeListResponseFromJson(

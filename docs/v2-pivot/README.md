@@ -27,7 +27,7 @@
 | Phase B | 多用户认证恢复（JWT、注册开关、收藏） | ✅ 完成 |
 | Phase C | AI 评分与三刊成刊（移植 TS 流水线） | ✅ 完成 |
 | Phase D | 站点读 API 与 Web 阅读站切换 | ✅ 完成 |
-| Phase E | Flutter 核心版客户端 | ⬜ 未开始 |
+| Phase E | Flutter 核心版客户端 | ✅ 完成 |
 | Phase F | CI 与发布 v2.0.0 | ⬜ 未开始 |
 
 ## 总原则

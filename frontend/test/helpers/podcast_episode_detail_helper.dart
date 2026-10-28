@@ -11,6 +11,7 @@ import 'package:personal_ai_assistant/features/podcast/data/models/podcast_conve
 import 'package:personal_ai_assistant/features/podcast/data/models/podcast_episode_model.dart';
 import 'package:personal_ai_assistant/features/podcast/data/models/podcast_playback_model.dart';
 import 'package:personal_ai_assistant/features/podcast/data/models/podcast_transcription_model.dart';
+import 'package:personal_ai_assistant/features/podcast/presentation/providers/favorites_providers.dart';
 import 'package:personal_ai_assistant/features/podcast/presentation/pages/podcast_episode_detail_page.dart';
 import 'package:personal_ai_assistant/features/podcast/presentation/providers/conversation_providers.dart';
 import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_episodes_providers.dart';
@@ -159,6 +160,7 @@ Widget createEpisodeDetailWidget({
 }) {
   return ProviderScope(
     overrides: [
+      favoriteStatusProvider(1).overrideWith((ref) async => false),
       audioPlayerProvider.overrideWith(mockAudioPlayerNotifierFactory),
       episodeDetailProvider.overrideWith(
         (ref, episodeId) =>
@@ -198,6 +200,7 @@ Widget createEpisodeDetailWidgetWithPlayer({
   final resolvedEpisode = episode ?? createTestEpisode(itemLink: null);
   return ProviderScope(
     overrides: [
+      favoriteStatusProvider(1).overrideWith((ref) async => false),
       currentRouteProvider.overrideWith(
         () => TestCurrentRouteNotifier(route),
       ),

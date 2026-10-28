@@ -158,6 +158,7 @@ async def test_episode_service_filters_summary_on_detail_response() -> None:
 
     service.repo = AsyncMock()
     service.repo.get_episode_by_id.return_value = episode
+    service.repo.get_current_analyses = AsyncMock(return_value={})
     service.repo.get_playback_state.return_value = None
     service._get_transcription_task = AsyncMock(return_value=None)
 

@@ -49,6 +49,7 @@ async def test_list_feed_by_cursor_lightweight_normalizes_payload(monkeypatch):
 
     service = PodcastEpisodeService(db=AsyncMock(), user_id=42)
     service.repo = AsyncMock()
+    service.repo.get_current_analyses = AsyncMock(return_value={})
     service.repo.get_feed_lightweight_cursor_paginated.return_value = (
         [_feed_item(now, long_description)],
         1,
@@ -80,6 +81,7 @@ async def test_list_feed_by_page_uses_lightweight_repo(monkeypatch):
     now = datetime.now(UTC)
     service = PodcastEpisodeService(db=AsyncMock(), user_id=7)
     service.repo = AsyncMock()
+    service.repo.get_current_analyses = AsyncMock(return_value={})
     service.repo.get_feed_lightweight_page_paginated.return_value = (
         [_feed_item(now, "desc")],
         5,

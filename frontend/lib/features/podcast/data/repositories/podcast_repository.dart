@@ -3,8 +3,8 @@ import 'package:personal_ai_assistant/core/network/exceptions/network_exceptions
 import 'package:personal_ai_assistant/core/utils/time_formatter.dart';
 import 'package:personal_ai_assistant/features/podcast/data/models/playback_history_lite_model.dart';
 import 'package:personal_ai_assistant/features/podcast/data/models/podcast_conversation_model.dart';
-import 'package:personal_ai_assistant/features/podcast/data/models/podcast_daily_report_model.dart';
 import 'package:personal_ai_assistant/features/podcast/data/models/podcast_episode_model.dart';
+import 'package:personal_ai_assistant/features/podcast/data/models/site_report_model.dart';
 import 'package:personal_ai_assistant/features/podcast/data/models/podcast_highlight_model.dart';
 import 'package:personal_ai_assistant/features/podcast/data/models/podcast_playback_model.dart';
 import 'package:personal_ai_assistant/features/podcast/data/models/podcast_queue_model.dart';
@@ -19,8 +19,6 @@ class PodcastRepository {
   PodcastRepository(this._apiService);
   final PodcastApiService _apiService;
 
-  static const String _dailyReportTimezone = 'Asia/Shanghai';
-  static const String _dailyReportScheduleTime = '03:30';
 
   /// Generic wrapper that converts [DioException] to [NetworkException].
   ///
@@ -87,71 +85,43 @@ class PodcastRepository {
   }) =>
       _apiCall(() => _apiService.getPodcastFeed(page, pageSize, cursor));
 
-  Future<PodcastDailyReportResponse> getDailyReport({DateTime? date}) async {
+  /// 三刊（v2 全局报刊）：最新一期 / 指定期 / 归档
+  Future<SiteReport> getSiteReport(String kind, {String? reportKey}) =>
+      _apiCall(() => reportKey == null
+          ? _apiService.getLatestSiteReport(kind)
+          : _apiService.getSiteReport(kind, reportKey));
+
+  Future<SiteReportArchiveResponse> getSiteReportArchive(String kind,
+          {int page = 1, int size = 30}) =>
+      _apiCall(() => _apiService.getSiteReportArchive(kind,
+          page: page, size: size));
+
+  /// 发现（后端代理 iTunes）
+  Future<DiscoverSearchResponse> discoverSearch(String query, {int? limit}) =>
+      _apiCall(() => _apiService.discoverSearch(query, limit: limit));
+
+  Future<DiscoverChartsResponse> discoverCharts(String country, {int? limit}) =>
+      _apiCall(() => _apiService.discoverCharts(country, limit: limit));
+
+  /// 收藏同步
+  Future<FavoritesListResponse> listFavorites({int page = 1, int size = 50}) =>
+      _apiCall(
+          () => _apiService.listFavorites(page: page, size: size));
+
+  Future<bool> isFavorite(int episodeId) async {
     try {
-      final dateParam = date != null ? TimeFormatter.formatDate(date) : null;
-      return await _apiService.getDailyReport(dateParam);
-    } on DioException catch (e) {
-      if (e.response?.statusCode == 404) {
-        // Backward compatibility: old backend may not provide daily report API yet.
-        return const PodcastDailyReportResponse(
-          available: false,
-          timezone: _dailyReportTimezone,
-          scheduleTimeLocal: _dailyReportScheduleTime,
-          totalItems: 0,
-          items: [],
-        );
-      }
-      throw NetworkException.fromDioError(e);
+      final status = await _apiCall(() => _apiService.getFavoriteStatus(episodeId));
+      return status.favorited;
+    } on NetworkException {
+      return false;
     }
   }
 
-  Future<PodcastDailyReportResponse> generateDailyReport({
-    DateTime? date,
-    bool rebuild = false,
-  }) async {
-    try {
-      final dateParam = date != null ? TimeFormatter.formatDate(date) : null;
-      return await _apiService.generateDailyReport(dateParam, rebuild);
-    } on DioException catch (e) {
-      final statusCode = e.response?.statusCode;
-      if (statusCode == 404 || statusCode == 405) {
-        final fallback = await getDailyReport(date: date);
-        if (fallback.available) {
-          return fallback;
-        }
-        throw const NetworkException(
-          'Daily report generation is unavailable on the current server',
-        );
-      }
-      final wrappedError = e.error;
-      if (wrappedError is AppException) {
-        throw wrappedError;
-      }
-      throw NetworkException.fromDioError(e);
-    }
-  }
+  Future<void> addFavorite(int episodeId) =>
+      _apiCall(() => _apiService.addFavorite(episodeId));
 
-  Future<PodcastDailyReportDatesResponse> getDailyReportDates({
-    int page = 1,
-    int size = 30,
-  }) async {
-    try {
-      return await _apiService.getDailyReportDates(page, size);
-    } on DioException catch (e) {
-      if (e.response?.statusCode == 404) {
-        // Backward compatibility: old backend may not provide daily report API yet.
-        return PodcastDailyReportDatesResponse(
-          dates: const [],
-          total: 0,
-          page: page,
-          size: size,
-          pages: 0,
-        );
-      }
-      throw NetworkException.fromDioError(e);
-    }
-  }
+  Future<void> removeFavorite(int episodeId) =>
+      _apiCall(() => _apiService.removeFavorite(episodeId));
 
   Future<PodcastEpisodeListResponse> listEpisodes({
     int? subscriptionId,

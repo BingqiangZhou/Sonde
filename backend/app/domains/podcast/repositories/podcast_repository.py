@@ -581,6 +581,25 @@ class PodcastRepository:
         result = await self.db.execute(stmt)
         return result.scalar() or 0
 
+
+    async def get_current_analyses(self, episode_ids: list[int]) -> dict[int, Any]:
+        """当前 AI 判定映射（Phase E：feed/详情叠加评分字段）。"""
+        if not episode_ids:
+            return {}
+        from sqlalchemy import select as _select
+
+        from app.domains.insight.models import AiAnalysis
+
+        rows = (
+            await self.db.execute(
+                _select(AiAnalysis).where(
+                    AiAnalysis.episode_id.in_(episode_ids),
+                    AiAnalysis.is_current.is_(True),
+                )
+            )
+        ).scalars().all()
+        return {a.episode_id: a for a in rows}
+
     async def get_episode_by_id(
         self,
         episode_id: int,

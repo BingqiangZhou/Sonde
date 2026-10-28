@@ -7,7 +7,6 @@ import 'package:personal_ai_assistant/core/network/server_health_service.dart';
 import 'package:personal_ai_assistant/core/services/app_cache_service.dart';
 import 'package:personal_ai_assistant/core/storage/local_storage_service.dart';
 import 'package:personal_ai_assistant/features/auth/presentation/providers/auth_provider.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_daily_report_providers.dart';
 import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_episodes_providers.dart';
 import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_feed_providers.dart';
 import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_highlights_providers.dart';
@@ -99,8 +98,6 @@ class ServerConfigNotifier extends Notifier<ServerConfigState> {
     ref.invalidate(profileStatsProvider);
     ref.invalidate(playbackHistoryLiteProvider);
     ref.invalidate(podcastStatsProvider);
-    ref.invalidate(dailyReportProvider);
-    ref.invalidate(dailyReportDatesProvider);
     ref.invalidate(highlightsProvider);
     ref.invalidate(highlightDatesProvider);
     ref.invalidate(podcastSearchProvider);

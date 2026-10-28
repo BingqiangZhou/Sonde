@@ -16,7 +16,8 @@ import 'package:personal_ai_assistant/features/auth/presentation/providers/auth_
 import 'package:personal_ai_assistant/features/auth/presentation/providers/onboarding_provider.dart';
 import 'package:personal_ai_assistant/features/home/presentation/pages/home_page.dart';
 import 'package:personal_ai_assistant/features/podcast/presentation/navigation/podcast_navigation.dart';
-import 'package:personal_ai_assistant/features/podcast/presentation/pages/podcast_daily_report_page.dart';
+import 'package:personal_ai_assistant/features/podcast/presentation/pages/site_favorites_page.dart';
+import 'package:personal_ai_assistant/features/podcast/presentation/pages/site_reports_page.dart';
 import 'package:personal_ai_assistant/features/podcast/presentation/pages/podcast_downloads_page.dart';
 import 'package:personal_ai_assistant/features/podcast/presentation/pages/podcast_episode_detail_page.dart';
 import 'package:personal_ai_assistant/features/podcast/presentation/pages/podcast_episodes_page.dart';
@@ -189,6 +190,17 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                     ),
                   ),
                   GoRoute(
+                    path: 'favorites',
+                    name: 'profile-favorites',
+                    parentNavigatorKey: appNavigatorKey,
+                    pageBuilder: (context, state) => _buildModalPage(
+                      state: state,
+                      child: const _PlayerAwareRouteFrame(
+                        child: SiteFavoritesPage(),
+                      ),
+                    ),
+                  ),
+                  GoRoute(
                     path: 'history',
                     name: 'profile-history',
                     parentNavigatorKey: appNavigatorKey,
@@ -239,22 +251,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         ),
       ),
 
-      // Daily report
+      // Global three-kind reports (v2)
       GoRoute(
-        path: '/reports/daily',
-        name: 'dailyReport',
-        pageBuilder: (context, state) {
-          final dateParam = state.uri.queryParameters['date'];
-          final parsedDate = _parseDateOnlyQuery(dateParam);
-          return _buildModalPage(
-            state: state,
-            child: _PlayerAwareRouteFrame(
-              child: PodcastDailyReportPage(
-                initialDate: parsedDate,
-              ),
-            ),
-          );
-        },
+        path: '/reports',
+        name: 'reports',
+        pageBuilder: (context, state) => _buildModalPage(
+          state: state,
+          child: _PlayerAwareRouteFrame(child: const SiteReportsPage()),
+        ),
       ),
 
       // Highlights

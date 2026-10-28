@@ -11,6 +11,8 @@ import 'package:personal_ai_assistant/features/podcast/data/models/podcast_disco
 import 'package:personal_ai_assistant/features/podcast/data/models/podcast_search_model.dart';
 import 'package:personal_ai_assistant/features/podcast/data/services/apple_podcast_rss_service.dart';
 import 'package:personal_ai_assistant/features/podcast/data/services/itunes_search_service.dart';
+import 'package:personal_ai_assistant/core/utils/app_logger.dart' as logger;
+import 'package:personal_ai_assistant/features/podcast/presentation/providers/podcast_providers.dart';
 
 enum PodcastSearchMode { podcasts, episodes }
 
@@ -166,6 +168,40 @@ class PodcastSearchNotifier extends Notifier<PodcastSearchState> {
 
     try {
       if (mode == PodcastSearchMode.podcasts) {
+        // v2：播客搜索走后端代理（多国合并 + 出站可控），失败回退 iTunes 直连
+        try {
+          final discover = await ref
+              .read(podcastRepositoryProvider)
+              .discoverSearch(query);
+          if (!_isRequestActive(requestId, query, mode)) {
+            return;
+          }
+          state = state.copyWith(
+            podcastResults: discover.results
+                .map(
+                  (item) => PodcastSearchResult(
+                    collectionId: item.collectionId,
+                    collectionName: item.name,
+                    artistName: item.author,
+                    artworkUrl100: item.artworkUrl,
+                    artworkUrl600: item.artworkUrl,
+                    feedUrl: item.feedUrl,
+                    collectionViewUrl: item.appleUrl,
+                    primaryGenreName: item.genre,
+                    trackCount: item.trackCount,
+                  ),
+                )
+                .toList(),
+            episodeResults: const [],
+            isLoading: false,
+            searchCountry: country,
+            searchMode: mode,
+          );
+          return;
+        } on Exception catch (backendError) {
+          logger.AppLogger.debug(
+              'Backend discover search failed, fallback to iTunes: $backendError');
+        }
         final response = await searchService.searchPodcasts(
           term: query,
           country: country,

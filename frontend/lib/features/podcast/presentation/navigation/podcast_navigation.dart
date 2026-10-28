@@ -148,21 +148,13 @@ class PodcastNavigation {
     );
   }
 
-  /// Navigate to daily report page
-  static void goToDailyReport(
-    BuildContext context, {
-    DateTime? date,
-  }) {
+  /// Navigate to the global three-kind reports page (v2)
+  static void goToReports(BuildContext context) {
     final routingContext = _resolveRoutingContext(context);
     if (routingContext == null) {
       return;
     }
-    GoRouter.of(routingContext).pushNamed(
-      'dailyReport',
-      queryParameters: {
-        if (date != null) 'date': EpisodeCardUtils.formatDate(date),
-      },
-    );
+    GoRouter.of(routingContext).pushNamed('reports');
   }
 
   /// Navigate to highlights page
