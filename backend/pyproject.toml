@@ -91,6 +91,7 @@ select = [
 ignore = [
     "E501",   # Line too long (handled by formatter)
     "B008",   # Do not perform function calls in argument defaults
+    "N806",   # SQLAlchemy repositories alias ORM classes into local variables (e.g. Subscription)
 ]
 
 [tool.ruff.lint.isort]

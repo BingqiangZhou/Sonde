@@ -106,7 +106,6 @@ class Settings(BaseSettings):
     TRANSCRIPTION_QUEUE_SIZE: int = 100
     TRANSCRIPTION_BACKLOG_ENABLED: bool = True
     TRANSCRIPTION_BACKLOG_BATCH_SIZE: int = 20
-    TRANSCRIPTION_BACKLOG_SCHEDULE_MINUTE: int = 5
     TRANSCRIPTION_STARTUP_RESET_TIMEOUT_SECONDS: float = 15.0
 
     # Logging Configuration
@@ -160,15 +159,6 @@ class Settings(BaseSettings):
     def validate_transcription_backlog_batch_size(cls, v: int) -> int:
         if v < 1:
             raise ValueError("TRANSCRIPTION_BACKLOG_BATCH_SIZE must be >= 1")
-        return v
-
-    @field_validator("TRANSCRIPTION_BACKLOG_SCHEDULE_MINUTE")
-    @classmethod
-    def validate_transcription_backlog_schedule_minute(cls, v: int) -> int:
-        if v < 0 or v > 59:
-            raise ValueError(
-                "TRANSCRIPTION_BACKLOG_SCHEDULE_MINUTE must be between 0 and 59",
-            )
         return v
 
     @field_validator("TRANSCRIPTION_STARTUP_RESET_TIMEOUT_SECONDS")
