@@ -13,12 +13,6 @@ upstream fastapi_backend {
     keepalive 8;
 }
 
-upstream web_ssr {
-    # web 阅读站（React Router SSR）
-    server web:3000;
-    keepalive 8;
-}
-
 # HTTP Server (端口 80 / Port 80)
 server {
     listen 80;
@@ -73,9 +67,9 @@ server {
         proxy_read_timeout 60s;
     }
 
-    # 根路径 → web 阅读站（SSR）
+    # 根路径 → FastAPI 后端（Web 阅读站已于 Phase G 退役，阅读功能在 App 内）
     location / {
-        proxy_pass http://web_ssr;
+        proxy_pass http://fastapi_backend;
         proxy_http_version 1.1;
 
         # 代理头设置 / Proxy Headers

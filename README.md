@@ -8,10 +8,9 @@
 **个人播客知识库**：订阅播客 → 自动转写全文 → AI 评分筛选 → 每天/周/月自动成刊（中文日报/周报/月报），多端阅读与收听。
 
 - **backend/** — Python FastAPI（+ Celery + Redis + PostgreSQL）：订阅抓取、六步转写流水线、AI 评分与三刊成刊、多用户认证、管理面板
-- **frontend/** — Flutter 多端客户端（Android / iOS / 桌面 / Web）：登录、订阅管理、发现、播放、三刊阅读
-- **web/** — 报刊风中文阅读站（React Router SSR），只经 HTTP 读后端
+- **frontend/** — Flutter 多端客户端（Android / iOS / 桌面）：登录、订阅管理、发现、播放、阅读（三刊/归档/全部动态）
 
-> **v2（2026-10-28）**：回归 Python + Flutter 多用户形态，移植 v1.x TS 版的 AI 评分/三刊流水线，六阶段转向已全部完成（决策与实施记录见 [`docs/v2-pivot/`](docs/v2-pivot/README.md)）；v1.x TS 版完整存档于 [`ts-era`](https://github.com/BingqiangZhou/Sonde/tree/ts-era) 分支。
+> **v2（2026-10-28）**：回归 Python + Flutter 多用户形态，移植 v1.x TS 版的 AI 评分/三刊流水线，六阶段转向已全部完成（决策与实施记录见 [`docs/v2-pivot/`](docs/v2-pivot/README.md)）；v1.x TS 版完整存档于 [`ts-era`](https://github.com/BingqiangZhou/Sonde/tree/ts-era) 分支。原 `web/` React 阅读站已于 Phase G 退役，阅读功能并入 App「阅读」Tab，`/api/v1/site/*` 同步收紧为登录态。
 
 ## 功能
 
@@ -49,11 +48,6 @@ uv sync --extra dev
 cp .env.example .env        # 填 API_KEY / DATABASE_URL / REDIS_URL
 uv run uvicorn app.main:app --reload
 uv run pytest               # 测试（内存 SQLite，无需 Docker）
-
-# Web 阅读站
-cd web
-npm install
-npm run dev                 # 开发；API 基址用环境变量 API_URL 指向后端
 ```
 
 ## 仓库结构
@@ -61,8 +55,7 @@ npm run dev                 # 开发；API 基址用环境变量 API_URL 指向�
 ```
 backend/            FastAPI 应用（app/domains: podcast, ai；app/admin: 管理面板；app/industry: 定制层）
 backend/app/industry/   站点定制层：site/taxonomy/selection 配置 + prompts/*.md（改配置不改代码）
-frontend/           Flutter 客户端（Riverpod 3 + GoRouter + Drift + audio_service）
-web/                React Router 8 SSR 阅读站（独立 npm 项目）
+frontend/           Flutter 客户端（Riverpod 3 + GoRouter + Drift + audio_service；阅读 Tab 含三刊/归档/全部动态）
 docker/             Docker Compose（postgres / redis / backend / celery_worker / nginx）
 docs/               设计文档；docs/v2-pivot/ 为 v2 转向文档集（当前开发依据）
 specs/              历史规格记录
@@ -71,7 +64,7 @@ specs/              历史规格记录
 ## 文档
 
 - 📋 [CHANGELOG.md](CHANGELOG.md) — 更新历史（v1.x TS 版见 ts-era 分支）
-- 🗂 [docs/v2-pivot/](docs/v2-pivot/README.md) — v2 转向决策、基线盘点、目标架构与 Phase A–F 实施计划
+- 🗂 [docs/v2-pivot/](docs/v2-pivot/README.md) — v2 转向决策、基线盘点、目标架构与 Phase A–G 实施计划
 - 🔧 [AGENTS.md](AGENTS.md) — 仓库开发约定（agent 工作区入口；项目级 skill `/commit`、`/release` 见 `.agents/skills/`）
 
 ## License

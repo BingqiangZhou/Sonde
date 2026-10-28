@@ -1,6 +1,6 @@
 # Repository Guidelines
 
-声读 Sonde v2 — Python + Flutter 多用户播客知识库。当前处于 v2 转向实施期（Phase A–F），**开发依据与阶段状态见 `docs/v2-pivot/README.md`**，动工前先读对应 Phase 文档。
+声读 Sonde v2 — Python + Flutter 多用户播客知识库。当前处于 v2 转向实施期（Phase A–G），**开发依据与阶段状态见 `docs/v2-pivot/README.md`**，动工前先读对应 Phase 文档。
 
 ## Project Structure & Module Organization
 - `backend/`: FastAPI service (DDD layout) in `backend/app/`:
@@ -11,8 +11,7 @@
 - `backend/app/industry/`: 声读定制层 — `site.py` / `taxonomy.py` / `selection.py` 常量 + `prompts/*.md`（LLM prompt 模板，`{{var}}` + `{{> include}}`）。站点个性改这里，不改代码；prompt 文本永不内联进 Python。
 - `backend/alembic/`: database migrations.
 - `backend/tests/` and `backend/app/**/tests/`: backend test suites.
-- `frontend/`: Flutter app in `frontend/lib/`（`core/`：database (Drift)、theme、network (Dio + token refresh)、widgets (adaptive/)；`features/`：auth, podcast, profile, settings, splash, home）with tests in `frontend/test/`. Dart 包名为 `sonde`，平台标识统一 `app.sonde`（v2.0.1 起，旧名 personal_ai_assistant/com.opc.stella 已全量移除）。
-- `web/`: React Router 8 SSR 阅读站（独立 npm 项目，无 workspace）。
+- `frontend/`: Flutter app in `frontend/lib/`（`core/`：database (Drift)、theme、network (Dio + token refresh)、widgets (adaptive/)；`features/`：auth, podcast, profile, settings, splash, home）with tests in `frontend/test/`. Dart 包名为 `sonde`，平台标识统一 `app.sonde`（v2.0.1 起，旧名 personal_ai_assistant/com.opc.stella 已全量移除）。阅读站功能（三刊/归档/全部动态）在 App「阅读」Tab 内（Phase G；原 `web/` React 阅读站已退役删除）。
 - `docker/`: Docker Compose files and deployment assets (postgres, redis, backend, celery_worker, nginx).
 - `docs/` and `specs/`: design notes; `docs/v2-pivot/` is the active v2 pivot doc set.
 
@@ -25,7 +24,6 @@
 - Frontend deps: `cd frontend && flutter pub get`
 - Frontend code gen: `cd frontend && dart run build_runner build` (required after modifying `@riverpod`, `@RestApi`, `@JsonSerializable`, or Drift files)
 - Frontend tests: `flutter test`; l10n: `flutter gen-l10n` (edit both en/zh ARB)
-- Web: `cd web && npm install && npm run build`（typecheck: `npm run typecheck`）
 - Docker backend verification (required): `cd docker && docker compose up -d --build`，`curl http://localhost:8000/api/v1/health`
 - 本机网络不畅时构建镜像：`docker/.env` 设 `BUILD_HTTP_PROXY=http://host.docker.internal:7897`
 
@@ -37,7 +35,6 @@
 - Celery: 单 `default` 队列，worker 带 embedded beat（`-B` flag）运行。
 - Frontend uses Material 3 + platform-adaptive UI (CupertinoTheme wrapper, `.adaptive()` widgets); theme tokens (`AppColors`/`AppRadius`/`AppSpacing`) — no hardcoded values.
 - Frontend responsive breakpoints: mobile <600 | tablet 600–1200 | desktop >=1200。
-- Web: React Router framework mode, Tailwind, no component library; Chinese-first UI copy.
 - 付费 AI 调用必须走 provider 层并写 receipts 成本台账（Phase C 起）。
 
 ## Testing Guidelines
@@ -48,7 +45,7 @@
 
 ## Commit & Pull Request Guidelines
 - Commit messages follow Conventional Commits: `feat:`, `fix:`, `refactor:`, `chore:`, `style:`, `docs:`.
-- 按阶段分组提交（Phase A–F），不跨阶段混合。
+- 按阶段分组提交（Phase A–G），不跨阶段混合。
 - 项目级 ZCode skill：`/commit`（智能提交，`.agents/skills/commit/`）、`/release`（发版流程，`.agents/skills/release/`）。
 
 ## Environment & Secrets
@@ -58,7 +55,7 @@
 
 ## Configuration & Requirements Notes
 - API endpoints are prefixed with `/api/v1/`.
-- 当前后端为单用户 API Key 认证；多用户 JWT 在 Phase B 恢复（契约见 `backend/docs/AUTHENTICATION.md`）。
+- 当前后端为多用户 JWT 认证（Phase B 恢复，契约见 `backend/docs/AUTHENTICATION.md`）；`/api/v1/site/*` 自 Phase G 起同样需登录态。
 - 日期/时区：报告窗口按 Asia/Shanghai 日历计算，DB 存 timestamptz (UTC)。
 - Check `docs/v2-pivot/` before implementing new work.
 

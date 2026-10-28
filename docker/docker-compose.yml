@@ -196,33 +196,6 @@ services:
     logging: *default-logging
 
   # =============================================================================
-  # Web 阅读站（React Router SSR，/api 由其 server.ts 反代到 backend）
-  # =============================================================================
-  web:
-    build:
-      # 上下文为仓库根：web 源码 + 根 CHANGELOG.md（changelog 页面打包）
-      context: ${WEB_SRC_CONTEXT:-..}
-      dockerfile: web/Dockerfile
-      args:
-        http_proxy: ${BUILD_HTTP_PROXY:-}
-        https_proxy: ${BUILD_HTTP_PROXY:-}
-    container_name: ${PROJECT_NAME:-sonde}_web
-    environment:
-      - API_URL=http://backend:8000
-      - PORT=3000
-      - TZ=${TZ:-Asia/Shanghai}
-    ports:
-      - "${WEB_PUBLISH_PORT:-127.0.0.1:3000}:3000"
-    depends_on:
-      backend:
-        condition: service_healthy
-    networks:
-      - app_network
-    restart: always
-    logging: *default-logging
-
-
-  # =============================================================================
   # Nginx Reverse Proxy (反向代理)
   # =============================================================================
   nginx:

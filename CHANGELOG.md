@@ -7,6 +7,26 @@ All notable changes to this project will be documented in this file.
 > v1.x（Node/TS 日报站时期，2026-09）的发版历史见 [`ts-era` 分支](https://github.com/BingqiangZhou/Sonde/blob/ts-era/CHANGELOG.md)；
 > 更早的 v0.x 历史即本文件以下条目（原 Personal AI Assistant 时期）。
 
+## [Unreleased]
+
+> Phase G：退役 Web 阅读站，阅读功能并入 Flutter App「阅读」Tab（设计见 `docs/v2-pivot/09-phase-g-app-reading.md`）。
+
+### ✨ 新增
+
+- App「阅读」Tab（底部导航第 3 栏）：三刊（日/周/月）阅读 + 站点标语（/site/meta）
+- 刊物归档浏览页（/reading/archive）与指定期详情页（/reading/issue/:kind/:key）
+- 全部动态页（/reading/all）：全部已分析单集分页，落选条目带落选原因与原始单集外链
+- 三刊正文共享渲染组件（分类徽章/时长/评分色块），全量接入 l10n（en/zh）
+
+### 🔒 变更
+
+- `/api/v1/site/*` 端点收紧为登录态（挂 `require_user`），不再对外公开
+
+### 🗑️ 移除
+
+- `web/` React Router SSR 阅读站（git 历史可追溯）；docker compose web 服务、nginx 根路径 web 分流、CI web 构建 job 同步移除
+
+
 ## [2.0.1](https://github.com/BingqiangZhou/Sonde/compare/v2.0.0...v2.0.1) - 2026-10-28 ([📥](https://github.com/BingqiangZhou/Sonde/releases/tag/v2.0.1))
 
 > v2.0.1 全库去 "Personal AI Assistant / Stella" 化，统一为声读 Sonde 标识：Dart 包名 personal_ai_assistant → `sonde`（全部导入与生成代码同步），Android/macOS 包名 com.opc.stella 与 iOS com.example.personalAiAssistant 统一为 `app.sonde`，Windows/Linux 二进制名与发布产物名改为 `sonde-*`，后端项目名 sonde-backend、Celery 应用 sonde_tasks；本地数据库 stella.db → sonde.db；发布产物以新命名重新构建。
