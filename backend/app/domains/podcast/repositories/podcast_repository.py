@@ -319,7 +319,9 @@ class PodcastRepository:
     ) -> tuple[PodcastEpisode, bool]:
         stmt = select(PodcastEpisode).where(PodcastEpisode.item_link == item_link)
         result = await self.db.execute(stmt)
-        episode = result.scalar_one_or_none()
+        # Links are not unique across episodes (real feeds repeat detail-page
+        # links); take the first match instead of raising on duplicates.
+        episode = result.scalars().first()
 
         if episode:
             episode.title = title
@@ -366,19 +368,21 @@ class PodcastRepository:
         item_links = list(
             {data["item_link"] for data in episodes_data if data.get("item_link")},
         )
-        existing_by_item_link: dict[str, PodcastEpisode] = {}
+        # Link -> queue of existing episodes: real feeds may repeat the same
+        # detail-page link across distinct episodes, so each incoming item
+        # consumes one unmatched existing row instead of collapsing them.
+        existing_by_item_link: dict[str, list[PodcastEpisode]] = {}
 
         if item_links:
             existing_stmt = select(PodcastEpisode).where(
                 PodcastEpisode.item_link.in_(item_links),
             )
             existing_result = await self.db.execute(existing_stmt)
-            existing_episodes = list(existing_result.scalars().all())
-            existing_by_item_link = {
-                episode.item_link: episode
-                for episode in existing_episodes
-                if episode.item_link
-            }
+            for episode in existing_result.scalars().all():
+                if episode.item_link:
+                    existing_by_item_link.setdefault(
+                        episode.item_link, []
+                    ).append(episode)
 
         processed_episodes: list[PodcastEpisode] = []
         new_episodes: list[PodcastEpisode] = []
@@ -395,7 +399,13 @@ class PodcastRepository:
             published_at_raw = data.get("published_at") or now
             published_at = sanitize_published_date(published_at_raw)
 
-            episode = existing_by_item_link.get(item_link) if item_link else None
+            episode = None
+            if item_link:
+                candidates = existing_by_item_link.get(item_link)
+                if candidates:
+                    episode = candidates.pop(0)
+                    if not candidates:
+                        existing_by_item_link.pop(item_link, None)
             if episode:
                 episode.title = title
                 episode.description = description
@@ -584,7 +594,8 @@ class PodcastRepository:
             ),
         )
         result = await self.db.execute(stmt)
-        return result.scalar_one_or_none()
+        # Links are not unique across episodes; return the first match.
+        return result.scalars().first()
 
     async def update_ai_summary(
         self,

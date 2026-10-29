@@ -70,10 +70,13 @@ class PodcastEpisode(Base):
     image_url = Column(String(500))  # Episode cover image URL
 
     # Episode detail page link
+    # Nullable and non-unique: real feeds omit <link> or repeat the same
+    # detail-page link across distinct episodes; ingestion dedup matches per
+    # link list, not a single row.
     item_link = Column(
         String(500),
-        unique=True,
-        nullable=False,
+        index=True,
+        nullable=True,
     )  # <item><link> tag content, links to episode detail page
 
     # Episode information
@@ -120,7 +123,6 @@ class PodcastEpisode(Base):
             "idx_podcast_episodes_status_published_id", "status", "published_at", "id"
         ),
         Index("idx_podcast_episode_image", "image_url"),
-        Index("idx_podcast_episodes_item_link", "item_link", unique=True),
     )
 
     def __repr__(self):

@@ -171,14 +171,12 @@ def get_podcast_stats_service(
     db: AsyncSession = Depends(get_db_session_dependency),
     user_id: int = Depends(require_user),
     repo=Depends(get_podcast_stats_repository),
-    redis: RedisCache = Depends(get_redis_client),
 ) -> PodcastStatsService:
     """Provide request-scoped podcast stats service."""
     return PodcastStatsService(
         db,
         user_id,
         repo=repo,
-        redis=redis,
     )
 
 
