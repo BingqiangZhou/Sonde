@@ -199,7 +199,6 @@ class TestPodcastSubscriptionPlatform:
             {1: 0},
         )
         mock_repo.get_subscription_episodes_batch.return_value = {1: []}
-        mock_repo.get_playback_states_batch.return_value = {}
 
         result, total = await service.list_subscriptions(page=1, size=20)
 

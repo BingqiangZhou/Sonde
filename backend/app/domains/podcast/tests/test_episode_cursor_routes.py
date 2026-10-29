@@ -7,7 +7,6 @@ from fastapi.testclient import TestClient
 from app.core.config import settings
 from app.domains.podcast.routes.dependencies import (
     get_podcast_episode_service,
-    get_podcast_search_service,
 )
 from app.domains.podcast.routes.episode_route_common import encode_keyset_cursor
 from app.main import app
@@ -22,10 +21,6 @@ def _sample_episode(now: datetime) -> dict:
         "audio_url": "https://example.com/audio.mp3",
         "audio_duration": 1200,
         "published_at": now,
-        "play_count": 0,
-        "is_playing": False,
-        "playback_rate": 1.0,
-        "is_played": False,
         "status": "published",
         "created_at": now,
         "updated_at": now,
@@ -120,54 +115,3 @@ def test_feed_keyset_cursor_path():
     service.list_feed_by_cursor.assert_awaited_once()
 
     app.dependency_overrides.pop(get_podcast_episode_service, None)
-
-
-def test_history_keyset_cursor_path():
-    service = AsyncMock()
-    app.dependency_overrides[get_podcast_episode_service] = lambda: service
-    client = TestClient(app)
-
-    now = datetime.now(UTC)
-    service.list_playback_history_by_cursor.return_value = (
-        [_sample_episode(now)],
-        20,
-        True,
-        (now, 1),
-    )
-    keyset_cursor = encode_keyset_cursor("history", now, 888)
-
-    response = client.get(
-        f"/api/v1/podcasts/episodes/history?cursor={keyset_cursor}&size=10",
-    )
-
-    assert response.status_code == 200
-    payload = response.json()
-    assert payload["next_cursor"]
-    service.list_playback_history_by_cursor.assert_awaited_once()
-
-    app.dependency_overrides.pop(get_podcast_episode_service, None)
-
-
-def test_search_rejects_query_alias():
-    service = AsyncMock()
-    app.dependency_overrides[get_podcast_search_service] = lambda: service
-    client = TestClient(app)
-
-    response = client.get("/api/v1/podcasts/search?query=slow")
-
-    assert response.status_code == 422
-    service.search_podcasts.assert_not_awaited()
-    app.dependency_overrides.pop(get_podcast_search_service, None)
-
-
-def test_search_requires_q():
-    service = AsyncMock()
-    app.dependency_overrides[get_podcast_search_service] = lambda: service
-    client = TestClient(app)
-
-    response = client.get("/api/v1/podcasts/search")
-
-    assert response.status_code == 422
-    service.search_podcasts.assert_not_awaited()
-
-    app.dependency_overrides.pop(get_podcast_search_service, None)

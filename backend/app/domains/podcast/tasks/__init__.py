@@ -7,7 +7,6 @@ from app.domains.podcast.tasks.tasks_highlight import (
 )
 from app.domains.podcast.tasks.tasks_maintenance import (
     auto_cleanup_cache_files,
-    cleanup_old_playback_states,
     cleanup_old_transcription_temp_files,
     process_opml_subscription_episodes,
 )
@@ -26,7 +25,6 @@ from app.domains.podcast.tasks.tasks_transcription import (
 __all__ = [
     "auto_cleanup_cache_files",
     "celery_app",
-    "cleanup_old_playback_states",
     "cleanup_old_transcription_temp_files",
     "extract_episode_highlights",
     "extract_pending_highlights",

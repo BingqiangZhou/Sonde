@@ -36,13 +36,22 @@ def test_legacy_subscription_podcasts_routes_removed() -> None:
 # Monitoring routes have been removed
 
 
-def test_queue_routes_exist() -> None:
+def test_playback_and_queue_routes_removed() -> None:
     paths = _route_paths()
 
-    assert "/api/v1/podcasts/queue" in paths
-    assert "/api/v1/podcasts/queue/items" in paths
-    assert "/api/v1/podcasts/queue/items/{episode_id}" in paths
-    assert "/api/v1/podcasts/queue/items/reorder" in paths
-    assert "/api/v1/podcasts/queue/current" in paths
-    assert "/api/v1/podcasts/queue/current/complete" in paths
-    assert "/api/v1/podcasts/queue/activate" in paths
+    for removed in (
+        "/api/v1/podcasts/queue",
+        "/api/v1/podcasts/queue/items",
+        "/api/v1/podcasts/queue/items/{episode_id}",
+        "/api/v1/podcasts/queue/items/reorder",
+        "/api/v1/podcasts/queue/current",
+        "/api/v1/podcasts/queue/current/complete",
+        "/api/v1/podcasts/queue/activate",
+        "/api/v1/podcasts/episodes/history",
+        "/api/v1/podcasts/episodes/history-lite",
+        "/api/v1/podcasts/episodes/{episode_id}/playback",
+        "/api/v1/podcasts/playback/rate/effective",
+        "/api/v1/podcasts/playback/rate/apply",
+        "/api/v1/podcasts/stats",
+    ):
+        assert removed not in paths, f"removed playback route still present: {removed}"

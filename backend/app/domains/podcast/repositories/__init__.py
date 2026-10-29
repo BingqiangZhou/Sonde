@@ -5,8 +5,6 @@ from app.domains.podcast.repositories.content_repository import (
 )
 from app.domains.podcast.repositories.podcast_repository import (
     PodcastEpisodeRepository,
-    PodcastPlaybackRepository,
-    PodcastQueueRepository,
     PodcastRepository,
     PodcastSearchRepository,
     PodcastStatsRepository,
@@ -16,8 +14,6 @@ from app.domains.podcast.repositories.podcast_repository import (
 
 __all__ = [
     "PodcastEpisodeRepository",
-    "PodcastPlaybackRepository",
-    "PodcastQueueRepository",
     "PodcastRepository",
     "PodcastSearchRepository",
     "PodcastStatsRepository",

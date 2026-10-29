@@ -83,7 +83,7 @@ class PodcastEpisodeService:
         """List podcast episodes with pagination.
 
         Args:
-            filters: Optional PodcastEpisodeFilter Pydantic model (subscription_id, has_summary, is_played)
+            filters: Optional PodcastEpisodeFilter Pydantic model (subscription_id, has_summary)
             page: Page number
             size: Items per page
 
@@ -91,31 +91,6 @@ class PodcastEpisodeService:
             Tuple of (episodes list, total count)
 
         """
-        # Handle both dict and Pydantic model inputs
-        if filters is None:
-            subscription_id = None
-        elif isinstance(filters, dict):
-            subscription_id = filters.get("subscription_id")
-        else:
-            # Pydantic model - access attributes directly
-            subscription_id = getattr(filters, "subscription_id", None)
-
-        # Try cache first
-        if subscription_id:
-            cached = await self.redis.get_episode_list(subscription_id, page, size)
-            if cached:
-                logger.info(
-                    f"Cache HIT for episode list: sub_id={subscription_id}, page={page}",
-                )
-                return (
-                    list(cached["results"]),
-                    cached["total"],
-                )
-
-            logger.info(
-                f"Cache MISS for episode list: sub_id={subscription_id}, page={page}",
-            )
-
         episodes, total = await self.repo.get_episodes_paginated(
             self.user_id,
             page=page,
@@ -123,48 +98,9 @@ class PodcastEpisodeService:
             filters=filters,
         )
 
-        # Batch fetch playback states
-        episode_ids = [ep.id for ep in episodes]
-        playback_states = await self.repo.get_playback_states_batch(
-            self.user_id,
-            episode_ids,
-        )
-
         # Build response
-        results = self._build_episode_dicts(episodes, playback_states)
+        results = self._build_episode_dicts(episodes)
 
-        # Cache if filtering by subscription
-        if subscription_id:
-            await self.redis.set_episode_list(
-                subscription_id,
-                page,
-                size,
-                {
-                    "results": results,
-                    "total": total,
-                },
-            )
-
-        return results, total
-
-    async def list_playback_history(
-        self,
-        page: int = 1,
-        size: int = 20,
-    ) -> tuple[list[dict[str, Any]], int]:
-        """List user playback/view history ordered by latest activity."""
-        episodes, total = await self.repo.get_playback_history_paginated(
-            self.user_id,
-            page=page,
-            size=size,
-        )
-
-        episode_ids = [ep.id for ep in episodes]
-        playback_states = await self.repo.get_playback_states_batch(
-            self.user_id,
-            episode_ids,
-        )
-        results = self._build_episode_dicts(episodes, playback_states)
         return results, total
 
     async def list_feed_by_cursor(
@@ -207,12 +143,7 @@ class PodcastEpisodeService:
             cursor_episode_id=cursor_episode_id,
         )
 
-        episode_ids = [ep.id for ep in episodes]
-        playback_states = await self.repo.get_playback_states_batch(
-            self.user_id,
-            episode_ids,
-        )
-        results = self._build_episode_dicts(episodes, playback_states)
+        results = self._build_episode_dicts(episodes)
         results = await self._merge_insight_fields(results)
         results = [
             self._rewrite_feed_item_description(item, hide_ai_summary=False)
@@ -242,57 +173,13 @@ class PodcastEpisodeService:
             size=size,
             filters=None,
         )
-        episode_ids = [ep.id for ep in episodes]
-        playback_states = await self.repo.get_playback_states_batch(
-            self.user_id,
-            episode_ids,
-        )
-        results = self._build_episode_dicts(episodes, playback_states)
+        results = self._build_episode_dicts(episodes)
         results = await self._merge_insight_fields(results)
         results = [
             self._rewrite_feed_item_description(item, hide_ai_summary=False)
             for item in results
         ]
         return results, total
-
-    async def list_playback_history_by_cursor(
-        self,
-        size: int = 20,
-        cursor_last_updated_at: datetime | None = None,
-        cursor_episode_id: int | None = None,
-    ) -> tuple[list[dict[str, Any]], int, bool, tuple[datetime, int] | None]:
-        """List playback history via keyset cursor pagination."""
-        (
-            episodes,
-            total,
-            has_more,
-            next_cursor_values,
-        ) = await self.repo.get_playback_history_cursor_paginated(
-            self.user_id,
-            size=size,
-            cursor_last_updated_at=cursor_last_updated_at,
-            cursor_episode_id=cursor_episode_id,
-        )
-
-        episode_ids = [ep.id for ep in episodes]
-        playback_states = await self.repo.get_playback_states_batch(
-            self.user_id,
-            episode_ids,
-        )
-        results = self._build_episode_dicts(episodes, playback_states)
-        return results, total, has_more, next_cursor_values
-
-    async def list_playback_history_lite(
-        self,
-        page: int = 1,
-        size: int = 20,
-    ) -> tuple[list[dict[str, Any]], int]:
-        """List lightweight playback history for profile history page."""
-        return await self.repo.get_playback_history_lite_paginated(
-            self.user_id,
-            page=page,
-            size=size,
-        )
 
     async def get_episode_by_id(self, episode_id: int) -> PodcastEpisode | None:
         """Get episode by ID.
@@ -342,12 +229,12 @@ class PodcastEpisodeService:
             Episode details dict or None
 
         """
+
         async def _load_from_db() -> dict[str, Any] | None:
             episode = await self.repo.get_episode_by_id(episode_id, self.user_id)
             if not episode:
                 return None
 
-            playback = await self.repo.get_playback_state(self.user_id, episode_id)
             cleaned_summary = filter_thinking_content(episode.ai_summary)
             transcription_task = await self._get_transcription_task(episode_id)
             summary_status = _derive_summary_status(
@@ -384,11 +271,6 @@ class PodcastEpisodeService:
                 "ai_summary": cleaned_summary,
                 "summary_version": episode.summary_version,
                 "ai_confidence_score": episode.ai_confidence_score,
-                "play_count": episode.play_count,
-                # Use per-user playback timestamp when available.
-                "last_played_at": playback.last_updated_at
-                if playback
-                else episode.last_played_at,
                 "season": episode.season,
                 "episode_number": episode.episode_number,
                 "explicit": episode.explicit,
@@ -396,10 +278,6 @@ class PodcastEpisodeService:
                 "metadata": episode.metadata_json or {},
                 "created_at": episode.created_at,
                 "updated_at": episode.updated_at,
-                "playback_position": playback.current_position if playback else None,
-                "is_playing": playback.is_playing if playback else False,
-                "playback_rate": playback.playback_rate if playback else 1.0,
-                "is_played": None,
                 "summary_status": summary_status,
                 "summary_error_message": transcription_task.summary_error_message
                 if transcription_task
@@ -439,49 +317,13 @@ class PodcastEpisodeService:
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def get_recently_played(
-        self,
-        user_id: int,
-        limit: int = 5,
-    ) -> list[dict[str, Any]]:
-        """Get recently played episodes.
-
-        Args:
-            user_id: User ID
-            limit: Maximum number of episodes
-
-        Returns:
-            List of recently played episodes
-
-        """
-        return await self.repo.get_recently_played(user_id, limit)
-
-    async def get_liked_episodes(
-        self,
-        user_id: int,
-        limit: int = 20,
-    ) -> list[PodcastEpisode]:
-        """Get user's liked episodes (high completion rate).
-
-        Args:
-            user_id: User ID
-            limit: Maximum number of episodes
-
-        Returns:
-            List of liked episodes
-
-        """
-        return await self.repo.get_liked_episodes(user_id, limit)
-
     def _build_episode_dicts(
         self,
         episodes: list[PodcastEpisode],
-        playback_states: dict[int, Any],
     ) -> list[dict[str, Any]]:
-        """Build episode dicts with playback states."""
+        """Build episode dicts."""
         return build_episode_dicts(
             episodes=episodes,
-            playback_states=playback_states,
             include_extended_fields=True,
         )
 
@@ -489,8 +331,9 @@ class PodcastEpisodeService:
         """Normalize lightweight feed payload fields for stable frontend semantics."""
         return self._rewrite_feed_item_description(item, hide_ai_summary=True)
 
-
-    async def _merge_insight_fields(self, items: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    async def _merge_insight_fields(
+        self, items: list[dict[str, Any]]
+    ) -> list[dict[str, Any]]:
         """合并当前 AI 判定字段（Phase E：App feed/详情展示评分与中文三件套）。"""
         ids = [i.get("id") for i in items if i.get("id") is not None]
         if not ids:
@@ -700,7 +543,9 @@ class PodcastSubscriptionService:
         )
 
         try:
-            await self.redis.delete_pattern(f"podcast:subscription:list:{self.user_id}:*")
+            await self.redis.delete_pattern(
+                f"podcast:subscription:list:{self.user_id}:*"
+            )
         except Exception as e:
             logger.warning(
                 f"Cache invalidation skipped: op=add cache=subscription_list user_id={self.user_id}: {e}"
@@ -746,33 +591,10 @@ class PodcastSubscriptionService:
             limit_per_subscription=settings.PODCAST_RECENT_EPISODES_LIMIT,
         )
 
-        # Batch fetch playback states
-        all_episode_ids = []
-        for ep_list in episodes_batch.values():
-            all_episode_ids.extend([ep.id for ep in ep_list])
-        playback_states = await self.repo.get_playback_states_batch(
-            self.user_id,
-            all_episode_ids,
-        )
-
         # Build response
         results = []
         for sub in subscriptions:
             episodes = episodes_batch.get(sub.id, [])
-
-            # Calculate unplayed count
-            unplayed_count = 0
-            for ep in episodes:
-                playback = playback_states.get(ep.id)
-                if (
-                    not playback
-                    or not playback.current_position
-                    or (
-                        ep.audio_duration
-                        and playback.current_position < ep.audio_duration * 0.9
-                    )
-                ):
-                    unplayed_count += 1
 
             episode_count = episode_counts.get(sub.id, 0)
 
@@ -814,7 +636,6 @@ class PodcastSubscriptionService:
                     "error_message": sub.error_message,
                     "fetch_interval": sub.fetch_interval,
                     "episode_count": episode_count,
-                    "unplayed_count": unplayed_count,
                     "latest_episode": latest_episode_dict,
                     "categories": metadata["categories"],
                     "image_url": metadata["image_url"],
@@ -1283,7 +1104,9 @@ class PodcastSubscriptionService:
     ) -> None:
         """Invalidate caches without failing the business operation."""
         try:
-            await self.redis.delete_pattern(f"podcast:episodes:list:{subscription_id}:*")
+            await self.redis.delete_pattern(
+                f"podcast:episodes:list:{subscription_id}:*"
+            )
         except Exception as e:
             logger.warning(
                 f"Cache invalidation skipped: "
@@ -1291,7 +1114,9 @@ class PodcastSubscriptionService:
                 f"subscription_id={subscription_id}: {e}"
             )
         try:
-            await self.redis.delete_pattern(f"podcast:subscription:list:{self.user_id}:*")
+            await self.redis.delete_pattern(
+                f"podcast:subscription:list:{self.user_id}:*"
+            )
         except Exception as e:
             logger.warning(
                 f"Cache invalidation skipped: "

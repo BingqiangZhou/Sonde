@@ -1,6 +1,6 @@
 """Podcast data models - unified domain models.
 
-Contains all models: podcast episodes, playback, queue,
+Contains all models: podcast episodes,
 subscription, transcription, conversation, reports, and highlights.
 """
 
@@ -10,7 +10,6 @@ from enum import StrEnum
 from sqlalchemy import (
     JSON,
     Boolean,
-    CheckConstraint,
     Column,
     DateTime,
     Enum,
@@ -77,10 +76,6 @@ class PodcastEpisode(Base):
         nullable=False,
     )  # <item><link> tag content, links to episode detail page
 
-    # Playback statistics (global)
-    play_count = Column(Integer, default=0)
-    last_played_at = Column(DateTime(timezone=True))
-
     # Episode information
     season = Column(Integer)
     episode_number = Column(Integer)
@@ -109,16 +104,6 @@ class PodcastEpisode(Base):
 
     # Relationships
     subscription = relationship("Subscription", back_populates="podcast_episodes")
-    playback_states = relationship(
-        "PodcastPlaybackState",
-        back_populates="episode",
-        cascade="all, delete",
-    )
-    queue_items = relationship(
-        "PodcastQueueItem",
-        back_populates="episode",
-        cascade="all, delete",
-    )
     transcript = relationship(
         "PodcastEpisodeTranscript",
         back_populates="episode",
@@ -140,138 +125,6 @@ class PodcastEpisode(Base):
 
     def __repr__(self):
         return f"<PodcastEpisode(id={self.id}, title='{self.title[:30]}...', status='{self.status}')>"
-
-
-class PodcastPlaybackState(Base):
-    """User playback state - tracks each user's podcast playback progress."""
-
-    __tablename__ = "podcast_playback_states"
-
-    id = Column(Integer, primary_key=True)
-    user_id = Column(
-        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False
-    )
-    episode_id = Column(
-        Integer,
-        ForeignKey("podcast_episodes.id", ondelete="CASCADE"),
-        nullable=False,
-    )
-
-    # Playback state
-    current_position = Column(Integer, default=0)  # Current playback position (seconds)
-    is_playing = Column(Boolean, default=False)
-    playback_rate = Column(Float, default=1.0, nullable=False)  # Playback speed
-    last_updated_at = Column(
-        DateTime(timezone=True),
-        default=lambda: datetime.now(UTC),
-        onupdate=lambda: datetime.now(UTC),
-    )
-
-    # Statistics
-    play_count = Column(Integer, default=0)
-
-    # Relationships
-    episode = relationship("PodcastEpisode", back_populates="playback_states")
-    # Note: User model not imported; accessed via repositories only
-
-    __table_args__ = (
-        CheckConstraint(
-            "playback_rate >= 0.5 AND playback_rate <= 3.0",
-            name="ck_podcast_playback_states_playback_rate_range",
-        ),
-        # Ensure each user-episode combination is unique
-        Index("idx_user_episode_unique", "user_id", "episode_id", unique=True),
-    )
-
-    def __repr__(self):
-        return f"<PlaybackState(user={self.user_id}, ep={self.episode_id}, pos={self.current_position}s)>"
-
-
-class PodcastQueue(Base):
-    """Per-user persistent podcast playback queue."""
-
-    __tablename__ = "podcast_queues"
-
-    id = Column(Integer, primary_key=True)
-    user_id = Column(
-        Integer,
-        ForeignKey("users.id", ondelete="CASCADE"),
-        nullable=False,
-        unique=True,
-    )
-    current_episode_id = Column(
-        Integer,
-        ForeignKey("podcast_episodes.id", ondelete="SET NULL"),
-        nullable=True,
-    )
-    revision = Column(Integer, default=0, nullable=False)
-    updated_at = Column(
-        DateTime(timezone=True),
-        default=lambda: datetime.now(UTC),
-        onupdate=lambda: datetime.now(UTC),
-    )
-
-    items = relationship(
-        "PodcastQueueItem",
-        back_populates="queue",
-        cascade="all, delete-orphan",
-        order_by="PodcastQueueItem.position",
-    )
-    current_episode = relationship(
-        "PodcastEpisode",
-        foreign_keys=[current_episode_id],
-        lazy="joined",
-    )
-
-    __table_args__ = (Index("idx_podcast_queue_user", "user_id"),)
-
-    def __repr__(self):
-        return f"<PodcastQueue(user={self.user_id}, current={self.current_episode_id}, revision={self.revision})>"
-
-
-class PodcastQueueItem(Base):
-    """Item in a user's podcast queue."""
-
-    __tablename__ = "podcast_queue_items"
-
-    id = Column(Integer, primary_key=True)
-    queue_id = Column(
-        Integer,
-        ForeignKey("podcast_queues.id", ondelete="CASCADE"),
-        nullable=False,
-    )
-    episode_id = Column(
-        Integer,
-        ForeignKey("podcast_episodes.id", ondelete="CASCADE"),
-        nullable=False,
-    )
-    position = Column(Integer, nullable=False)
-    created_at = Column(
-        DateTime(timezone=True),
-        default=lambda: datetime.now(UTC),
-    )
-    updated_at = Column(
-        DateTime(timezone=True),
-        default=lambda: datetime.now(UTC),
-        onupdate=lambda: datetime.now(UTC),
-    )
-
-    queue = relationship("PodcastQueue", back_populates="items")
-    episode = relationship("PodcastEpisode", back_populates="queue_items")
-
-    __table_args__ = (
-        UniqueConstraint(
-            "queue_id",
-            "episode_id",
-            name="uq_podcast_queue_item_episode",
-        ),
-        UniqueConstraint("queue_id", "position", name="uq_podcast_queue_item_position"),
-        Index("idx_podcast_queue_items_queue_position", "queue_id", "position"),
-    )
-
-    def __repr__(self):
-        return f"<PodcastQueueItem(queue={self.queue_id}, episode={self.episode_id}, position={self.position})>"
-
 
 
 # ---------------------------------------------------------------------------
@@ -407,11 +260,6 @@ class UserSubscription(Base):
     is_archived = Column(
         Boolean, default=False, comment="User has archived this subscription"
     )
-    playback_rate_preference = Column(
-        Float,
-        nullable=True,
-        comment="Subscription-level playback speed preference",
-    )
 
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
     updated_at = Column(
@@ -423,11 +271,6 @@ class UserSubscription(Base):
     subscription = relationship("Subscription", back_populates="user_subscriptions")
 
     __table_args__ = (
-        CheckConstraint(
-            "playback_rate_preference IS NULL OR "
-            "(playback_rate_preference >= 0.5 AND playback_rate_preference <= 3.0)",
-            name="ck_user_subscriptions_playback_rate_preference_range",
-        ),
         Index("idx_user_subscription", "user_id", "subscription_id", unique=True),
         Index("idx_user_archived", "user_id", "is_archived"),
     )
@@ -732,7 +575,6 @@ class TranscriptionTask(Base):
         return f"<TranscriptionTask(id={self.id}, episode_id={self.episode_id}, status='{self.status}')>"
 
 
-
 # ---------------------------------------------------------------------------
 # Helper
 # ---------------------------------------------------------------------------
@@ -860,8 +702,6 @@ class PodcastConversation(Base):
 
     def __repr__(self):
         return f"<PodcastConversation(id={self.id}, episode_id={self.episode_id}, role='{self.role}')>"
-
-
 
 
 class HighlightExtractionTask(Base):
@@ -1031,9 +871,6 @@ class UserFavorite(Base):
 __all__ = [
     # Podcast domain
     "PodcastEpisode",
-    "PodcastPlaybackState",
-    "PodcastQueue",
-    "PodcastQueueItem",
     "is_podcast_subscription",
     # Subscription domain (merged)
     "SubscriptionType",

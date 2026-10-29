@@ -13,10 +13,8 @@ from enum import StrEnum
 from sqlalchemy import (
     JSON,
     Boolean,
-    CheckConstraint,
     Column,
     DateTime,
-    Float,
     ForeignKey,
     Index,
     Integer,
@@ -37,7 +35,7 @@ class UserStatus(StrEnum):
 
 
 class User(Base):
-    """User model（列集与现库对齐：001 + 003 default_playback_rate + 024 去除 2FA）。"""
+    """User model（列集与现库对齐：001 + 024 去除 2FA + 027 去除播放倍速）。"""
 
     __tablename__ = "users"
 
@@ -53,7 +51,6 @@ class User(Base):
     last_login_at = Column(DateTime(timezone=True), nullable=True)
     settings = Column(JSON, nullable=True, default=dict)
     preferences = Column(JSON, nullable=True, default=dict)
-    default_playback_rate = Column(Float, nullable=False, default=1.0)
     api_key = Column(String(255), unique=True, nullable=True)
 
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
@@ -68,10 +65,6 @@ class User(Base):
     )
 
     __table_args__ = (
-        CheckConstraint(
-            "default_playback_rate >= 0.5 AND default_playback_rate <= 3.0",
-            name="ck_users_default_playback_rate_range",
-        ),
         Index("idx_email_status", "email", "status"),
         Index("idx_username_status", "username", "status"),
     )

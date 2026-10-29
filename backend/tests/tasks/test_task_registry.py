@@ -11,7 +11,6 @@ def test_registered_task_names_snapshot() -> None:
         "app.domains.podcast.tasks.tasks_transcription.process_audio_transcription",
         "app.domains.podcast.tasks.tasks_transcription.process_podcast_episode_with_transcription",
         "app.domains.podcast.tasks.tasks_transcription.process_pending_transcriptions",
-        "app.domains.podcast.tasks.tasks_maintenance.cleanup_old_playback_states",
         "app.domains.podcast.tasks.tasks_maintenance.cleanup_old_transcription_temp_files",
         "app.domains.podcast.tasks.tasks_maintenance.auto_cleanup_cache_files",
         "app.domains.insight.tasks.analyze_episode_task",

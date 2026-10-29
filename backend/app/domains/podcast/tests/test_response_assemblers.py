@@ -6,9 +6,6 @@ from app.domains.podcast.routes.response_assemblers import (
     build_daily_report_dates_response,
     build_episode_list_response,
     build_feed_response,
-    build_playback_history_list_response,
-    build_playback_state_response,
-    build_queue_response,
     build_summary_models_response,
     build_summary_response,
 )
@@ -33,18 +30,12 @@ def _episode_payload(now: datetime) -> dict:
         "ai_summary": "summary",
         "summary_version": "v1",
         "ai_confidence_score": 0.9,
-        "play_count": 0,
-        "last_played_at": None,
         "season": None,
         "episode_number": None,
         "explicit": False,
         "status": "published",
         "metadata": {},
         "subscription_title": "Podcast",
-        "playback_position": 30,
-        "is_playing": False,
-        "playback_rate": 1.0,
-        "is_played": False,
         "created_at": now,
         "updated_at": now,
     }
@@ -84,34 +75,6 @@ def test_build_episode_list_response_sets_pagination():
     assert response.pages == 3
     assert response.subscription_id == 5
     assert response.next_cursor == "cursor-2"
-
-
-def test_build_playback_history_list_response_uses_lightweight_items():
-    now = datetime.now(UTC)
-
-    response = build_playback_history_list_response(
-        [
-            {
-                "id": 11,
-                "subscription_id": 2,
-                "subscription_title": "Podcast",
-                "subscription_image_url": None,
-                "title": "Episode 11",
-                "image_url": None,
-                "audio_duration": 1800,
-                "playback_position": 45,
-                "last_played_at": now,
-                "published_at": now,
-            },
-        ],
-        total=1,
-        page=1,
-        size=20,
-    )
-
-    assert response.total == 1
-    assert response.pages == 1
-    assert response.items[0].playback_position == 45
 
 
 def test_build_conversation_responses_wrap_payloads():
@@ -177,7 +140,7 @@ def test_build_report_dates_response():
     assert report_dates.items[0].total_items == 1
 
 
-def test_build_summary_and_playback_responses():
+def test_build_summary_response_basic():
     now = datetime.now(UTC)
 
     summary = build_summary_response(
@@ -190,21 +153,8 @@ def test_build_summary_and_playback_responses():
             "processing_time": 1.2,
         },
     )
-    playback = build_playback_state_response(
-        payload={
-            "episode_id": 9,
-            "progress": 33,
-            "is_playing": True,
-            "playback_rate": 1.25,
-            "play_count": 4,
-            "last_updated_at": now,
-            "progress_percentage": 12.5,
-            "remaining_time": 240,
-        },
-    )
 
     assert summary.word_count == 3
-    assert playback.current_position == 33
 
 
 def test_build_summary_response_accepts_model_used_key():
@@ -223,49 +173,6 @@ def test_build_summary_response_accepts_model_used_key():
 
     assert summary.model_used == "workflow-model"
     assert summary.word_count == 3
-
-
-def test_build_playback_and_queue_responses_from_dicts():
-    now = datetime.now(UTC)
-
-    playback = build_playback_state_response(
-        payload={
-            "episode_id": 7,
-            "current_position": 80,
-            "is_playing": False,
-            "playback_rate": 1.0,
-            "play_count": 2,
-            "last_updated_at": now,
-            "progress_percentage": 50.0,
-            "remaining_time": 80,
-        },
-    )
-    queue = build_queue_response(
-        {
-            "current_episode_id": 7,
-            "revision": 3,
-            "updated_at": now,
-            "items": [
-                {
-                    "episode_id": 7,
-                    "position": 0,
-                    "playback_position": 80,
-                    "title": "Episode 7",
-                    "podcast_id": 4,
-                    "audio_url": "https://example.com/audio.mp3",
-                    "duration": 160,
-                    "published_at": now,
-                    "image_url": None,
-                    "subscription_title": "Podcast",
-                    "subscription_image_url": None,
-                },
-            ],
-        },
-    )
-
-    assert playback.episode_id == 7
-    assert queue.revision == 3
-    assert queue.items[0].episode_id == 7
 
 
 def test_build_pending_and_model_responses():

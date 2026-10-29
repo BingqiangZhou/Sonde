@@ -38,20 +38,6 @@ def mock_daily_report_service(mock_service_factory):
 
 
 @pytest.fixture
-def mock_playback_service(mock_service_factory):
-    from app.domains.podcast.routes.dependencies import get_podcast_playback_service
-
-    yield from mock_service_factory(get_podcast_playback_service)
-
-
-@pytest.fixture
-def mock_queue_service(mock_service_factory):
-    from app.domains.podcast.routes.dependencies import get_podcast_queue_service
-
-    yield from mock_service_factory(get_podcast_queue_service)
-
-
-@pytest.fixture
 def mock_stats_service(mock_service_factory):
     from app.domains.podcast.routes.dependencies import (
         get_podcast_episode_service,

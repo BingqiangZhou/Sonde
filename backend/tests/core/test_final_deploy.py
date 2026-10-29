@@ -33,20 +33,18 @@ def test_api_routes_shape() -> None:
     paths = [route.path for route in router.routes]
     assert any("/episodes" in path for path in paths)
     assert any("/favorites" in path for path in paths)
-    assert any("/queue" in path for path in paths)
+    assert any("/stats/profile" in path for path in paths)
 
 
 def test_repository_contract() -> None:
     from app.domains.podcast.repositories import (
         PodcastEpisodeRepository,
-        PodcastPlaybackRepository,
         PodcastSubscriptionRepository,
     )
 
     assert hasattr(PodcastSubscriptionRepository, "create_or_update_subscription")
     assert hasattr(PodcastSubscriptionRepository, "create_or_update_episode")
     assert hasattr(PodcastEpisodeRepository, "update_ai_summary")
-    assert hasattr(PodcastPlaybackRepository, "update_playback_progress")
 
 
 def test_specialized_service_contracts() -> None:
@@ -57,9 +55,7 @@ def test_specialized_service_contracts() -> None:
         PodcastEpisodeService,
         PodcastSubscriptionService,
     )
-    from app.domains.podcast.services.playback_service import PodcastPlaybackService
 
     assert hasattr(PodcastSubscriptionService, "add_subscription")
     assert hasattr(PodcastEpisodeService, "get_episode_with_summary")
-    assert hasattr(PodcastPlaybackService, "update_playback_progress")
     assert hasattr(PodcastSummaryGenerationService, "regenerate_summary")

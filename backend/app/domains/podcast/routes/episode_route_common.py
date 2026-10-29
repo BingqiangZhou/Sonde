@@ -26,7 +26,7 @@ def encode_keyset_cursor(cursor_type: str, timestamp: datetime, episode_id: int)
 
 
 def decode_cursor(cursor: str) -> dict[str, Any]:
-    """Decode a keyset cursor token used by feed/history endpoints."""
+    """Decode a keyset cursor token used by feed endpoints."""
     padding = "=" * (-len(cursor) % 4)
     try:
         decoded = base64.urlsafe_b64decode(f"{cursor}{padding}").decode("utf-8")
@@ -44,7 +44,7 @@ def decode_cursor(cursor: str) -> dict[str, Any]:
         cursor_type = payload.get("type")
         timestamp_raw = payload.get("ts")
         episode_id = payload.get("id")
-        if cursor_type not in {"feed", "history"}:
+        if cursor_type not in {"feed"}:
             raise ValueError("unsupported cursor type")
         if not isinstance(timestamp_raw, str):
             raise ValueError("timestamp missing")

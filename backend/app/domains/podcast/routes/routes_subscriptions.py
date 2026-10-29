@@ -69,7 +69,6 @@ async def add_subscription(
             "error_message": subscription.error_message,
             "fetch_interval": subscription.fetch_interval,
             "episode_count": len(new_episodes),
-            "unplayed_count": len(new_episodes),
             "image_url": image_url,
             "author": author,
             "categories": categories,

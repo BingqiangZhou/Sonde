@@ -11,8 +11,6 @@ import pytest
 from app.core.config import settings
 from app.domains.podcast.services import (
     PodcastEpisodeService,
-    PodcastPlaybackService,
-    PodcastQueueService,
     PodcastSearchService,
     PodcastSubscriptionService,
 )
@@ -93,7 +91,6 @@ class TestPodcastSubscriptionService:
         """测试空订阅列表"""
         mock_repo.get_user_subscriptions_paginated.return_value = ([], 0, {})
         mock_repo.get_subscription_episodes_batch.return_value = {}
-        mock_repo.get_playback_states_batch.return_value = {}
 
         results, total = await service.list_subscriptions()
 
@@ -273,7 +270,6 @@ class TestPodcastEpisodeService:
             published_at=now,
         )
         mock_repo.get_episodes_paginated.return_value = ([episode], 1)
-        mock_repo.get_playback_states_batch.return_value = {}
 
         results, total = await service.list_feed_by_page(page=1, size=20)
 
@@ -296,7 +292,6 @@ class TestPodcastEpisodeService:
             published_at=now,
         )
         mock_repo.get_episodes_paginated.return_value = ([episode], 1)
-        mock_repo.get_playback_states_batch.return_value = {}
 
         results, total = await service.list_episodes(page=1, size=20)
 
@@ -313,122 +308,6 @@ class TestPodcastEpisodeService:
 
         assert result is not None
         assert len(result) == service._feed_description_max_length
-
-
-class TestPodcastPlaybackService:
-    """测试播客播放服务"""
-
-    @pytest.fixture
-    def mock_db(self):
-        return AsyncMock()
-
-    @pytest.fixture
-    def mock_repo(self):
-        with patch(
-            "app.domains.podcast.services.playback_service.PodcastPlaybackRepository",
-        ) as mock:
-            repo_instance = AsyncMock()
-            mock.return_value = repo_instance
-            yield repo_instance
-
-    @pytest.fixture
-    def service(self, mock_db, mock_repo):
-        return PodcastPlaybackService(mock_db, user_id=1)
-
-    @pytest.mark.asyncio
-    async def test_service_initialization(self, service):
-        """测试服务初始化"""
-        assert service.user_id == 1
-        assert service.db is not None
-        assert service.repo is not None
-
-    @pytest.mark.asyncio
-    async def test_get_playback_state_not_found(self, service, mock_repo):
-        """测试获取不存在的播放状态"""
-        mock_repo.get_playback_state.return_value = None
-        mock_repo.get_episode_by_id.return_value = None
-
-        result = await service.get_playback_state(1)
-
-        assert result is None
-
-    @pytest.mark.asyncio
-    async def test_update_playback_progress_returns_projection(
-        self,
-        service,
-        mock_repo,
-    ):
-        episode = Mock(audio_duration=200)
-        playback = Mock(
-            current_position=50,
-            is_playing=True,
-            playback_rate=1.25,
-            play_count=3,
-            last_updated_at=datetime.now(UTC),
-        )
-        mock_repo.get_episode_by_id.return_value = episode
-        mock_repo.update_playback_progress.return_value = playback
-        service.redis.invalidate_user_stats = AsyncMock()
-        service.redis.invalidate_profile_stats = AsyncMock()
-
-        result = await service.update_playback_progress(1, 50, True, 1.25)
-
-        assert result.current_position == 50
-        assert result.progress_percentage == 25.0
-
-
-class TestPodcastQueueService:
-    """测试播客队列服务"""
-
-    @pytest.fixture
-    def mock_db(self):
-        return AsyncMock()
-
-    @pytest.fixture
-    def mock_repo(self):
-        with patch(
-            "app.domains.podcast.services.playback_service.PodcastQueueRepository",
-        ) as mock:
-            repo_instance = AsyncMock()
-            mock.return_value = repo_instance
-            yield repo_instance
-
-    @pytest.fixture
-    def service(self, mock_db, mock_repo):
-        return PodcastQueueService(mock_db, user_id=1)
-
-    @pytest.mark.asyncio
-    async def test_get_queue_returns_projection(self, service, mock_repo):
-        now = datetime.now(UTC)
-        subscription = Mock(
-            title="Podcast",
-            config={"image_url": "https://example.com/sub.jpg"},
-        )
-        episode = Mock(
-            title="Episode 1",
-            subscription_id=10,
-            audio_url="https://example.com/audio.mp3",
-            audio_duration=120,
-            published_at=now,
-            image_url="https://example.com/ep.jpg",
-            subscription=subscription,
-        )
-        queue_item = Mock(id=1, episode_id=5, position=0, episode=episode)
-        queue = Mock(
-            current_episode_id=5,
-            revision=2,
-            updated_at=now,
-            items=[queue_item],
-        )
-        playback_state = Mock(current_position=30)
-        mock_repo.get_queue_with_items.return_value = queue
-        mock_repo.get_playback_states_batch.return_value = {5: playback_state}
-
-        result = await service.get_queue()
-
-        assert result["current_episode_id"] == 5
-        assert result["items"][0]["episode_id"] == 5
-        assert result["items"][0]["playback_position"] == 30
 
 
 class TestPodcastSearchService:
@@ -473,7 +352,6 @@ class TestPodcastSearchService:
         """测试空搜索结果"""
         mock_repo.search_episodes.return_value = ([], 0)
         mock_redis.get_search_results.return_value = None
-        mock_repo.get_playback_states_batch.return_value = {}
 
         results, total = await service.search_podcasts("test query")
 

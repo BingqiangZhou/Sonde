@@ -23,10 +23,6 @@ from app.domains.podcast.services.episode_service import (
     PodcastEpisodeService,
     PodcastSubscriptionService,
 )
-from app.domains.podcast.services.playback_service import (
-    PodcastPlaybackService,
-    PodcastQueueService,
-)
 from app.domains.podcast.services.schedule_service import PodcastScheduleService
 from app.domains.podcast.services.search_service import PodcastSearchService
 from app.domains.podcast.services.stats_service import PodcastStatsService
@@ -52,8 +48,6 @@ def _get_repositories():
         return _cached_repos
     from app.domains.podcast.repositories import (
         PodcastEpisodeRepository,
-        PodcastPlaybackRepository,
-        PodcastQueueRepository,
         PodcastRepository,
         PodcastSearchRepository,
         PodcastStatsRepository,
@@ -62,8 +56,6 @@ def _get_repositories():
 
     _cached_repos = {
         "episode": PodcastEpisodeRepository,
-        "playback": PodcastPlaybackRepository,
-        "queue": PodcastQueueRepository,
         "search": PodcastSearchRepository,
         "stats": PodcastStatsRepository,
         "subscription": PodcastSubscriptionRepository,
@@ -86,22 +78,6 @@ def get_podcast_episode_repository(
     """Provide the podcast episode-query repository."""
     repos = _get_repositories()
     return repos["episode"](db)
-
-
-def get_podcast_playback_repository(
-    db: AsyncSession = Depends(get_db_session_dependency),
-):
-    """Provide the podcast playback repository."""
-    repos = _get_repositories()
-    return repos["playback"](db)
-
-
-def get_podcast_queue_repository(
-    db: AsyncSession = Depends(get_db_session_dependency),
-):
-    """Provide the podcast queue repository."""
-    repos = _get_repositories()
-    return repos["queue"](db)
 
 
 def get_podcast_search_repository(
@@ -173,25 +149,6 @@ def get_podcast_episode_service(
     return PodcastEpisodeService(db, user_id, repo=repo, redis=redis)
 
 
-def get_podcast_playback_service(
-    db: AsyncSession = Depends(get_db_session_dependency),
-    user_id: int = Depends(require_user),
-    repo=Depends(get_podcast_playback_repository),
-    redis: RedisCache = Depends(get_redis_client),
-) -> PodcastPlaybackService:
-    """Provide request-scoped podcast playback service."""
-    return PodcastPlaybackService(db, user_id, repo=repo, redis=redis)
-
-
-def get_podcast_queue_service(
-    db: AsyncSession = Depends(get_db_session_dependency),
-    user_id: int = Depends(require_user),
-    repo=Depends(get_podcast_queue_repository),
-) -> PodcastQueueService:
-    """Provide request-scoped podcast queue service."""
-    return PodcastQueueService(db, user_id, repo=repo)
-
-
 def get_podcast_schedule_service(
     db: AsyncSession = Depends(get_db_session_dependency),
     user_id: int = Depends(require_user),
@@ -215,7 +172,6 @@ def get_podcast_stats_service(
     user_id: int = Depends(require_user),
     repo=Depends(get_podcast_stats_repository),
     redis: RedisCache = Depends(get_redis_client),
-    playback_service: PodcastPlaybackService = Depends(get_podcast_playback_service),
 ) -> PodcastStatsService:
     """Provide request-scoped podcast stats service."""
     return PodcastStatsService(
@@ -223,10 +179,7 @@ def get_podcast_stats_service(
         user_id,
         repo=repo,
         redis=redis,
-        playback_service=playback_service,
     )
-
-
 
 
 def get_highlight_service(
@@ -272,10 +225,6 @@ __all__ = [
     "get_podcast_episode_repository",
     "get_podcast_episode_service",
     "get_podcast_parser",
-    "get_podcast_playback_repository",
-    "get_podcast_playback_service",
-    "get_podcast_queue_repository",
-    "get_podcast_queue_service",
     "get_podcast_schedule_service",
     "get_podcast_search_repository",
     "get_podcast_search_service",

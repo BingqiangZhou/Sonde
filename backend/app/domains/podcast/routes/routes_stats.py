@@ -3,27 +3,11 @@
 from fastapi import APIRouter, Depends
 
 from app.domains.podcast.routes.dependencies import get_podcast_stats_service
-from app.domains.podcast.schemas import (
-    PodcastProfileStatsResponse,
-    PodcastStatsResponse,
-)
+from app.domains.podcast.schemas import PodcastProfileStatsResponse
 from app.domains.podcast.services.stats_service import PodcastStatsService
 
 
 router = APIRouter(prefix="")
-
-
-@router.get(
-    "/stats",
-    response_model=PodcastStatsResponse,
-    summary="Get podcast statistics",
-)
-async def get_podcast_stats(
-    service: PodcastStatsService = Depends(get_podcast_stats_service),
-):
-    """Get podcast listening statistics for the user."""
-    stats = await service.get_user_stats()
-    return PodcastStatsResponse(**stats)
 
 
 @router.get(

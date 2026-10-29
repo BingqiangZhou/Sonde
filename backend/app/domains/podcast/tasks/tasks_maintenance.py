@@ -10,11 +10,6 @@ from app.domains.podcast.tasks.task_orchestration import (
 )
 
 
-async def cleanup_old_playback_states_handler(session) -> dict:
-    """Delete playback states older than 90 days."""
-    return await PodcastTaskOrchestrationService(session).cleanup_old_playback_states()
-
-
 async def cleanup_old_transcription_temp_files_handler(session, days: int = 7) -> dict:
     """Clean stale transcription temporary files."""
     return await PodcastTaskOrchestrationService(
@@ -42,19 +37,6 @@ async def process_opml_subscription_episodes_handler(
         user_id=user_id,
         source_url=source_url,
     )
-
-
-@celery_app.task(bind=True, max_retries=2)
-def cleanup_old_playback_states(self):
-    try:
-        return run_async(_cleanup_old_playback_states_async())
-    except Exception:
-        raise
-
-
-async def _cleanup_old_playback_states_async():
-    async with worker_session("celery-playback-cleanup-worker") as session:
-        return await cleanup_old_playback_states_handler(session)
 
 
 @celery_app.task(bind=True, max_retries=2)

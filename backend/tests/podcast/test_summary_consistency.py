@@ -56,8 +56,6 @@ def _make_episode(*, ai_summary: str) -> SimpleNamespace:
         ai_summary=ai_summary,
         summary_version="1.0",
         ai_confidence_score=None,
-        play_count=0,
-        last_played_at=None,
         season=None,
         episode_number=None,
         explicit=False,
@@ -159,7 +157,6 @@ async def test_episode_service_filters_summary_on_detail_response() -> None:
     service.repo = AsyncMock()
     service.repo.get_episode_by_id.return_value = episode
     service.repo.get_current_analyses = AsyncMock(return_value={})
-    service.repo.get_playback_state.return_value = None
     service._get_transcription_task = AsyncMock(return_value=None)
 
     # Bypass Redis cache: simulate a cache miss by calling the loader directly
@@ -178,7 +175,7 @@ def test_search_service_filters_summary_in_list_response() -> None:
     service = PodcastSearchService(db=AsyncMock(), user_id=1)
     episode = _make_episode(ai_summary="<think>internal</think>search summary")
 
-    result = service._build_episode_dicts([episode], playback_states={})
+    result = service._build_episode_dicts([episode])
 
     assert result[0]["ai_summary"] == "search summary"
 

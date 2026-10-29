@@ -76,15 +76,8 @@ class PodcastSearchService:
             size=size,
         )
 
-        # Batch fetch playback states
-        episode_ids = [ep.id for ep in episodes]
-        playback_states = await self.repo.get_playback_states_batch(
-            self.user_id,
-            episode_ids,
-        )
-
         # Build response
-        results = self._build_episode_dicts(episodes, playback_states)
+        results = self._build_episode_dicts(episodes)
 
         # Add relevance scores
         for i, ep in enumerate(episodes):
@@ -95,11 +88,9 @@ class PodcastSearchService:
     def _build_episode_dicts(
         self,
         episodes: list[PodcastEpisode],
-        playback_states: dict[int, Any],
     ) -> list[dict[str, Any]]:
-        """Build episode dicts with playback states."""
+        """Build episode dicts."""
         return build_episode_dicts(
             episodes=episodes,
-            playback_states=playback_states,
             include_extended_fields=False,
         )

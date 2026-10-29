@@ -107,18 +107,6 @@ class TranscriptionTaskNotFoundError(NotFoundError):
     pass
 
 
-class QueueLimitExceededError(BadRequestError):
-    pass
-
-
-class EpisodeNotInQueueError(BadRequestError):
-    pass
-
-
-class InvalidReorderPayloadError(BadRequestError):
-    pass
-
-
 # ── Exception handlers ───────────────────────────────────────────────────────
 
 

@@ -1,7 +1,7 @@
 """播客相关的Pydantic schemas - API请求和响应模型"""
 
 from datetime import date, datetime
-from typing import Any, Literal
+from typing import Any
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
@@ -82,7 +82,6 @@ class PodcastSubscriptionResponse(PodcastTimestampedSchema):
     error_message: str | None = None
     fetch_interval: int | None = None
     episode_count: int | None = 0
-    unplayed_count: int | None = 0
     latest_episode: dict[str, Any] | None = None
     categories: list[dict[str, Any]] | None = []
     image_url: str | None = None
@@ -194,20 +193,13 @@ class PodcastEpisodeResponse(PodcastTimestampedSchema):
     ai_summary: str | None = None
     summary_version: str | None = None
     ai_confidence_score: float | None = None
-    play_count: int = 0
-    last_played_at: datetime | None = None
     season: int | None = None
     episode_number: int | None = None
     explicit: bool = False
     status: str
     metadata: dict[str, Any] | None = {}
 
-    # 播放状态（如果用户有收听记录）
     subscription_title: str | None = None
-    playback_position: int | None = None
-    is_playing: bool = False
-    playback_rate: float = 1.0
-    is_played: bool | None = None
 
     # AI 判定（Phase E：来自 insight 域当前判定；未分析为 null）
     insight_score: int | None = None
@@ -230,32 +222,6 @@ class PodcastEpisodeListResponse(PodcastBaseSchema):
     next_cursor: str | None = None
 
 
-class PodcastPlaybackHistoryItemResponse(PodcastBaseSchema):
-    """Lightweight playback history item for profile history page."""
-
-    id: int
-    subscription_id: int
-    subscription_title: str | None = None
-    subscription_image_url: str | None = None
-    title: str
-    image_url: str | None = None
-    audio_duration: int | None = None
-    playback_position: int | None = None
-    last_played_at: datetime | None = None
-    published_at: datetime
-
-
-class PodcastPlaybackHistoryListResponse(PodcastBaseSchema):
-    """Lightweight playback history list response -- unified with PaginatedResponse shape."""
-
-    items: list[PodcastPlaybackHistoryItemResponse]
-    total: int
-    page: int
-    size: int
-    pages: int
-    next_cursor: str | None = None
-
-
 class PodcastEpisodeDetailResponse(PodcastEpisodeResponse):
     """播客单集详情响应（包含更多信息）"""
 
@@ -275,116 +241,6 @@ class PodcastFeedResponse(PodcastBaseSchema):
     next_page: int | None = None
     next_cursor: str | None = None
     total: int
-
-
-# === Daily Report相关 ===
-
-
-
-
-
-
-class PodcastPlaybackUpdate(PodcastBaseSchema):
-    """播放进度更新请求"""
-
-    position: int = Field(..., ge=0, description="当前播放位置(秒)")
-    is_playing: bool = Field(default=False, description="是否正在播放")
-    playback_rate: float = Field(default=1.0, ge=0.5, le=3.0, description="播放倍速")
-
-
-class PodcastPlaybackStateResponse(PodcastBaseSchema):
-    """播放状态响应"""
-
-    episode_id: int
-    current_position: int
-    is_playing: bool
-    playback_rate: float
-    play_count: int
-    last_updated_at: datetime
-
-    # 计算字段
-    progress_percentage: float = Field(description="播放进度百分比")
-    remaining_time: int = Field(description="剩余时间(秒)")
-
-
-# === Category相关 ===
-
-
-class PlaybackRateApplyRequest(PodcastBaseSchema):
-    """Apply global/subscription playback rate preference."""
-
-    playback_rate: float = Field(..., ge=0.5, le=3.0, description="播放倍速")
-    subscription_id: int | None = Field(
-        default=None,
-        ge=1,
-        description="订阅ID，仅按订阅设置时使用",
-    )
-    apply_to_subscription: bool = Field(
-        default=False,
-        description="是否仅应用到当前订阅",
-    )
-
-
-class PlaybackRateEffectiveResponse(PodcastBaseSchema):
-    """Effective playback-rate response."""
-
-    global_playback_rate: float
-    subscription_playback_rate: float | None = None
-    effective_playback_rate: float
-    source: Literal["subscription", "global", "default"]
-
-
-class PodcastQueueItemAddRequest(PodcastBaseSchema):
-    """Add one episode to queue."""
-
-    episode_id: int = Field(..., ge=1)
-
-
-class PodcastQueueReorderRequest(PodcastBaseSchema):
-    """Reorder queue by full episode id list."""
-
-    episode_ids: list[int] = Field(..., min_length=0, max_length=500)
-
-
-class PodcastQueueSetCurrentRequest(PodcastBaseSchema):
-    """Set current queue episode."""
-
-    episode_id: int = Field(..., ge=1)
-
-
-class PodcastQueueActivateRequest(PodcastBaseSchema):
-    """Ensure episode exists in queue, move to head, and set as current."""
-
-    episode_id: int = Field(..., ge=1)
-
-
-class PodcastQueueCurrentCompleteRequest(PodcastBaseSchema):
-    """Complete current queue episode."""
-
-
-class PodcastQueueItemResponse(PodcastBaseSchema):
-    """Queue item response."""
-
-    episode_id: int
-    position: int
-    playback_position: int | None = None
-    title: str
-    podcast_id: int
-    audio_url: str
-    duration: int | None = None
-    published_at: datetime | None = None
-    image_url: str | None = None
-    subscription_title: str | None = None
-    subscription_image_url: str | None = None
-
-
-class PodcastQueueResponse(PodcastBaseSchema):
-    """Queue snapshot response."""
-
-    current_episode_id: int | None = None
-    revision: int
-    updated_at: datetime | None = None
-    items: list[PodcastQueueItemResponse] = Field(default_factory=list)
 
 
 # === Summary相关 ===
@@ -465,25 +321,8 @@ class PodcastEpisodeFilter(PodcastSearchFilter):
     """播客单集过滤器"""
 
     subscription_id: int | None = Field(None, description="订阅ID")
-    is_played: bool | None = Field(None, description="是否已播放")
     duration_min: int | None = Field(None, ge=0, description="最小时长(秒)")
     duration_max: int | None = Field(None, ge=0, description="最大时长(秒)")
-
-
-# === Statistics相关 ===
-
-
-class PodcastStatsResponse(PodcastBaseSchema):
-    """播客统计响应"""
-
-    total_subscriptions: int
-    total_episodes: int
-    total_playtime: int  # 总播放时间(秒)
-    summaries_generated: int
-    pending_summaries: int
-    recently_played: list[dict[str, Any]]
-    top_categories: list[dict[str, Any]]
-    listening_streak: int  # 连续收听天数
 
 
 # === Import/Export相关 ===
@@ -496,7 +335,6 @@ class PodcastProfileStatsResponse(PodcastBaseSchema):
     total_episodes: int
     summaries_generated: int
     pending_summaries: int
-    played_episodes: int
     total_highlights: int = 0
 
 
