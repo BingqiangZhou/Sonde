@@ -167,6 +167,8 @@ class PodcastSubscriptionNotifier extends Notifier<PodcastSubscriptionState> {
             .where((url) => url != feedUrl)
             .toSet(),
       );
+      // Subscription count changed: refresh profile stats in background
+      ref.invalidate(profileStatsProvider);
 
       return subscription;
     } catch (error) {
@@ -193,6 +195,8 @@ class PodcastSubscriptionNotifier extends Notifier<PodcastSubscriptionState> {
         subscriptions: updatedSubscriptions,
         total: state.total > 0 ? state.total - 1 : 0,
       );
+      // Subscription count changed: refresh profile stats in background
+      ref.invalidate(profileStatsProvider);
     } catch (error) {
       // Revert: reload from server on failure (fire-and-forget to avoid nested throw)
       state = state.copyWith(error: error.toString());
@@ -228,6 +232,8 @@ class PodcastSubscriptionNotifier extends Notifier<PodcastSubscriptionState> {
             ? state.total - response.successCount
             : 0,
       );
+      // Subscription count changed: refresh profile stats in background
+      ref.invalidate(profileStatsProvider);
 
       return response;
     } catch (error) {

@@ -33,6 +33,8 @@ class FavoritesNotifier extends AsyncNotifier<FavoritesListResponse?> {
     try {
       await ref.read(podcastRepositoryProvider).removeFavorite(episodeId);
       await reload();
+      // Favorites count changed: refresh profile stats in background
+      ref.invalidate(profileStatsProvider);
     } catch (error) {
       logger.AppLogger.debug('Failed to remove favorite $episodeId: $error');
     }
@@ -64,6 +66,8 @@ Future<bool> toggleFavorite({
     }
     ref.invalidate(favoriteStatusProvider(episodeId));
     ref.invalidate(favoritesProvider);
+    // Favorites count changed: refresh profile stats in background
+    ref.invalidate(profileStatsProvider);
     return !current;
   } catch (error) {
     logger.AppLogger.debug('Failed to toggle favorite $episodeId: $error');

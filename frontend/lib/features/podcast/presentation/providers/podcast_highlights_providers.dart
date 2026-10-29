@@ -177,6 +177,8 @@ class HighlightsNotifier extends AsyncNotifier<HighlightsListResponse?> {
           pages: previousData.pages,
         ),
       );
+      // Favorites count changed: refresh profile stats in background
+      ref.invalidate(profileStatsProvider);
     } catch (error) {
       logger.AppLogger.debug('Failed to toggle favorite: $error');
       // Revert on error
