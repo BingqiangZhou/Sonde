@@ -1,5 +1,6 @@
 # 声读 Sonde
 
+[![Version](https://img.shields.io/badge/version-2.0.3-blue)](CHANGELOG.md)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.11+-blue)](https://www.python.org/)
 [![Flutter](https://img.shields.io/badge/flutter-3.8+-cyan)](https://flutter.dev/)
@@ -10,6 +11,8 @@
 - **backend/** — Python FastAPI（+ Celery + Redis + PostgreSQL）：订阅抓取、六步转写流水线、AI 评分与三刊成刊、多用户认证、管理面板
 - **frontend/** — Flutter 多端客户端（Android / iOS / 桌面）：登录、订阅管理、发现、阅读（三刊/归档/全部动态）
 
+> **v2.0.3（2026-10-29）**：阅读化重定位——播放栈（播放器/队列/下载/历史）整体退役，App 转纯阅读/知识库；完成全页面风格优化两轮（设计系统收敛 + 全页三态/l10n/组件统一，见 `docs/2026-10-29-frontend-style-optimization.md`）。
+>
 > **v2（2026-10-28）**：回归 Python + Flutter 多用户形态，移植 v1.x TS 版的 AI 评分/三刊流水线，六阶段转向已全部完成（决策与实施记录见 [`docs/v2-pivot/`](docs/v2-pivot/README.md)）；v1.x TS 版完整存档于 [`ts-era`](https://github.com/BingqiangZhou/Sonde/tree/ts-era) 分支。原 `web/` React 阅读站已于 Phase G 退役，阅读功能并入 App「阅读」Tab，`/api/v1/site/*` 同步收紧为登录态。
 
 ## 功能
