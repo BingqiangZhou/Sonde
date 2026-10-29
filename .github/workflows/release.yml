@@ -20,8 +20,10 @@ env:
   # pubspec.lock 记录的是 pub.flutter-io.cn 镜像源；不设置此项时 CI 会视为
   # 异源并重新解析依赖，拿到与 lock 不一致的版本（如 riverpod 3.4.3 的
   # AnyNotifier.runBuild 签名变更会打爆生成代码）。与 lock 同源即可精确复现。
+  # 只锁 pub 包源（与 lock 同源即可精确还原依赖）；Flutter SDK 仍走官方
+  # 源下载——国内镜像对海外 runner 反而不稳定（Windows job 曾在
+  # Setup Flutter 下载 SDK 时超时失败）。
   PUB_HOSTED_URL: https://pub.flutter-io.cn
-  FLUTTER_STORAGE_BASE_URL: https://storage.flutter-io.cn
 
 jobs:
   # ============================================
