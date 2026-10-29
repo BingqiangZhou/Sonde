@@ -17,6 +17,11 @@ permissions:
 env:
   JAVA_VERSION: '21'
   JAVA_DISTRIBUTION: 'temurin'
+  # pubspec.lock 记录的是 pub.flutter-io.cn 镜像源；不设置此项时 CI 会视为
+  # 异源并重新解析依赖，拿到与 lock 不一致的版本（如 riverpod 3.4.3 的
+  # AnyNotifier.runBuild 签名变更会打爆生成代码）。与 lock 同源即可精确复现。
+  PUB_HOSTED_URL: https://pub.flutter-io.cn
+  FLUTTER_STORAGE_BASE_URL: https://storage.flutter-io.cn
 
 jobs:
   # ============================================
