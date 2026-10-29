@@ -21,15 +21,6 @@ import 'package:sonde/shared/constants/storage_keys.dart';
 const int _tokenRefreshBufferMinutes = 5; // Refresh 5 minutes before expiry
 const int _tokenCheckIntervalSeconds = 180; // Check every 3 minutes
 
-@visibleForTesting
-List<String> playbackSnapshotKeysToClearOnLogout(String? userId) {
-  final keys = <String>[kLastPlaybackSnapshotStorageKeyPrefix];
-  if (userId != null && userId.isNotEmpty) {
-    keys.add('${kLastPlaybackSnapshotStorageKeyPrefix}_$userId');
-  }
-  return keys;
-}
-
 // Storage provider
 final secureStorageProvider = Provider<SecureStorageService>((ref) {
   return SecureStorageServiceImpl(const FlutterSecureStorage());
@@ -398,7 +389,6 @@ class AuthNotifier extends Notifier<AuthState> {
       logger.AppLogger.debug('[Auth] Logout API call failed: $e');
     }
     await _clearAuthState();
-    await _clearPlaybackSnapshot(currentUserId);
     ref.read(dioClientProvider).clearETagCache();
     state = const AuthState();
   }
@@ -471,14 +461,6 @@ class AuthNotifier extends Notifier<AuthState> {
     await _secureStorage.clearTokenExpiry();
   }
 
-  Future<void> _clearPlaybackSnapshot(String? userId) async {
-    final storage = ref.read(localStorageServiceProvider);
-    final keys = playbackSnapshotKeysToClearOnLogout(userId);
-    for (final key in keys) {
-      await storage.remove(key);
-    }
-  }
-
   Future<TokenRefreshResult> _attemptTokenRefresh() async {
     return ref.read(dioClientProvider).refreshSessionToken();
   }
@@ -504,7 +486,6 @@ class AuthNotifier extends Notifier<AuthState> {
     _disableAutoRefresh();
     final currentUserId = state.user?.id;
     await _clearAuthState();
-    await _clearPlaybackSnapshot(currentUserId);
     state = const AuthState();
   }
 

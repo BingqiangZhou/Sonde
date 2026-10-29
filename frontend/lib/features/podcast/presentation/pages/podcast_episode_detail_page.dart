@@ -4,7 +4,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:sonde/core/database/app_database.dart';
 import 'package:sonde/features/podcast/presentation/providers/favorites_providers.dart';
 import 'package:sonde/core/constants/app_durations.dart';
 import 'package:sonde/core/constants/app_radius.dart';
@@ -15,7 +14,6 @@ import 'package:sonde/core/localization/app_localizations_en.dart';
 import 'package:sonde/core/platform/adaptive_app_bar.dart';
 import 'package:sonde/core/platform/adaptive_haptic.dart';
 import 'package:sonde/core/services/adaptive_share.dart';
-import 'package:sonde/core/services/download_provider.dart';
 import 'package:sonde/core/theme/app_colors.dart';
 import 'package:sonde/core/utils/app_logger.dart' as logger;
 import 'package:sonde/core/utils/time_formatter.dart';
@@ -24,13 +22,10 @@ import 'package:sonde/core/widgets/adaptive/adaptive.dart';
 import 'package:sonde/core/widgets/app_shells.dart';
 import 'package:sonde/core/widgets/top_floating_notice.dart';
 import 'package:sonde/features/podcast/core/utils/html_sanitizer.dart';
-import 'package:sonde/features/podcast/data/models/audio_player_state_model.dart';
 import 'package:sonde/features/podcast/data/models/podcast_episode_model.dart';
 import 'package:sonde/features/podcast/data/models/podcast_transcription_model.dart';
 import 'package:sonde/features/podcast/presentation/providers/podcast_episodes_providers.dart';
 import 'package:sonde/features/podcast/presentation/providers/podcast_highlights_providers.dart';
-import 'package:sonde/features/podcast/presentation/providers/podcast_playback_providers.dart';
-import 'package:sonde/features/podcast/presentation/providers/podcast_providers.dart';
 import 'package:sonde/features/podcast/presentation/providers/conversation_providers.dart';
 import 'package:sonde/features/podcast/presentation/widgets/ai_summary_control_widget.dart';
 import 'package:sonde/features/podcast/presentation/widgets/conversation_chat_widget.dart';
@@ -66,8 +61,6 @@ class _PodcastEpisodeDetailPageState
   int _selectedTabIndex = 0; // 0 = Shownotes, 1 = Transcript, 2 = Summary
   ProviderSubscription<AsyncValue<PodcastTranscriptionResponse?>>?
   _transcriptionNoticeSubscription;
-  bool _hasTrackedEpisodeView = false;
-  bool _isAddingToQueue = false;
   String _selectedSummaryText = '';
   bool _summaryUpdateScheduled = false;
 
@@ -79,7 +72,6 @@ class _PodcastEpisodeDetailPageState
   int _episodeUpdateVersion = 0;
   static const double _headerScrollThreshold =
       50; // Header starts fading after 50px scroll
-  static const double _autoCollapseScrollDeltaThreshold = 6;
   static const double _scrollToTopFixedLift = 56;
   List<ShownotesAnchor> _shownotesAnchors = const <ShownotesAnchor>[];
 
@@ -176,58 +168,6 @@ class _PodcastEpisodeDetailPageState
     }
   }
 
-  void _trackEpisodeViewOnce(PodcastEpisodeModel episodeDetail) {
-    if (_hasTrackedEpisodeView) {
-      return;
-    }
-    _hasTrackedEpisodeView = true;
-    unawaited(_trackEpisodeView(episodeDetail));
-  }
-
-  Future<void> _trackEpisodeView(
-    PodcastEpisodeModel episodeDetail,
-  ) async {
-    try {
-      final repository = ref.read(podcastRepositoryProvider);
-      await repository.updatePlaybackProgress(
-        episodeId: widget.episodeId,
-        position: episodeDetail.playbackPosition ?? 0,
-        isPlaying: false,
-        playbackRate: episodeDetail.playbackRate,
-      );
-      ref.invalidate(podcastStatsProvider);
-      ref.invalidate(playbackHistoryProvider);
-    } catch (error) {
-      logger.AppLogger.debug('Failed to track episode view: $error');
-    }
-  }
-
-  void _handleAutoCollapseOnRead(ScrollNotification scrollNotification) {
-    if (scrollNotification is! ScrollUpdateNotification) {
-      return;
-    }
-
-    if (scrollNotification.metrics.axis != Axis.vertical) {
-      return;
-    }
-
-    final scrollDelta = scrollNotification.scrollDelta ?? 0.0;
-    if (scrollDelta <= _autoCollapseScrollDeltaThreshold) {
-      return;
-    }
-
-    if (MediaQuery.sizeOf(context).width >= Breakpoints.medium) {
-      return;
-    }
-
-    final playerUi = ref.read(podcastPlayerUiProvider);
-    if (!playerUi.isExpanded) {
-      return;
-    }
-
-    ref.read(podcastPlayerUiProvider.notifier).collapse();
-  }
-
   void _recordScrollMetrics(ScrollMetrics metrics) {
     if (metrics.axis != Axis.vertical) {
       return;
@@ -285,7 +225,6 @@ class _PodcastEpisodeDetailPageState
                   l10n.podcast_episode_not_found,
                 );
               }
-              _trackEpisodeViewOnce(episodeDetail);
               return _buildNewLayout(context, episodeDetail);
             },
             loading: () => _buildPageLoadingState(context),
@@ -320,7 +259,6 @@ class _PodcastEpisodeDetailPageState
         '[Playback] Invalidating old episode detail provider',
       );
       ref.invalidate(episodeDetailProvider(oldWidget.episodeId));
-      _hasTrackedEpisodeView = false;
 
       // Reset tab selection
       _selectedTabIndex = 0;

@@ -17,7 +17,6 @@ extension _PodcastEpisodesPageActions on _PodcastEpisodesPageState {
           .read(podcastEpisodesProvider.notifier)
           .loadMoreEpisodesForSubscription(
             subscriptionId: widget.subscriptionId,
-            status: _statusFilter,
             hasSummary: _hasSummaryFilter,
           );
     });
@@ -32,7 +31,6 @@ extension _PodcastEpisodesPageActions on _PodcastEpisodesPageState {
           .read(podcastEpisodesProvider.notifier)
           .loadEpisodesForSubscription(
             subscriptionId: widget.subscriptionId,
-            status: _statusFilter,
             hasSummary: _hasSummaryFilter,
             forceRefresh: forceRefresh,
           );
@@ -52,45 +50,8 @@ extension _PodcastEpisodesPageActions on _PodcastEpisodesPageState {
         .read(podcastEpisodesProvider.notifier)
         .refreshEpisodesForSubscription(
           subscriptionId: widget.subscriptionId,
-          status: _statusFilter,
           hasSummary: _hasSummaryFilter,
         );
-  }
-
-  // Add episode to queue and show feedback.
-  Future<void> _handleAddToQueue(PodcastEpisodeModel episode) async {
-    if (_addingEpisodeIds.contains(episode.id)) {
-      return;
-    }
-    _applyViewState(() {
-      _addingEpisodeIds.add(episode.id);
-    });
-
-    try {
-      await ref.read(podcastQueueControllerProvider.notifier).addToQueue(episode.id);
-      if (!mounted) return;
-      final l10n = context.l10n;
-      showTopFloatingNotice(
-        context,
-        message: l10n.added_to_queue,
-        extraTopOffset: 72,
-      );
-    } catch (error) {
-      if (!mounted) return;
-      final l10n = context.l10n;
-      showTopFloatingNotice(
-        context,
-        message: l10n.failed_to_add_to_queue(error.toString()),
-        isError: true,
-        extraTopOffset: 72,
-      );
-    } finally {
-      if (mounted) {
-        _applyViewState(() {
-          _addingEpisodeIds.remove(episode.id);
-        });
-      }
-    }
   }
 
   Future<void> _reparseSubscription() async {
@@ -141,12 +102,5 @@ extension _PodcastEpisodesPageActions on _PodcastEpisodesPageState {
         });
       }
     }
-  }
-
-  Future<void> _playAndOpenEpisodeDetail(PodcastEpisodeModel episode) async {
-    AdaptiveHaptic.mediumImpact();
-    await ref.read(audioPlayerProvider.notifier).playManagedEpisode(episode);
-    if (!mounted) return;
-    context.push('/podcast/episode/detail/${episode.id}');
   }
 }

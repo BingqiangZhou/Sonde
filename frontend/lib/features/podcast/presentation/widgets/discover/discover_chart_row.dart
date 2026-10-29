@@ -18,7 +18,6 @@ class DiscoverChartRow extends StatelessWidget {
     required this.item,
     required this.onTap,
     required this.onSubscribe,
-    required this.onPlay,
     super.key,
     this.isSubscribing = false,
     this.isSubscribed = false,
@@ -30,7 +29,6 @@ class DiscoverChartRow extends StatelessWidget {
   final PodcastDiscoverItem item;
   final VoidCallback onTap;
   final VoidCallback onSubscribe;
-  final VoidCallback onPlay;
   final bool isSubscribing;
   final bool isSubscribed;
   final bool isDense;
@@ -183,33 +181,6 @@ class DiscoverChartRow extends StatelessWidget {
                                       : Icons.add_circle_outline,
                                 ),
                               ),
-                      ),
-                    ),
-                  ),
-                if (!showSubscribe)
-                  SizedBox(
-                    width: actionSlotWidth,
-                    child: Center(
-                      child: SizedBox(
-                        width: isDense ? 32 : 36,
-                        height: isDense ? 32 : 36,
-                        child: IconButton(
-                          key: Key(
-                            'podcast_discover_play_${item.itemId}',
-                          ),
-                          onPressed: onPlay,
-                          tooltip: context.l10n.podcast_play,
-                          style: IconButton.styleFrom(
-                            minimumSize: Size(isDense ? 32 : 36, isDense ? 32 : 36),
-                            maximumSize: Size(isDense ? 32 : 36, isDense ? 32 : 36),
-                            tapTargetSize: MaterialTapTargetSize.padded,
-                            visualDensity: VisualDensity.compact,
-                            padding: EdgeInsets.zero,
-                            foregroundColor:
-                                theme.colorScheme.onSurfaceVariant,
-                          ),
-                          icon: const Icon(Icons.play_circle_outline, size: 24),
-                        ),
                       ),
                     ),
                   ),

@@ -22,17 +22,11 @@ class PodcastEpisodeModel extends Equatable {
     this.aiSummary,
     this.summaryVersion,
     this.aiConfidenceScore,
-    this.playCount = 0,
-    this.lastPlayedAt,
     this.season,
     this.episodeNumber,
     this.explicit = false,
     this.status = 'published',
     this.metadata,
-    this.playbackPosition,
-    this.isPlaying = false,
-    this.playbackRate = 1.0,
-    this.isPlayed = false,
     this.updatedAt,
     this.summaryStatus,
     this.summaryErrorMessage,
@@ -81,26 +75,12 @@ class PodcastEpisodeModel extends Equatable {
   final String? summaryVersion;
   @JsonKey(name: 'ai_confidence_score')
   final double? aiConfidenceScore;
-  @JsonKey(name: 'play_count')
-  final int playCount;
-  @JsonKey(name: 'last_played_at')
-  final DateTime? lastPlayedAt;
   final int? season;
   @JsonKey(name: 'episode_number')
   final int? episodeNumber;
   final bool explicit;
   final String status;
   final Map<String, dynamic>? metadata;
-
-  // Playback state
-  @JsonKey(name: 'playback_position')
-  final int? playbackPosition;
-  @JsonKey(name: 'is_playing')
-  final bool isPlaying;
-  @JsonKey(name: 'playback_rate')
-  final double playbackRate;
-  @JsonKey(name: 'is_played')
-  final bool isPlayed;
 
   @JsonKey(name: 'created_at')
   final DateTime createdAt;
@@ -154,17 +134,11 @@ class PodcastEpisodeModel extends Equatable {
     String? aiSummary,
     String? summaryVersion,
     double? aiConfidenceScore,
-    int? playCount,
-    DateTime? lastPlayedAt,
     int? season,
     int? episodeNumber,
     bool? explicit,
     String? status,
     Map<String, dynamic>? metadata,
-    int? playbackPosition,
-    bool? isPlaying,
-    double? playbackRate,
-    bool? isPlayed,
     DateTime? createdAt,
     DateTime? updatedAt,
     String? summaryStatus,
@@ -198,17 +172,11 @@ class PodcastEpisodeModel extends Equatable {
       aiSummary: aiSummary ?? this.aiSummary,
       summaryVersion: summaryVersion ?? this.summaryVersion,
       aiConfidenceScore: aiConfidenceScore ?? this.aiConfidenceScore,
-      playCount: playCount ?? this.playCount,
-      lastPlayedAt: lastPlayedAt ?? this.lastPlayedAt,
       season: season ?? this.season,
       episodeNumber: episodeNumber ?? this.episodeNumber,
       explicit: explicit ?? this.explicit,
       status: status ?? this.status,
       metadata: metadata ?? this.metadata,
-      playbackPosition: playbackPosition ?? this.playbackPosition,
-      isPlaying: isPlaying ?? this.isPlaying,
-      playbackRate: playbackRate ?? this.playbackRate,
-      isPlayed: isPlayed ?? this.isPlayed,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       summaryStatus: summaryStatus ?? this.summaryStatus,
@@ -232,19 +200,6 @@ class PodcastEpisodeModel extends Equatable {
     final duration = audioDuration;
     if (duration == null) return '--:--';
     return TimeFormatter.formatDuration(Duration(seconds: duration));
-  }
-
-  String get formattedPlaybackPosition {
-    final position = playbackPosition;
-    if (position == null) return '00:00';
-    return TimeFormatter.formatDuration(Duration(seconds: position));
-  }
-
-  double get progressPercentage {
-    final duration = audioDuration;
-    final position = playbackPosition;
-    if (duration == null || position == null) return 0;
-    return (position / duration).clamp(0.0, 1.0);
   }
 
   String get episodeIdentifier {
@@ -274,12 +229,6 @@ class PodcastEpisodeModel extends Equatable {
     audioDuration,
     publishedAt,
     imageUrl,
-    playCount,
-    lastPlayedAt,
-    playbackPosition,
-    isPlaying,
-    playbackRate,
-    isPlayed,
     status,
     summaryStatus,
   ];

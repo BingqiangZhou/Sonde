@@ -20,7 +20,6 @@ class DiscoverChartsList extends ConsumerWidget {
     required this.scrollController,
     required this.onItemTap,
     required this.onItemSubscribe,
-    required this.onItemPlay,
     required this.subscribingShowIds,
     required this.subscribedShowIds,
     super.key,
@@ -31,7 +30,6 @@ class DiscoverChartsList extends ConsumerWidget {
   final ScrollController scrollController;
   final ValueChanged<PodcastDiscoverItem> onItemTap;
   final ValueChanged<PodcastDiscoverItem> onItemSubscribe;
-  final ValueChanged<PodcastDiscoverItem> onItemPlay;
   final Set<int> subscribingShowIds;
   final Set<int> subscribedShowIds;
   final bool isDense;
@@ -137,7 +135,6 @@ class DiscoverChartsList extends ConsumerWidget {
         item: item,
         onTap: () => onItemTap(item),
         onSubscribe: () => onItemSubscribe(item),
-        onPlay: () => onItemPlay(item),
         isSubscribing: isSubscribing,
         isSubscribed: isSubscribed,
         isDense: isDense,

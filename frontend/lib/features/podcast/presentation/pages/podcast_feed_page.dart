@@ -11,13 +11,9 @@ import 'package:sonde/core/localization/app_localizations_extension.dart';
 import 'package:sonde/core/utils/text_processing_cache.dart';
 import 'package:sonde/core/widgets/adaptive/adaptive.dart';
 import 'package:sonde/core/widgets/app_shells.dart';
-import 'package:sonde/core/widgets/top_floating_notice.dart';
-import 'package:sonde/features/podcast/data/models/podcast_episode_model.dart';
 import 'package:sonde/features/podcast/data/models/podcast_state_models.dart';
 import 'package:sonde/features/podcast/presentation/navigation/podcast_navigation.dart';
 import 'package:sonde/features/podcast/presentation/providers/podcast_feed_providers.dart';
-import 'package:sonde/features/podcast/presentation/providers/podcast_playback_providers.dart';
-import 'package:sonde/features/podcast/presentation/providers/podcast_providers.dart';
 import 'package:sonde/features/podcast/presentation/widgets/podcast_feed_episode_card.dart';
 import 'package:sonde/shared/widgets/skeleton_widgets.dart';
 
@@ -29,7 +25,6 @@ class PodcastFeedPage extends ConsumerStatefulWidget {
 }
 
 class _PodcastFeedPageState extends ConsumerState<PodcastFeedPage> {
-  final Set<int> _addingEpisodeIds = <int>{};
   final ScrollController _scrollController = ScrollController();
   bool _awaitingInitialFeed = true;
 
@@ -112,49 +107,8 @@ class _PodcastFeedPageState extends ConsumerState<PodcastFeedPage> {
       child: _FeedContent(
         scrollController: _scrollController,
         awaitingInitialFeed: _awaitingInitialFeed,
-        addingEpisodeIds: _addingEpisodeIds,
-        onAddToQueue: _addToQueue,
       ),
     );
-  }
-
-  Future<void> _addToQueue(PodcastEpisodeModel episode) async {
-    if (_addingEpisodeIds.contains(episode.id)) {
-      return;
-    }
-    setState(() {
-      _addingEpisodeIds.add(episode.id);
-    });
-
-    try {
-      await ref
-          .read(podcastQueueControllerProvider.notifier)
-          .addToQueue(episode.id);
-      if (mounted) {
-        final l10n = context.l10n;
-        showTopFloatingNotice(
-          context,
-          message: l10n.added_to_queue,
-          extraTopOffset: 64,
-        );
-      }
-    } on Object catch (error) {
-      if (mounted) {
-        final l10n = context.l10n;
-        showTopFloatingNotice(
-          context,
-          message: l10n.failed_to_add_to_queue(error.toString()),
-          isError: true,
-          extraTopOffset: 64,
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _addingEpisodeIds.remove(episode.id);
-        });
-      }
-    }
   }
 
   Widget _buildDailyReportEntryTile(
@@ -257,14 +211,10 @@ class _FeedContent extends ConsumerWidget {
   const _FeedContent({
     required this.scrollController,
     required this.awaitingInitialFeed,
-    required this.addingEpisodeIds,
-    required this.onAddToQueue,
   });
 
   final ScrollController scrollController;
   final bool awaitingInitialFeed;
-  final Set<int> addingEpisodeIds;
-  final Future<void> Function(PodcastEpisodeModel episode) onAddToQueue;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -454,24 +404,10 @@ class _FeedContent extends ConsumerWidget {
     final displayDescription = TextProcessingCache.getCachedDescription(
       episode.description,
     );
-    final isAddingToQueue = addingEpisodeIds.contains(episode.id);
-
-    void playAndOpenDetail() {
-      unawaited(
-        ref.read(audioPlayerProvider.notifier).playManagedEpisode(episode),
-      );
-      PodcastNavigation.goToEpisodeDetail(
-        context,
-        episodeId: episode.id,
-        subscriptionId: episode.subscriptionId,
-        episodeTitle: episode.title,
-      );
-    }
 
     return PodcastFeedEpisodeCard(
       episode: episode,
       compact: compact,
-      isAddingToQueue: isAddingToQueue,
       displayDescription: displayDescription,
       onOpenDetail: () {
         PodcastNavigation.goToEpisodeDetail(
@@ -481,8 +417,6 @@ class _FeedContent extends ConsumerWidget {
           episodeTitle: episode.title,
         );
       },
-      onPlayAndOpenDetail: playAndOpenDetail,
-      onAddToQueue: () => onAddToQueue(episode),
     );
   }
 }

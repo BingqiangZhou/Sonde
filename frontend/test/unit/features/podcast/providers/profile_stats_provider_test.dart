@@ -101,6 +101,5 @@ ProfileStatsModel _stats(int totalEpisodes) {
     totalEpisodes: totalEpisodes,
     summariesGenerated: 0,
     pendingSummaries: 0,
-    playedEpisodes: 0,
   );
 }

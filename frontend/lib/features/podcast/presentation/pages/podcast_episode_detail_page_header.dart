@@ -12,8 +12,6 @@ extension _PodcastEpisodeDetailPageHeader on _PodcastEpisodeDetailPageState {
           ? HeaderCapsuleActionButtonDensity.compact
           : HeaderCapsuleActionButtonDensity.regular;
 
-  bool get _isUltraCompactPhoneLayout => MediaQuery.sizeOf(context).width < 360;
-
   Widget _buildHeader(PodcastEpisodeModel episode) {
     return ValueListenableBuilder<bool>(
       valueListenable: _isHeaderExpandedNotifier,
@@ -65,7 +63,6 @@ extension _PodcastEpisodeDetailPageHeader on _PodcastEpisodeDetailPageState {
       _buildPodcastTitleChip(episode, l10n),
       _buildDateChip(episode),
       if (episode.audioDuration != null) _buildDurationChip(episode),
-      _buildPlaybackStateBadge(episode, l10n),
       if (episode.itemLink != null && episode.itemLink!.trim().isNotEmpty)
         _buildSourceLinkChip(episode, l10n),
       if (episode.episodeNumber != null)
@@ -107,7 +104,7 @@ extension _PodcastEpisodeDetailPageHeader on _PodcastEpisodeDetailPageState {
               ),
             ),
             SizedBox(width: context.spacing.mdLg),
-            _buildWideHeaderActionColumn(episode, l10n),
+            _buildWideHeaderActionColumn(episode),
           ],
         ),
       );
@@ -147,10 +144,6 @@ extension _PodcastEpisodeDetailPageHeader on _PodcastEpisodeDetailPageState {
           ),
         ),
         SizedBox(width: context.spacing.xs),
-        _buildQueueButton(),
-        SizedBox(width: context.spacing.xs),
-        _buildDownloadButton(episode),
-        SizedBox(width: context.spacing.xs),
         _buildFavoriteButton(episode),
         SizedBox(width: context.spacing.xs),
         _buildShareButton(episode),
@@ -168,81 +161,42 @@ extension _PodcastEpisodeDetailPageHeader on _PodcastEpisodeDetailPageState {
     required bool isWide,
   }) {
     final size = isWide ? 76.0 : 44.0;
-    final borderRadius = BorderRadius.circular(isWide ? _artworkBorderRadiusWide : _artworkBorderRadiusCompact);
-    final artwork = Container(
-      key: Key(
-        isWide
-            ? 'podcast_episode_detail_wide_hero_artwork'
-            : 'podcast_episode_detail_mobile_hero_artwork',
-      ),
-      decoration: BoxDecoration(
-        borderRadius: borderRadius,
-        boxShadow: [
-          BoxShadow(
-            color: Theme.of(context).shadowColor.withValues(alpha: 0.12),
-            blurRadius: 18,
-            offset: const Offset(0, 12),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: borderRadius,
-        child: PodcastImageWidget(
-          imageUrl: episode.imageUrl,
-          fallbackImageUrl: episode.subscriptionImageUrl,
-          width: size,
-          height: size,
-          iconSize: size * 0.32,
-        ),
-      ),
+    final borderRadius = BorderRadius.circular(
+      isWide ? _artworkBorderRadiusWide : _artworkBorderRadiusCompact,
     );
-
     return Hero(
       tag: 'episode_cover_${episode.id}',
-      child: Semantics(
-        button: true,
-        hint: 'Play episode',
-        child: GestureDetector(
-          onTap: () => unawaited(_playOrResumeFromDetail(episode)),
-          child: Stack(
-          alignment: Alignment.center,
-          children: [
-            artwork,
-            Consumer(
-              builder: (context, ref, _) {
-                final playState = ref.watch(audioEpisodePlayStateProvider.select(
-                  (s) => (s.currentEpisodeId, s.isPlaying),
-                ));
-                final isPlaying = playState.$1 == episode.id && playState.$2;
-                return Container(
-                  width: size,
-                  height: size,
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.scrim.withValues(alpha: 0.3),
-                    borderRadius: borderRadius,
-                  ),
-                  alignment: Alignment.center,
-                  child: Icon(
-                    isPlaying
-                        ? Icons.graphic_eq_rounded
-                        : Icons.play_arrow_rounded,
-                    color: Theme.of(context).colorScheme.onPrimary,
-                    size: size * 0.4,
-                  ),
-                );
-              },
+      child: Container(
+        key: Key(
+          isWide
+              ? 'podcast_episode_detail_wide_hero_artwork'
+              : 'podcast_episode_detail_mobile_hero_artwork',
+        ),
+        decoration: BoxDecoration(
+          borderRadius: borderRadius,
+          boxShadow: [
+            BoxShadow(
+              color: Theme.of(context).shadowColor.withValues(alpha: 0.12),
+              blurRadius: 18,
+              offset: const Offset(0, 12),
             ),
           ],
         ),
-      ),
+        child: ClipRRect(
+          borderRadius: borderRadius,
+          child: PodcastImageWidget(
+            imageUrl: episode.imageUrl,
+            fallbackImageUrl: episode.subscriptionImageUrl,
+            width: size,
+            height: size,
+            iconSize: size * 0.32,
+          ),
+        ),
       ),
     );
   }
 
-  Widget _buildWideHeaderActionColumn(
-    PodcastEpisodeModel episode,
-    AppLocalizations l10n,
-  ) {
+  Widget _buildWideHeaderActionColumn(PodcastEpisodeModel episode) {
     return ConstrainedBox(
       constraints: const BoxConstraints(minWidth: 124, maxWidth: 168),
       child: Column(
@@ -254,19 +208,9 @@ extension _PodcastEpisodeDetailPageHeader on _PodcastEpisodeDetailPageState {
             runSpacing: context.spacing.xs,
             alignment: WrapAlignment.end,
             children: [
-              _buildDownloadButton(episode),
-              _buildQueueButton(),
               _buildFavoriteButton(episode),
               _buildShareButton(episode),
             ],
-          ),
-          SizedBox(height: context.spacing.sm),
-          _buildPlayButton(
-            episode,
-            l10n,
-            compact: false,
-            density: HeaderCapsuleActionButtonDensity.compact,
-            padding: EdgeInsets.symmetric(horizontal: context.spacing.xsSm, vertical: context.spacing.xs),
           ),
         ],
       ),
@@ -391,198 +335,6 @@ extension _PodcastEpisodeDetailPageHeader on _PodcastEpisodeDetailPageState {
     }
   }
 
-  Future<void> _playOrResumeFromDetail(PodcastEpisodeModel episodeModel) async {
-    final notifier = ref.read(audioPlayerProvider.notifier);
-    final playerState = ref.read(audioPlayerProvider);
-    final isSameEpisode = playerState.currentEpisode?.id == episodeModel.id;
-    final isCompleted =
-        isSameEpisode &&
-        playerState.processingState == ProcessingState.completed;
-
-    if (isSameEpisode && !isCompleted) {
-      if (playerState.isPlaying) {
-        return;
-      }
-      await notifier.resume();
-      return;
-    }
-
-    await notifier.playManagedEpisode(episodeModel);
-  }
-
-  Future<void> _addCurrentEpisodeToQueue() async {
-    if (_isAddingToQueue) {
-      return;
-    }
-    _updatePageState(() {
-      _isAddingToQueue = true;
-    });
-
-    try {
-      await ref
-          .read(podcastQueueControllerProvider.notifier)
-          .addToQueue(widget.episodeId);
-      if (mounted) {
-        final l10n = AppLocalizations.of(context) ?? AppLocalizationsEn();
-        showTopFloatingNotice(
-          context,
-          message: l10n.added_to_queue,
-          extraTopOffset: 72,
-        );
-      }
-    } catch (error) {
-      if (mounted) {
-        final l10n = AppLocalizations.of(context) ?? AppLocalizationsEn();
-        showTopFloatingNotice(
-          context,
-          message: l10n.failed_to_add_to_queue(error.toString()),
-          isError: true,
-          extraTopOffset: 72,
-        );
-      }
-    } finally {
-      if (mounted) {
-        _updatePageState(() {
-          _isAddingToQueue = false;
-        });
-      }
-    }
-  }
-
-  Widget _buildPlayButton(
-    PodcastEpisodeModel episode,
-    AppLocalizations l10n, {
-    required bool compact,
-    HeaderCapsuleActionButtonDensity? density,
-    EdgeInsetsGeometry? padding,
-    HeaderCapsuleActionButtonStyle? style,
-  }) {
-    return RepaintBoundary(
-      child: Consumer(
-      builder: (context, ref, _) {
-        final playStateInfo = ref.watch(audioEpisodePlayStateProvider);
-        final effectiveDensity =
-            density ??
-            (_isUltraCompactPhoneLayout
-                ? HeaderCapsuleActionButtonDensity.iconOnly
-                : _isCompactPhoneLayout || compact
-                ? HeaderCapsuleActionButtonDensity.compact
-                : HeaderCapsuleActionButtonDensity.regular);
-        final playState = _resolveEpisodePlayState(playStateInfo, episode);
-        final showLabel =
-            effectiveDensity != HeaderCapsuleActionButtonDensity.iconOnly;
-
-        final buttonText = switch (playState) {
-          _EpisodeDetailPlayState.playing => l10n.podcast_episode_playing,
-          _EpisodeDetailPlayState.resume => l10n.podcast_resume_episode,
-          _EpisodeDetailPlayState.play =>
-            _isCompactPhoneLayout
-                ? l10n.podcast_play_episode
-                : l10n.podcast_play_episode_full,
-        };
-
-        final icon = switch (playState) {
-          _EpisodeDetailPlayState.playing => Icons.graphic_eq_rounded,
-          _EpisodeDetailPlayState.resume => Icons.play_circle_fill_rounded,
-          _EpisodeDetailPlayState.play => Icons.play_arrow_rounded,
-        };
-
-        final tooltip = switch (playState) {
-          _EpisodeDetailPlayState.playing => l10n.podcast_episode_playing,
-          _EpisodeDetailPlayState.resume => l10n.podcast_resume_episode,
-          _EpisodeDetailPlayState.play => l10n.podcast_play_episode_full,
-        };
-
-        return HeaderCapsuleActionButton(
-          key: const Key('podcast_episode_detail_play_button'),
-          tooltip: tooltip,
-          icon: icon,
-          density: effectiveDensity,
-          padding: padding,
-          style: style ?? HeaderCapsuleActionButtonStyle.surfaceNeutral,
-          label: showLabel ? Text(buttonText) : null,
-          onPressed: () {
-            unawaited(_playOrResumeFromDetail(episode));
-          },
-        );
-      },
-    ),
-    );
-  }
-
-  _EpisodeDetailPlayState _resolveEpisodePlayState(
-    AudioEpisodePlayState playStateInfo,
-    PodcastEpisodeModel episode,
-  ) {
-    final isSameEpisode = playStateInfo.currentEpisodeId == episode.id;
-    final isCompleted =
-        isSameEpisode &&
-        playStateInfo.processingState == ProcessingState.completed;
-    if (isSameEpisode && playStateInfo.isPlaying && !isCompleted) {
-      return _EpisodeDetailPlayState.playing;
-    }
-
-    final resumePositionMs = _resolveResumePositionMs(playStateInfo, episode);
-    if (resumePositionMs > 0 && !isCompleted) {
-      return _EpisodeDetailPlayState.resume;
-    }
-
-    return _EpisodeDetailPlayState.play;
-  }
-
-  int _resolveResumePositionMs(
-    AudioEpisodePlayState playStateInfo,
-    PodcastEpisodeModel episode,
-  ) {
-    final isSameEpisode = playStateInfo.currentEpisodeId == episode.id;
-    if (isSameEpisode) {
-      return playStateInfo.currentPositionMs;
-    }
-    return (episode.playbackPosition ?? 0) * 1000;
-  }
-
-  Widget _buildPlaybackStateBadge(
-    PodcastEpisodeModel episode,
-    AppLocalizations l10n,
-  ) {
-    return RepaintBoundary(
-      child: Consumer(
-      builder: (context, ref, _) {
-        final theme = Theme.of(context);
-        final playStateInfo = ref.watch(audioEpisodePlayStateProvider);
-        final playState = _resolveEpisodePlayState(playStateInfo, episode);
-        final resumePositionMs = _resolveResumePositionMs(playStateInfo, episode);
-
-        return switch (playState) {
-          _EpisodeDetailPlayState.playing => StatusBadge(
-            label: l10n.podcast_episode_playing,
-            icon: Icons.graphic_eq_rounded,
-          ),
-          _EpisodeDetailPlayState.resume => StatusBadge(
-            label:
-                '${l10n.podcast_resume_episode} ${_formatPlaybackProgress(resumePositionMs)}',
-            icon: Icons.history_rounded,
-            color: theme.colorScheme.secondary,
-          ),
-          _EpisodeDetailPlayState.play => const SizedBox.shrink(),
-        };
-      },
-    ),
-    );
-  }
-
-  Widget _buildQueueButton() {
-    return HeaderCapsuleActionButton(
-      tooltip: (AppLocalizations.of(context) ?? AppLocalizationsEn())
-          .podcast_add_to_queue,
-      icon: Icons.playlist_add_rounded,
-      onPressed: _isAddingToQueue ? null : _addCurrentEpisodeToQueue,
-      circular: true,
-      isLoading: _isAddingToQueue,
-      density: _buttonDensity,
-    );
-  }
-
   Widget _buildDateChip(PodcastEpisodeModel episode) {
     return StatusBadge(
       label: EpisodeCardUtils.formatDate(episode.publishedAt),
@@ -592,20 +344,11 @@ extension _PodcastEpisodeDetailPageHeader on _PodcastEpisodeDetailPageState {
   }
 
   Widget _buildDurationChip(PodcastEpisodeModel episode) {
-    return Consumer(
-      builder: (context, ref, _) {
-        final activeDuration = ref.watch(
-          audioDurationForEpisodeProvider(episode.id),
-        );
-        final displayDuration =
-            activeDuration ?? ((episode.audioDuration ?? 0) * 1000);
-
-        return StatusBadge(
-          label: _formatDurationLabel(displayDuration),
-          icon: Icons.schedule_outlined,
-          color: Theme.of(context).colorScheme.tertiary,
-        );
-      },
+    final durationSeconds = episode.audioDuration ?? 0;
+    return StatusBadge(
+      label: _formatDurationLabel(durationSeconds * 1000),
+      icon: Icons.schedule_outlined,
+      color: Theme.of(context).colorScheme.tertiary,
     );
   }
 
@@ -624,10 +367,6 @@ extension _PodcastEpisodeDetailPageHeader on _PodcastEpisodeDetailPageState {
         unawaited(_launchEpisodeSource(episode));
       },
     );
-  }
-
-  String _formatPlaybackProgress(int milliseconds) {
-    return _formatDurationLabel(milliseconds.clamp(0, 1 << 31));
   }
 
   String _formatDurationLabel(int milliseconds) {
@@ -703,128 +442,4 @@ extension _PodcastEpisodeDetailPageHeader on _PodcastEpisodeDetailPageState {
       }
     }
   }
-
-  Widget _buildDownloadButton(PodcastEpisodeModel episode) {
-    return Consumer(
-      builder: (context, ref, _) {
-        final asyncTask = ref.watch(episodeDownloadStatusProvider(episode.id));
-        final l10n = AppLocalizations.of(context) ?? AppLocalizationsEn();
-
-        return asyncTask.when(
-          data: (task) {
-            if (task == null) {
-              return HeaderCapsuleActionButton(
-                tooltip: l10n.download_button_download,
-                icon: Icons.download_outlined,
-                onPressed: () => _startDownload(episode),
-                circular: true,
-                density: _isCompactPhoneLayout
-                    ? HeaderCapsuleActionButtonDensity.compact
-                    : HeaderCapsuleActionButtonDensity.regular,
-              );
-            }
-
-            return switch (task.status) {
-              DownloadStatus.pending => HeaderCapsuleActionButton(
-                  tooltip: l10n.download_button_downloading,
-                  icon: Icons.downloading,
-                  onPressed: () => _cancelDownload(episode.id),
-                  circular: true,
-                  density: _isCompactPhoneLayout
-                      ? HeaderCapsuleActionButtonDensity.compact
-                      : HeaderCapsuleActionButtonDensity.regular,
-                  style: HeaderCapsuleActionButtonStyle.primaryTinted,
-                ),
-              DownloadStatus.downloading => HeaderCapsuleActionButton(
-                  tooltip:
-                      '${(task.progress * 100).toStringAsFixed(0)}% — ${l10n.download_button_cancel}',
-                  icon: Icons.downloading,
-                  onPressed: () => _cancelDownload(episode.id),
-                  circular: true,
-                  isLoading: true,
-                  density: _isCompactPhoneLayout
-                      ? HeaderCapsuleActionButtonDensity.compact
-                      : HeaderCapsuleActionButtonDensity.regular,
-                  style: HeaderCapsuleActionButtonStyle.primaryTinted,
-                ),
-              DownloadStatus.completed => HeaderCapsuleActionButton(
-                  tooltip: l10n.download_button_delete,
-                  icon: Icons.download_done,
-                  onPressed: () => _deleteDownload(episode.id),
-                  circular: true,
-                  density: _isCompactPhoneLayout
-                      ? HeaderCapsuleActionButtonDensity.compact
-                      : HeaderCapsuleActionButtonDensity.regular,
-                  style: HeaderCapsuleActionButtonStyle.primaryTinted,
-                ),
-              DownloadStatus.failed => HeaderCapsuleActionButton(
-                  tooltip: l10n.download_button_retry,
-                  icon: Icons.error_outline,
-                  onPressed: () => _startDownload(episode),
-                  circular: true,
-                  density: _isCompactPhoneLayout
-                      ? HeaderCapsuleActionButtonDensity.compact
-                      : HeaderCapsuleActionButtonDensity.regular,
-                ),
-              _ => HeaderCapsuleActionButton(
-                  tooltip: l10n.download_button_download,
-                  icon: Icons.download_outlined,
-                  onPressed: () => _startDownload(episode),
-                  circular: true,
-                  density: _isCompactPhoneLayout
-                      ? HeaderCapsuleActionButtonDensity.compact
-                      : HeaderCapsuleActionButtonDensity.regular,
-                ),
-            };
-          },
-          loading: () => HeaderCapsuleActionButton(
-            tooltip: l10n.download_button_download,
-            icon: Icons.download_outlined,
-            onPressed: null,
-            circular: true,
-            density: _isCompactPhoneLayout
-                ? HeaderCapsuleActionButtonDensity.compact
-                : HeaderCapsuleActionButtonDensity.regular,
-          ),
-          error: (_, _) => HeaderCapsuleActionButton(
-            tooltip: l10n.download_button_download,
-            icon: Icons.download_outlined,
-            onPressed: () => _startDownload(episode),
-            circular: true,
-            density: _isCompactPhoneLayout
-                ? HeaderCapsuleActionButtonDensity.compact
-                : HeaderCapsuleActionButtonDensity.regular,
-          ),
-        );
-      },
-    );
-  }
-
-  void _startDownload(PodcastEpisodeModel episode) {
-    final sub = episode.subscription;
-    final podcastTitle = sub?['title'] as String? ??
-        sub?['name'] as String? ??
-        episode.metadata?['podcast_title'] as String?;
-    ref.read(downloadManagerProvider).download(
-          episodeId: episode.id,
-          audioUrl: episode.audioUrl,
-          title: episode.title,
-          subscriptionTitle: podcastTitle,
-          imageUrl: episode.imageUrl,
-          subscriptionImageUrl: episode.subscriptionImageUrl,
-          subscriptionId: episode.subscriptionId,
-          audioDuration: episode.audioDuration,
-          publishedAt: episode.publishedAt,
-        );
-  }
-
-  void _cancelDownload(int episodeId) {
-    ref.read(downloadManagerProvider).cancel(episodeId);
-  }
-
-  void _deleteDownload(int episodeId) {
-    ref.read(downloadManagerProvider).delete(episodeId);
-  }
 }
-
-enum _EpisodeDetailPlayState { play, resume, playing }

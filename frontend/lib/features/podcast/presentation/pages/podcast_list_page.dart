@@ -205,8 +205,6 @@ class _PodcastListPageState extends ConsumerState<PodcastListPage> {
             searchState: searchState,
             onEpisodeTap: (e) =>
                 DiscoverInteractionHandler.handleEpisodeTap(ref, context, e),
-            onEpisodePlay: (e) =>
-                DiscoverInteractionHandler.handleEpisodePlay(ref, context, e),
             onPodcastSubscribe: (r) =>
                 DiscoverInteractionHandler.subscribeFromSearch(ref, context, r),
             isDense: isDense,
@@ -307,8 +305,6 @@ class _PodcastListPageState extends ConsumerState<PodcastListPage> {
               onItemTap: (item) =>
                   DiscoverInteractionHandler.handleChartRowTap(ref, context, item),
               onItemSubscribe: _handleSubscribeFromChart,
-              onItemPlay: (item) =>
-                  DiscoverInteractionHandler.playEpisodeFromChartRow(ref, context, item),
               subscribingShowIds: _subscribingShowIds,
               subscribedShowIds: _subscribedShowIds,
               isDense: isDense,

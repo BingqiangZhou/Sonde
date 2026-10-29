@@ -21,15 +21,12 @@ import 'package:sonde/features/podcast/presentation/pages/site_archive_page.dart
 import 'package:sonde/features/podcast/presentation/pages/site_favorites_page.dart';
 import 'package:sonde/features/podcast/presentation/pages/site_reading_page.dart';
 import 'package:sonde/features/podcast/presentation/pages/site_report_issue_page.dart';
-import 'package:sonde/features/podcast/presentation/pages/podcast_downloads_page.dart';
 import 'package:sonde/features/podcast/presentation/pages/podcast_episode_detail_page.dart';
 import 'package:sonde/features/podcast/presentation/pages/podcast_episodes_page.dart';
 import 'package:sonde/features/podcast/presentation/pages/podcast_feed_page.dart';
 import 'package:sonde/features/podcast/presentation/pages/podcast_highlights_page.dart';
 import 'package:sonde/features/podcast/presentation/pages/podcast_list_page.dart';
-import 'package:sonde/features/podcast/presentation/widgets/podcast_bottom_player_widget.dart';
 import 'package:sonde/features/profile/presentation/pages/profile_cache_management_page.dart';
-import 'package:sonde/features/profile/presentation/pages/profile_history_page.dart';
 import 'package:sonde/features/profile/presentation/pages/profile_page.dart';
 import 'package:sonde/features/profile/presentation/pages/profile_subscriptions_page.dart';
 import 'package:sonde/features/settings/presentation/pages/appearance_page.dart';
@@ -200,9 +197,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                     parentNavigatorKey: appNavigatorKey,
                     pageBuilder: (context, state) => _buildModalPage(
                       state: state,
-                      child: const _PlayerAwareRouteFrame(
-                        child: ProfileCacheManagementPage(),
-                      ),
+                      child: const ProfileCacheManagementPage(),
                     ),
                   ),
                   GoRoute(
@@ -211,20 +206,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                     parentNavigatorKey: appNavigatorKey,
                     pageBuilder: (context, state) => _buildModalPage(
                       state: state,
-                      child: const _PlayerAwareRouteFrame(
-                        child: SiteFavoritesPage(),
-                      ),
-                    ),
-                  ),
-                  GoRoute(
-                    path: 'history',
-                    name: 'profile-history',
-                    parentNavigatorKey: appNavigatorKey,
-                    pageBuilder: (context, state) => _buildModalPage(
-                      state: state,
-                      child: const _PlayerAwareRouteFrame(
-                        child: ProfileHistoryPage(),
-                      ),
+                      child: const SiteFavoritesPage(),
                     ),
                   ),
                   GoRoute(
@@ -233,20 +215,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                     parentNavigatorKey: appNavigatorKey,
                     pageBuilder: (context, state) => _buildModalPage(
                       state: state,
-                      child: const _PlayerAwareRouteFrame(
-                        child: ProfileSubscriptionsPage(),
-                      ),
-                    ),
-                  ),
-                  GoRoute(
-                    path: 'downloads',
-                    name: 'profile-downloads',
-                    parentNavigatorKey: appNavigatorKey,
-                    pageBuilder: (context, state) => _buildModalPage(
-                      state: state,
-                      child: const _PlayerAwareRouteFrame(
-                        child: PodcastDownloadsPage(),
-                      ),
+                      child: const ProfileSubscriptionsPage(),
                     ),
                   ),
                 ],
@@ -279,12 +248,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         name: 'reading-archive',
         pageBuilder: (context, state) => _buildModalPage(
           state: state,
-          child: _PlayerAwareRouteFrame(
-            child: SiteArchivePage(
+          child: SiteArchivePage(
               initialKind: SiteReportIssuePage.parseKind(
                 state.uri.queryParameters['kind'],
               ),
-            ),
           ),
         ),
       ),
@@ -293,7 +260,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         name: 'reading-all',
         pageBuilder: (context, state) => _buildModalPage(
           state: state,
-          child: const _PlayerAwareRouteFrame(child: SiteAllEpisodesPage()),
+          child: const SiteAllEpisodesPage(),
         ),
       ),
       GoRoute(
@@ -315,9 +282,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           }
           return _buildModalPage(
             state: state,
-            child: _PlayerAwareRouteFrame(
-              child: SiteReportIssuePage(kind: kind, reportKey: key),
-            ),
+            child: SiteReportIssuePage(kind: kind, reportKey: key),
           );
         },
       ),
@@ -331,11 +296,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           final parsedDate = _parseDateOnlyQuery(dateParam);
           return _buildModalPage(
             state: state,
-            child: _PlayerAwareRouteFrame(
-              child: PodcastHighlightsPage(
-                initialDate: parsedDate,
-              ),
-            ),
+            child: PodcastHighlightsPage(initialDate: parsedDate),
           );
         },
       ),
@@ -362,13 +323,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           }
           return _buildPageWithTransition(
             state: state,
-            child: _PlayerAwareRouteFrame(
-              child: PodcastEpisodesPage(
+            child: PodcastEpisodesPage(
                 subscriptionId: args.subscriptionId,
                 podcastTitle: args.podcastTitle,
                 subscription: args.subscription,
               ),
-            ),
           );
         },
       ),
@@ -388,9 +347,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           }
           return _buildPageWithTransition(
             state: state,
-            child: _PlayerAwareRouteFrame(
-              child: PodcastEpisodeDetailPage(episodeId: args.episodeId),
-            ),
+            child: PodcastEpisodeDetailPage(episodeId: args.episodeId),
           );
         },
       ),
@@ -412,9 +369,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           }
           return _buildPageWithTransition(
             state: state,
-            child: _PlayerAwareRouteFrame(
-              child: PodcastEpisodeDetailPage(episodeId: episodeId),
-            ),
+            child: PodcastEpisodeDetailPage(episodeId: episodeId),
           );
         },
       ),
@@ -526,13 +481,3 @@ DateTime? _parseDateOnlyQuery(String? value) {
   return DateTime(local.year, local.month, local.day);
 }
 
-class _PlayerAwareRouteFrame extends StatelessWidget {
-  const _PlayerAwareRouteFrame({required this.child});
-
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return PodcastPlayerLayoutFrame(child: child);
-  }
-}

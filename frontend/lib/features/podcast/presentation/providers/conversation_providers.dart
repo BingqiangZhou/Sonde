@@ -6,7 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:sonde/features/podcast/core/utils/html_sanitizer.dart';
 import 'package:sonde/features/podcast/data/models/podcast_conversation_model.dart';
-import 'package:sonde/features/podcast/data/models/podcast_playback_model.dart';
+import 'package:sonde/features/podcast/data/models/podcast_summary_model.dart';
 import 'package:sonde/features/podcast/data/models/podcast_transcription_model.dart';
 import 'package:sonde/features/podcast/presentation/providers/podcast_providers.dart';
 import 'package:riverpod/src/providers/async_notifier.dart';

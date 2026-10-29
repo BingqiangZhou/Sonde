@@ -64,7 +64,6 @@ class PodcastSearchResultCard extends StatelessWidget {
           ),
           cornerRadius: appThemeOf(context).itemRadius,
           titleMaxLines: 1,
-          showPlayButton: false,
           showSubscribeAction: true,
           isSubscribed: isSubscribed,
           isSubscribing: isSubscribing,

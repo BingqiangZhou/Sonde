@@ -7,5 +7,3 @@ library;
 /// Storage key prefix for persisting last playback snapshot.
 ///
 /// Used by podcast playback (to save/restore) and auth (to clear on logout).
-const String kLastPlaybackSnapshotStorageKeyPrefix =
-    'podcast_last_playback_snapshot_v1';

@@ -10,13 +10,11 @@ class PodcastEpisodeSearchResultCard extends StatelessWidget {
   const PodcastEpisodeSearchResultCard({
     required this.episode, super.key,
     this.onTap,
-    this.onPlay,
     this.dense = false,
   });
 
   final ITunesPodcastEpisodeResult episode;
   final VoidCallback? onTap;
-  final VoidCallback? onPlay;
   final bool dense;
 
   @override
@@ -42,13 +40,11 @@ class PodcastEpisodeSearchResultCard extends StatelessWidget {
         ),
         cornerRadius: appThemeOf(context).itemRadius,
         titleMaxLines: 1,
-        showPlayButton: onPlay != null,
       ),
       title: episode.trackName,
       subtitle: episode.collectionName,
       subtitle2: _buildMetaText(episode),
       onTap: onTap,
-      onPlay: onPlay,
     );
   }
 

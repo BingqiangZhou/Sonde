@@ -110,7 +110,6 @@ const _profileStats = ProfileStatsModel(
   totalEpisodes: 12,
   summariesGenerated: 8,
   pendingSummaries: 1,
-  playedEpisodes: 5,
 );
 
 class _FixedCountrySelectorNotifier extends CountrySelectorNotifier {

@@ -7,10 +7,8 @@ import 'package:sonde/core/constants/app_text_styles.dart';
 import 'package:sonde/core/constants/breakpoints.dart';
 import 'package:sonde/core/localization/app_localizations.dart';
 import 'package:sonde/core/localization/app_localizations_extension.dart';
-import 'package:sonde/core/platform/adaptive_haptic.dart';
 import 'package:sonde/core/platform/platform_helper.dart';
 import 'package:sonde/core/theme/app_colors.dart';
-import 'package:sonde/core/theme/app_theme.dart';
 import 'package:sonde/core/utils/app_logger.dart' as logger;
 import 'package:sonde/core/widgets/adaptive/adaptive.dart';
 import 'package:sonde/core/widgets/app_dialog_helper.dart';
@@ -21,7 +19,6 @@ import 'package:sonde/features/podcast/data/models/podcast_state_models.dart';
 import 'package:sonde/features/podcast/data/models/podcast_subscription_model.dart';
 import 'package:sonde/features/podcast/presentation/navigation/podcast_navigation.dart';
 import 'package:sonde/features/podcast/presentation/providers/podcast_episodes_providers.dart';
-import 'package:sonde/features/podcast/presentation/providers/podcast_playback_providers.dart';
 import 'package:sonde/features/podcast/presentation/providers/podcast_providers.dart';
 import 'package:sonde/features/podcast/presentation/widgets/podcast_image_widget.dart';
 import 'package:sonde/features/podcast/presentation/widgets/simplified_episode_card.dart';
@@ -68,17 +65,9 @@ class PodcastEpisodesPage extends ConsumerStatefulWidget {
 
 class _PodcastEpisodesPageState extends ConsumerState<PodcastEpisodesPage> {
   final ScrollController _scrollController = ScrollController();
-  final Set<int> _addingEpisodeIds = <int>{};
-  String _selectedFilter = 'all';
   bool _showOnlyWithSummary = false;
   bool _isReparsing = false; // Guard to avoid duplicate reparse requests.
   static const double _desktopEpisodeCardHeight = 160;
-
-  String? get _statusFilter => _selectedFilter == 'played'
-      ? 'played'
-      : _selectedFilter == 'unplayed'
-      ? 'unplayed'
-      : null;
 
   bool? get _hasSummaryFilter => _showOnlyWithSummary ? true : null;
 
@@ -113,7 +102,6 @@ class _PodcastEpisodesPageState extends ConsumerState<PodcastEpisodesPage> {
       );
 
       // Reset filters
-      _selectedFilter = 'all';
       _showOnlyWithSummary = false;
 
       // Reload episodes for the new subscription

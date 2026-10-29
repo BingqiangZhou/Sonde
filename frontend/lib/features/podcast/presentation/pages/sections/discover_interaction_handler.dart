@@ -6,9 +6,7 @@ import 'package:sonde/core/widgets/adaptive_sheet_helper.dart';
 import 'package:sonde/core/widgets/top_floating_notice.dart';
 import 'package:sonde/features/podcast/data/models/itunes_episode_lookup_model.dart';
 import 'package:sonde/features/podcast/data/models/podcast_discover_chart_model.dart';
-import 'package:sonde/features/podcast/data/models/podcast_episode_model.dart';
 import 'package:sonde/features/podcast/data/models/podcast_search_model.dart' show PodcastSearchResult;
-import 'package:sonde/features/podcast/presentation/providers/podcast_playback_providers.dart';
 import 'package:sonde/features/podcast/presentation/providers/podcast_providers.dart';
 import 'package:sonde/features/podcast/presentation/providers/podcast_search_provider.dart';
 import 'package:sonde/features/podcast/presentation/widgets/discover_episode_detail_sheet.dart';
@@ -46,7 +44,7 @@ class DiscoverInteractionHandler {
     }
   }
 
-  // --- Episode tap / play ---
+  // --- Episode tap ---
 
   static Future<void> handleEpisodeTap(
     WidgetRef ref,
@@ -61,19 +59,6 @@ class DiscoverInteractionHandler {
     await showEpisodeDetailSheetFromSearch(ref, context, resolved);
   }
 
-  static Future<void> handleEpisodePlay(
-    WidgetRef ref,
-    BuildContext context,
-    ITunesPodcastEpisodeResult episode,
-  ) async {
-    final resolved = await resolveEpisodeForSearchResult(ref, episode);
-    if (!context.mounted || resolved == null) {
-      if (context.mounted) showErrorNotice(context, context.l10n.podcast_player_no_audio);
-      return;
-    }
-    await playDiscoverEpisode(ref, context, episode: resolved, showId: resolved.collectionId);
-  }
-
   static Future<void> handleChartRowTap(
     WidgetRef ref,
     BuildContext context,
@@ -83,22 +68,6 @@ class DiscoverInteractionHandler {
       await showPodcastEpisodeInfoSheet(ref, context, item);
     } else {
       await showEpisodeDetailSheetFromChart(ref, context, item);
-    }
-  }
-
-  static Future<void> playEpisodeFromChartRow(
-    WidgetRef ref,
-    BuildContext context,
-    PodcastDiscoverItem item,
-  ) async {
-    final selection = await resolveDiscoverEpisodeSelection(ref, context, item);
-    if (selection != null) {
-      await playDiscoverEpisode(
-        ref,
-        context,
-        episode: selection.episode,
-        showId: selection.showId,
-      );
     }
   }
 
@@ -143,10 +112,6 @@ class DiscoverInteractionHandler {
                 Navigator.of(sheetContext).pop();
                 showEpisodeDetailSheetFromSearch(ref, context, episode);
               },
-              onPlayEpisode: (episode) {
-                Navigator.of(sheetContext).pop();
-                playDiscoverEpisode(ref, context, episode: episode, showId: showId);
-              },
             ),
           );
         },
@@ -174,15 +139,6 @@ class DiscoverInteractionHandler {
           ),
           child: DiscoverEpisodeDetailSheet(
             episode: selection.episode,
-            onPlay: () {
-              Navigator.of(sheetContext).pop();
-              playDiscoverEpisode(
-                ref,
-                context,
-                episode: selection.episode,
-                showId: selection.showId,
-              );
-            },
           ),
         );
       },
@@ -203,10 +159,6 @@ class DiscoverInteractionHandler {
           ),
           child: DiscoverEpisodeDetailSheet(
             episode: episode,
-            onPlay: () {
-              Navigator.of(sheetContext).pop();
-              playDiscoverEpisode(ref, context, episode: episode, showId: episode.collectionId);
-            },
           ),
         );
       },
@@ -266,52 +218,6 @@ class DiscoverInteractionHandler {
     } catch (e) {
       logger.AppLogger.debug('[Search] Failed to resolve episode: $e');
       return null;
-    }
-  }
-
-  // --- Play ---
-
-  static Future<void> playDiscoverEpisode(
-    WidgetRef ref,
-    BuildContext context, {
-    required ITunesPodcastEpisodeResult episode,
-    required int showId,
-  }) async {
-    final audioUrl = episode.resolvedAudioUrl;
-    if (audioUrl == null || audioUrl.isEmpty) {
-      showErrorNotice(context, context.l10n.podcast_player_no_audio);
-      return;
-    }
-
-    final now = DateTime.now();
-    final discoverEpisode = PodcastEpisodeModel(
-      id: episode.trackId,
-      subscriptionId: 0,
-      title: episode.trackName,
-      subscriptionTitle: episode.collectionName,
-      description: episode.description ?? episode.shortDescription,
-      audioUrl: audioUrl,
-      audioDuration: switch (episode.trackTimeMillis) {
-        null => null,
-        final millis => (millis / 1000).round(),
-      },
-      publishedAt: episode.releaseDate ?? now,
-      imageUrl: episode.artworkUrl600 ?? episode.artworkUrl100,
-      itemLink: episode.trackViewUrl,
-      metadata: {
-        'discover_preview': true,
-        'source': 'top_charts',
-        'show_id': showId,
-        'track_id': episode.trackId,
-      },
-      createdAt: now,
-    );
-
-    try {
-      await ref.read(audioPlayerProvider.notifier).playEpisode(discoverEpisode);
-    } catch (e) {
-      logger.AppLogger.debug('[Discover] Failed to play episode: $e');
-      showErrorNotice(context, context.l10n.podcast_player_no_audio);
     }
   }
 

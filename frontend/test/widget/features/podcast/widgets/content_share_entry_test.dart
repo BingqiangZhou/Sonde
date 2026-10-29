@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:sonde/core/localization/app_localizations.dart';
 import 'package:sonde/core/theme/app_theme.dart';
 import 'package:sonde/features/podcast/data/models/podcast_conversation_model.dart';
-import 'package:sonde/features/podcast/data/models/podcast_playback_model.dart';
+import 'package:sonde/features/podcast/data/models/podcast_summary_model.dart';
 import 'package:sonde/features/podcast/data/models/podcast_transcription_model.dart';
 import 'package:sonde/features/podcast/presentation/providers/conversation_providers.dart';
 import 'package:sonde/features/podcast/presentation/providers/conversation_providers.dart';

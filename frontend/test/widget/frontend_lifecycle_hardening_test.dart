@@ -10,7 +10,7 @@ import 'package:sonde/core/localization/app_localizations.dart';
 import 'package:sonde/core/storage/local_storage_service.dart';
 import 'package:sonde/features/auth/presentation/pages/login_page.dart';
 import 'package:sonde/features/auth/presentation/providers/auth_provider.dart';
-import 'package:sonde/features/podcast/data/models/podcast_playback_model.dart';
+import 'package:sonde/features/podcast/data/models/podcast_summary_model.dart';
 import 'package:sonde/features/podcast/presentation/providers/conversation_providers.dart';
 import 'package:sonde/features/podcast/presentation/providers/conversation_providers.dart';
 import 'package:sonde/features/podcast/presentation/widgets/conversation_chat_widget.dart';

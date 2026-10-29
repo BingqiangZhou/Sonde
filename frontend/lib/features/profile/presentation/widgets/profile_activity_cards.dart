@@ -55,9 +55,6 @@ class ProfileActivityCards extends ConsumerWidget {
     final summaryCount = isLoading
         ? '...'
         : (stats?.summariesGenerated.toString() ?? '0');
-    final historyCount = isLoading
-        ? '...'
-        : (stats?.playedEpisodes.toString() ?? '0');
     final subscriptionCount = isLoading
         ? '...'
         : (stats?.totalSubscriptions.toString() ?? '0');
@@ -75,7 +72,6 @@ class ProfileActivityCards extends ConsumerWidget {
         subscriptionCount: subscriptionCount,
         episodeCount: episodeCount,
         summaryCount: summaryCount,
-        historyCount: historyCount,
         latestDailyReportDateText: latestDailyReportDateText,
         highlightsCount: highlightsCount,
         scheme: scheme,
@@ -101,7 +97,6 @@ class ProfileActivityCards extends ConsumerWidget {
           subscriptionCount: subscriptionCount,
           episodeCount: episodeCount,
           summaryCount: summaryCount,
-          historyCount: historyCount,
           latestDailyReportDateText: latestDailyReportDateText,
           highlightsCount: highlightsCount,
           scheme: scheme,
@@ -123,7 +118,6 @@ class ProfileActivityCards extends ConsumerWidget {
     required String subscriptionCount,
     required String episodeCount,
     required String summaryCount,
-    required String historyCount,
     required String latestDailyReportDateText,
     required String highlightsCount,
     required ColorScheme scheme,

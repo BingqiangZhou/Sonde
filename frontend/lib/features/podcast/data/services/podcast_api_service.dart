@@ -1,10 +1,8 @@
 import 'package:dio/dio.dart';
-import 'package:sonde/features/podcast/data/models/playback_history_lite_model.dart';
 import 'package:sonde/features/podcast/data/models/podcast_conversation_model.dart';
 import 'package:sonde/features/podcast/data/models/podcast_episode_model.dart';
 import 'package:sonde/features/podcast/data/models/podcast_highlight_model.dart';
-import 'package:sonde/features/podcast/data/models/podcast_playback_model.dart';
-import 'package:sonde/features/podcast/data/models/podcast_queue_model.dart';
+import 'package:sonde/features/podcast/data/models/podcast_summary_model.dart';
 import 'package:sonde/features/podcast/data/models/podcast_subscription_model.dart';
 import 'package:sonde/features/podcast/data/models/podcast_transcription_model.dart';
 import 'package:sonde/features/podcast/data/models/profile_stats_model.dart';
@@ -153,81 +151,11 @@ abstract class PodcastApiService {
     @Query('page') int page,
     @Query('size') int size,
     @Query('has_summary') bool? hasSummary,
-    @Query('is_played') bool? isPlayed,
-  );
-
-  @GET('/podcasts/episodes/history')
-  Future<PodcastEpisodeListResponse> getPlaybackHistory(
-    @Query('page') int page,
-    @Query('size') int size,
-    @Query('cursor') String? cursor,
-  );
-
-  @GET('/podcasts/episodes/history-lite')
-  Future<PlaybackHistoryLiteResponse> getPlaybackHistoryLite(
-    @Query('page') int page,
-    @Query('size') int size,
   );
 
   @GET('/podcasts/episodes/{episodeId}')
   Future<PodcastEpisodeModel> getEpisode(
     @Path('episodeId') int episodeId,
-  );
-
-  // === Playback Management ===
-
-  @PUT('/podcasts/episodes/{episodeId}/playback')
-  Future<PodcastPlaybackStateResponse> updatePlaybackProgress(
-    @Path('episodeId') int episodeId,
-    @Body() PodcastPlaybackUpdateRequest request,
-  );
-
-  @GET('/podcasts/episodes/{episodeId}/playback')
-  Future<PodcastPlaybackStateResponse> getPlaybackState(
-    @Path('episodeId') int episodeId,
-  );
-
-  @GET('/podcasts/playback/rate/effective')
-  Future<PlaybackRateEffectiveResponse> getEffectivePlaybackRate(
-    @Query('subscription_id') int? subscriptionId,
-  );
-
-  @PUT('/podcasts/playback/rate/apply')
-  Future<PlaybackRateEffectiveResponse> applyPlaybackRatePreference(
-    @Body() PlaybackRateApplyRequest request,
-  );
-
-  // === Queue Management ===
-
-  @GET('/podcasts/queue')
-  Future<PodcastQueueModel> getQueue();
-
-  @POST('/podcasts/queue/items')
-  Future<PodcastQueueModel> addQueueItem(
-    @Body() PodcastQueueAddItemRequest request,
-  );
-
-  @DELETE('/podcasts/queue/items/{episodeId}')
-  Future<PodcastQueueModel> removeQueueItem(@Path('episodeId') int episodeId);
-
-  @PUT('/podcasts/queue/items/reorder')
-  Future<PodcastQueueModel> reorderQueueItems(
-    @Body() PodcastQueueReorderRequest request,
-  );
-
-  @POST('/podcasts/queue/current')
-  Future<PodcastQueueModel> setQueueCurrent(
-    @Body() PodcastQueueSetCurrentRequest request,
-  );
-
-  @POST('/podcasts/queue/activate')
-  Future<PodcastQueueModel> activateQueueEpisode(
-    @Body() PodcastQueueActivateRequest request,
-  );
-
-  @POST('/podcasts/queue/current/complete')
-  Future<PodcastQueueModel> completeQueueCurrent(
-    @Body() Map<String, dynamic> request,
   );
 
   // === Summary Management ===
@@ -255,9 +183,6 @@ abstract class PodcastApiService {
   );
 
   // === Statistics ===
-
-  @GET('/podcasts/stats')
-  Future<PodcastStatsResponse> getStats();
 
   @GET('/podcasts/stats/profile')
   Future<ProfileStatsModel> getProfileStats();

@@ -8,7 +8,7 @@ import 'package:sonde/core/services/adaptive_share.dart';
 import 'package:sonde/core/widgets/app_dialog_helper.dart';
 import 'package:sonde/core/widgets/top_floating_notice.dart';
 import 'package:sonde/features/podcast/data/models/podcast_conversation_model.dart';
-import 'package:sonde/features/podcast/data/models/podcast_playback_model.dart';
+import 'package:sonde/features/podcast/data/models/podcast_summary_model.dart';
 import 'package:sonde/features/podcast/presentation/providers/conversation_providers.dart';
 import 'package:sonde/features/podcast/presentation/widgets/conversation/chat_empty_state.dart';
 import 'package:sonde/features/podcast/presentation/widgets/conversation/chat_header.dart';

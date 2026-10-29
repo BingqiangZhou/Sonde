@@ -14,15 +14,9 @@ class SimplifiedEpisodeCard extends ConsumerWidget {
     required this.episode,
     super.key,
     this.onTap,
-    this.onPlay,
-    this.onAddToQueue,
-    this.isAddingToQueue = false,
   });
   final PodcastEpisodeModel episode;
   final VoidCallback? onTap;
-  final VoidCallback? onPlay;
-  final VoidCallback? onAddToQueue;
-  final bool isAddingToQueue;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -54,22 +48,9 @@ class SimplifiedEpisodeCard extends ConsumerWidget {
               ? displayDescription
               : null,
           descriptionMaxLines: isMobile ? 2 : 4,
-          showQueueButton: true,
-          isAddingToQueue: isAddingToQueue,
-          showDownloadButton: true,
-          episodeId: episode.id,
-          audioUrl: episode.audioUrl,
-          episodeTitle: episode.title,
-          subscriptionTitle: episode.subscriptionTitle,
-          subscriptionImageUrl: episode.subscriptionImageUrl,
-          subscriptionId: episode.subscriptionId,
-          audioDuration: episode.audioDuration,
-          publishedAt: episode.publishedAt,
         ),
         title: episode.title,
         onTap: onTap,
-        onPlay: onPlay,
-        onAddToQueue: onAddToQueue,
         additionalMetadata: episode.aiSummary != null
             ? [
                 Tooltip(

@@ -8,14 +8,13 @@ import 'package:sonde/features/podcast/presentation/widgets/simplified_episode_c
 
 class DiscoverShowEpisodesSheet extends StatelessWidget {
   const DiscoverShowEpisodesSheet({
-    required this.showId, required this.showTitle, required this.episodes, required this.onEpisodeSelected, required this.onPlayEpisode, super.key,
+    required this.showId, required this.showTitle, required this.episodes, required this.onEpisodeSelected, super.key,
   });
 
   final int showId;
   final String showTitle;
   final List<ITunesPodcastEpisodeResult> episodes;
   final void Function(ITunesPodcastEpisodeResult episode) onEpisodeSelected;
-  final void Function(ITunesPodcastEpisodeResult episode) onPlayEpisode;
 
   @override
   Widget build(BuildContext context) {
@@ -89,7 +88,6 @@ class DiscoverShowEpisodesSheet extends StatelessWidget {
                         return SimplifiedEpisodeCard(
                           episode: discoverEpisode,
                           onTap: () => onEpisodeSelected(episode),
-                          onPlay: () => onPlayEpisode(episode),
                         );
                       },
                     ),

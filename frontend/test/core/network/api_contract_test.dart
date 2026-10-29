@@ -8,7 +8,6 @@ import 'package:sonde/core/network/dio_client.dart';
 import 'package:sonde/core/storage/secure_storage_service.dart';
 import 'package:sonde/features/auth/data/repositories/auth_repository_impl.dart';
 import 'package:sonde/features/auth/domain/models/auth_request.dart';
-import 'package:sonde/features/podcast/data/models/podcast_queue_model.dart';
 import 'package:sonde/features/podcast/data/models/podcast_transcription_model.dart';
 import 'package:sonde/features/podcast/data/services/podcast_api_service.dart';
 
@@ -92,23 +91,6 @@ void main() {
         'page_size': '20',
         'cursor': 'cursor-token',
       });
-    });
-
-    test('queue endpoint uses /podcasts/queue', () async {
-      final adapter = _RecordingHttpClientAdapter(
-        responder: (options) => _responseBody(
-          options,
-          const PodcastQueueModel().toJson(),
-        ),
-      );
-      final dio = Dio(BaseOptions(baseUrl: 'http://localhost/api/v1'))
-        ..httpClientAdapter = adapter;
-      final service = PodcastApiService(dio);
-
-      await service.getQueue();
-
-      expect(adapter.lastRequest!.method, 'GET');
-      expect(adapter.lastRequest!.uri.path, '/api/v1/podcasts/queue');
     });
 
     test('transcription start uses /podcasts/episodes/{id}/transcribe body contract', () async {

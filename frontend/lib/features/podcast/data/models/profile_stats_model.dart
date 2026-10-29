@@ -7,7 +7,6 @@ class ProfileStatsModel extends Equatable {
     required this.totalEpisodes,
     required this.summariesGenerated,
     required this.pendingSummaries,
-    required this.playedEpisodes,
     this.latestDailyReportDate,
     this.totalHighlights = 0,
   });
@@ -18,7 +17,6 @@ class ProfileStatsModel extends Equatable {
       totalEpisodes: (json['total_episodes'] as num?)?.toInt() ?? 0,
       summariesGenerated: (json['summaries_generated'] as num?)?.toInt() ?? 0,
       pendingSummaries: (json['pending_summaries'] as num?)?.toInt() ?? 0,
-      playedEpisodes: (json['played_episodes'] as num?)?.toInt() ?? 0,
       latestDailyReportDate: json['latest_daily_report_date'] as String?,
       totalHighlights: (json['total_highlights'] as num?)?.toInt() ?? 0,
     );
@@ -27,7 +25,6 @@ class ProfileStatsModel extends Equatable {
   final int totalEpisodes;
   final int summariesGenerated;
   final int pendingSummaries;
-  final int playedEpisodes;
   final String? latestDailyReportDate;
   final int totalHighlights;
 
@@ -37,7 +34,6 @@ class ProfileStatsModel extends Equatable {
     totalEpisodes,
     summariesGenerated,
     pendingSummaries,
-    playedEpisodes,
     latestDailyReportDate,
     totalHighlights,
   ];

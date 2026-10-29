@@ -482,12 +482,6 @@ abstract class AppLocalizations {
   /// **'No subscriptions yet'**
   String get podcast_no_subscriptions;
 
-  /// Play button
-  ///
-  /// In en, this message translates to:
-  /// **'Play'**
-  String get podcast_play;
-
   /// Home page title
   ///
   /// In en, this message translates to:
@@ -752,18 +746,6 @@ abstract class AppLocalizations {
   /// **'No description'**
   String get podcast_description;
 
-  /// Unknown episode title
-  ///
-  /// In en, this message translates to:
-  /// **'Unknown Episode'**
-  String get podcast_player_unknown_episode;
-
-  /// No audio link message
-  ///
-  /// In en, this message translates to:
-  /// **'No audio link'**
-  String get podcast_player_no_audio;
-
   /// Coming soon label
   ///
   /// In en, this message translates to:
@@ -775,18 +757,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'All'**
   String get podcast_filter_all;
-
-  /// Filter unplayed episodes
-  ///
-  /// In en, this message translates to:
-  /// **'Unplayed'**
-  String get podcast_filter_unplayed;
-
-  /// Filter played episodes
-  ///
-  /// In en, this message translates to:
-  /// **'Played'**
-  String get podcast_filter_played;
 
   /// Summary label
   ///
@@ -842,29 +812,11 @@ abstract class AppLocalizations {
   /// **'Filter Episodes'**
   String get podcast_filter_episodes;
 
-  /// Playback status label
-  ///
-  /// In en, this message translates to:
-  /// **'Playback Status:'**
-  String get podcast_playback_status;
-
   /// All episodes filter option
   ///
   /// In en, this message translates to:
   /// **'All Episodes'**
   String get podcast_all_episodes;
-
-  /// Unplayed only filter option
-  ///
-  /// In en, this message translates to:
-  /// **'Unplayed Only'**
-  String get podcast_unplayed_only;
-
-  /// Played only filter option
-  ///
-  /// In en, this message translates to:
-  /// **'Played Only'**
-  String get podcast_played_only;
 
   /// Only with summary filter option
   ///
@@ -1274,24 +1226,6 @@ abstract class AppLocalizations {
   /// **'Failed'**
   String get connection_status_failed;
 
-  /// Server history title
-  ///
-  /// In en, this message translates to:
-  /// **'History'**
-  String get server_history_title;
-
-  /// Profile viewed history title
-  ///
-  /// In en, this message translates to:
-  /// **'Viewed'**
-  String get profile_viewed_title;
-
-  /// No server history message
-  ///
-  /// In en, this message translates to:
-  /// **'No history'**
-  String get server_history_empty;
-
   /// Save failed error message
   ///
   /// In en, this message translates to:
@@ -1699,78 +1633,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'❌ Reparse failed:'**
   String get podcast_reparse_failed;
-
-  /// Now playing label in floating player
-  ///
-  /// In en, this message translates to:
-  /// **'Now Playing'**
-  String get podcast_player_now_playing;
-
-  /// Collapse button tooltip in floating player
-  ///
-  /// In en, this message translates to:
-  /// **'Collapse'**
-  String get podcast_player_collapse;
-
-  /// Playlist button tooltip in floating player
-  ///
-  /// In en, this message translates to:
-  /// **'Playlist'**
-  String get podcast_player_list;
-
-  /// Sleep mode button tooltip in floating player
-  ///
-  /// In en, this message translates to:
-  /// **'Sleep Mode'**
-  String get podcast_player_sleep_mode;
-
-  /// Play button tooltip in floating player
-  ///
-  /// In en, this message translates to:
-  /// **'Play'**
-  String get podcast_player_play;
-
-  /// Pause button tooltip in floating player
-  ///
-  /// In en, this message translates to:
-  /// **'Pause'**
-  String get podcast_player_pause;
-
-  /// Rewind 10 seconds button tooltip
-  ///
-  /// In en, this message translates to:
-  /// **'Rewind 10s'**
-  String get podcast_player_rewind_10;
-
-  /// Forward 30 seconds button tooltip
-  ///
-  /// In en, this message translates to:
-  /// **'Forward 30s'**
-  String get podcast_player_forward_30;
-
-  /// Play button label (short version for mobile)
-  ///
-  /// In en, this message translates to:
-  /// **'Play'**
-  String get podcast_play_episode;
-
-  /// Play button label (full version for desktop)
-  ///
-  /// In en, this message translates to:
-  /// **'Play'**
-  String get podcast_play_episode_full;
-
-  /// Resume button label for episodes with saved progress
-  ///
-  /// In en, this message translates to:
-  /// **'Resume'**
-  String get podcast_resume_episode;
-
-  /// Current episode is already playing
-  ///
-  /// In en, this message translates to:
-  /// **'Playing'**
-  String get podcast_episode_playing;
 
   /// Source link label
   ///
@@ -2540,66 +2402,6 @@ abstract class AppLocalizations {
   /// **'Try clicking Retry to start over'**
   String get transcription_suggest_generic;
 
-  /// Title for playback speed section
-  ///
-  /// In en, this message translates to:
-  /// **'Playback Speed'**
-  String get player_playback_speed_title;
-
-  /// Checkbox label for subscription-specific speed
-  ///
-  /// In en, this message translates to:
-  /// **'Apply to current subscription only'**
-  String get player_apply_subscription_only;
-
-  /// Subtitle for subscription checkbox
-  ///
-  /// In en, this message translates to:
-  /// **'Checked: current subscription only; Unchecked: global default'**
-  String get player_apply_subscription_subtitle;
-
-  /// Title for sleep timer section
-  ///
-  /// In en, this message translates to:
-  /// **'Sleep Timer'**
-  String get player_sleep_timer_title;
-
-  /// Description for sleep timer
-  ///
-  /// In en, this message translates to:
-  /// **'Playback will automatically pause after the set time'**
-  String get player_sleep_timer_desc;
-
-  /// Option to stop playback after current episode
-  ///
-  /// In en, this message translates to:
-  /// **'Stop after this episode'**
-  String get player_stop_after_episode;
-
-  /// Button to cancel sleep timer
-  ///
-  /// In en, this message translates to:
-  /// **'Cancel timer'**
-  String get player_cancel_timer;
-
-  /// Duration in minutes
-  ///
-  /// In en, this message translates to:
-  /// **'{count} min'**
-  String player_minutes(int count);
-
-  /// Duration in hours and minutes
-  ///
-  /// In en, this message translates to:
-  /// **'{hours}h {minutes}min'**
-  String player_hours_minutes(int hours, int minutes);
-
-  /// Duration in hours only
-  ///
-  /// In en, this message translates to:
-  /// **'{count}h'**
-  String player_hours(int count);
-
   /// Error title when loading fails
   ///
   /// In en, this message translates to:
@@ -2738,95 +2540,11 @@ abstract class AppLocalizations {
   /// **'Build: {build}'**
   String build_label(String build);
 
-  /// Message shown when item is added to queue
-  ///
-  /// In en, this message translates to:
-  /// **'Added to queue'**
-  String get added_to_queue;
-
-  /// Error message when failing to add to queue
-  ///
-  /// In en, this message translates to:
-  /// **'Failed to add to queue: {error}'**
-  String failed_to_add_to_queue(String error);
-
   /// Error message when failing to open link
   ///
   /// In en, this message translates to:
   /// **'Error opening link: {error}'**
   String error_opening_link(String error);
-
-  /// Message shown when queue is empty
-  ///
-  /// In en, this message translates to:
-  /// **'Queue is empty'**
-  String get queue_is_empty;
-
-  /// Title for the playback queue sheet
-  ///
-  /// In en, this message translates to:
-  /// **'Up Next'**
-  String get queue_up_next;
-
-  /// Label for the current playing section in the queue sheet
-  ///
-  /// In en, this message translates to:
-  /// **'Now playing'**
-  String get queue_now_playing;
-
-  /// Suffix label for queue item count
-  ///
-  /// In en, this message translates to:
-  /// **'in queue'**
-  String get queue_in_queue;
-
-  /// Label before remaining queue duration
-  ///
-  /// In en, this message translates to:
-  /// **'Remaining'**
-  String get queue_remaining_label;
-
-  /// Status label when the queue is syncing
-  ///
-  /// In en, this message translates to:
-  /// **'Syncing queue'**
-  String get queue_syncing;
-
-  /// Status label when queue reorder is being saved
-  ///
-  /// In en, this message translates to:
-  /// **'Saving order'**
-  String get queue_saving_order;
-
-  /// Status label when queue content is being updated
-  ///
-  /// In en, this message translates to:
-  /// **'Updating queue'**
-  String get queue_updating;
-
-  /// Separator between podcast title and playback progress in queue items
-  ///
-  /// In en, this message translates to:
-  /// **' • '**
-  String get queue_subtitle_separator;
-
-  /// Error message when failing to load queue
-  ///
-  /// In en, this message translates to:
-  /// **'Failed to load queue: {error}'**
-  String failed_to_load_queue(String error);
-
-  /// Error message when failing to reorder queue
-  ///
-  /// In en, this message translates to:
-  /// **'Failed to reorder queue: {error}'**
-  String failed_to_reorder_queue(String error);
-
-  /// Error message when failing to play item
-  ///
-  /// In en, this message translates to:
-  /// **'Failed to play item: {error}'**
-  String failed_to_play_item(String error);
 
   /// Error message when failing to remove item
   ///
@@ -2917,12 +2635,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'New Password'**
   String get auth_new_password;
-
-  /// Add episode to queue button
-  ///
-  /// In en, this message translates to:
-  /// **'Add to queue'**
-  String get podcast_add_to_queue;
 
   /// Fallback episode title when name is empty
   ///
@@ -3362,119 +3074,11 @@ abstract class AppLocalizations {
   /// **'Failed to delete conversation'**
   String get session_delete_failed;
 
-  /// Download button label
-  ///
-  /// In en, this message translates to:
-  /// **'Download'**
-  String get download_button_download;
-
-  /// Downloading state label
-  ///
-  /// In en, this message translates to:
-  /// **'Downloading'**
-  String get download_button_downloading;
-
-  /// Downloaded state label
-  ///
-  /// In en, this message translates to:
-  /// **'Downloaded'**
-  String get download_button_downloaded;
-
-  /// Download failed state label
-  ///
-  /// In en, this message translates to:
-  /// **'Failed'**
-  String get download_button_failed;
-
-  /// Cancel download tooltip
-  ///
-  /// In en, this message translates to:
-  /// **'Cancel download'**
-  String get download_button_cancel;
-
-  /// Delete download tooltip
-  ///
-  /// In en, this message translates to:
-  /// **'Delete download'**
-  String get download_button_delete;
-
-  /// Retry download tooltip
-  ///
-  /// In en, this message translates to:
-  /// **'Retry download'**
-  String get download_button_retry;
-
-  /// Downloads menu item in profile page
-  ///
-  /// In en, this message translates to:
-  /// **'Downloads'**
-  String get profile_downloads;
-
-  /// Subtitle for downloads menu item
-  ///
-  /// In en, this message translates to:
-  /// **'Manage downloaded episodes'**
-  String get profile_downloads_subtitle;
-
-  /// Downloads page title
-  ///
-  /// In en, this message translates to:
-  /// **'Downloads'**
-  String get downloads_page_title;
-
-  /// Empty state for downloads page
-  ///
-  /// In en, this message translates to:
-  /// **'No downloads yet'**
-  String get downloads_empty;
-
-  /// Subtitle for empty downloads state
-  ///
-  /// In en, this message translates to:
-  /// **'Downloaded episodes will appear here'**
-  String get downloads_empty_subtitle;
-
   /// Error message when downloads list fails to load
   ///
   /// In en, this message translates to:
   /// **'Failed to load downloads. Please try again.'**
   String get podcast_downloads_load_error;
-
-  /// Delete all downloads button
-  ///
-  /// In en, this message translates to:
-  /// **'Delete all'**
-  String get downloads_delete_all;
-
-  /// Confirmation to delete all downloads
-  ///
-  /// In en, this message translates to:
-  /// **'Delete all downloads?'**
-  String get downloads_delete_confirm;
-
-  /// Message for delete all confirmation dialog
-  ///
-  /// In en, this message translates to:
-  /// **'This will remove all downloaded audio files. This action cannot be undone.'**
-  String get downloads_delete_confirm_message;
-
-  /// Section title for active downloads
-  ///
-  /// In en, this message translates to:
-  /// **'Active downloads'**
-  String get downloads_active_title;
-
-  /// Section title for completed downloads
-  ///
-  /// In en, this message translates to:
-  /// **'Downloaded'**
-  String get downloads_completed_title;
-
-  /// Download count subtitle
-  ///
-  /// In en, this message translates to:
-  /// **'{count, plural, one{1 download} other{{count} downloads}}'**
-  String downloads_items(int count);
 
   /// Title for the Appearance settings page
   ///
@@ -3518,23 +3122,11 @@ abstract class AppLocalizations {
   /// **'{theme} · {font}'**
   String appearance_subtitle(String theme, String font);
 
-  /// Semantics label for expanding the mini player to full screen
-  ///
-  /// In en, this message translates to:
-  /// **'Expand player'**
-  String get player_expand_player;
-
   /// Fallback title when podcast name is unavailable
   ///
   /// In en, this message translates to:
   /// **'Unknown Podcast'**
   String get unknown_podcast;
-
-  /// Label for sleep timer option to stop after current episode
-  ///
-  /// In en, this message translates to:
-  /// **'After current episode'**
-  String get sleep_timer_after_episode;
 
   /// Title of the first onboarding screen
   ///
@@ -3811,18 +3403,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'If you have any questions about this Privacy Policy, please contact us through the app\'s support section.'**
   String get privacy_section_contact_body;
-
-  /// Subtitle for playback history page
-  ///
-  /// In en, this message translates to:
-  /// **'Resume episodes and review recently played content.'**
-  String get profile_history_subtitle;
-
-  /// Count of recently played episodes
-  ///
-  /// In en, this message translates to:
-  /// **'{count} recently played episodes'**
-  String profile_history_episode_count(int count);
 
   /// Terms of Service menu item in profile
   ///

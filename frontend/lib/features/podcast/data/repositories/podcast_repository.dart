@@ -1,13 +1,11 @@
 import 'package:dio/dio.dart';
 import 'package:sonde/core/network/exceptions/network_exceptions.dart';
 import 'package:sonde/core/utils/time_formatter.dart';
-import 'package:sonde/features/podcast/data/models/playback_history_lite_model.dart';
 import 'package:sonde/features/podcast/data/models/podcast_conversation_model.dart';
 import 'package:sonde/features/podcast/data/models/podcast_episode_model.dart';
 import 'package:sonde/features/podcast/data/models/site_report_model.dart';
 import 'package:sonde/features/podcast/data/models/podcast_highlight_model.dart';
-import 'package:sonde/features/podcast/data/models/podcast_playback_model.dart';
-import 'package:sonde/features/podcast/data/models/podcast_queue_model.dart';
+import 'package:sonde/features/podcast/data/models/podcast_summary_model.dart';
 import 'package:sonde/features/podcast/data/models/podcast_subscription_model.dart';
 import 'package:sonde/features/podcast/data/models/podcast_transcription_model.dart';
 import 'package:sonde/features/podcast/data/models/profile_stats_model.dart';
@@ -146,100 +144,16 @@ class PodcastRepository {
     int page = 1,
     int size = 20,
     bool? hasSummary,
-    bool? isPlayed,
   }) =>
       _apiCall(() => _apiService.listEpisodes(
             subscriptionId,
             page,
             size,
             hasSummary,
-            isPlayed,
           ));
 
   Future<PodcastEpisodeModel> getEpisode(int episodeId) =>
       _apiCall(() => _apiService.getEpisode(episodeId));
-
-  Future<PodcastEpisodeListResponse> getPlaybackHistory({
-    int page = 1,
-    int size = 50,
-    String? cursor,
-  }) =>
-      _apiCall(() => _apiService.getPlaybackHistory(page, size, cursor));
-
-  Future<PlaybackHistoryLiteResponse> getPlaybackHistoryLite({
-    int page = 1,
-    int size = 100,
-  }) =>
-      _apiCall(() => _apiService.getPlaybackHistoryLite(page, size));
-
-  // === Playback Management ===
-
-  Future<PodcastPlaybackStateResponse> updatePlaybackProgress({
-    required int episodeId,
-    required int position,
-    required bool isPlaying,
-    double playbackRate = 1.0,
-  }) =>
-      _apiCall(() => _apiService.updatePlaybackProgress(
-            episodeId,
-            PodcastPlaybackUpdateRequest(
-              position: position,
-              isPlaying: isPlaying,
-              playbackRate: playbackRate,
-            ),
-          ));
-
-  Future<PodcastPlaybackStateResponse> getPlaybackState(int episodeId) =>
-      _apiCall(() => _apiService.getPlaybackState(episodeId));
-
-  Future<PlaybackRateEffectiveResponse> getEffectivePlaybackRate({
-    int? subscriptionId,
-  }) =>
-      _apiCall(() => _apiService.getEffectivePlaybackRate(subscriptionId));
-
-  Future<PlaybackRateEffectiveResponse> applyPlaybackRatePreference({
-    required double playbackRate,
-    required bool applyToSubscription,
-    int? subscriptionId,
-  }) =>
-      _apiCall(() => _apiService.applyPlaybackRatePreference(
-            PlaybackRateApplyRequest(
-              playbackRate: playbackRate,
-              applyToSubscription: applyToSubscription,
-              subscriptionId: subscriptionId,
-            ),
-          ));
-
-  // === Queue Management ===
-
-  Future<PodcastQueueModel> getQueue() =>
-      _apiCall(_apiService.getQueue);
-
-  Future<PodcastQueueModel> addQueueItem(int episodeId) =>
-      _apiCall(() => _apiService.addQueueItem(
-            PodcastQueueAddItemRequest(episodeId: episodeId),
-          ));
-
-  Future<PodcastQueueModel> removeQueueItem(int episodeId) =>
-      _apiCall(() => _apiService.removeQueueItem(episodeId));
-
-  Future<PodcastQueueModel> reorderQueueItems(List<int> episodeIds) =>
-      _apiCall(() => _apiService.reorderQueueItems(
-            PodcastQueueReorderRequest(episodeIds: episodeIds),
-          ));
-
-  Future<PodcastQueueModel> setQueueCurrent(int episodeId) =>
-      _apiCall(() => _apiService.setQueueCurrent(
-            PodcastQueueSetCurrentRequest(episodeId: episodeId),
-          ));
-
-  Future<PodcastQueueModel> activateQueueEpisode(int episodeId) =>
-      _apiCall(() => _apiService.activateQueueEpisode(
-            PodcastQueueActivateRequest(episodeId: episodeId),
-          ));
-
-  Future<PodcastQueueModel> completeQueueCurrent() =>
-      _apiCall(() => _apiService.completeQueueCurrent(const {}));
 
   // === Summary Management ===
 
@@ -277,9 +191,6 @@ class PodcastRepository {
       _apiCall(() => _apiService.searchPodcasts(query, searchIn, page, size));
 
   // === Statistics ===
-
-  Future<PodcastStatsResponse> getStats() =>
-      _apiCall(_apiService.getStats);
 
   Future<ProfileStatsModel> getProfileStats() =>
       _apiCall(_apiService.getProfileStats);

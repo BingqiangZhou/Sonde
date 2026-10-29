@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sonde/core/constants/app_spacing.dart';
 
-import 'package:sonde/core/localization/app_localizations_extension.dart';
 import 'package:sonde/core/theme/app_colors.dart';
 import 'package:sonde/core/utils/time_formatter.dart';
 import 'package:sonde/features/podcast/data/models/itunes_episode_lookup_model.dart';
@@ -10,15 +9,13 @@ import 'package:sonde/features/podcast/presentation/widgets/shared/episode_card_
 
 class DiscoverEpisodeDetailSheet extends StatelessWidget {
   const DiscoverEpisodeDetailSheet({
-    required this.episode, required this.onPlay, super.key,
+    required this.episode, super.key,
   });
 
   final ITunesPodcastEpisodeResult episode;
-  final VoidCallback onPlay;
 
   @override
   Widget build(BuildContext context) {
-    final l10n = context.l10n;
     final theme = Theme.of(context);
     final description = episode.description?.trim().isNotEmpty == true
         ? episode.description!
@@ -87,23 +84,6 @@ class DiscoverEpisodeDetailSheet extends StatelessWidget {
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ],
-                            ),
-                          ),
-                          SizedBox(width: context.spacing.sm),
-                          Align(
-                            child: IconButton(
-                              key: const Key('discover_episode_detail_play_button'),
-                              tooltip: l10n.podcast_play,
-                              onPressed: onPlay,
-                              style: IconButton.styleFrom(
-                                minimumSize: const Size(36, 36),
-                                maximumSize: const Size(36, 36),
-                                tapTargetSize: MaterialTapTargetSize.padded,
-                                visualDensity: VisualDensity.compact,
-                                padding: EdgeInsets.zero,
-                                foregroundColor: theme.colorScheme.onSurfaceVariant,
-                              ),
-                              icon: const Icon(Icons.play_circle_outline, size: 32),
                             ),
                           ),
                         ],

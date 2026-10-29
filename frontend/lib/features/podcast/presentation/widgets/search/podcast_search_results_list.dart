@@ -15,12 +15,11 @@ import 'package:sonde/features/podcast/presentation/widgets/podcast_search_resul
 /// Search results list widget for displaying podcast/episode search results
 class PodcastSearchResultsList extends ConsumerWidget {
   const PodcastSearchResultsList({
-    required this.searchState, required this.onEpisodeTap, required this.onEpisodePlay, required this.onPodcastSubscribe, required this.isDense, super.key,
+    required this.searchState, required this.onEpisodeTap, required this.onPodcastSubscribe, required this.isDense, super.key,
   });
 
   final search.PodcastSearchState searchState;
   final ValueChanged<ITunesPodcastEpisodeResult> onEpisodeTap;
-  final ValueChanged<ITunesPodcastEpisodeResult> onEpisodePlay;
   final ValueChanged<PodcastSearchResult> onPodcastSubscribe;
   final bool isDense;
 
@@ -88,7 +87,6 @@ class PodcastSearchResultsList extends ConsumerWidget {
             episode: episode,
             isDense: isDense,
             onTap: () => onEpisodeTap(episode),
-            onPlay: () => onEpisodePlay(episode),
           ),
         );
       },
@@ -130,13 +128,11 @@ class _EpisodeSearchResultItem extends StatelessWidget {
     required this.episode,
     required this.isDense,
     required this.onTap,
-    required this.onPlay,
   });
 
   final ITunesPodcastEpisodeResult episode;
   final bool isDense;
   final VoidCallback onTap;
-  final VoidCallback onPlay;
 
   @override
   Widget build(BuildContext context) {
@@ -144,7 +140,6 @@ class _EpisodeSearchResultItem extends StatelessWidget {
       episode: episode,
       dense: isDense,
       onTap: onTap,
-      onPlay: onPlay,
       key: ValueKey('episode_search_${episode.trackId}'),
     );
   }

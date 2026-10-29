@@ -10,7 +10,6 @@ import 'package:sonde/features/podcast/data/models/podcast_state_models.dart';
 import 'package:sonde/features/podcast/data/services/apple_podcast_rss_service.dart';
 import 'package:sonde/features/podcast/data/services/itunes_search_service.dart';
 import 'package:sonde/features/podcast/presentation/pages/podcast_list_page.dart';
-import 'package:sonde/features/podcast/presentation/providers/podcast_playback_providers.dart';
 import 'package:sonde/features/podcast/presentation/providers/podcast_providers.dart';
 import 'package:sonde/features/podcast/presentation/providers/podcast_search_provider.dart'
     as search;
@@ -18,7 +17,6 @@ import 'package:sonde/features/podcast/presentation/providers/podcast_search_pro
     show applePodcastRssServiceProvider;
 import 'package:sonde/features/podcast/presentation/widgets/country_selector_dropdown.dart';
 import '../../../../helpers/podcast_list_page_helper.dart';
-import '../../../../helpers/mock_audio_player_notifier.dart';
 import '../../../../helpers/mock_local_storage_service.dart';
 
 // ---------------------------------------------------------------------------
@@ -139,65 +137,6 @@ void main() {
       },
     );
 
-    testWidgets('episodes support detail sheet and internal play button', (
-      tester,
-    ) async {
-      final audioNotifier = MockAudioPlayerNotifier();
-
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            localStorageServiceProvider.overrideWithValue(
-              MockLocalStorageService(),
-            ),
-            applePodcastRssServiceProvider.overrideWithValue(
-              SingleItemFakeApplePodcastRssService(),
-            ),
-            search.iTunesSearchServiceProvider.overrideWithValue(
-              FakeITunesSearchService(),
-            ),
-            podcastSubscriptionProvider.overrideWith(
-              FakePodcastSubscriptionNotifier.new,
-            ),
-            audioPlayerProvider.overrideWith(() => audioNotifier),
-            search.podcastSearchProvider.overrideWith(
-              () => PassthroughPodcastSearchNotifier(
-                  const search.PodcastSearchState()),
-            ),
-          ],
-          child: const MaterialApp(
-            localizationsDelegates: AppLocalizations.localizationsDelegates,
-            supportedLocales: AppLocalizations.supportedLocales,
-            home: PodcastListPage(),
-          ),
-        ),
-      );
-      await tester.pumpAndSettle();
-
-      expect(find.byKey(const Key('podcast_discover_open_222')), findsNothing);
-      expect(
-        find.byKey(const Key('podcast_discover_play_222')),
-        findsOneWidget,
-      );
-
-      await tester.tap(find.byKey(const Key('podcast_discover_chart_row_222')));
-      await tester.pumpAndSettle();
-
-      expect(
-        find.byKey(const Key('discover_episode_detail_sheet')),
-        findsOneWidget,
-      );
-
-      await tester.tap(
-        find.byKey(const Key('discover_episode_detail_play_button')),
-      );
-      await tester.pumpAndSettle();
-
-      final played = audioNotifier.lastPlayedEpisode;
-      expect(played, isNotNull);
-      expect(played!.id, 222);
-      expect(played.metadata?['discover_preview'], isTrue);
-    });
   });
 
   // =========================================================================

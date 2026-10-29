@@ -201,9 +201,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get podcast_no_subscriptions => '还没有订阅';
 
   @override
-  String get podcast_play => '播放';
-
-  @override
   String get home => '首页';
 
   @override
@@ -342,22 +339,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get podcast_description => '无描述';
 
   @override
-  String get podcast_player_unknown_episode => '未知剧集';
-
-  @override
-  String get podcast_player_no_audio => '无音频链接';
-
-  @override
   String get podcast_coming_soon => '即将推出';
 
   @override
   String get podcast_filter_all => '全部';
-
-  @override
-  String get podcast_filter_unplayed => '未播放';
-
-  @override
-  String get podcast_filter_played => '已播放';
 
   @override
   String get podcast_filter_with_summary => '摘要';
@@ -387,16 +372,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get podcast_filter_episodes => '筛选剧集';
 
   @override
-  String get podcast_playback_status => '播放状态：';
-
-  @override
   String get podcast_all_episodes => '全部剧集';
-
-  @override
-  String get podcast_unplayed_only => '仅未播放';
-
-  @override
-  String get podcast_played_only => '仅已播放';
 
   @override
   String get podcast_only_with_summary => '仅显示有摘要的剧集';
@@ -610,15 +586,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get connection_status_failed => '失败';
-
-  @override
-  String get server_history_title => '历史记录';
-
-  @override
-  String get profile_viewed_title => '查看历史';
-
-  @override
-  String get server_history_empty => '暂无历史记录';
 
   @override
   String save_failed(Object error) {
@@ -835,42 +802,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get podcast_reparse_failed => '❌ 重新解析失败：';
-
-  @override
-  String get podcast_player_now_playing => '正在播放';
-
-  @override
-  String get podcast_player_collapse => '收起';
-
-  @override
-  String get podcast_player_list => '播放列表';
-
-  @override
-  String get podcast_player_sleep_mode => '睡眠模式';
-
-  @override
-  String get podcast_player_play => '播放';
-
-  @override
-  String get podcast_player_pause => '暂停';
-
-  @override
-  String get podcast_player_rewind_10 => '后退10秒';
-
-  @override
-  String get podcast_player_forward_30 => '前进30秒';
-
-  @override
-  String get podcast_play_episode => '播放';
-
-  @override
-  String get podcast_play_episode_full => '播放';
-
-  @override
-  String get podcast_resume_episode => '继续播放';
-
-  @override
-  String get podcast_episode_playing => '正在播放';
 
   @override
   String get podcast_source => '来源';
@@ -1288,42 +1219,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get transcription_suggest_generic => '请尝试点击重试重新开始';
 
   @override
-  String get player_playback_speed_title => '播放倍速';
-
-  @override
-  String get player_apply_subscription_only => '仅应用于当前订阅';
-
-  @override
-  String get player_apply_subscription_subtitle => '选中：仅当前订阅；未选中：全局默认';
-
-  @override
-  String get player_sleep_timer_title => '睡眠定时';
-
-  @override
-  String get player_sleep_timer_desc => '设置定时后，播放将在指定时间自动暂停';
-
-  @override
-  String get player_stop_after_episode => '播放完本集后停止';
-
-  @override
-  String get player_cancel_timer => '取消定时';
-
-  @override
-  String player_minutes(int count) {
-    return '$count分钟';
-  }
-
-  @override
-  String player_hours_minutes(int hours, int minutes) {
-    return '$hours小时$minutes分钟';
-  }
-
-  @override
-  String player_hours(int count) {
-    return '$count小时';
-  }
-
-  @override
   String get global_rss_failed_load => '加载失败';
 
   @override
@@ -1403,58 +1298,8 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get added_to_queue => '已添加到播放队列';
-
-  @override
-  String failed_to_add_to_queue(String error) {
-    return '添加到队列失败：$error';
-  }
-
-  @override
   String error_opening_link(String error) {
     return '打开链接时出错：$error';
-  }
-
-  @override
-  String get queue_is_empty => '播放队列为空';
-
-  @override
-  String get queue_up_next => '接下来';
-
-  @override
-  String get queue_now_playing => '正在播放';
-
-  @override
-  String get queue_in_queue => '待播';
-
-  @override
-  String get queue_remaining_label => '剩余';
-
-  @override
-  String get queue_syncing => '正在同步队列';
-
-  @override
-  String get queue_saving_order => '正在保存顺序';
-
-  @override
-  String get queue_updating => '正在更新队列';
-
-  @override
-  String get queue_subtitle_separator => ' · ';
-
-  @override
-  String failed_to_load_queue(String error) {
-    return '加载队列失败：$error';
-  }
-
-  @override
-  String failed_to_reorder_queue(String error) {
-    return '重新排序队列失败：$error';
-  }
-
-  @override
-  String failed_to_play_item(String error) {
-    return '播放项目失败：$error';
   }
 
   @override
@@ -1503,9 +1348,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get auth_new_password => '新密码';
-
-  @override
-  String get podcast_add_to_queue => '添加到播放队列';
 
   @override
   String get episode_unknown_title => '未知集数';
@@ -1743,63 +1585,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get session_delete_failed => '删除对话失败';
 
   @override
-  String get download_button_download => '下载';
-
-  @override
-  String get download_button_downloading => '下载中';
-
-  @override
-  String get download_button_downloaded => '已下载';
-
-  @override
-  String get download_button_failed => '下载失败';
-
-  @override
-  String get download_button_cancel => '取消下载';
-
-  @override
-  String get download_button_delete => '删除下载';
-
-  @override
-  String get download_button_retry => '重新下载';
-
-  @override
-  String get profile_downloads => '下载管理';
-
-  @override
-  String get profile_downloads_subtitle => '管理已下载的剧集';
-
-  @override
-  String get downloads_page_title => '下载管理';
-
-  @override
-  String get downloads_empty => '暂无下载';
-
-  @override
-  String get downloads_empty_subtitle => '下载的剧集将显示在这里';
-
-  @override
   String get podcast_downloads_load_error => '加载下载列表失败，请重试。';
-
-  @override
-  String get downloads_delete_all => '全部删除';
-
-  @override
-  String get downloads_delete_confirm => '删除全部下载？';
-
-  @override
-  String get downloads_delete_confirm_message => '将移除所有已下载的音频文件，此操作不可撤销。';
-
-  @override
-  String get downloads_active_title => '正在下载';
-
-  @override
-  String get downloads_completed_title => '已下载';
-
-  @override
-  String downloads_items(int count) {
-    return '$count 个下载';
-  }
 
   @override
   String get appearance_title => '外观';
@@ -1825,13 +1611,7 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get player_expand_player => '展开播放器';
-
-  @override
   String get unknown_podcast => '未知播客';
-
-  @override
-  String get sleep_timer_after_episode => '当前剧集结束后';
 
   @override
   String get onboarding_welcome_title => '欢迎使用 声读';
@@ -1986,14 +1766,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get privacy_section_contact_body => '如果您对本隐私政策有任何疑问，请通过应用的支持部分与我们联系。';
-
-  @override
-  String get profile_history_subtitle => '继续收听并回顾最近播放的内容。';
-
-  @override
-  String profile_history_episode_count(int count) {
-    return '$count 条最近播放记录';
-  }
 
   @override
   String get profile_terms_of_service => '服务条款';

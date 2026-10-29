@@ -7,8 +7,6 @@ import 'package:sonde/core/localization/app_localizations_extension.dart';
 import 'package:sonde/core/platform/adaptive_haptic.dart';
 import 'package:sonde/core/widgets/adaptive/adaptive.dart';
 import 'package:sonde/core/theme/app_colors.dart';
-import 'package:sonde/core/theme/app_theme.dart';
-import 'package:sonde/features/podcast/presentation/widgets/download_button.dart';
 import 'package:sonde/features/podcast/presentation/widgets/podcast_image_widget.dart';
 import 'package:sonde/features/podcast/presentation/widgets/shared/episode_card_utils.dart';
 
@@ -35,26 +33,10 @@ class EpisodeCardConfig {
     this.cardMargin,
     this.cardPadding,
     this.cornerRadius = 12.0,
-    this.showPlayButton = true,
-    this.showQueueButton = false,
-    this.isAddingToQueue = false,
     this.showSubscribeAction = false,
     this.isSubscribed = false,
     this.isSubscribing = false,
-    this.showDownloadButton = false,
-    this.downloadButtonSize,
-    this.downloadQueueButtonSpacing,
     this.metadataFontSize,
-    this.queueButtonSize,
-    this.queueButtonIconSize,
-    this.episodeId,
-    this.audioUrl,
-    this.episodeTitle,
-    this.subscriptionTitle,
-    this.subscriptionImageUrl,
-    this.subscriptionId,
-    this.audioDuration,
-    this.publishedAt,
     this.heroTag,
     this.identityColor,
     this.showIdentityColorBar = false,
@@ -82,26 +64,10 @@ class EpisodeCardConfig {
   final EdgeInsetsGeometry? cardMargin;
   final EdgeInsetsGeometry? cardPadding;
   final double cornerRadius;
-  final bool showPlayButton;
-  final bool showQueueButton;
-  final bool isAddingToQueue;
   final bool showSubscribeAction;
   final bool isSubscribed;
   final bool isSubscribing;
-  final bool showDownloadButton;
-  final double? downloadButtonSize;
-  final double? downloadQueueButtonSpacing;
   final double? metadataFontSize;
-  final double? queueButtonSize;
-  final double? queueButtonIconSize;
-  final int? episodeId;
-  final String? audioUrl;
-  final String? episodeTitle;
-  final String? subscriptionTitle;
-  final String? subscriptionImageUrl;
-  final int? subscriptionId;
-  final int? audioDuration;
-  final DateTime? publishedAt;
 
   /// Optional Hero tag for shared element transitions to detail pages.
   /// When provided, the image will be wrapped in a Hero widget.
@@ -139,8 +105,6 @@ class BaseEpisodeCard extends StatelessWidget {
     this.subtitle,
     this.subtitle2,
     this.trailingWidget,
-    this.onPlay,
-    this.onAddToQueue,
     this.onSubscribe,
     this.additionalMetadata,
   });
@@ -151,8 +115,6 @@ class BaseEpisodeCard extends StatelessWidget {
   final String? subtitle;
   final String? subtitle2;
   final Widget? trailingWidget;
-  final VoidCallback? onPlay;
-  final VoidCallback? onAddToQueue;
   final VoidCallback? onSubscribe;
 
   /// Additional metadata widgets to display between date/duration and action buttons.
@@ -246,8 +208,6 @@ class BaseEpisodeCard extends StatelessWidget {
       config.showSubscriptionBadge ||
       config.showDate ||
       config.showDuration ||
-      config.showQueueButton ||
-      config.showDownloadButton ||
       config.showSubscribeAction ||
       (additionalMetadata != null && additionalMetadata!.isNotEmpty);
 
@@ -355,10 +315,7 @@ class BaseEpisodeCard extends StatelessWidget {
           ),
         ),
         SizedBox(width: context.spacing.sm),
-        if (trailingWidget != null)
-          trailingWidget!
-        else if (config.showPlayButton)
-          _buildPlayButton(context, theme),
+        if (trailingWidget != null) trailingWidget!,
       ],
     );
   }
@@ -392,24 +349,6 @@ class BaseEpisodeCard extends StatelessWidget {
     return image;
   }
 
-  Widget _buildPlayButton(BuildContext context, ThemeData theme) {
-    final l10n = context.l10n;
-    final isMobile = Breakpoints.isMobile(MediaQuery.sizeOf(context).width);
-    final iconSize = config.dense ? 22.0 : (isMobile ? 24.0 : 26.0);
-    return IconButton(
-      tooltip: l10n.podcast_play,
-      onPressed: onPlay,
-      icon: Icon(Icons.play_circle_outline, size: iconSize),
-      iconSize: iconSize,
-      color: theme.colorScheme.onSurfaceVariant,
-      padding: EdgeInsets.zero,
-      constraints: BoxConstraints(
-        minWidth: isMobile ? 32.0 : 36.0,
-        minHeight: isMobile ? 32.0 : 36.0,
-      ),
-    );
-  }
-
   Widget _buildDescription(BuildContext context, ThemeData theme) {
     final isMobile = Breakpoints.isMobile(MediaQuery.sizeOf(context).width);
     return Text(
@@ -428,28 +367,8 @@ class BaseEpisodeCard extends StatelessWidget {
   }
 
   Widget _buildMetaActionRow(BuildContext context, ThemeData theme) {
-    final l10n = context.l10n;
     final isMobile = Breakpoints.isMobile(MediaQuery.sizeOf(context).width);
-    final downloadButtonSize =
-        config.downloadButtonSize ??
-        (config.dense
-            ? 16.0
-            : isMobile
-            ? 17.0
-            : 19.0);
-    final queueButtonSize =
-        config.queueButtonSize ?? (config.dense ? 22.0 : 24.0);
-    final queueButtonIconSize = config.queueButtonIconSize ?? 19.0;
-    final downloadQueueButtonSpacing = config.downloadQueueButtonSpacing ?? 0.0;
-    final showDownloadAction =
-        config.showDownloadButton &&
-        config.episodeId != null &&
-        config.audioUrl != null &&
-        config.audioUrl!.isNotEmpty;
-    final hasTrailingActions =
-        showDownloadAction ||
-        config.showQueueButton ||
-        config.showSubscribeAction;
+    final hasTrailingActions = config.showSubscribeAction;
     final metadataInlineSpacing = context.spacing.xxs;
     final metadataTextStyle =
         (isMobile ? theme.textTheme.bodyMedium : theme.textTheme.bodySmall)
@@ -496,41 +415,6 @@ class BaseEpisodeCard extends StatelessWidget {
           ),
         ),
         if (hasTrailingActions) SizedBox(width: context.spacing.xxs),
-        if (showDownloadAction)
-          DownloadButton(
-            episodeId: config.episodeId!,
-            audioUrl: config.audioUrl!,
-            size: downloadButtonSize,
-            title: config.episodeTitle,
-            subscriptionTitle: config.subscriptionTitle,
-            imageUrl: config.imageUrl,
-            subscriptionImageUrl: config.subscriptionImageUrl,
-            subscriptionId: config.subscriptionId,
-            audioDuration: config.audioDuration,
-            publishedAt: config.publishedAt,
-          ),
-        if (showDownloadAction && config.showQueueButton)
-          SizedBox(width: downloadQueueButtonSpacing),
-        if (config.showQueueButton)
-          IconButton(
-            tooltip: config.isAddingToQueue
-                ? l10n.podcast_adding
-                : l10n.podcast_add_to_queue,
-            onPressed: config.isAddingToQueue ? null : onAddToQueue,
-            style: EpisodeCardUtils.compactIconButtonStyle(
-              theme,
-              buttonSize: queueButtonSize,
-            ),
-            icon: config.isAddingToQueue
-                ? SizedBox(
-                    width: queueButtonIconSize,
-                    height: queueButtonIconSize,
-                    child: const CircularProgressIndicator.adaptive(
-                      strokeWidth: 2,
-                    ),
-                  )
-                : Icon(Icons.playlist_add, size: queueButtonIconSize),
-          ),
         if (config.showSubscribeAction) ...[
           SizedBox(width: context.spacing.smMd),
           _buildSubscribeAction(context, theme),

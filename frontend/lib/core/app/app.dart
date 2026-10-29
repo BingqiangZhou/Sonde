@@ -17,8 +17,6 @@ import 'package:sonde/core/utils/app_logger.dart' as logger;
 
 import 'package:sonde/features/auth/data/events/auth_event.dart';
 import 'package:sonde/features/auth/presentation/providers/auth_provider.dart';
-import 'package:sonde/features/podcast/presentation/providers/podcast_providers.dart';
-import 'package:sonde/features/podcast/presentation/providers/podcast_playback_providers.dart';
 import 'package:sonde/features/settings/presentation/providers/app_update_provider.dart';
 import 'package:sonde/features/settings/presentation/widgets/update_dialog.dart';
 import 'package:sonde/shared/widgets/loading_widget.dart';
@@ -139,9 +137,6 @@ class _SondeAppState
     if (router != null && listener != null) {
       router.routerDelegate.removeListener(listener);
     }
-    // CRITICAL: Release audio resources when app is disposed
-    // This ensures the audio player and (on mobile) the AudioService foreground service are properly cleaned up
-    _cleanupAudioService();
     // CRITICAL: Dispose AuthEventNotifier to clean up the broadcast stream
     // This prevents memory leaks and ensures proper cleanup on app shutdown
     AuthEventNotifier.instance.dispose();
@@ -164,37 +159,8 @@ class _SondeAppState
       },
       onDetach: () {
         logger.AppLogger.debug('[AppLifecycle] App detached');
-        // Save playback state immediately when app is being destroyed
-        _savePlaybackState();
       },
     );
-  }
-
-  void _savePlaybackState() {
-    try {
-      final playerState = ref.read(audioPlayerProvider);
-      if (playerState.currentEpisode != null && playerState.isPlaying) {
-        // Pause playback to save resources when app is detaching
-        ref.read(audioPlayerProvider.notifier).pause();
-      }
-    } catch (e) {
-      logger.AppLogger.debug('[AppLifecycle] Error saving playback state: $e');
-    }
-  }
-
-  /// Cleanup audio service resources
-  /// Works on both mobile (with AudioService) and desktop (without AudioService)
-  Future<void> _cleanupAudioService() async {
-    try {
-      // stopService() will:
-      // - On mobile: Stop AudioService, stop playback, dispose player
-      // - On desktop: Stop playback, dispose player
-      await ref.read(audioHandlerProvider).stopService();
-
-      logger.AppLogger.debug('[AppInit] Audio handler stopped and cleaned up');
-    } catch (e) {
-      logger.AppLogger.debug('[AppInit] Error cleaning up audio handler: $e');
-    }
   }
 
   Future<void> _initializeApp() async {

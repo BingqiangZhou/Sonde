@@ -1,20 +1,16 @@
 import 'dart:async';
 import 'dart:io' show Platform;
 
-import 'package:audio_service/audio_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:sonde/core/app/app.dart';
 import 'package:sonde/core/app/config/app_config.dart';
 import 'package:sonde/core/storage/local_storage_service.dart';
 import 'package:sonde/core/theme/theme_provider.dart';
 import 'package:sonde/core/utils/app_logger.dart' as logger;
 import 'package:sonde/features/auth/presentation/providers/onboarding_provider.dart';
-import 'package:sonde/features/podcast/presentation/providers/podcast_playback_providers.dart';
-import 'package:sonde/features/podcast/presentation/providers/podcast_providers.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:window_manager/window_manager.dart';
 
@@ -42,55 +38,6 @@ void main() {
         );
         return true;
       };
-
-      final isMobile = Platform.isAndroid || Platform.isIOS;
-
-      // On mobile platforms, AudioService.init() wraps the handler in a
-      // foreground service that provides lock-screen controls and a
-      // persistent notification. On desktop, we use a plain handler.
-      // The resulting handler is fed into Riverpod via a provider override
-      // so that the entire app accesses a single instance through
-      // [audioHandlerProvider].
-      final PodcastAudioHandler platformAudioHandler;
-      if (isMobile) {
-        platformAudioHandler = await AudioService.init(
-          builder: PodcastAudioHandler.new,
-          config: const AudioServiceConfig(
-            androidNotificationChannelId: 'app.sonde.audio',
-            androidNotificationChannelName: 'Podcast Playback',
-            androidNotificationChannelDescription:
-                'Podcast audio playback controls',
-            androidShowNotificationBadge: true,
-            androidStopForegroundOnPause: false,
-          ),
-        );
-        logger.AppLogger.info('AudioService initialized (mobile platform)');
-      } else {
-        // Desktop platforms do not require media notification integration
-        // (AudioService.init provides lock-screen controls and persistent
-        // notification on mobile).  A plain handler is sufficient here.
-        try {
-          platformAudioHandler = PodcastAudioHandler();
-          logger.AppLogger.info(
-            'PodcastAudioHandler initialized (desktop platform)',
-          );
-        } catch (e, st) {
-          logger.AppLogger.error(
-            '[AppInit] Failed to create PodcastAudioHandler on desktop',
-            error: e,
-            stackTrace: st,
-          );
-          // Re-throw so the caller knows initialization failed.
-          rethrow;
-        }
-      }
-
-      if (Platform.isAndroid) {
-        final notificationStatus = await Permission.notification.status;
-        if (!notificationStatus.isGranted) {
-          await Permission.notification.request();
-        }
-      }
 
       // Desktop platforms allow all orientations (landscape is natural for desktop).
       // Mobile platforms lock to portrait for consistent mobile UX.
@@ -146,7 +93,6 @@ void main() {
         ProviderScope(
           overrides: [
             localStorageServiceProvider.overrideWithValue(storageService),
-            audioHandlerProvider.overrideWithValue(platformAudioHandler),
             initialThemeModeCodeProvider.overrideWithValue(
               initialThemeModeCode,
             ),

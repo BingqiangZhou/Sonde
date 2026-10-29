@@ -11,27 +11,20 @@ class PodcastFeedEpisodeCard extends StatelessWidget {
   const PodcastFeedEpisodeCard({
     required this.episode,
     required this.compact,
-    required this.isAddingToQueue,
     required this.displayDescription,
     required this.onOpenDetail,
-    required this.onPlayAndOpenDetail,
-    required this.onAddToQueue,
     super.key,
   });
 
   final PodcastEpisodeModel episode;
   final bool compact;
-  final bool isAddingToQueue;
   final String displayDescription;
   final VoidCallback onOpenDetail;
-  final VoidCallback onPlayAndOpenDetail;
-  final VoidCallback onAddToQueue;
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final theme = Theme.of(context);
-    final isMobile = Breakpoints.isMobile(MediaQuery.sizeOf(context).width);
     final titleStyle = theme.textTheme.titleSmall?.copyWith(
       fontWeight: FontWeight.w600,
     );
@@ -39,11 +32,7 @@ class PodcastFeedEpisodeCard extends StatelessWidget {
     final titleLineHeightFactor = titleStyle?.height ?? 1.0;
     final coverSize = 2 * (titleFontSize * titleLineHeightFactor);
     final coverIconSize = (coverSize * 0.58).clamp(14.0, 28.0);
-    final downloadButtonSize = compact ? 20.0 : (isMobile ? 21.0 : 23.0);
-    final downloadQueueButtonSpacing = context.spacing.smMd;
-    final metadataFontSize = compact ? 11.0 : (isMobile ? 12.0 : 11.0);
-    final queueButtonSize = compact ? 30.0 : 32.0;
-    const queueButtonIconSize = 23.0;
+    final metadataFontSize = compact ? 11.0 : (Breakpoints.isMobile(MediaQuery.sizeOf(context).width) ? 12.0 : 11.0);
 
     // Identity gradient colors (all gradients are now monochrome gray)
     final identityGradientColors = AppColors.podcastGradientColors.first;
@@ -72,29 +61,12 @@ class PodcastFeedEpisodeCard extends StatelessWidget {
         showDescription: displayDescription.isNotEmpty,
         description: displayDescription.isNotEmpty ? displayDescription : null,
         descriptionMaxLines: compact ? 2 : 4,
-        showQueueButton: true,
-        queueButtonSize: queueButtonSize,
-        queueButtonIconSize: queueButtonIconSize,
-        isAddingToQueue: isAddingToQueue,
-        showDownloadButton: true,
-        downloadButtonSize: downloadButtonSize,
-        downloadQueueButtonSpacing: downloadQueueButtonSpacing,
-        episodeId: episode.id,
-        audioUrl: episode.audioUrl,
-        episodeTitle: episode.title,
-        subscriptionTitle: episode.subscriptionTitle,
-        subscriptionImageUrl: episode.subscriptionImageUrl,
-        subscriptionId: episode.subscriptionId,
-        audioDuration: episode.audioDuration,
-        publishedAt: episode.publishedAt,
         heroTag: 'episode_cover_${episode.id}',
         useGradientIdentityBar: true,
         identityGradientColors: identityGradientColors,
       ),
       title: episode.title,
       onTap: onOpenDetail,
-      onPlay: onPlayAndOpenDetail,
-      onAddToQueue: onAddToQueue,
       additionalMetadata: episode.aiSummary != null
           ? [
               Tooltip(

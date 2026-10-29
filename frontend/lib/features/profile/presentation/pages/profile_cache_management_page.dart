@@ -336,7 +336,6 @@ class _ProfileCacheManagementPageState
       ref.invalidate(podcastSubscriptionProvider);
       ref.invalidate(podcastEpisodesProvider);
       ref.invalidate(profileStatsProvider);
-      ref.invalidate(playbackHistoryLiteProvider);
 
       if (!mounted) return;
       nav.pop();

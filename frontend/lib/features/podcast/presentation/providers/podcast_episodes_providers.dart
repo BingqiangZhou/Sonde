@@ -163,9 +163,6 @@ class PodcastEpisodesNotifier extends Notifier<PodcastEpisodesState> {
         page: page,
         size: size,
         hasSummary: normalizedHasSummary,
-        isPlayed: normalizedStatus == 'played'
-            ? true
-            : (normalizedStatus == 'unplayed' ? false : null),
       );
 
       // Discard if a newer request was made while this one was in-flight
@@ -240,9 +237,6 @@ class PodcastEpisodesNotifier extends Notifier<PodcastEpisodesState> {
         subscriptionId: subscriptionId,
         page: currentState.nextPage ?? 1,
         hasSummary: effectiveHasSummary,
-        isPlayed: effectiveStatus == 'played'
-            ? true
-            : (effectiveStatus == 'unplayed' ? false : null),
       );
 
       // Discard if a newer load-more request was made while this one was in-flight

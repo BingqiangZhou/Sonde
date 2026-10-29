@@ -5,16 +5,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:sonde/core/localization/app_localizations_extension.dart';
-import 'package:sonde/core/platform/platform_helper.dart';
-import 'package:sonde/core/providers/route_provider.dart';
-import 'package:sonde/core/router/app_router.dart';
 import 'package:sonde/core/widgets/custom_adaptive_navigation.dart';
 import 'package:sonde/core/widgets/keyboard_shortcuts.dart';
 import 'package:sonde/features/auth/presentation/providers/auth_provider.dart';
 import 'package:sonde/features/podcast/presentation/providers/podcast_feed_providers.dart';
-import 'package:sonde/features/podcast/presentation/providers/podcast_playback_providers.dart';
-import 'package:sonde/features/podcast/presentation/providers/podcast_providers.dart';
-import 'package:sonde/features/podcast/presentation/widgets/podcast_bottom_player_widget.dart';
 
 /// Shell widget for the main tab navigation using StatefulShellRoute.
 ///
@@ -29,81 +23,18 @@ class HomeShellWidget extends ConsumerStatefulWidget {
   ConsumerState<HomeShellWidget> createState() => _HomeShellWidgetState();
 }
 
-class _HomeShellWidgetState extends ConsumerState<HomeShellWidget>
-    with RouteAware {
-  bool _hasAttemptedPlaybackRestore = false;
+class _HomeShellWidgetState extends ConsumerState<HomeShellWidget> {
   bool _desktopNavExpanded = true;
   bool _hasPrefetchedLibraryFeed = false;
-  PodcastPlayerHostPageOverride? _lastPlayerHostOverride;
-  late final PodcastPlayerHostPageOverrideNotifier _playerHostOverrideNotifier;
-  ModalRoute<dynamic>? _subscribedRoute;
-  bool _returningFromCoveredRoute = false;
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    final route = ModalRoute.of(context);
-    if (_subscribedRoute == route) {
-      return;
-    }
-
-    appRouteObserver.unsubscribe(this);
-    _subscribedRoute = route;
-    if (route != null) {
-      appRouteObserver.subscribe(this, route);
-    }
-  }
-
-  @override
-  void dispose() {
-    appRouteObserver.unsubscribe(this);
-    super.dispose();
-  }
-
-  @override
-  void didPushNext() {
-    _returningFromCoveredRoute = true;
-    _lastPlayerHostOverride = null;
-  }
-
-  @override
-  void didPopNext() {
-    if (!_returningFromCoveredRoute) {
-      return;
-    }
-
-    _returningFromCoveredRoute = false;
-    final playerUi = ref.read(podcastPlayerUiProvider);
-    if (playerUi.isExpanded) {
-      ref.read(podcastPlayerUiProvider.notifier).collapse();
-    }
-  }
 
   @override
   void initState() {
     super.initState();
-    _playerHostOverrideNotifier = ref.read(
-      podcastPlayerHostPageOverrideProvider.notifier,
-    );
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
 
-      _restoreMiniPlayerOnHomeEnter();
       _prefetchLibraryFeedOnHomeEnter();
     });
-  }
-
-  void _restoreMiniPlayerOnHomeEnter() {
-    if (_hasAttemptedPlaybackRestore) {
-      return;
-    }
-
-    _hasAttemptedPlaybackRestore = true;
-    unawaited(
-      ref
-          .read(audioPlayerProvider.notifier)
-          .restoreLastPlayedEpisodeIfNeeded(),
-    );
   }
 
   void _prefetchLibraryFeedOnHomeEnter() {
@@ -124,29 +55,6 @@ class _HomeShellWidgetState extends ConsumerState<HomeShellWidget>
 
     unawaited(
       ref.read(podcastFeedProvider.notifier).loadInitialFeed(background: true),
-    );
-  }
-
-  void _syncPlayerHostOverride(PodcastPlayerHostPageOverride override) {
-    final currentOverride = ref.read(podcastPlayerHostPageOverrideProvider);
-    if (_lastPlayerHostOverride == override && currentOverride == override) {
-      return;
-    }
-    _lastPlayerHostOverride = override;
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) {
-        return;
-      }
-      _playerHostOverrideNotifier.setOverride(override);
-    });
-  }
-
-  PodcastPlayerHostPageOverride _buildPlayerHostOverride() {
-    return PodcastPlayerHostPageOverride(
-      routeOwner: PodcastPlayerHostRouteOwner.homeShell,
-      surfaceContext: PodcastPlayerSurfaceContext.homeShell,
-      homeShellDesktopNavExpanded: _desktopNavExpanded,
     );
   }
 
@@ -178,24 +86,8 @@ class _HomeShellWidgetState extends ConsumerState<HomeShellWidget>
 
   @override
   Widget build(BuildContext context) {
-    final currentRoute = ref.watch(currentRouteProvider);
-    final isHomeShellPlayerRoute =
-        currentRoute.isNotEmpty && isHomeShellRoute(currentRoute);
-    final isDesktop = PlatformHelper.isDesktop(context);
-
-    if (isHomeShellPlayerRoute) {
-      _syncPlayerHostOverride(_buildPlayerHostOverride());
-    }
-
-    return PlaybackShortcuts(
-      onTogglePlayPause: _togglePlayPause,
-      onSeekBackward: _seekBackward,
-      onSeekForward: _seekForward,
-      onVolumeUp: isDesktop ? _volumeUp : null,
-      onVolumeDown: isDesktop ? _volumeDown : null,
-      onNextEpisode: isDesktop ? _nextEpisode : null,
-      onPreviousEpisode: isDesktop ? _previousEpisode : null,
-      onTabSwitch: isDesktop ? _handleNavigation : null,
+    return AppKeyboardShortcuts(
+      onTabSwitch: _handleNavigation,
       child: CustomAdaptiveNavigation(
         key: const ValueKey('home_custom_adaptive_navigation'),
         destinations: _buildDestinations(context),
@@ -208,10 +100,7 @@ class _HomeShellWidgetState extends ConsumerState<HomeShellWidget>
             _desktopNavExpanded = !_desktopNavExpanded;
           });
         },
-        body: PodcastPlayerLayoutFrame(
-          applyMiniPlayerSafeArea: false,
-          child: widget.navigationShell,
-        ),
+        body: widget.navigationShell,
       ),
     );
   }
@@ -224,82 +113,6 @@ class _HomeShellWidgetState extends ConsumerState<HomeShellWidget>
     widget.navigationShell.goBranch(
       index,
       initialLocation: index == widget.navigationShell.currentIndex,
-    );
-  }
-
-  void _togglePlayPause() {
-    final notifier = ref.read(audioPlayerProvider.notifier);
-    final playerState = ref.read(audioPlayerProvider);
-    if (playerState.currentEpisode == null) return;
-
-    if (playerState.isPlaying) {
-      notifier.pause();
-    } else {
-      notifier.resume();
-    }
-  }
-
-  void _seekBackward() {
-    final notifier = ref.read(audioPlayerProvider.notifier);
-    final playerState = ref.read(audioPlayerProvider);
-    if (playerState.currentEpisode == null) return;
-
-    final newPosition = (playerState.position - 10000).clamp(0, playerState.duration);
-    notifier.seekTo(newPosition);
-  }
-
-  void _seekForward() {
-    final notifier = ref.read(audioPlayerProvider.notifier);
-    final playerState = ref.read(audioPlayerProvider);
-    if (playerState.currentEpisode == null) return;
-
-    final newPosition = (playerState.position + 30000).clamp(0, playerState.duration);
-    notifier.seekTo(newPosition);
-  }
-
-  void _volumeUp() {
-    ref.read(audioHandlerProvider).volumeUp();
-  }
-
-  void _volumeDown() {
-    ref.read(audioHandlerProvider).volumeDown();
-  }
-
-  void _nextEpisode() {
-    final queue = ref.read(podcastQueueControllerProvider).value;
-    if (queue == null || queue.items.isEmpty) return;
-
-    final currentIndex = queue.items.indexWhere(
-      (item) => item.episodeId == queue.currentEpisodeId,
-    );
-
-    // If current is the last item or not found, wrap to first item.
-    final nextIndex = currentIndex < queue.items.length - 1
-        ? currentIndex + 1
-        : 0;
-
-    final nextItem = queue.items[nextIndex];
-    ref.read(audioPlayerProvider.notifier).playManagedEpisode(
-      nextItem.toEpisodeModel(),
-    );
-  }
-
-  void _previousEpisode() {
-    final queue = ref.read(podcastQueueControllerProvider).value;
-    if (queue == null || queue.items.isEmpty) return;
-
-    final currentIndex = queue.items.indexWhere(
-      (item) => item.episodeId == queue.currentEpisodeId,
-    );
-
-    // If current is the first item or not found, wrap to last item.
-    final prevIndex = currentIndex > 0
-        ? currentIndex - 1
-        : queue.items.length - 1;
-
-    final prevItem = queue.items[prevIndex];
-    ref.read(audioPlayerProvider.notifier).playManagedEpisode(
-      prevItem.toEpisodeModel(),
     );
   }
 }

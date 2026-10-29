@@ -203,9 +203,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get podcast_no_subscriptions => 'No subscriptions yet';
 
   @override
-  String get podcast_play => 'Play';
-
-  @override
   String get home => 'Home';
 
   @override
@@ -350,22 +347,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get podcast_description => 'No description';
 
   @override
-  String get podcast_player_unknown_episode => 'Unknown Episode';
-
-  @override
-  String get podcast_player_no_audio => 'No audio link';
-
-  @override
   String get podcast_coming_soon => 'Coming Soon';
 
   @override
   String get podcast_filter_all => 'All';
-
-  @override
-  String get podcast_filter_unplayed => 'Unplayed';
-
-  @override
-  String get podcast_filter_played => 'Played';
 
   @override
   String get podcast_filter_with_summary => 'Summary';
@@ -396,16 +381,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get podcast_filter_episodes => 'Filter Episodes';
 
   @override
-  String get podcast_playback_status => 'Playback Status:';
-
-  @override
   String get podcast_all_episodes => 'All Episodes';
-
-  @override
-  String get podcast_unplayed_only => 'Unplayed Only';
-
-  @override
-  String get podcast_played_only => 'Played Only';
 
   @override
   String get podcast_only_with_summary => 'Only episodes with Summary';
@@ -625,15 +601,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get connection_status_failed => 'Failed';
-
-  @override
-  String get server_history_title => 'History';
-
-  @override
-  String get profile_viewed_title => 'Viewed';
-
-  @override
-  String get server_history_empty => 'No history';
 
   @override
   String save_failed(Object error) {
@@ -856,42 +823,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get podcast_reparse_failed => '❌ Reparse failed:';
-
-  @override
-  String get podcast_player_now_playing => 'Now Playing';
-
-  @override
-  String get podcast_player_collapse => 'Collapse';
-
-  @override
-  String get podcast_player_list => 'Playlist';
-
-  @override
-  String get podcast_player_sleep_mode => 'Sleep Mode';
-
-  @override
-  String get podcast_player_play => 'Play';
-
-  @override
-  String get podcast_player_pause => 'Pause';
-
-  @override
-  String get podcast_player_rewind_10 => 'Rewind 10s';
-
-  @override
-  String get podcast_player_forward_30 => 'Forward 30s';
-
-  @override
-  String get podcast_play_episode => 'Play';
-
-  @override
-  String get podcast_play_episode_full => 'Play';
-
-  @override
-  String get podcast_resume_episode => 'Resume';
-
-  @override
-  String get podcast_episode_playing => 'Playing';
 
   @override
   String get podcast_source => 'Source';
@@ -1331,45 +1262,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'Try clicking Retry to start over';
 
   @override
-  String get player_playback_speed_title => 'Playback Speed';
-
-  @override
-  String get player_apply_subscription_only =>
-      'Apply to current subscription only';
-
-  @override
-  String get player_apply_subscription_subtitle =>
-      'Checked: current subscription only; Unchecked: global default';
-
-  @override
-  String get player_sleep_timer_title => 'Sleep Timer';
-
-  @override
-  String get player_sleep_timer_desc =>
-      'Playback will automatically pause after the set time';
-
-  @override
-  String get player_stop_after_episode => 'Stop after this episode';
-
-  @override
-  String get player_cancel_timer => 'Cancel timer';
-
-  @override
-  String player_minutes(int count) {
-    return '$count min';
-  }
-
-  @override
-  String player_hours_minutes(int hours, int minutes) {
-    return '${hours}h ${minutes}min';
-  }
-
-  @override
-  String player_hours(int count) {
-    return '${count}h';
-  }
-
-  @override
   String get global_rss_failed_load => 'Failed to load';
 
   @override
@@ -1451,58 +1343,8 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get added_to_queue => 'Added to queue';
-
-  @override
-  String failed_to_add_to_queue(String error) {
-    return 'Failed to add to queue: $error';
-  }
-
-  @override
   String error_opening_link(String error) {
     return 'Error opening link: $error';
-  }
-
-  @override
-  String get queue_is_empty => 'Queue is empty';
-
-  @override
-  String get queue_up_next => 'Up Next';
-
-  @override
-  String get queue_now_playing => 'Now playing';
-
-  @override
-  String get queue_in_queue => 'in queue';
-
-  @override
-  String get queue_remaining_label => 'Remaining';
-
-  @override
-  String get queue_syncing => 'Syncing queue';
-
-  @override
-  String get queue_saving_order => 'Saving order';
-
-  @override
-  String get queue_updating => 'Updating queue';
-
-  @override
-  String get queue_subtitle_separator => ' • ';
-
-  @override
-  String failed_to_load_queue(String error) {
-    return 'Failed to load queue: $error';
-  }
-
-  @override
-  String failed_to_reorder_queue(String error) {
-    return 'Failed to reorder queue: $error';
-  }
-
-  @override
-  String failed_to_play_item(String error) {
-    return 'Failed to play item: $error';
   }
 
   @override
@@ -1555,9 +1397,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get auth_new_password => 'New Password';
-
-  @override
-  String get podcast_add_to_queue => 'Add to queue';
 
   @override
   String get episode_unknown_title => 'Unknown Episode';
@@ -1818,71 +1657,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get session_delete_failed => 'Failed to delete conversation';
 
   @override
-  String get download_button_download => 'Download';
-
-  @override
-  String get download_button_downloading => 'Downloading';
-
-  @override
-  String get download_button_downloaded => 'Downloaded';
-
-  @override
-  String get download_button_failed => 'Failed';
-
-  @override
-  String get download_button_cancel => 'Cancel download';
-
-  @override
-  String get download_button_delete => 'Delete download';
-
-  @override
-  String get download_button_retry => 'Retry download';
-
-  @override
-  String get profile_downloads => 'Downloads';
-
-  @override
-  String get profile_downloads_subtitle => 'Manage downloaded episodes';
-
-  @override
-  String get downloads_page_title => 'Downloads';
-
-  @override
-  String get downloads_empty => 'No downloads yet';
-
-  @override
-  String get downloads_empty_subtitle => 'Downloaded episodes will appear here';
-
-  @override
   String get podcast_downloads_load_error =>
       'Failed to load downloads. Please try again.';
-
-  @override
-  String get downloads_delete_all => 'Delete all';
-
-  @override
-  String get downloads_delete_confirm => 'Delete all downloads?';
-
-  @override
-  String get downloads_delete_confirm_message =>
-      'This will remove all downloaded audio files. This action cannot be undone.';
-
-  @override
-  String get downloads_active_title => 'Active downloads';
-
-  @override
-  String get downloads_completed_title => 'Downloaded';
-
-  @override
-  String downloads_items(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count downloads',
-      one: '1 download',
-    );
-    return '$_temp0';
-  }
 
   @override
   String get appearance_title => 'Appearance';
@@ -1909,13 +1685,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get player_expand_player => 'Expand player';
-
-  @override
   String get unknown_podcast => 'Unknown Podcast';
-
-  @override
-  String get sleep_timer_after_episode => 'After current episode';
 
   @override
   String get onboarding_welcome_title => 'Welcome to Sonde';
@@ -2073,15 +1843,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get privacy_section_contact_body =>
       'If you have any questions about this Privacy Policy, please contact us through the app\'s support section.';
-
-  @override
-  String get profile_history_subtitle =>
-      'Resume episodes and review recently played content.';
-
-  @override
-  String profile_history_episode_count(int count) {
-    return '$count recently played episodes';
-  }
 
   @override
   String get profile_terms_of_service => 'Terms of Service';

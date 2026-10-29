@@ -193,11 +193,8 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // On mobile, the header uses inline icon buttons (queue, download, share)
+      // On mobile, the header uses inline icon buttons (favorite, share)
       // and a source link icon button instead of a separate actions area.
-      // The play button is accessed by tapping the artwork, not a separate button.
-      expect(find.byIcon(Icons.playlist_add_rounded), findsOneWidget);
-      expect(find.byIcon(Icons.download_outlined), findsOneWidget);
       expect(find.byIcon(Icons.adaptive.share), findsOneWidget);
 
       // Source link on mobile uses an icon-only button with tooltip
@@ -226,8 +223,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // On ultra-narrow mobile, header should still render with action buttons
-      expect(find.byIcon(Icons.playlist_add_rounded), findsOneWidget);
-      expect(find.byIcon(Icons.download_outlined), findsOneWidget);
+      expect(find.byIcon(Icons.adaptive.share), findsOneWidget);
 
       // Source link icon button is present
       final sourceTooltip = find.byTooltip('Source');

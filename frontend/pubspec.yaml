@@ -30,9 +30,6 @@ dependencies:
   # Local Storage
   shared_preferences: ^2.5.4
 
-  # Local Database
-  drift: ^2.31.0
-  drift_flutter: ^0.2.8
   path_provider: ^2.1.5
   path: ^1.9.1
 
@@ -50,11 +47,6 @@ dependencies:
 
   # Security
   flutter_secure_storage: ^10.0.0
-
-  # Audio Player
-  audioplayers: ^6.6.0
-  audio_service: ^0.18.18
-  permission_handler: ^12.0.1
 
   # File Handling
   file_selector: ^1.1.0
@@ -82,7 +74,6 @@ dev_dependencies:
   riverpod_generator: ^4.0.3
   retrofit_generator: ^10.2.1
   json_serializable: ^6.13.0
-  drift_dev: ^2.20.3
 
   # Linting & Testing
   very_good_analysis: ^10.2.0

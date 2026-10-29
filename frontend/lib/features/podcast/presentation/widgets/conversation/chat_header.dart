@@ -8,7 +8,7 @@ import 'package:sonde/core/constants/app_text_styles.dart';
 import 'package:sonde/core/localization/app_localizations.dart';
 import 'package:sonde/core/localization/app_localizations_extension.dart';
 import 'package:sonde/core/theme/app_colors.dart';
-import 'package:sonde/features/podcast/data/models/podcast_playback_model.dart';
+import 'package:sonde/features/podcast/data/models/podcast_summary_model.dart';
 import 'package:sonde/features/podcast/presentation/providers/conversation_providers.dart';
 
 /// Header bar for the conversation chat widget.

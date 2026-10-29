@@ -90,14 +90,11 @@ class ServerConfigNotifier extends Notifier<ServerConfigState> {
     ref.read(podcastDiscoverProvider.notifier).clearRuntimeCache();
     ref.read(iTunesSearchServiceProvider).clearCache();
     ref.read(profileStatsProvider.notifier).reset();
-    ref.read(playbackHistoryLiteProvider.notifier).reset();
     ref.invalidate(podcastFeedProvider);
     ref.invalidate(podcastDiscoverProvider);
     ref.invalidate(podcastSubscriptionProvider);
     ref.invalidate(podcastEpisodesProvider);
     ref.invalidate(profileStatsProvider);
-    ref.invalidate(playbackHistoryLiteProvider);
-    ref.invalidate(podcastStatsProvider);
     ref.invalidate(highlightsProvider);
     ref.invalidate(highlightDatesProvider);
     ref.invalidate(podcastSearchProvider);

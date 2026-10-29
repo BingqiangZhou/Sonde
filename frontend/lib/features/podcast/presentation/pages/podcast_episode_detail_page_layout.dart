@@ -59,7 +59,6 @@ extension _PodcastEpisodeDetailPageLayout on _PodcastEpisodeDetailPageState {
                 children: [
                   NotificationListener<ScrollNotification>(
                     onNotification: (scrollNotification) {
-                      _handleAutoCollapseOnRead(scrollNotification);
                       if (scrollNotification is ScrollUpdateNotification) {
                         _recordScrollMetrics(scrollNotification.metrics);
                       }
@@ -119,7 +118,6 @@ extension _PodcastEpisodeDetailPageLayout on _PodcastEpisodeDetailPageState {
             children: [
               NotificationListener<ScrollNotification>(
                 onNotification: (scrollNotification) {
-                  _handleAutoCollapseOnRead(scrollNotification);
                   if (scrollNotification is ScrollUpdateNotification) {
                     _recordScrollMetrics(scrollNotification.metrics);
                   }

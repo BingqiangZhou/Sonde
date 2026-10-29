@@ -133,10 +133,7 @@ extension _PodcastEpisodesPageView on _PodcastEpisodesPageState {
   Widget _buildEpisodeCard(PodcastEpisodeModel episode) {
     return SimplifiedEpisodeCard(
       episode: episode,
-      isAddingToQueue: _addingEpisodeIds.contains(episode.id),
       onTap: () => context.push('/podcast/episode/detail/${episode.id}'),
-      onPlay: () => _playAndOpenEpisodeDetail(episode),
-      onAddToQueue: () => _handleAddToQueue(episode),
     );
   }
 
@@ -185,23 +182,10 @@ extension _PodcastEpisodesPageView on _PodcastEpisodesPageState {
         mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
-          _buildPillButton(l10n.podcast_filter_all, _selectedFilter == 'all', () {
+          _buildPillButton(l10n.podcast_filter_all, !_showOnlyWithSummary, () {
+            if (!_showOnlyWithSummary) return;
             _applyViewState(() {
-              _selectedFilter = 'all';
-            });
-            _refreshEpisodes();
-          }),
-          SizedBox(width: context.spacing.sm),
-          _buildPillButton(l10n.podcast_filter_unplayed, _selectedFilter == 'unplayed', () {
-            _applyViewState(() {
-              _selectedFilter = 'unplayed';
-            });
-            _refreshEpisodes();
-          }),
-          SizedBox(width: context.spacing.sm),
-          _buildPillButton(l10n.podcast_filter_played, _selectedFilter == 'played', () {
-            _applyViewState(() {
-              _selectedFilter = 'played';
+              _showOnlyWithSummary = false;
             });
             _refreshEpisodes();
           }),
@@ -221,32 +205,11 @@ extension _PodcastEpisodesPageView on _PodcastEpisodesPageState {
       children: [
         FilterChip(
           label: Text(l10n.podcast_filter_all),
-          selected: _selectedFilter == 'all',
+          selected: !_showOnlyWithSummary,
           onSelected: (selected) {
+            if (!_showOnlyWithSummary) return;
             _applyViewState(() {
-              _selectedFilter = 'all';
-            });
-            _refreshEpisodes();
-          },
-        ),
-        SizedBox(width: context.spacing.sm),
-        FilterChip(
-          label: Text(l10n.podcast_filter_unplayed),
-          selected: _selectedFilter == 'unplayed',
-          onSelected: (selected) {
-            _applyViewState(() {
-              _selectedFilter = 'unplayed';
-            });
-            _refreshEpisodes();
-          },
-        ),
-        SizedBox(width: context.spacing.sm),
-        FilterChip(
-          label: Text(l10n.podcast_filter_played),
-          selected: _selectedFilter == 'played',
-          onSelected: (selected) {
-            _applyViewState(() {
-              _selectedFilter = 'played';
+              _showOnlyWithSummary = false;
             });
             _refreshEpisodes();
           },
@@ -327,7 +290,6 @@ extension _PodcastEpisodesPageView on _PodcastEpisodesPageState {
   }
 
   void _showFilterDialog() {
-    final previousFilter = _selectedFilter;
     final previousShowOnlySummary = _showOnlyWithSummary;
     final l10n = context.l10n;
     showAppDialog(
@@ -340,22 +302,6 @@ extension _PodcastEpisodesPageView on _PodcastEpisodesPageState {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(l10n.podcast_playback_status),
-              SizedBox(height: context.spacing.sm),
-              AdaptiveSegmentedControl<String>(
-                segments: {
-                  'all': Text(l10n.podcast_all_episodes),
-                  'unplayed': Text(l10n.podcast_unplayed_only),
-                  'played': Text(l10n.podcast_played_only),
-                },
-                selected: _selectedFilter,
-                onChanged: (value) {
-                  setDialogState(() {
-                    _selectedFilter = value;
-                  });
-                },
-              ),
-              SizedBox(height: context.spacing.md),
               if (PlatformHelper.isApple(context))
                 AdaptiveListTile(
                   leading: const AdaptiveSwitch(
@@ -389,7 +335,6 @@ extension _PodcastEpisodesPageView on _PodcastEpisodesPageState {
             AdaptiveButton(
               style: AdaptiveButtonStyle.text,
               onPressed: () {
-                _selectedFilter = previousFilter;
                 _showOnlyWithSummary = previousShowOnlySummary;
                 Navigator.of(context).pop();
               },
