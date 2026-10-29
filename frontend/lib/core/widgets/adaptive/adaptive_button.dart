@@ -87,7 +87,9 @@ class AdaptiveButton extends StatelessWidget {
       case AdaptiveButtonStyle.outlined:
         return DecoratedBox(
           decoration: BoxDecoration(
-            border: Border.all(color: theme.colorScheme.primary),
+            // Same hairline treatment as the Material outlined theme
+            // (outlineVariant), so density/contrast match across platforms.
+            border: Border.all(color: theme.colorScheme.outlineVariant),
             borderRadius: BorderRadius.circular(appThemeOf(context).buttonRadius),
           ),
           child: CupertinoButton(
@@ -127,7 +129,11 @@ class AdaptiveButton extends StatelessWidget {
         return ElevatedButton(
           onPressed: isLoading ? null : onPressed,
           style: ElevatedButton.styleFrom(
-            padding: padding,
+            padding: padding ??
+                EdgeInsets.symmetric(
+                  horizontal: context.spacing.md,
+                  vertical: context.spacing.smMd,
+                ),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(appThemeOf(context).buttonRadius),
             ),
@@ -138,7 +144,11 @@ class AdaptiveButton extends StatelessWidget {
         return TextButton(
           onPressed: isLoading ? null : onPressed,
           style: TextButton.styleFrom(
-            padding: padding,
+            padding: padding ??
+                EdgeInsets.symmetric(
+                  horizontal: context.spacing.smMd,
+                  vertical: context.spacing.xs,
+                ),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(appThemeOf(context).buttonRadius),
             ),

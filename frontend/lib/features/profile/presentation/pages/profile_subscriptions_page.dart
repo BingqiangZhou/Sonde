@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sonde/core/constants/app_radius.dart';
 import 'package:sonde/core/constants/app_spacing.dart';
+import 'package:sonde/core/constants/scroll_constants.dart';
 import 'package:sonde/core/localization/app_localizations.dart';
 import 'package:sonde/core/localization/app_localizations_extension.dart';
 import 'package:sonde/core/theme/app_colors.dart';
@@ -17,6 +18,7 @@ import 'package:sonde/features/podcast/presentation/providers/podcast_providers.
 import 'package:sonde/features/podcast/presentation/widgets/add_podcast_dialog.dart';
 import 'package:sonde/features/podcast/presentation/widgets/podcast_image_widget.dart';
 import 'package:sonde/shared/widgets/loading_widget.dart';
+import 'package:sonde/core/theme/app_opacity.dart';
 
 class ProfileSubscriptionsPage extends ConsumerStatefulWidget {
   const ProfileSubscriptionsPage({super.key});
@@ -54,7 +56,8 @@ class _ProfileSubscriptionsPageState
       return;
     }
     if (_scrollController.position.pixels <
-        _scrollController.position.maxScrollExtent - 200) {
+        _scrollController.position.maxScrollExtent -
+            ScrollConstants.loadMoreThreshold) {
       return;
     }
 
@@ -182,47 +185,10 @@ class _ProfileSubscriptionsPageState
     final tokens = appThemeOf(context);
     return [
       // Header
-      SliverToBoxAdapter(
-        child: Container(
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surfaceContainerLow,
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(tokens.cardRadius),
-              topRight: Radius.circular(tokens.cardRadius),
-            ),
-            border: Border.all(
-              color: Theme.of(context)
-                  .colorScheme
-                  .outlineVariant
-                  .withValues(alpha: 0.15),
-            ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: EdgeInsets.fromLTRB(
-                  context.spacing.mdLg,
-                  context.spacing.mdLg,
-                  context.spacing.mdLg,
-                  context.spacing.smMd,
-                ),
-                child: AppSectionHeader(
-                  title: l10n.profile_subscriptions,
-                  subtitle: l10n.profile_subscriptions_count(total),
-                  hideTitle: true,
-                ),
-              ),
-              Divider(
-                height: 1,
-                color: Theme.of(context)
-                    .colorScheme
-                    .outlineVariant
-                    .withValues(alpha: 0.45),
-              ),
-            ],
-          ),
-        ),
+      PanelHeaderSliver(
+        title: l10n.profile_subscriptions,
+        subtitle: l10n.profile_subscriptions_count(total),
+        hideTitle: true,
       ),
       // List items
       SliverList.builder(
@@ -243,24 +209,7 @@ class _ProfileSubscriptionsPageState
         },
       ),
       // Bottom cap
-      SliverToBoxAdapter(
-        child: Container(
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surfaceContainerLow,
-            borderRadius: BorderRadius.only(
-              bottomLeft: Radius.circular(tokens.cardRadius),
-              bottomRight: Radius.circular(tokens.cardRadius),
-            ),
-            border: Border.all(
-              color: Theme.of(context)
-                  .colorScheme
-                  .outlineVariant
-                  .withValues(alpha: 0.15),
-            ),
-          ),
-          height: context.spacing.smMd,
-        ),
-      ),
+      const PanelBottomCapSliver(),
       // Bottom buffer
       SliverPadding(
         padding: EdgeInsets.only(bottom: context.spacing.xl),
@@ -303,27 +252,15 @@ class _ProfileSubscriptionsPageState
           context,
           title: l10n.profile_subscriptions,
           subtitle: l10n.profile_subscriptions_subtitle,
-          child: Center(
-            child: Padding(
-              padding: EdgeInsets.all(context.spacing.lg),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.error_outline,
-                    size: 56,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                  SizedBox(height: context.spacing.lg),
-                  Text(
-                    error,
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
+          child: AppEmptyState(
+            icon: Icons.error_outline,
+            title: l10n.common_load_failed,
+            subtitle: error,
+            action: AdaptiveButton(
+              onPressed: () => ref
+                  .read(podcastSubscriptionProvider.notifier)
+                  .refreshSubscriptions(),
+              child: Text(l10n.retry),
             ),
           ),
         ),
@@ -342,35 +279,10 @@ class _ProfileSubscriptionsPageState
           context,
           title: l10n.profile_subscriptions,
           subtitle: l10n.profile_subscriptions_subtitle,
-          child: Center(
-            child: Padding(
-              padding: EdgeInsets.all(context.spacing.lg),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.subscriptions_outlined,
-                    size: 56,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                  SizedBox(height: context.spacing.lg),
-                  Text(
-                    l10n.podcast_no_subscriptions,
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                  SizedBox(height: context.spacing.sm),
-                  Text(
-                    l10n.feed_no_subscriptions_hint,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
-            ),
+          child: AppEmptyState(
+            icon: Icons.subscriptions_outlined,
+            title: l10n.podcast_no_subscriptions,
+            subtitle: l10n.feed_no_subscriptions_hint,
           ),
         ),
       ),
@@ -430,7 +342,7 @@ class _ProfileSubscriptionsPageState
       child: Container(
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surfaceContainerLow,
-          border: Border.all(color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.15)),
+          border: Border.all(color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: AppOpacity.border)),
         ),
         child: Material(
           color: Colors.transparent,

@@ -2,7 +2,7 @@ part of 'podcast_episode_detail_page.dart';
 
 extension _PodcastEpisodeDetailPageTabs on _PodcastEpisodeDetailPageState {
   List<String> _episodeDetailTabLabels() {
-    final l10n = AppLocalizations.of(context) ?? AppLocalizationsEn();
+    final l10n = context.l10n;
     return <String>[
       l10n.podcast_tab_shownotes,
       l10n.podcast_tab_transcript,

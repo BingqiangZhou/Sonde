@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sonde/core/constants/app_spacing.dart';
 import 'package:shimmer/shimmer.dart';
+import 'package:sonde/core/theme/app_opacity.dart';
 
 class LoadingWidget extends StatelessWidget {
 
@@ -110,7 +111,7 @@ class LoadingOverlay extends StatelessWidget {
         child,
         if (isLoading)
           ColoredBox(
-            color: scheme.scrim.withValues(alpha: 0.5),
+            color: scheme.scrim.withValues(alpha: AppOpacity.medium),
             child: Center(
               child: Padding(
                 padding: EdgeInsets.symmetric(horizontal: context.spacing.xl),

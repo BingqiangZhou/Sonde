@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sonde/core/constants/app_spacing.dart';
+import 'package:sonde/core/theme/app_opacity.dart';
 
 class PodcastEmptyState extends StatelessWidget {
   const PodcastEmptyState({
@@ -46,7 +47,7 @@ class PodcastEmptyState extends StatelessWidget {
                 style:
                     subtitleStyle ??
                     theme.textTheme.bodyMedium?.copyWith(
-                      color: scheme.onSurfaceVariant.withValues(alpha: 0.7),
+                      color: scheme.onSurfaceVariant.withValues(alpha: AppOpacity.strong),
                     ),
                 textAlign: TextAlign.center,
               ),

@@ -2658,5 +2658,9 @@
   "common_not_published": "This issue hasn't been published yet. Check back later.",
   "@common_not_published": {
     "description": "Placeholder when a publication issue is not published yet"
+  },
+  "profile_user_menu": "User menu",
+  "@profile_user_menu": {
+    "description": "Semantic hint for the profile avatar menu button"
   }
 }

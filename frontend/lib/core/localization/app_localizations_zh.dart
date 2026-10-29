@@ -1970,4 +1970,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get common_not_published => '本期尚未发布，请稍后再来。';
+
+  @override
+  String get profile_user_menu => '用户菜单';
 }

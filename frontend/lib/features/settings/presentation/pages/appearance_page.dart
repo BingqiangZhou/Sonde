@@ -15,6 +15,9 @@ import 'package:sonde/shared/widgets/settings_section_card.dart';
 class AppearancePage extends ConsumerWidget {
   const AppearancePage({super.key});
 
+  /// Segment glyph size; kept small to balance the control's height.
+  static const double _segmentIconSize = 16;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;

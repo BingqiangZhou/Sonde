@@ -152,28 +152,6 @@ extension _PodcastEpisodesPageView on _PodcastEpisodesPageState {
 
   Widget _buildFilterChips() {
     final l10n = context.l10n;
-    if (PlatformHelper.isApple(context)) {
-      return Row(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          _buildPillButton(l10n.podcast_filter_all, !_showOnlyWithSummary, () {
-            if (!_showOnlyWithSummary) return;
-            _applyViewState(() {
-              _showOnlyWithSummary = false;
-            });
-            _refreshEpisodes();
-          }),
-          SizedBox(width: context.spacing.sm),
-          _buildPillButton(l10n.podcast_filter_with_summary, _showOnlyWithSummary, () {
-            _applyViewState(() {
-              _showOnlyWithSummary = !_showOnlyWithSummary;
-            });
-            _refreshEpisodes();
-          }),
-        ],
-      );
-    }
     return Row(
       mainAxisSize: MainAxisSize.min,
       mainAxisAlignment: MainAxisAlignment.end,
@@ -204,28 +182,6 @@ extension _PodcastEpisodesPageView on _PodcastEpisodesPageState {
               : null,
         ),
       ],
-    );
-  }
-
-  Widget _buildPillButton(String label, bool isSelected, VoidCallback onTap) {
-    final scheme = Theme.of(context).colorScheme;
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: EdgeInsets.symmetric(horizontal: context.spacing.smMd, vertical: context.spacing.xs),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? scheme.primary
-              : scheme.surfaceContainerHighest,
-          borderRadius: AppRadius.lgXlRadius,
-        ),
-        child: Text(
-          label,
-          style: AppTextStyles.caption(
-            isSelected ? scheme.onPrimary : scheme.onSurface,
-          ),
-        ),
-      ),
     );
   }
 
@@ -279,10 +235,6 @@ extension _PodcastEpisodesPageView on _PodcastEpisodesPageState {
             children: [
               if (PlatformHelper.isApple(context))
                 AdaptiveListTile(
-                  leading: const AdaptiveSwitch(
-                    value: false,
-                    onChanged: null,
-                  ),
                   title: Text(l10n.podcast_only_with_summary),
                   trailing: AdaptiveSwitch(
                     value: _showOnlyWithSummary,

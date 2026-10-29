@@ -836,7 +836,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
 
     return Semantics(
       button: true,
-      hint: 'User menu',
+      hint: context.l10n.profile_user_menu,
       child: GestureDetector(
         key: const Key('profile_user_menu_button'),
         onTap: () {

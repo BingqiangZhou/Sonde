@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:sonde/core/constants/app_spacing.dart';
 import 'package:sonde/core/platform/platform_helper.dart';
 import 'package:sonde/core/theme/app_colors.dart';
+import 'package:sonde/core/theme/app_opacity.dart';
 
 class CustomTextField extends StatefulWidget {
   const CustomTextField({
@@ -163,7 +164,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
       decoration: BoxDecoration(
         color: widget.enabled
             ? Theme.of(context).colorScheme.surfaceContainerHighest
-            : Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+            : Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: AppOpacity.medium),
         borderRadius:
             BorderRadius.circular(appThemeOf(context).buttonRadius),
       ),

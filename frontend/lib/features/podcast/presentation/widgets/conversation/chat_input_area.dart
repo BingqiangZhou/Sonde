@@ -5,6 +5,7 @@ import 'package:sonde/core/localization/app_localizations_extension.dart';
 import 'package:sonde/core/theme/app_colors.dart';
 import 'package:sonde/core/theme/app_theme.dart';
 import 'package:sonde/core/widgets/adaptive/adaptive_text_field.dart';
+import 'package:sonde/core/theme/app_opacity.dart';
 
 /// Input area for the conversation chat with a text field and send button.
 ///
@@ -62,13 +63,13 @@ class ChatInputArea extends StatelessWidget {
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(extension.cardRadius),
                     borderSide: BorderSide(
-                      color: scheme.outlineVariant.withValues(alpha: 0.5),
+                      color: scheme.outlineVariant.withValues(alpha: AppOpacity.medium),
                     ),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(extension.cardRadius),
                     borderSide: BorderSide(
-                      color: scheme.outlineVariant.withValues(alpha: 0.5),
+                      color: scheme.outlineVariant.withValues(alpha: AppOpacity.medium),
                     ),
                   ),
                   focusedBorder: OutlineInputBorder(

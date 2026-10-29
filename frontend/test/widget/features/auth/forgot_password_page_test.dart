@@ -8,7 +8,7 @@ import 'package:sonde/features/auth/presentation/providers/auth_provider.dart';
 
 void main() {
   group('ForgotPasswordPage', () {
-    testWidgets('renders with fallback copy without localization delegates', (
+    testWidgets('renders with English copy without localization delegates', (
       tester,
     ) async {
       await tester.pumpWidget(
@@ -21,7 +21,8 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Forgot Password'), findsOneWidget);
+      // context.l10n falls back to AppLocalizationsEn without delegates.
+      expect(find.text('Forgot Password?'), findsOneWidget);
       expect(find.text('Email'), findsOneWidget);
       expect(find.text('Send Reset Link'), findsOneWidget);
       expect(tester.takeException(), isNull);

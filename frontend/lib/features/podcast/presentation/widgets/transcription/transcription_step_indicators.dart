@@ -5,6 +5,7 @@ import 'package:sonde/core/constants/app_spacing.dart';
 import 'package:sonde/core/theme/app_colors.dart';
 import 'package:sonde/core/theme/app_theme.dart';
 import 'package:sonde/features/podcast/presentation/widgets/transcription/transcription_step_mapper.dart';
+import 'package:sonde/core/theme/app_opacity.dart';
 
 class TranscriptionStepDescriptor {
   const TranscriptionStepDescriptor({required this.icon, required this.label});
@@ -66,11 +67,11 @@ class TranscriptionStatusStepIcon extends StatelessWidget {
       case 2:
         return const Icon(Icons.transform, size: 16, color: AppColors.warning);
       case 3:
-        return const Icon(Icons.content_cut, size: 16, color: AppColors.chart5);
+        return const Icon(Icons.content_cut, size: 16, color: Color(0xFFAF52DE)); // systemPurple
       case 4:
-        return const Icon(Icons.transcribe, size: 16, color: AppColors.chart7);
+        return const Icon(Icons.transcribe, size: 16, color: Color(0xFF5AC8FA)); // systemTeal
       case 5:
-        return const Icon(Icons.merge_type, size: 16, color: AppColors.leaf);
+        return const Icon(Icons.merge_type, size: 16, color: AppColors.tertiary);
       default:
         return Icon(Icons.pending, size: 16, color: Theme.of(context).colorScheme.onSurfaceVariant);
     }
@@ -91,7 +92,7 @@ class _ConnectorLine extends StatelessWidget {
           height: 2,
           width: 16,
           color: highlighted
-              ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.5)
+              ? Theme.of(context).colorScheme.primary.withValues(alpha: AppOpacity.medium)
               : Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.2),
         ),
       ),
@@ -123,7 +124,7 @@ class _TranscriptionStepIndicator extends StatelessWidget {
             color: backgroundColor,
             shape: BoxShape.circle,
             border: Border.all(
-              color: iconColor.withValues(alpha: 0.3),
+              color: iconColor.withValues(alpha: AppOpacity.light),
             ),
           ),
           child: Icon(
@@ -154,11 +155,11 @@ class _TranscriptionStepIndicator extends StatelessWidget {
   ) {
     switch (status) {
       case TranscriptionStepStatus.completed:
-        return (AppColors.success, AppColors.success.withValues(alpha: 0.1));
+        return (AppColors.success, AppColors.success.withValues(alpha: AppOpacity.faint));
       case TranscriptionStepStatus.current:
         return (
           Theme.of(context).colorScheme.primary,
-          Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.5),
+          Theme.of(context).colorScheme.primaryContainer.withValues(alpha: AppOpacity.medium),
         );
       case TranscriptionStepStatus.pending:
         return (

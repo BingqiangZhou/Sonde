@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:sonde/core/constants/app_radius.dart';
 import 'package:sonde/core/constants/app_spacing.dart';
 import 'package:sonde/core/localization/app_localizations.dart';
+import 'package:sonde/core/localization/app_localizations_extension.dart';
 import 'package:sonde/core/theme/app_colors.dart';
 import 'package:sonde/core/widgets/adaptive/adaptive.dart';
 import 'package:sonde/core/widgets/app_shells.dart';
@@ -11,6 +12,7 @@ import 'package:sonde/core/widgets/top_floating_notice.dart';
 import 'package:sonde/features/auth/presentation/providers/auth_provider.dart';
 import 'package:sonde/shared/widgets/custom_text_field.dart';
 import 'package:sonde/shared/widgets/loading_widget.dart';
+import 'package:sonde/core/theme/app_opacity.dart';
 
 class ForgotPasswordPage extends ConsumerStatefulWidget {
   const ForgotPasswordPage({super.key});
@@ -25,20 +27,6 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
   bool _emailSent = false;
   ProviderSubscription<AuthState>? _authSubscription;
 
-  static const String _fallbackForgotPasswordTitle = 'Forgot Password';
-  static const String _fallbackResetPasswordSubtitle =
-      'Enter your email to receive a password reset link.';
-  static const String _fallbackEmailLabel = 'Email';
-  static const String _fallbackEnterEmail = 'Please enter your email';
-  static const String _fallbackEnterValidEmail =
-      'Please enter a valid email address';
-  static const String _fallbackSendResetLink = 'Send Reset Link';
-  static const String _fallbackResetEmailSent = 'Reset email sent';
-  static const String _fallbackCheckEmailMessage =
-      'Please check your email and click the link to reset your password';
-  static const String _fallbackBackToLogin = 'Back to Login';
-  static const String _fallbackResendEmail =
-      "Didn't receive the email? Resend";
 
   @override
   void initState() {
@@ -91,13 +79,13 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
+
     final isLoading = ref.watch(authProvider.select((s) => s.isLoading));
 
     final forgotTitle =
-        l10n?.auth_forgot_password ?? _fallbackForgotPasswordTitle;
+        context.l10n.auth_forgot_password;
     final successTitle =
-        l10n?.auth_reset_email_sent ?? _fallbackResetEmailSent;
+        context.l10n.auth_reset_email_sent;
 
     return AdaptiveScaffold(
       child: LoadingOverlay(
@@ -105,12 +93,10 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
         child: AuthShell(
           title: _emailSent ? successTitle : forgotTitle,
           subtitle: _emailSent
-              ? l10n?.auth_reset_email_sent_to(
-                        _emailController.text.trim(),
-                      ) ??
-                  "We've sent a password reset link to\n${_emailController.text.trim()}"
-              : l10n?.auth_reset_password_subtitle ??
-                  _fallbackResetPasswordSubtitle,
+              ? context.l10n.auth_reset_email_sent_to(
+                  _emailController.text.trim(),
+                )
+              : context.l10n.auth_reset_password_subtitle,
           header: Column(
             children: [
               Align(
@@ -127,10 +113,10 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
                 height: 80,
                 decoration: BoxDecoration(
                   color: _emailSent
-                      ? AppColors.accentWarm.withValues(alpha: 0.1)
+                      ? AppColors.accentWarm.withValues(alpha: AppOpacity.faint)
                       : Theme.of(
                           context,
-                        ).colorScheme.primary.withValues(alpha: 0.1),
+                        ).colorScheme.primary.withValues(alpha: AppOpacity.faint),
                   borderRadius: AppRadius.xlRadius,
                 ),
                 child: Icon(
@@ -143,13 +129,13 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
               ),
             ],
           ),
-          child: _emailSent ? _buildSuccessContent(l10n) : _buildFormContent(l10n, isLoading),
+          child: _emailSent ? _buildSuccessContent(context) : _buildFormContent(context, isLoading),
         ),
       ),
     );
   }
 
-  Widget _buildFormContent(AppLocalizations? l10n, bool isLoading) {
+  Widget _buildFormContent(BuildContext context, bool isLoading) {
     return Form(
       key: _formKey,
       child: Column(
@@ -157,19 +143,18 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
         children: [
           CustomTextField(
             controller: _emailController,
-            label: l10n?.auth_email ?? _fallbackEmailLabel,
+            label: context.l10n.auth_email,
             keyboardType: TextInputType.emailAddress,
             textInputAction: TextInputAction.done,
             prefixIcon: const Icon(Icons.email_outlined),
             autofillHints: const [AutofillHints.email],
             validator: (value) {
               if (value == null || value.isEmpty) {
-                return l10n?.auth_enter_email ?? _fallbackEnterEmail;
+                return context.l10n.auth_enter_email;
               }
               final emailRegex = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
               if (!emailRegex.hasMatch(value.trim())) {
-                return l10n?.auth_enter_valid_email ??
-                    _fallbackEnterValidEmail;
+                return context.l10n.auth_enter_valid_email;
               }
               return null;
             },
@@ -180,7 +165,7 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
             style: AdaptiveButtonStyle.filled,
             onPressed: isLoading ? null : _submitForgotPassword,
             child: Text(
-              l10n?.auth_send_reset_link ?? _fallbackSendResetLink,
+              context.l10n.auth_send_reset_link,
             ),
           ),
         ],
@@ -188,12 +173,12 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
     );
   }
 
-  Widget _buildSuccessContent(AppLocalizations? l10n) {
+  Widget _buildSuccessContent(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          l10n?.auth_check_email_fallback ?? _fallbackCheckEmailMessage,
+          context.l10n.auth_check_email_fallback,
           key: const Key('forgot_password_success_message'),
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -206,7 +191,7 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
           style: AdaptiveButtonStyle.outlined,
           onPressed: () => context.go('/login'),
           child: Text(
-            l10n?.auth_back_to_login ?? _fallbackBackToLogin,
+            context.l10n.auth_back_to_login,
           ),
         ),
         SizedBox(height: context.spacing.md),
@@ -220,7 +205,7 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
             ref.read(authProvider.notifier).clearError();
           },
           child: Text(
-            l10n?.auth_resend_email ?? _fallbackResendEmail,
+            context.l10n.auth_resend_email,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: Theme.of(context).colorScheme.primary,
                 ),

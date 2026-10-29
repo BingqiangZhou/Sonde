@@ -9,6 +9,7 @@ import 'package:sonde/core/theme/app_colors.dart';
 import 'package:sonde/core/utils/time_formatter.dart';
 import 'package:sonde/features/podcast/data/models/site_report_model.dart';
 import 'package:sonde/features/podcast/presentation/navigation/podcast_navigation.dart';
+import 'package:sonde/core/theme/app_opacity.dart';
 
 class SiteReportBody extends StatelessWidget {
   const SiteReportBody({required this.report, super.key});
@@ -149,7 +150,7 @@ class _ReportItemTile extends StatelessWidget {
       onTap: () => PodcastNavigation.goToEpisodeDetail(
         context,
         episodeId: item.episodeId,
-        subscriptionId: item.episodeId, // 占位：详情页以 episodeId 为主键查询
+        
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: AppSpacing.smMd),
@@ -247,7 +248,7 @@ class _ScoreBadge extends StatelessWidget {
       height: 44,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.15),
+        color: color.withValues(alpha: AppOpacity.border),
         borderRadius: BorderRadius.circular(AppRadius.md),
       ),
       child: Text(

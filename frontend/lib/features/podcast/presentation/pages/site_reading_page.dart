@@ -25,44 +25,49 @@ class SiteReadingPage extends ConsumerWidget {
     final meta = ref.watch(siteMetaProvider);
     final tagline = meta.value?.tagline;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.site_reading_title),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.history),
+    return ContentShell(
+      title: l10n.site_reading_title,
+      subtitle: '',
+      roundedViewport: true,
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          HeaderCapsuleActionButton(
             tooltip: l10n.site_report_archive,
+            icon: Icons.history,
+            density: HeaderCapsuleActionButtonDensity.iconOnly,
             onPressed: () => context.push('/reading/archive'),
           ),
-          IconButton(
-            icon: const Icon(Icons.list_alt_outlined),
+          SizedBox(width: context.spacing.xs),
+          HeaderCapsuleActionButton(
             tooltip: l10n.site_report_all_episodes,
+            icon: Icons.list_alt_outlined,
+            density: HeaderCapsuleActionButtonDensity.iconOnly,
             onPressed: () => context.push('/reading/all'),
           ),
-          IconButton(
-            icon: const Icon(Icons.refresh),
+          SizedBox(width: context.spacing.xs),
+          HeaderCapsuleActionButton(
             tooltip: l10n.site_report_refresh,
+            icon: Icons.refresh,
+            density: HeaderCapsuleActionButtonDensity.iconOnly,
             onPressed: () {
               ref.read(siteReportProvider(kind).notifier).reload();
               ref.invalidate(siteMetaProvider);
             },
           ),
-          const SizedBox(width: AppSpacing.xs),
         ],
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(kToolbarHeight * 0.9),
-          child: _KindSelector(kind: kind),
-        ),
       ),
-      body: Column(
+      child: Column(
         children: [
+          _KindSelector(kind: kind),
+          SizedBox(height: context.spacing.sm),
           // 站点标语（/site/meta；失败静默隐藏）
           if (tagline?.isNotEmpty == true)
             Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.md,
-                AppSpacing.smMd,
-                AppSpacing.md,
+              padding: EdgeInsets.fromLTRB(
+                context.spacing.md,
+                0,
+                context.spacing.md,
                 0,
               ),
               child: SizedBox(
@@ -112,16 +117,15 @@ class _KindSelector extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
-    return SegmentedButton<SiteReportKind>(
-      segments: [
-        ButtonSegment(value: SiteReportKind.daily, label: Text(l10n.site_report_daily)),
-        ButtonSegment(value: SiteReportKind.weekly, label: Text(l10n.site_report_weekly)),
-        ButtonSegment(value: SiteReportKind.monthly, label: Text(l10n.site_report_monthly)),
-      ],
-      selected: {kind},
-      onSelectionChanged: (selection) => ref
-          .read(selectedReportKindProvider.notifier)
-          .set(selection.first),
+    return AdaptiveSegmentedControl<SiteReportKind>(
+      segments: {
+        SiteReportKind.daily: Text(l10n.site_report_daily),
+        SiteReportKind.weekly: Text(l10n.site_report_weekly),
+        SiteReportKind.monthly: Text(l10n.site_report_monthly),
+      },
+      selected: kind,
+      onChanged: (value) =>
+          ref.read(selectedReportKindProvider.notifier).set(value),
     );
   }
 }

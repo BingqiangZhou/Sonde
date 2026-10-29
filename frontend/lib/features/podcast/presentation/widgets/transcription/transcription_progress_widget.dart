@@ -9,6 +9,7 @@ import 'package:sonde/features/podcast/data/models/podcast_transcription_model_e
 import 'package:sonde/features/podcast/presentation/widgets/transcription/transcription_step_indicators.dart';
 import 'package:sonde/features/podcast/presentation/widgets/transcription/transcription_step_mapper.dart';
 import 'package:sonde/core/utils/time_formatter.dart';
+import 'package:sonde/core/theme/app_opacity.dart';
 
 /// Widget displaying the pending/waiting state for transcription.
 class PendingStateWidget extends StatelessWidget {
@@ -53,7 +54,7 @@ class PendingStateWidget extends StatelessWidget {
                       width: iconSize,
                       height: iconSize,
                       decoration: BoxDecoration(
-                        color: scheme.tertiary.withValues(alpha: 0.1),
+                        color: scheme.tertiary.withValues(alpha: AppOpacity.faint),
                         borderRadius: BorderRadius.circular(iconSize / 2),
                       ),
                       child: Icon(
@@ -155,7 +156,7 @@ class ProcessingStateWidget extends StatelessWidget {
                       width: progressContainerSize,
                       height: progressContainerSize,
                       decoration: BoxDecoration(
-                        color: scheme.primary.withValues(alpha: 0.1),
+                        color: scheme.primary.withValues(alpha: AppOpacity.faint),
                         borderRadius: BorderRadius.circular(
                           progressContainerSize / 2,
                         ),
@@ -212,7 +213,7 @@ class ProcessingStateWidget extends StatelessWidget {
                         vertical: isSmallScreen ? AppSpacing.sm : AppSpacing.smLg,
                       ),
                       decoration: BoxDecoration(
-                        color: scheme.primaryContainer.withValues(alpha: 0.3),
+                        color: scheme.primaryContainer.withValues(alpha: AppOpacity.light),
                         borderRadius: BorderRadius.circular(ext.pillRadius),
                       ),
                       child: Row(
@@ -286,7 +287,7 @@ class ProcessingStateWidget extends StatelessWidget {
                           color: scheme.surface,
                           borderRadius: BorderRadius.circular(ext.buttonRadius),
                           border: Border.all(
-                            color: scheme.outline.withValues(alpha: 0.1),
+                            color: scheme.outline.withValues(alpha: AppOpacity.faint),
                           ),
                         ),
                         child: Row(

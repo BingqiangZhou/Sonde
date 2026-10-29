@@ -14,6 +14,7 @@ import 'package:sonde/features/auth/presentation/widgets/password_requirement_it
 import 'package:sonde/features/auth/presentation/widgets/password_text_field.dart';
 import 'package:sonde/shared/widgets/custom_text_field.dart';
 import 'package:sonde/shared/widgets/loading_widget.dart';
+import 'package:sonde/core/theme/app_opacity.dart';
 
 class RegisterPage extends ConsumerStatefulWidget {
   const RegisterPage({super.key});
@@ -153,7 +154,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                   errorText: fieldErrors?['username'],
                 ),
 
-                SizedBox(height: context.spacing.smMd),
+                SizedBox(height: context.spacing.md),
 
                 // Email field
                 CustomTextField(
@@ -180,7 +181,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                   errorText: fieldErrors?['email'],
                 ),
 
-                SizedBox(height: context.spacing.smMd),
+                SizedBox(height: context.spacing.md),
 
                 // Password field
                 Column(
@@ -224,7 +225,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                       decoration: BoxDecoration(
                         color: Theme.of(context).colorScheme.surfaceContainerLow,
                         borderRadius: AppRadius.smRadius,
-                        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.15)),
+                        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: AppOpacity.border)),
                       ),
                       padding: EdgeInsets.all(context.spacing.sm),
                       child: Column(
@@ -269,7 +270,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                   ],
                 ),
 
-                SizedBox(height: context.spacing.smMd),
+                SizedBox(height: context.spacing.md),
 
                 // Confirm password field
                 PasswordTextField(

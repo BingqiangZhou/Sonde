@@ -3787,6 +3787,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This issue hasn\'t been published yet. Check back later.'**
   String get common_not_published;
+
+  /// Semantic hint for the profile avatar menu button
+  ///
+  /// In en, this message translates to:
+  /// **'User menu'**
+  String get profile_user_menu;
 }
 
 class _AppLocalizationsDelegate

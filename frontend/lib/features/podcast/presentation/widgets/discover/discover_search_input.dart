@@ -9,6 +9,7 @@ import 'package:sonde/core/platform/platform_helper.dart';
 import 'package:sonde/core/widgets/adaptive/adaptive.dart';
 import 'package:sonde/core/theme/app_colors.dart';
 import 'package:sonde/features/podcast/presentation/providers/podcast_search_provider.dart';
+import 'package:sonde/core/theme/app_opacity.dart';
 
 /// Search input widget for discover page with country selector.
 ///
@@ -89,7 +90,7 @@ class _DiscoverSearchInputState extends ConsumerState<DiscoverSearchInput> {
 
     final borderColor = _isFocused
         ? scheme.primary
-        : scheme.outlineVariant.withValues(alpha: 0.5);
+        : scheme.outlineVariant.withValues(alpha: AppOpacity.medium);
     final borderWidth = _isFocused ? 1.6 : 1.0;
     final backgroundColor = _isFocused
         ? scheme.surfaceContainerLow
@@ -244,7 +245,7 @@ class _CountryButton extends ConsumerWidget {
           height: height,
           padding: EdgeInsets.symmetric(horizontal: context.spacing.sm),
           decoration: BoxDecoration(
-            color: scheme.surfaceContainerHighest.withValues(alpha: 0.5),
+            color: scheme.surfaceContainerHighest.withValues(alpha: AppOpacity.medium),
             borderRadius: BorderRadius.circular(height / 2),
           ),
           child: Row(

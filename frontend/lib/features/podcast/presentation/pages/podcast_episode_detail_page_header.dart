@@ -57,7 +57,7 @@ extension _PodcastEpisodeDetailPageHeader on _PodcastEpisodeDetailPageState {
     required bool isWide,
     Key? key,
   }) {
-    final l10n = AppLocalizations.of(context) ?? AppLocalizationsEn();
+    final l10n = context.l10n;
     final theme = Theme.of(context);
     final metadata = <Widget>[
       _buildPodcastTitleChip(episode, l10n),
@@ -377,7 +377,7 @@ extension _PodcastEpisodeDetailPageHeader on _PodcastEpisodeDetailPageState {
   }
   Widget _buildFavoriteButton(PodcastEpisodeModel episode) {
     final favorited = ref.watch(favoriteStatusProvider(episode.id)).value ?? false;
-    final l10n = AppLocalizations.of(context) ?? AppLocalizationsEn();
+    final l10n = context.l10n;
     return HeaderCapsuleActionButton(
       tooltip: favorited
           ? l10n.podcast_highlights_unfavorite
@@ -394,7 +394,7 @@ extension _PodcastEpisodeDetailPageHeader on _PodcastEpisodeDetailPageState {
   }
 
   Widget _buildShareButton(PodcastEpisodeModel episode) {
-    final l10n = AppLocalizations.of(context) ?? AppLocalizationsEn();
+    final l10n = context.l10n;
     return HeaderCapsuleActionButton(
       tooltip: l10n.share,
       icon: Icons.adaptive.share,
@@ -419,7 +419,7 @@ extension _PodcastEpisodeDetailPageHeader on _PodcastEpisodeDetailPageState {
 
   Future<void> _shareEpisode(PodcastEpisodeModel episode) async {
     AdaptiveHaptic.mediumImpact();
-    final l10n = AppLocalizations.of(context) ?? AppLocalizationsEn();
+    final l10n = context.l10n;
 
     // Generate a deep link to the episode
     // For now, use the audio URL as the shareable link

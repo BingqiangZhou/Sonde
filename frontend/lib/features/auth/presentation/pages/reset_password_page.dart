@@ -14,6 +14,7 @@ import 'package:sonde/features/auth/presentation/providers/auth_provider.dart';
 import 'package:sonde/features/auth/presentation/widgets/password_requirement_item.dart';
 import 'package:sonde/features/auth/presentation/widgets/password_text_field.dart';
 import 'package:sonde/shared/widgets/loading_widget.dart';
+import 'package:sonde/core/theme/app_opacity.dart';
 
 class ResetPasswordPage extends ConsumerStatefulWidget {
 
@@ -143,10 +144,10 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
                 height: 80,
                 decoration: BoxDecoration(
                   color: _passwordReset
-                      ? AppColors.accentWarm.withValues(alpha: 0.1)
+                      ? AppColors.accentWarm.withValues(alpha: AppOpacity.faint)
                       : Theme.of(
                           context,
-                        ).colorScheme.primary.withValues(alpha: 0.1),
+                        ).colorScheme.primary.withValues(alpha: AppOpacity.faint),
                   borderRadius: AppRadius.xlRadius,
                 ),
                 child: Icon(
@@ -244,7 +245,7 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
                       color: Theme.of(context)
                           .colorScheme
                           .outlineVariant
-                          .withValues(alpha: 0.15),
+                          .withValues(alpha: AppOpacity.border),
                     ),
                   ),
                   padding: EdgeInsets.all(context.spacing.sm),

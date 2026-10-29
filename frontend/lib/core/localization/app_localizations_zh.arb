@@ -2612,5 +2612,9 @@
   "common_not_published": "本期尚未发布，请稍后再来。",
   "@common_not_published": {
     "description": "Placeholder when a publication issue is not published yet"
+  },
+  "profile_user_menu": "用户菜单",
+  "@profile_user_menu": {
+    "description": "Semantic hint for the profile avatar menu button"
   }
 }

@@ -1,5 +1,9 @@
 part of 'podcast_episode_detail_page.dart';
 
+/// Chat end-drawer sizing: fixed width on desktop, near-fullwidth on phones.
+const double _kChatDrawerDesktopWidth = 420;
+const double _kChatDrawerWidthFactor = 0.94;
+
 extension _PodcastEpisodeDetailPageContent on _PodcastEpisodeDetailPageState {
   Widget _buildTabSurface(Widget child, {Key? key}) {
     final tokens = appThemeOf(context);
@@ -24,7 +28,7 @@ extension _PodcastEpisodeDetailPageContent on _PodcastEpisodeDetailPageState {
           child: LoadingStatusContent(
             key: const Key('podcast_episode_detail_loading_content'),
             title:
-                (AppLocalizations.of(context) ?? AppLocalizationsEn()).loading,
+                (context.l10n).loading,
             spinnerSize: 36,
             gapAfterSpinner: 12,
           ),
@@ -77,7 +81,7 @@ extension _PodcastEpisodeDetailPageContent on _PodcastEpisodeDetailPageState {
         );
       },
       loading: () => _buildCenteredLoadingState(
-        (AppLocalizations.of(context) ?? AppLocalizationsEn()).loading,
+        (context.l10n).loading,
       ),
       error: (error, stack) => _buildTranscriptErrorState(context, error),
     );
@@ -115,7 +119,7 @@ extension _PodcastEpisodeDetailPageContent on _PodcastEpisodeDetailPageState {
   Widget _buildTranscriptErrorState(BuildContext context, dynamic error) {
     return AppEmptyState(
       icon: Icons.error_outline,
-      title: (AppLocalizations.of(context) ?? AppLocalizationsEn())
+      title: (context.l10n)
           .podcast_transcription_failed,
       subtitle: error.toString(),
     );
@@ -212,7 +216,7 @@ extension _PodcastEpisodeDetailPageContent on _PodcastEpisodeDetailPageState {
             !summaryState.hasSummary &&
             sanitizedEpisodeSummary.isEmpty)
           _buildCenteredLoadingState(
-            (AppLocalizations.of(context) ?? AppLocalizationsEn())
+            (context.l10n)
                 .podcast_generating_summary,
           )
         else if (summaryState.hasSummary)
@@ -256,14 +260,14 @@ extension _PodcastEpisodeDetailPageContent on _PodcastEpisodeDetailPageState {
   Widget _buildAiSummaryErrorState(BuildContext context, String message) {
     return AppEmptyState(
       icon: Icons.error_outline,
-      title: (AppLocalizations.of(context) ?? AppLocalizationsEn())
+      title: (context.l10n)
           .podcast_transcription_failed,
       subtitle: message,
     );
   }
 
   Widget _buildAiSummaryEmptyState(BuildContext context) {
-    final l10n = AppLocalizations.of(context) ?? AppLocalizationsEn();
+    final l10n = context.l10n;
     return AppEmptyState(
       icon: Icons.auto_awesome,
       title: l10n.podcast_summary_no_summary,
@@ -272,12 +276,12 @@ extension _PodcastEpisodeDetailPageContent on _PodcastEpisodeDetailPageState {
   }
 
   Widget _buildChatDrawer(PodcastEpisodeModel episode) {
-    final l10n = AppLocalizations.of(context) ?? AppLocalizationsEn();
+    final l10n = context.l10n;
     final width = MediaQuery.sizeOf(context).width;
     final drawerWidth =
         width >= _PodcastEpisodeDetailPageState._wideLayoutBreakpoint
-        ? 420.0
-        : width * 0.94;
+        ? _kChatDrawerDesktopWidth
+        : width * _kChatDrawerWidthFactor;
 
     return SizedBox(
       width: drawerWidth,
@@ -332,7 +336,7 @@ extension _PodcastEpisodeDetailPageContent on _PodcastEpisodeDetailPageState {
         if (episode == null) {
           return AppEmptyState(
             icon: Icons.error_outline,
-            title: (AppLocalizations.of(context) ?? AppLocalizationsEn())
+            title: (context.l10n)
                 .podcast_episode_not_found,
           );
         }
@@ -344,11 +348,11 @@ extension _PodcastEpisodeDetailPageContent on _PodcastEpisodeDetailPageState {
         );
       },
       loading: () => _buildCenteredLoadingState(
-        (AppLocalizations.of(context) ?? AppLocalizationsEn()).loading,
+        (context.l10n).loading,
       ),
       error: (error, stack) => AppEmptyState(
         icon: Icons.error_outline,
-        title: (AppLocalizations.of(context) ?? AppLocalizationsEn())
+        title: (context.l10n)
             .podcast_load_failed,
         subtitle: error.toString(),
       ),
@@ -356,7 +360,7 @@ extension _PodcastEpisodeDetailPageContent on _PodcastEpisodeDetailPageState {
   }
 
   Widget _buildErrorState(BuildContext context, dynamic error) {
-    final l10n = AppLocalizations.of(context) ?? AppLocalizationsEn();
+    final l10n = context.l10n;
     return Stack(
       fit: StackFit.expand,
       children: [

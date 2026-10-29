@@ -5,6 +5,7 @@ import 'package:sonde/core/constants/app_durations.dart';
 import 'package:sonde/core/services/app_cache_service.dart';
 import 'package:sonde/core/theme/app_colors.dart';
 import 'package:sonde/core/utils/app_logger.dart' as logger;
+import 'package:sonde/core/theme/app_opacity.dart';
 
 /// Podcast image widget with retry/fallback handling.
 class PodcastImageWidget extends StatefulWidget {
@@ -269,7 +270,7 @@ class _PodcastImageWidgetState extends State<PodcastImageWidget> {
               child: Icon(
                 Icons.refresh,
                 size: iconSize * 0.5,
-                color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
+                color: theme.colorScheme.onSurfaceVariant.withValues(alpha: AppOpacity.medium),
               ),
             );
           }
@@ -286,9 +287,9 @@ class _PodcastImageWidgetState extends State<PodcastImageWidget> {
         width: widget.width,
         height: widget.height,
         decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.1),
+          color: color.withValues(alpha: AppOpacity.faint),
           borderRadius: BorderRadius.circular(radius),
-          border: Border.all(color: color.withValues(alpha: 0.3)),
+          border: Border.all(color: color.withValues(alpha: AppOpacity.light)),
         ),
         child: Icon(
           Icons.podcasts,

@@ -6,15 +6,15 @@ import 'package:flutter/services.dart';
 import 'package:sonde/core/constants/app_radius.dart';
 import 'package:sonde/core/constants/app_spacing.dart';
 import 'package:sonde/core/theme/app_colors.dart';
+import 'package:sonde/core/theme/app_opacity.dart';
 
 /// ============================================================
 /// Refined Minimal Design System - 简约现代设计系统
 ///
-/// Typography System:
-/// - Headings: Space Grotesk (几何感、科技感、未来感)
-/// - Body: Inter (行业标准、极致清晰、屏幕优化)
-/// - Monospace: IBM Plex Mono (人文主义等宽、专业感)
-/// ============================================================
+/// Typography System (platform system fonts; no bundled families):
+/// - Headings/Body: system default (SF Pro / Roboto / Segoe)
+/// - Monospace: system monospace fallback via AppTextStyles.monoStyle
+/// ====================================================================
 
 class AppTheme {
   AppTheme._();
@@ -84,7 +84,7 @@ class AppTheme {
     final textTheme = _buildTextTheme(
       scheme.onSurface,
       scheme.onSurfaceVariant,
-      isDark ? AppColors.darkTextTertiary : AppColors.lightTextTertiary,
+      isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
     );
     // Unified color scheme: only brightness matters, form factor (radii/shadows)
     // still differs per platform via the extension.
@@ -156,7 +156,7 @@ class AppTheme {
         titleTextStyle: textTheme.headlineSmall ?? const TextStyle(),
       ),
       dividerTheme: DividerThemeData(
-        color: scheme.outlineVariant.withValues(alpha: 0.5),
+        color: scheme.outlineVariant.withValues(alpha: AppOpacity.medium),
         thickness: 1,
         space: 1,
       ),
@@ -165,7 +165,7 @@ class AppTheme {
         filled: true,
         fillColor: scheme.surfaceContainerHighest.withValues(alpha: extension.inputFillAlpha),
         hintStyle: textTheme.bodyMedium?.copyWith(
-            color: scheme.onSurfaceVariant.withValues(alpha: 0.7),
+            color: scheme.onSurfaceVariant.withValues(alpha: AppOpacity.strong),
           ) ?? const TextStyle(),
         labelStyle: textTheme.labelMedium?.copyWith(
             color: scheme.onSurfaceVariant,
@@ -199,10 +199,10 @@ class AppTheme {
       ),
       chipTheme: ChipThemeData(
         backgroundColor: scheme.surfaceContainerHighest.withValues(alpha: 0.8),
-        selectedColor: scheme.primary.withValues(alpha: 0.15),
-        disabledColor: scheme.surfaceContainerHighest.withValues(alpha: 0.5),
+        selectedColor: scheme.primary.withValues(alpha: AppOpacity.border),
+        disabledColor: scheme.surfaceContainerHighest.withValues(alpha: AppOpacity.medium),
         secondarySelectedColor: scheme.primary.withValues(alpha: 0.18),
-        side: BorderSide(color: scheme.outline.withValues(alpha: 0.15)),
+        side: BorderSide(color: scheme.outline.withValues(alpha: AppOpacity.border)),
         shape: const StadiumBorder(),
         padding: EdgeInsets.symmetric(horizontal: AppSpacing.smMd, vertical: AppSpacing.xs),
         labelStyle: textTheme.labelMedium?.copyWith(color: scheme.onSurface) ?? const TextStyle(),
@@ -258,12 +258,14 @@ class AppTheme {
         }),
         indicatorColor: scheme.primary.withValues(alpha: isDark ? 0.22 : 0.14),
       ),
-      bottomSheetTheme: const BottomSheetThemeData(
+      bottomSheetTheme: BottomSheetThemeData(
         backgroundColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xxl)),
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(extension.sheetRadius),
+          ),
         ),
       ),
       navigationRailTheme: NavigationRailThemeData(
@@ -330,7 +332,7 @@ class AppTheme {
         ),
       ),
       checkboxTheme: CheckboxThemeData(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+        shape: RoundedRectangleBorder(borderRadius: AppRadius.xsRadius),
         side: BorderSide(color: scheme.outlineVariant),
       ),
       segmentedButtonTheme: SegmentedButtonThemeData(

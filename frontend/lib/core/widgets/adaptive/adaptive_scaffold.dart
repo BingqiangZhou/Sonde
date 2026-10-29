@@ -1,5 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+
+import 'package:sonde/core/constants/app_spacing.dart';
 import 'package:sonde/core/platform/platform_helper.dart';
 
 /// Adaptive scaffold: CupertinoPageScaffold on iOS, Scaffold on Android.
@@ -56,8 +58,10 @@ class AdaptiveScaffold extends StatelessWidget {
                     ),
                   if (floatingActionButton != null)
                     Positioned(
-                      right: 16,
-                      bottom: 16,
+                      right: AppSpacing.smLg,
+                      // Sit above the home indicator on notch devices.
+                      bottom: AppSpacing.smLg +
+                          MediaQuery.paddingOf(context).bottom,
                       child: floatingActionButton!,
                     ),
                 ],

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import 'package:sonde/core/constants/app_radius.dart';
 import 'package:sonde/core/constants/app_spacing.dart';
+import 'package:sonde/core/constants/scroll_constants.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sonde/core/theme/app_colors.dart';
@@ -15,12 +16,12 @@ import 'package:sonde/core/widgets/adaptive/adaptive_sliver_app_bar.dart';
 import 'package:sonde/features/auth/presentation/providers/auth_provider.dart';
 import 'package:sonde/features/podcast/data/models/podcast_highlight_model.dart';
 import 'package:sonde/features/podcast/presentation/providers/podcast_highlights_providers.dart';
-import 'package:sonde/features/podcast/presentation/providers/podcast_providers.dart';
 import 'package:sonde/core/widgets/top_floating_notice.dart';
 import 'package:sonde/features/podcast/presentation/widgets/highlight_card.dart';
 import 'package:sonde/features/podcast/presentation/widgets/calendar_panel_dialog.dart';
 import 'package:sonde/features/podcast/presentation/widgets/shared/episode_card_utils.dart';
 import 'package:sonde/shared/widgets/loading_widget.dart';
+import 'package:sonde/core/theme/app_opacity.dart';
 
 /// Page for displaying podcast highlights.
 ///
@@ -40,7 +41,6 @@ class _PodcastHighlightsPageState extends ConsumerState<PodcastHighlightsPage> {
   final ScrollController _scrollController = ScrollController();
   late DateTime _focusedCalendarDay;
   bool _isLoadingMore = false;
-  bool _hasMore = false;
 
   @override
   void initState() {
@@ -71,12 +71,13 @@ class _PodcastHighlightsPageState extends ConsumerState<PodcastHighlightsPage> {
   void _onScroll() {
     if (_isLoadingMore) return;
 
-    if (!_hasMore) return;
+    final hasMore = ref.read(highlightsProvider).value?.hasMore ?? false;
+    if (!hasMore) return;
     if (!_scrollController.hasClients) return;
 
     final maxScroll = _scrollController.position.maxScrollExtent;
     final currentScroll = _scrollController.position.pixels;
-    const delta = 200.0;
+    const delta = ScrollConstants.loadMoreThreshold;
 
     if (maxScroll - currentScroll < delta) {
       _loadMoreHighlights();
@@ -179,11 +180,8 @@ class _PodcastHighlightsPageState extends ConsumerState<PodcastHighlightsPage> {
   }
 
   List<Widget> _buildHighlightsSlivers(BuildContext context) {
-    final theme = Theme.of(context);
-    final tokens = appThemeOf(context);
     final l10n = context.l10n;
     final highlightsAsync = ref.watch(highlightsProvider);
-    _hasMore = highlightsAsync.value?.hasMore ?? false;
     final selectedDate = ref.watch(selectedHighlightDateProvider);
     final headerDate = selectedDate ?? _focusedCalendarDay;
 
@@ -220,34 +218,14 @@ class _PodcastHighlightsPageState extends ConsumerState<PodcastHighlightsPage> {
     // Data state: panel header + divider + list items + bottom cap
     return [
       // Panel header with top radius
-      SliverToBoxAdapter(
-        child: Container(
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surfaceContainerLow,
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(tokens.cardRadius),
-              topRight: Radius.circular(tokens.cardRadius),
-            ),
-            border: Border.all(
-              color: theme.colorScheme.outlineVariant.withValues(alpha: 0.15),
-            ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: EdgeInsets.fromLTRB(context.spacing.mdLg, context.spacing.md, context.spacing.mdLg, context.spacing.smMd),
-                child: AppSectionHeader(
-                  title: EpisodeCardUtils.formatDate(headerDate),
-                  subtitle: l10n.podcast_highlights_items(highlightsResponse?.total ?? 0),
-                ),
-              ),
-              Divider(
-                height: 1,
-                color: theme.colorScheme.outlineVariant.withValues(alpha: 0.45),
-              ),
-            ],
-          ),
+      PanelHeaderSliver(
+        title: EpisodeCardUtils.formatDate(headerDate),
+        subtitle: l10n.podcast_highlights_items(highlightsResponse?.total ?? 0),
+        headerPadding: EdgeInsets.fromLTRB(
+          context.spacing.mdLg,
+          context.spacing.md,
+          context.spacing.mdLg,
+          context.spacing.smMd,
         ),
       ),
       // Highlight items
@@ -262,21 +240,7 @@ class _PodcastHighlightsPageState extends ConsumerState<PodcastHighlightsPage> {
         },
       ),
       // Panel bottom cap
-      SliverToBoxAdapter(
-        child: Container(
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surfaceContainerLow,
-            borderRadius: BorderRadius.only(
-              bottomLeft: Radius.circular(tokens.cardRadius),
-              bottomRight: Radius.circular(tokens.cardRadius),
-            ),
-            border: Border.all(
-              color: theme.colorScheme.outlineVariant.withValues(alpha: 0.15),
-            ),
-          ),
-          height: context.spacing.smMd,
-        ),
-      ),
+      const PanelBottomCapSliver(),
       // Bottom buffer
       SliverPadding(
         padding: EdgeInsets.only(bottom: context.spacing.xl),
@@ -444,7 +408,7 @@ class _PodcastHighlightsPageState extends ConsumerState<PodcastHighlightsPage> {
                 decoration: BoxDecoration(
                   color: theme.colorScheme.surfaceContainerLow,
                   borderRadius: AppRadius.xxlCardRadius,
-                  border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.15)),
+                  border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: AppOpacity.border)),
                 ),
                 padding: EdgeInsets.all(context.spacing.md),
                 child: Text(

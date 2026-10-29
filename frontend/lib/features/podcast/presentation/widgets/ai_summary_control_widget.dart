@@ -11,6 +11,7 @@ import 'package:sonde/core/widgets/adaptive/adaptive.dart';
 import 'package:sonde/core/widgets/top_floating_notice.dart';
 import 'package:sonde/features/podcast/data/models/podcast_summary_model.dart';
 import 'package:sonde/features/podcast/presentation/providers/conversation_providers.dart';
+import 'package:sonde/core/theme/app_opacity.dart';
 
 /// AI summary controls for generating and regenerating summaries.
 class AISummaryControlWidget extends ConsumerStatefulWidget {
@@ -141,10 +142,10 @@ class _AISummaryControlWidgetState
     return Container(
       padding: EdgeInsets.all(context.spacing.md),
       decoration: BoxDecoration(
-        color: scheme.errorContainer.withValues(alpha: 0.1),
+        color: scheme.errorContainer.withValues(alpha: AppOpacity.faint),
         borderRadius: BorderRadius.circular(extension.cardRadius),
         border: Border.all(
-          color: scheme.error.withValues(alpha: 0.3),
+          color: scheme.error.withValues(alpha: AppOpacity.light),
         ),
       ),
       child: Row(
@@ -242,7 +243,7 @@ class _AISummaryControlWidgetState
           Container(
             padding: EdgeInsets.symmetric(horizontal: context.spacing.md, vertical: context.spacing.sm),
             decoration: BoxDecoration(
-              color: scheme.secondaryContainer.withValues(alpha: 0.3),
+              color: scheme.secondaryContainer.withValues(alpha: AppOpacity.light),
               borderRadius: BorderRadius.circular(extension.cardRadius),
             ),
             child: Wrap(
@@ -397,7 +398,7 @@ class _AISummaryControlWidgetState
                         vertical: context.spacing.xxs,
                       ),
                       decoration: BoxDecoration(
-                        color: scheme.primary.withValues(alpha: 0.1),
+                        color: scheme.primary.withValues(alpha: AppOpacity.faint),
                         borderRadius: AppRadius.xsRadius,
                       ),
                       child: Text(
@@ -444,10 +445,10 @@ class _AISummaryControlWidgetState
     return Container(
       padding: EdgeInsets.all(context.spacing.md),
       decoration: BoxDecoration(
-        color: scheme.errorContainer.withValues(alpha: 0.1),
+        color: scheme.errorContainer.withValues(alpha: AppOpacity.faint),
         borderRadius: BorderRadius.circular(extension.cardRadius),
         border: Border.all(
-          color: scheme.error.withValues(alpha: 0.3),
+          color: scheme.error.withValues(alpha: AppOpacity.light),
         ),
       ),
       child: Row(

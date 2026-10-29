@@ -15,6 +15,7 @@ import 'package:sonde/core/utils/time_formatter.dart';
 import 'package:sonde/features/podcast/data/models/site_report_model.dart';
 import 'package:sonde/features/podcast/presentation/navigation/podcast_navigation.dart';
 import 'package:sonde/features/podcast/presentation/providers/site_reading_providers.dart';
+import 'package:sonde/core/theme/app_opacity.dart';
 
 class SiteAllEpisodesPage extends ConsumerWidget {
   const SiteAllEpisodesPage({super.key});
@@ -140,7 +141,6 @@ class _AnalyzedEpisodeTile extends StatelessWidget {
             ? () => PodcastNavigation.goToEpisodeDetail(
                   context,
                   episodeId: item.episodeId,
-                  subscriptionId: item.episodeId, // 占位：详情页以 episodeId 为主键查询
                 )
             : null,
         child: Padding(
@@ -296,7 +296,7 @@ class _ScoreBadge extends StatelessWidget {
       height: 40,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.15),
+        color: color.withValues(alpha: AppOpacity.border),
         borderRadius: BorderRadius.circular(AppRadius.md),
       ),
       child: Text(

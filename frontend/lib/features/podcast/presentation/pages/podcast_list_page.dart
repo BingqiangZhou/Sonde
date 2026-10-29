@@ -217,7 +217,9 @@ class _PodcastListPageState extends ConsumerState<PodcastListPage> {
         final screenWidth = MediaQuery.sizeOf(context).width;
         final useCompactShell =
             constraints.maxHeight < 540 || screenHeight < 720;
-        final headerSpacing = screenWidth < 600 ? 20.0 : 12.0;
+        final headerSpacing = screenWidth < Breakpoints.medium
+            ? context.spacing.xl
+            : context.spacing.md;
 
         return ContentShell(
           title: l10n.podcast_discover_title,
@@ -318,12 +320,13 @@ class _PodcastListPageState extends ConsumerState<PodcastListPage> {
   Widget _buildErrorView(BuildContext context, AppLocalizations l10n, String error) {
     return AppEmptyState(
       icon: Icons.error_outline,
-      title: error,
-      action: FilledButton.icon(
+      title: l10n.common_load_failed,
+      subtitle: error,
+      action: AdaptiveButton(
         onPressed: () =>
             ref.read(podcastDiscoverProvider.notifier).loadInitialData(),
         icon: const Icon(Icons.refresh),
-        label: Text(l10n.retry),
+        child: Text(l10n.retry),
       ),
     );
   }

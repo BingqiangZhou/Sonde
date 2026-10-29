@@ -20,6 +20,7 @@ import 'package:sonde/features/podcast/presentation/providers/podcast_episodes_p
 import 'package:sonde/features/podcast/presentation/providers/podcast_feed_providers.dart';
 import 'package:sonde/features/podcast/presentation/providers/podcast_providers.dart';
 import 'package:sonde/features/podcast/presentation/providers/podcast_search_provider.dart';
+import 'package:sonde/core/theme/app_opacity.dart';
 
 enum _CacheCategory { images, audio, other }
 
@@ -67,14 +68,14 @@ class _CachePagePalette {
 
   static _CachePagePalette of(ThemeData theme) {
     final scheme = theme.colorScheme;
-    final isDark = theme.brightness == Brightness.dark;
     return _CachePagePalette(
       images: scheme.onSurfaceVariant,
       audio: scheme.tertiary,
       other: scheme.secondary,
       emptySegment: scheme.surfaceContainerHighest,
-      deepCleanBackground: isDark ? scheme.surface : scheme.onSurfaceVariant,
-      deepCleanForeground: isDark ? scheme.onSurface : scheme.surface,
+      // Deep clean is destructive: render via semantic error roles.
+      deepCleanBackground: scheme.errorContainer,
+      deepCleanForeground: scheme.onErrorContainer,
     );
   }
 }
@@ -100,6 +101,7 @@ class _ProfileCacheManagementPageState
 
   _MediaCacheStats _stats = _emptyStats;
   bool _isLoading = true;
+  String? _loadError;
 
   double _contentHorizontalInset(BuildContext context) =>
       context.isMobile ? kPodcastRowCardHorizontalMargin : 0;
@@ -115,7 +117,10 @@ class _ProfileCacheManagementPageState
 
   Future<void> _refresh() async {
     if (!mounted) return;
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+      _loadError = null;
+    });
     try {
       final stats = await _loadStats();
       if (!mounted) return;
@@ -125,7 +130,10 @@ class _ProfileCacheManagementPageState
       });
     } catch (e) {
       if (!mounted) return;
-      setState(() => _isLoading = false);
+      setState(() {
+        _isLoading = false;
+        _loadError = e.toString();
+      });
     }
   }
 
@@ -455,7 +463,7 @@ class _ProfileCacheManagementPageState
           color: Colors.transparent,
           borderRadius: AppRadius.xlRadius,
           border: Border.all(
-            color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
+            color: theme.colorScheme.outlineVariant.withValues(alpha: AppOpacity.light),
           ),
         ),
         child: Column(
@@ -557,7 +565,7 @@ class _ProfileCacheManagementPageState
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surfaceContainerLow,
           borderRadius: BorderRadius.circular(appThemeOf(context).itemRadius),
-          border: Border.all(color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.15)),
+          border: Border.all(color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: AppOpacity.border)),
         ),
         padding: EdgeInsets.fromLTRB(context.spacing.smMd, context.spacing.sm, context.spacing.sm, context.spacing.sm),
       child: Row(
@@ -632,45 +640,13 @@ class _ProfileCacheManagementPageState
   }) {
     final l10n = context.l10n;
     final theme = Theme.of(context);
-    final tokens = appThemeOf(context);
 
     return [
       // Header panel top
-      SliverToBoxAdapter(
-        child: Container(
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surfaceContainerLow,
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(tokens.cardRadius),
-              topRight: Radius.circular(tokens.cardRadius),
-            ),
-            border: Border.all(
-              color: theme.colorScheme.outlineVariant.withValues(alpha: 0.15),
-            ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: EdgeInsets.fromLTRB(
-                  context.spacing.mdLg,
-                  context.spacing.mdLg,
-                  context.spacing.mdLg,
-                  context.spacing.smMd,
-                ),
-                child: AppSectionHeader(
-                  title: l10n.profile_cache_manage_title,
-                  subtitle: l10n.profile_cache_manage_item_count(stats.totalCount),
-                  hideTitle: true,
-                ),
-              ),
-              Divider(
-                height: 1,
-                color: theme.colorScheme.outlineVariant.withValues(alpha: 0.45),
-              ),
-            ],
-          ),
-        ),
+      PanelHeaderSliver(
+        title: l10n.profile_cache_manage_title,
+        subtitle: l10n.profile_cache_manage_item_count(stats.totalCount),
+        hideTitle: true,
       ),
       // Content
       SliverToBoxAdapter(
@@ -795,21 +771,7 @@ class _ProfileCacheManagementPageState
         ),
       ),
       // Bottom cap
-      SliverToBoxAdapter(
-        child: Container(
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surfaceContainerLow,
-            borderRadius: BorderRadius.only(
-              bottomLeft: Radius.circular(tokens.cardRadius),
-              bottomRight: Radius.circular(tokens.cardRadius),
-            ),
-            border: Border.all(
-              color: theme.colorScheme.outlineVariant.withValues(alpha: 0.15),
-            ),
-          ),
-          height: context.spacing.smMd,
-        ),
-      ),
+      const PanelBottomCapSliver(),
       // Bottom buffer
       SliverPadding(
         padding: EdgeInsets.only(bottom: context.spacing.xl),
@@ -856,6 +818,19 @@ class _ProfileCacheManagementPageState
                       hasScrollBody: false,
                       child: Center(
                         child: CircularProgressIndicator.adaptive(),
+                      ),
+                    )
+                  else if (_loadError != null)
+                    SliverFillRemaining(
+                      hasScrollBody: false,
+                      child: AppEmptyState(
+                        icon: Icons.cloud_off,
+                        title: context.l10n.common_load_failed,
+                        subtitle: _loadError,
+                        action: AdaptiveButton(
+                          onPressed: _refresh,
+                          child: Text(context.l10n.retry),
+                        ),
                       ),
                     )
                   else

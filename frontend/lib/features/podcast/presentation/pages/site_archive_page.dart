@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 
 import 'package:sonde/core/constants/app_spacing.dart';
 import 'package:sonde/core/localization/app_localizations_extension.dart';
+import 'package:sonde/core/utils/time_formatter.dart';
 import 'package:sonde/core/widgets/adaptive/adaptive.dart';
 import 'package:sonde/core/widgets/app_shells.dart';
 import 'package:sonde/features/podcast/data/models/site_report_model.dart';
@@ -26,6 +27,15 @@ class _SiteArchivePageState extends ConsumerState<SiteArchivePage>
 
   static const _kinds = SiteReportKind.values;
 
+  static String _kindLabel(BuildContext context, SiteReportKind kind) {
+    final l10n = context.l10n;
+    return switch (kind) {
+      SiteReportKind.daily => l10n.site_report_daily,
+      SiteReportKind.weekly => l10n.site_report_weekly,
+      SiteReportKind.monthly => l10n.site_report_monthly,
+    };
+  }
+
   @override
   void initState() {
     super.initState();
@@ -37,6 +47,10 @@ class _SiteArchivePageState extends ConsumerState<SiteArchivePage>
       vsync: this,
       initialIndex: initialIndex,
     );
+    // Rebuild so the segmented control follows swipe-driven index changes.
+    _tabController.addListener(() {
+      if (mounted && !_tabController.indexIsChanging) setState(() {});
+    });
   }
 
   @override
@@ -51,13 +65,19 @@ class _SiteArchivePageState extends ConsumerState<SiteArchivePage>
     return Scaffold(
       appBar: AppBar(
         title: Text(l10n.site_archive_title),
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: [
-            Tab(text: l10n.site_report_daily),
-            Tab(text: l10n.site_report_weekly),
-            Tab(text: l10n.site_report_monthly),
-          ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(kToolbarHeight * 0.9),
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: context.spacing.md),
+            child: AdaptiveSegmentedControl<int>(
+              segments: {
+                for (final (i, kind) in _kinds.indexed)
+                  i: Text(_kindLabel(context, kind)),
+              },
+              selected: _tabController.index,
+              onChanged: (index) => _tabController.animateTo(index),
+            ),
+          ),
         ),
       ),
       body: TabBarView(
@@ -122,12 +142,14 @@ class _ArchiveEntryTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     // 生成时间：与 reportKey 同日时只显示时刻，避免日期重复
-    final generatedParts = entry.generatedAt?.split('T');
-    final generatedAt = generatedParts == null
+    final generatedDateTime = entry.generatedAt == null
         ? null
-        : (generatedParts.first == entry.reportKey && generatedParts.length > 1)
-            ? generatedParts[1].substring(0, 5)
-            : generatedParts.first;
+        : TimeFormatter.parseUtcTime(entry.generatedAt!);
+    final generatedAt = generatedDateTime == null
+        ? null
+        : TimeFormatter.formatDate(generatedDateTime) == entry.reportKey
+            ? TimeFormatter.formatTime(generatedDateTime)
+            : TimeFormatter.formatDate(generatedDateTime);
 
     return Card(
       margin: EdgeInsets.zero,

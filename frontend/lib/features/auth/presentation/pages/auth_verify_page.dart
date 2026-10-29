@@ -8,27 +8,44 @@ import 'package:sonde/core/constants/app_spacing.dart';
 import 'package:sonde/core/constants/app_text_styles.dart';
 import 'package:sonde/core/localization/app_localizations_extension.dart';
 import 'package:sonde/core/widgets/adaptive/adaptive.dart';
-import 'package:sonde/core/theme/app_colors.dart';
-import 'package:sonde/core/theme/app_theme.dart';
+import 'package:sonde/core/theme/app_opacity.dart';
 import 'package:sonde/core/widgets/app_shells.dart';
 
 // ---------------------------------------------------------------------------
 // State model
+//
+// INTERNAL-ONLY DEBUG TOOL: this page is reachable solely in debug builds
+// (release routes redirect it away). Strings are intentionally NOT localized
+// and it uses a dedicated Dio instance so it can test connectivity in
+// isolation from the app's shared client.
 // ---------------------------------------------------------------------------
 
+/// Semantic tone resolved against the active theme at render time.
+enum _VerifyTone { initial, running, success, warning, error }
+
 class _VerifyStatus {
-  const _VerifyStatus({required this.message, required this.color});
+  const _VerifyStatus({required this.message, required this.tone});
 
   final String message;
-  final Color color;
+  final _VerifyTone tone;
 
   static const initial = _VerifyStatus(
     message: 'Ready to test...',
-    color: AppColors.lightOnSurfaceMuted,
+    tone: _VerifyTone.initial,
   );
 
-  _VerifyStatus copyWith({String? message, Color? color}) =>
-      _VerifyStatus(message: message ?? this.message, color: color ?? this.color);
+  Color resolveColor(ColorScheme scheme) {
+    return switch (tone) {
+      _VerifyTone.initial => scheme.onSurfaceVariant,
+      _VerifyTone.running => scheme.primary,
+      _VerifyTone.success => scheme.tertiary,
+      _VerifyTone.warning => scheme.secondary,
+      _VerifyTone.error => scheme.error,
+    };
+  }
+
+  _VerifyStatus copyWith({String? message, _VerifyTone? tone}) =>
+      _VerifyStatus(message: message ?? this.message, tone: tone ?? this.tone);
 }
 
 // ---------------------------------------------------------------------------
@@ -54,7 +71,7 @@ class AuthVerifyNotifier extends Notifier<_VerifyStatus> {
   Future<void> testBackendHealth() async {
     state = const _VerifyStatus(
       message: 'Testing backend connectivity...',
-      color: AppColors.primary,
+      tone: _VerifyTone.running,
     );
 
     try {
@@ -65,25 +82,25 @@ class AuthVerifyNotifier extends Notifier<_VerifyStatus> {
       if (response.statusCode == 200) {
         state = _VerifyStatus(
           message: 'Backend is reachable and healthy!',
-          color: AppColors.accentWarm,
+          tone: _VerifyTone.success,
         );
       } else {
         state = _VerifyStatus(
           message: 'Backend responded with status: ${response.statusCode}',
-          color: AppColors.warning,
+          tone: _VerifyTone.warning,
         );
       }
     } on DioException catch (e) {
       state = _VerifyStatus(
         message:
             'Failed to connect: ${e.message ?? e.type.toString()}\n\nMake sure backend Docker is running on port 8000',
-        color: AppColors.error,
+        tone: _VerifyTone.error,
       );
     } catch (e) {
       state = _VerifyStatus(
         message:
             'Failed to connect: $e\n\nMake sure backend Docker is running on port 8000',
-        color: AppColors.error,
+        tone: _VerifyTone.error,
       );
     }
   }
@@ -91,7 +108,7 @@ class AuthVerifyNotifier extends Notifier<_VerifyStatus> {
   Future<void> testRegister() async {
     state = const _VerifyStatus(
       message: 'Testing registration...',
-      color: AppColors.primary,
+      tone: _VerifyTone.running,
     );
 
     try {
@@ -112,42 +129,42 @@ class AuthVerifyNotifier extends Notifier<_VerifyStatus> {
         state = _VerifyStatus(
           message:
               'Registration SUCCESS!\n\nUser: ${data['email']}\nID: ${data['id']}\n\nNow try login to get tokens.',
-          color: AppColors.accentWarm,
+          tone: _VerifyTone.success,
         );
       } else if (response.statusCode == 409) {
         state = const _VerifyStatus(
           message: 'Email already exists (this is OK for repeat tests)',
-          color: AppColors.warning,
+          tone: _VerifyTone.warning,
         );
       } else {
         state = _VerifyStatus(
           message: 'Registration failed: ${data['detail'] ?? response.data}',
-          color: AppColors.error,
+          tone: _VerifyTone.error,
         );
       }
     } on DioException catch (e) {
       if (e.response?.statusCode == 409) {
         state = const _VerifyStatus(
           message: 'Email already exists (this is OK for repeat tests)',
-          color: AppColors.warning,
+          tone: _VerifyTone.warning,
         );
       } else {
         final data = e.response?.data;
         state = _VerifyStatus(
           message:
               'Registration failed: ${data is Map ? (data['detail'] ?? data) : e.message}',
-          color: AppColors.error,
+          tone: _VerifyTone.error,
         );
       }
     } catch (e) {
-      state = _VerifyStatus(message: 'Error: $e', color: AppColors.error);
+      state = _VerifyStatus(message: 'Error: $e', tone: _VerifyTone.error);
     }
   }
 
   Future<void> testLogin() async {
     state = const _VerifyStatus(
       message: 'Testing login...',
-      color: AppColors.primary,
+      tone: _VerifyTone.running,
     );
 
     try {
@@ -168,13 +185,13 @@ class AuthVerifyNotifier extends Notifier<_VerifyStatus> {
         state = _VerifyStatus(
           message:
               'Login SUCCESS!\n\nAccess Token: ${accessToken.substring(0, 30)}...\nRefresh Token: ${refreshToken.substring(0, 30)}...\n\nTry "Get User Info" to verify token works!',
-          color: AppColors.accentWarm,
+          tone: _VerifyTone.success,
         );
       } else {
         final data = response.data;
         state = _VerifyStatus(
           message: 'Login failed: $data',
-          color: AppColors.error,
+          tone: _VerifyTone.error,
         );
       }
     } on DioException catch (e) {
@@ -182,17 +199,17 @@ class AuthVerifyNotifier extends Notifier<_VerifyStatus> {
       state = _VerifyStatus(
         message:
             'Login failed: ${data is Map ? (data['detail'] ?? data) : e.message}',
-        color: AppColors.error,
+        tone: _VerifyTone.error,
       );
     } catch (e) {
-      state = _VerifyStatus(message: 'Error: $e', color: AppColors.error);
+      state = _VerifyStatus(message: 'Error: $e', tone: _VerifyTone.error);
     }
   }
 
   Future<void> testGetUser() async {
     state = const _VerifyStatus(
       message: 'Getting user info (needs login first)...',
-      color: AppColors.primary,
+      tone: _VerifyTone.running,
     );
 
     try {
@@ -208,7 +225,7 @@ class AuthVerifyNotifier extends Notifier<_VerifyStatus> {
       if (loginResp.statusCode != 200) {
         state = const _VerifyStatus(
           message: 'Need to login first. Login failed.',
-          color: AppColors.error,
+          tone: _VerifyTone.error,
         );
         return;
       }
@@ -230,21 +247,21 @@ class AuthVerifyNotifier extends Notifier<_VerifyStatus> {
               'Username: ${userData['username']}\n'
               'Full Name: ${userData['full_name']}\n'
               'User ID: ${userData['id']}',
-          color: AppColors.accentWarm,
+          tone: _VerifyTone.success,
         );
       } else {
         state = _VerifyStatus(
           message: 'Get user failed: ${userResp.statusCode}',
-          color: AppColors.error,
+          tone: _VerifyTone.error,
         );
       }
     } on DioException catch (e) {
       state = _VerifyStatus(
         message: 'Error: ${e.message ?? e.type.toString()}',
-        color: AppColors.error,
+        tone: _VerifyTone.error,
       );
     } catch (e) {
-      state = _VerifyStatus(message: 'Error: $e', color: AppColors.error);
+      state = _VerifyStatus(message: 'Error: $e', tone: _VerifyTone.error);
     }
   }
 }
@@ -295,7 +312,7 @@ class AuthVerifyPage extends ConsumerWidget {
                       decoration: BoxDecoration(
                         color: Theme.of(context).colorScheme.surfaceContainerLow,
                         borderRadius: AppRadius.mdLgRadius,
-                        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.15)),
+                        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: AppOpacity.border)),
                       ),
                       padding: EdgeInsets.all(context.spacing.md),
                       child: Text(
@@ -303,7 +320,7 @@ class AuthVerifyPage extends ConsumerWidget {
                         style: AppTextStyles.monoStyle(
                           fontSize: Theme.of(context).textTheme.bodyMedium?.fontSize ?? 14,
                           fontWeight: FontWeight.w500,
-                          color: status.color,
+                          color: status.resolveColor(Theme.of(context).colorScheme),
                         ),
                       ),
                     ),
@@ -412,7 +429,7 @@ class _TestButton extends StatelessWidget {
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surfaceContainerLow,
         borderRadius: AppRadius.mdLgRadius,
-        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.15)),
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: AppOpacity.border)),
       ),
       child: Material(
         color: Colors.transparent,

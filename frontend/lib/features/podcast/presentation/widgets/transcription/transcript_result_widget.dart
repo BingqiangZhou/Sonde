@@ -8,6 +8,7 @@ import 'package:sonde/core/theme/app_colors.dart';
 import 'package:sonde/core/theme/app_theme.dart';
 import 'package:sonde/core/utils/time_formatter.dart';
 import 'package:sonde/features/podcast/data/models/podcast_transcription_model.dart';
+import 'package:sonde/core/theme/app_opacity.dart';
 
 /// Widget displaying the completed transcription state with stats and actions.
 class CompletedStateWidget extends StatelessWidget {
@@ -36,7 +37,7 @@ class CompletedStateWidget extends StatelessWidget {
         color: scheme.tertiary.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(ext.cardRadius),
         border: Border.all(
-          color: scheme.outlineVariant.withValues(alpha: 0.15),
+          color: scheme.outlineVariant.withValues(alpha: AppOpacity.border),
         ),
       ),
       child: Padding(
@@ -49,7 +50,7 @@ class CompletedStateWidget extends StatelessWidget {
               width: 80,
               height: 80,
               decoration: BoxDecoration(
-                color: scheme.tertiary.withValues(alpha: 0.1),
+                color: scheme.tertiary.withValues(alpha: AppOpacity.faint),
                 borderRadius: const BorderRadius.all(Radius.circular(40)),
               ),
               child: Icon(Icons.check_circle, size: 40, color: scheme.tertiary),
@@ -217,7 +218,7 @@ class FailedStateWidget extends StatelessWidget {
         color: scheme.error.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(ext.cardRadius),
         border: Border.all(
-          color: scheme.outlineVariant.withValues(alpha: 0.15),
+          color: scheme.outlineVariant.withValues(alpha: AppOpacity.border),
         ),
       ),
       child: Padding(
@@ -230,7 +231,7 @@ class FailedStateWidget extends StatelessWidget {
               width: 80,
               height: 80,
               decoration: BoxDecoration(
-                color: scheme.error.withValues(alpha: 0.1),
+                color: scheme.error.withValues(alpha: AppOpacity.faint),
                 borderRadius: const BorderRadius.all(Radius.circular(40)),
               ),
               child: Icon(Icons.error_outline, size: 40, color: scheme.error),
@@ -265,9 +266,9 @@ class FailedStateWidget extends StatelessWidget {
             Container(
               padding: EdgeInsets.all(context.spacing.smMd),
               decoration: BoxDecoration(
-                color: scheme.tertiary.withValues(alpha: 0.1),
+                color: scheme.tertiary.withValues(alpha: AppOpacity.faint),
                 borderRadius: BorderRadius.circular(ext.buttonRadius),
-                border: Border.all(color: scheme.tertiary.withValues(alpha: 0.3)),
+                border: Border.all(color: scheme.tertiary.withValues(alpha: AppOpacity.light)),
               ),
               child: Row(
                 children: [

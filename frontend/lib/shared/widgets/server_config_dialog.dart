@@ -13,6 +13,7 @@ import 'package:sonde/core/router/app_router.dart';
 import 'package:sonde/core/widgets/adaptive/adaptive.dart';
 import 'package:sonde/core/widgets/app_dialog_helper.dart';
 import 'package:sonde/core/widgets/top_floating_notice.dart';
+import 'package:sonde/core/theme/app_opacity.dart';
 
 class ServerConfigDialog extends ConsumerStatefulWidget {
   const ServerConfigDialog({super.key, this.initialUrl, this.onSave});
@@ -275,7 +276,7 @@ class _ServerConfigDialogState extends ConsumerState<ServerConfigDialog> {
       decoration: BoxDecoration(
         color: statusColor.withValues(alpha: 0.08),
         borderRadius: AppRadius.smRadius,
-        border: Border.all(color: statusColor.withValues(alpha: 0.3)),
+        border: Border.all(color: statusColor.withValues(alpha: AppOpacity.light)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

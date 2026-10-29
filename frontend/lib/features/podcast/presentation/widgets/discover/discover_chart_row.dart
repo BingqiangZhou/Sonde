@@ -6,6 +6,7 @@ import 'package:sonde/core/widgets/adaptive/adaptive.dart';
 import 'package:sonde/core/theme/app_colors.dart';
 import 'package:sonde/features/podcast/data/models/podcast_discover_chart_model.dart';
 import 'package:sonde/features/podcast/presentation/widgets/podcast_image_widget.dart';
+import 'package:sonde/core/theme/app_opacity.dart';
 
 /// Chart row widget for displaying a single discover item with rank and actions.
 ///
@@ -69,7 +70,7 @@ class DiscoverChartRow extends StatelessWidget {
         color: theme.colorScheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(extension.cardRadius),
         border: Border.all(
-          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.15),
+          color: theme.colorScheme.outlineVariant.withValues(alpha: AppOpacity.border),
         ),
       ),
       child: Material(

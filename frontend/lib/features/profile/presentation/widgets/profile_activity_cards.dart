@@ -13,6 +13,7 @@ import 'package:sonde/core/widgets/app_shells.dart';
 import 'package:sonde/features/podcast/presentation/navigation/podcast_navigation.dart';
 import 'package:sonde/features/podcast/presentation/providers/podcast_providers.dart';
 import 'package:sonde/features/podcast/presentation/widgets/shared/episode_card_utils.dart';
+import 'package:sonde/core/theme/app_opacity.dart';
 
 class ProfileActivityCards extends ConsumerWidget {
   const ProfileActivityCards({super.key});
@@ -193,7 +194,7 @@ class ProfileActivityCards extends ConsumerWidget {
                 width: context.spacing.xl,
                 height: context.spacing.xl,
                 decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.1),
+                  color: color.withValues(alpha: AppOpacity.faint),
                   borderRadius: AppRadius.mdRadius,
                 ),
                 child: Icon(icon, color: color, size: 20),

@@ -9,6 +9,7 @@ import 'package:sonde/core/widgets/adaptive/adaptive.dart';
 import 'package:sonde/core/theme/app_colors.dart';
 import 'package:sonde/features/podcast/presentation/widgets/podcast_image_widget.dart';
 import 'package:sonde/features/podcast/presentation/widgets/shared/episode_card_utils.dart';
+import 'package:sonde/core/theme/app_opacity.dart';
 
 /// Configuration for what to display in a [BaseEpisodeCard].
 class EpisodeCardConfig {
@@ -144,7 +145,7 @@ class BaseEpisodeCard extends StatelessWidget {
         color: theme.colorScheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(config.cornerRadius),
         border: Border.all(
-          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.15),
+          color: theme.colorScheme.outlineVariant.withValues(alpha: AppOpacity.border),
         ),
       ),
       child: Semantics(

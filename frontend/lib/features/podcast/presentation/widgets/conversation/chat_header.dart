@@ -10,6 +10,7 @@ import 'package:sonde/core/localization/app_localizations_extension.dart';
 import 'package:sonde/core/theme/app_colors.dart';
 import 'package:sonde/features/podcast/data/models/podcast_summary_model.dart';
 import 'package:sonde/features/podcast/presentation/providers/conversation_providers.dart';
+import 'package:sonde/core/theme/app_opacity.dart';
 
 /// Header bar for the conversation chat widget.
 ///
@@ -48,7 +49,7 @@ class ChatHeader extends ConsumerWidget {
         color: Colors.transparent,
         border: Border(
           bottom: BorderSide(
-            color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.5),
+            color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: AppOpacity.medium),
           ),
         ),
       ),

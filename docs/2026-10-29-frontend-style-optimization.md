@@ -1,7 +1,7 @@
 # 声读 Sonde 全页面风格优化方案
 
 > 日期：2026-10-29 ｜ 范围：`frontend/`（Flutter App 全部 23 个页面 + 设计系统）
-> 状态：**本文档第一部分（分析）与第二部分（本轮已实施）均已落地并通过验证**；第三部分为后续迭代路线图。
+> 状态：第一、二轮全部落地并通过验证（analyze 0 错误；测试 532 过/6 失败均为 main 既有；模拟器亮/暗回归无布局异常）。唯一遗留：register 条款/隐私链接 TODO（待产品决策）。
 
 ---
 
@@ -80,32 +80,34 @@
 
 ---
 
-## 三、后续迭代路线图（未实施，按优先级）
+## 三、第二轮：路线图全部落地（2026-10-29 同日完成）
 
-### 3.1 结构性收敛（需组件/主题抽象，改动面大）
+除「条款/隐私链接 TODO（待产品决策，暂不处理）」外，第一轮路线图 3.1/3.2 全部实施完毕。
 
-1. **"面板"组件抽取**：highlights/subscriptions/cache 三处各 ~80 行手写"面板头+Divider+底盖"结构合并为共享 `PanelSection` 组件（与 SurfacePanel 收敛）。
-2. **圆角/字号双源合并**：`AppRadius.*` 静态值与 `AppThemeExtension` 平台感知值（iOS 16/14/10）统一为单一来源；`AppTextStyles`（10/11/13/15）并入 TextTheme 槽位，消除 1px 步进。
-3. **壳层统一**：`site_reading_page` 从裸 AppBar 迁移到 ContentShell；三刊切换统一用 AdaptiveSegmentedControl（消除 SegmentedButton/TabBar/Adaptive 三套）。
-4. **auth_verify（debug 页）整改**：整页 l10n 化（或明示 internal-only 样式）；语义色直引改走 scheme；直连 Dio 收敛。
-5. **死 token 清理**：extension 的 `aiPrimary/shellGradient/lightWithGradient/darkWithGradient`、`sunGlow/sunRay/leaf`、`chart5/chart7` 断档命名；排版注释（三字体体系）与现实对齐；`monoStyle` 的 'monospace' 族处理。
-6. **alpha 档位 token 化**：114 处 `withValues(alpha:)` 收敛为 3-4 档语义 alpha token。
-7. **缓存管理页私有调色板**（`_CachePagePalette`）并入主题语义层；`_refresh` 失败静默吞掉需补错误态；滚动加载阈值统一用 `ScrollConstants`。
-8. **AdaptiveButton 平台密度对齐**：iOS outlined 边框色/内边距与 Android 主题化样式同源；`AdaptiveScaffold` iOS FAB 定位（right:16/bottom:16）spacing 化并处理 safe-area。
+### 3.1 结构性收敛（已全部实施）
 
-### 3.2 散点遗留（本轮分析发现、尚未处理的小项）
+1. ✅ **"面板"组件抽取**：新增 `PanelHeaderSliver` / `PanelBottomCapSliver`（app_shells.dart），highlights/subscriptions/cache 三处手写结构全部替换。
+2. ✅ **圆角/字号双源统一**：解除 app_radius→app_colors 反向依赖后，extension 的 card/button/navItem/item/pill 半径改为引用 `AppRadius` 常量并删除 iOS 16/14/10 分叉（统一 14/10/8）；bottomSheet 接 `sheetRadius`、checkbox 接 `AppRadius.xs`；`AppTextStyles` 尺寸对齐刻度（13→12、15→14），monoStyle 增加 fontFamilyFallback。
+3. ✅ **壳层统一**：阅读页迁 ContentShell（HeroHeader + 圆角视口 + 胶囊按钮，header 按钮用 iconOnly 密度修复 0.29px 溢出）；阅读/归档三刊切换统一 AdaptiveSegmentedControl。
+4. ✅ **auth_verify 整改**：状态色改语义 tone 枚举按 scheme 解析；文档标注 internal-only（debug 路由独占，不进 l10n、Dio 独立属有意设计）。
+5. ✅ **死 token 清理**：删除 extension 的 `aiPrimary/shellGradient/lightWithGradient/darkWithGradient/podcastGradientColors`、AppColors 的 `sunGlow/sunRay/leaf/chart5/chart7/aiBubble*/cosmicFilterActive` 与 8 个无引用的 on-surface/muted/TextTertiary 定义；chartColors 内联字面量；排版注释对齐现实（系统字体）。
+6. ✅ **alpha 档位 token 化**：新增 `AppOpacity`（faint/border/light/medium/strong），0.15/0.1/0.3/0.5/0.5/0.7 六档高频值全库替换（35 个文件）。
+7. ✅ **缓存管理页**：deepClean 色改语义 error 角色（视觉由灰变警示红，语义更正确）；`_refresh` 失败改为错误态 UI（AppEmptyState + 重试）；滚动阈值统一 `ScrollConstants.loadMoreThreshold`（highlights/subscriptions）。
+8. ✅ **AdaptiveButton 平台对齐**：iOS outlined 边框改 outlineVariant 与 Android 同源；Material 三态补默认 padding 与 iOS 密度一致；`AdaptiveScaffold` iOS FAB 定位 spacing 化 + bottom safe-area。
 
-9. **l10n 残留**：forgot 页英文兜底 `_fallback*` 常量与可空 `AppLocalizations.of` 写法；profile 头像 `'User menu'` 英文 semantics hint。
-10. **auth 视觉不一致**：login 标题 `headlineLarge` vs register 默认字号；register 字段间距 smMd vs login md；onboarding 未迁 AuthShell、图标圈 120/56 魔数。
-11. **register 条款/隐私链接 `onTap` 为空 TODO**——需产品决策（法务页面 URL）后补。
-12. **discover 页魔数**：`maxHeight<540 || screenHeight<720`、`width<600 ? 20 : 12` 阈值未用 Breakpoints/spacing；错误态把原始 error 直塞 AppEmptyState.title。
-13. **episodes 页**：筛选 Apple 自制 pill vs Android FilterChip 两套视觉；筛选对话框假 Switch 占位；`_desktopEpisodeCardHeight=160` 与 feed 的 172 两套卡高。
-14. **detail 页**：回到顶部按钮定位魔数（56/32/width*0.1）；聊天抽屉宽 420/0.94；l10n 三种取法（context.l10n / AppLocalizations.of ?? En / 可空）应统一为 context.l10n。
-15. **highlights 页**：`_isLoadingMore/_hasMore` 在 build 中赋值（实例字段状态易失真）；`delta=200` 阈值。
-16. **subscriptions 页**：空/错态 Icon(56) 自绘未用 AppEmptyState；`maxScrollExtent-200` 阈值。
-17. **archive 页**：`generatedAt.split('T')` 手工解析应换 TimeFormatter。
-18. **site_all_episodes**：`subscriptionId: item.episodeId // 占位` 隐患（跳转详情的参数冒用）。
-19. **杂项**：splash 用 spacing 当控件尺寸；appearance 页 segment 图标 size 16 魔数；`custom_adaptive_navigation` 侧栏手写 isDark surface 字面量；AuthShell 480/AppEmptyState 420/ProfileShell 120 等视口魔数未进 token；muted 文字三套近义 token 定义本身的收敛（本轮只修了使用侧）。
+### 3.2 散点遗留（除 #11 外已全部实施）
+
+9. ✅ forgot 页删除全部 `_fallback*` 常量与可空 l10n 写法，统一 `context.l10n`；profile 头像 hint 接新增 key `profile_user_menu`。
+10. ✅ login 标题改 headlineMedium 与 AuthShell 默认一致；register 字段间距 smMd→md 与 login 对齐；onboarding 图标圈 120/56 命名常量（整页翻页形态保留，不强行套 AuthShell——设计决策）。
+11. ⏸ **register 条款/隐私链接 TODO**：待产品决策，本轮不处理。
+12. ✅ discover：阈值接 `Breakpoints.medium` + spacing token；错误态改「固定标题 + error 副标题 + AdaptiveButton 重试」。
+13. ✅ episodes：删除 Apple 专用 pill，双平台统一 FilterChip；删除筛选对话框假 Switch；卡高 160/172 保留为各自布局常量（列表页与流页卡型不同，非同款卡）。
+14. ✅ detail：定位接 Breakpoints/AppSpacing；聊天抽屉宽命名常量；4 个文件 l10n 统一 `context.l10n`。
+15. ✅ highlights：`_hasMore` 字段删除，滚动守卫改读 provider；阈值接 ScrollConstants。
+16. ✅ subscriptions：空/错态改 AppEmptyState（错误态带重试）；阈值接 ScrollConstants。
+17. ✅ archive：时间解析改 TimeFormatter（formatDate/formatTime）。
+18. ✅ site_all_episodes/report_body：`goToEpisodeDetail` 的 subscriptionId 改可选，无订阅上下文时走 `episodeDetailDirect` 路由，删除 episodeId 冒充 subscriptionId 的占位。
+19. ✅ 杂项：splash 独立尺寸常量；appearance 图标常量；导航侧栏 surface 字面量改 scheme；AuthShell 480/EmptyState 420 进 extension token（`authContentMaxWidth`/`emptyStateMaxWidth`）、ProfileShell 120 命名常量；muted/TextTertiary 定义收敛删除。
 
 ---
 

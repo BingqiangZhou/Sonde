@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:sonde/core/localization/app_localizations_extension.dart';
 import 'package:sonde/features/podcast/presentation/providers/favorites_providers.dart';
 import 'package:sonde/core/constants/app_durations.dart';
 import 'package:sonde/core/constants/app_radius.dart';
@@ -121,7 +122,7 @@ class _PodcastEpisodeDetailPageState
               return;
             }
 
-            final l10n = AppLocalizations.of(context) ?? AppLocalizationsEn();
+            final l10n = context.l10n;
             if (prevData == null && nextData.isProcessing) {
               showTopFloatingNotice(
                 context,
@@ -206,7 +207,7 @@ class _PodcastEpisodeDetailPageState
               if (episodeDetail != null)
                 IconButton(
                   icon: const Icon(Icons.auto_awesome_outlined),
-                  tooltip: (AppLocalizations.of(context) ?? AppLocalizationsEn()).podcast_tab_chat,
+                  tooltip: (context.l10n).podcast_tab_chat,
                   onPressed: _openChatDrawer,
                 ),
             ],
@@ -219,7 +220,7 @@ class _PodcastEpisodeDetailPageState
             data: (episodeDetail) {
               if (episodeDetail == null) {
                 final l10n =
-                    AppLocalizations.of(context) ?? AppLocalizationsEn();
+                    context.l10n;
                 return _buildErrorState(
                   context,
                   l10n.podcast_episode_not_found,
@@ -286,11 +287,14 @@ class _PodcastEpisodeDetailPageState
 
   Widget _buildScrollToTopButton() {
     final screenSize = MediaQuery.sizeOf(context);
-    final isMobile = screenSize.width < 600;
+    final isMobile = screenSize.width < Breakpoints.medium;
 
-    final rightMargin = isMobile ? 32.0 : (screenSize.width * 0.1);
+    // Mobile: float near the corner; desktop: align with the 10% gutters.
+    final rightMargin =
+        isMobile ? AppSpacing.lgXs : (screenSize.width * 0.1);
     final bottomMargin =
-        (isMobile ? (screenSize.height * 0.1) : 32.0) + _scrollToTopFixedLift;
+        (isMobile ? (screenSize.height * 0.1) : AppSpacing.lgXs) +
+            _scrollToTopFixedLift;
 
     return Padding(
       key: const Key('podcast_episode_detail_scroll_to_top_button'),

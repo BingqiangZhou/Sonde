@@ -11,6 +11,7 @@ import 'package:sonde/core/widgets/adaptive/adaptive.dart';
 import 'package:sonde/core/widgets/adaptive_sheet_helper.dart';
 import 'package:sonde/features/podcast/data/models/podcast_highlight_model.dart';
 import 'package:sonde/features/podcast/presentation/widgets/highlight_score_indicator.dart';
+import 'package:sonde/core/theme/app_opacity.dart';
 
 /// Shows highlight details in an adaptive bottom sheet/dialog
 Future<void> showHighlightDetailSheet({
@@ -130,7 +131,7 @@ class _HighlightDetailContent extends StatelessWidget {
       width: double.infinity,
       padding: EdgeInsets.all(context.spacing.smMd),
       decoration: BoxDecoration(
-        color: scheme.primaryContainer.withValues(alpha: 0.15),
+        color: scheme.primaryContainer.withValues(alpha: AppOpacity.border),
         borderRadius: AppRadius.lgRadius,
         border: Border.all(
           color: scheme.primary.withValues(alpha: 0.2),
@@ -142,7 +143,7 @@ class _HighlightDetailContent extends StatelessWidget {
           Icon(
             Icons.format_quote,
             size: 20,
-            color: scheme.primary.withValues(alpha: 0.7),
+            color: scheme.primary.withValues(alpha: AppOpacity.strong),
           ),
           SizedBox(width: context.spacing.smMd),
           Expanded(
@@ -177,7 +178,7 @@ class _HighlightDetailContent extends StatelessWidget {
         color: scoreColor.withValues(alpha: 0.12),
         borderRadius: AppRadius.xlRadius,
         border: Border.all(
-          color: scoreColor.withValues(alpha: 0.3),
+          color: scoreColor.withValues(alpha: AppOpacity.light),
         ),
       ),
       child: Row(
@@ -385,7 +386,7 @@ class _HighlightListItem extends StatelessWidget {
           color: scheme.surfaceContainerLow,
           borderRadius: AppRadius.mdLgRadius,
           border: Border.all(
-            color: scheme.outlineVariant.withValues(alpha: 0.15),
+            color: scheme.outlineVariant.withValues(alpha: AppOpacity.border),
           ),
         ),
         child: AdaptiveInkWell(

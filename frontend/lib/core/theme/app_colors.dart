@@ -1,6 +1,7 @@
 import 'dart:ui' show lerpDouble;
 
 import 'package:flutter/material.dart';
+import 'package:sonde/core/constants/app_radius.dart';
 import 'package:sonde/core/constants/app_spacing.dart';
 
 /// ============================================================
@@ -23,14 +24,9 @@ class AppColors {
   static const Color lightBackground = Color(0xFFF8F9FA);
   static const Color lightSurface = Color(0xFFFFFFFF);
   static const Color lightSurfaceVariant = Color(0xFFF2F2F7);
-  static const Color lightOnBackground = Color(0xFF1a1a2e);
-  static const Color lightOnSurface = Color(0x991a1a2e); // rgba 0.6
-  static const Color lightOnSurfaceMuted = Color(0x8C1a1a2e); // rgba 0.55
-
   // Text Colors - 文字色系 (Apple HIG label colors)
   static const Color lightTextPrimary = Color(0xFF000000);
   static const Color lightTextSecondary = Color(0xFF3C3C43);
-  static const Color lightTextTertiary = Color(0xFF3C3C43);
 
   // Outline Colors - 边框色系 (Apple HIG systemGray colors)
   static const Color lightOutline = Color(0xFFC7C7CC);
@@ -45,15 +41,11 @@ class AppColors {
   // Background Colors - 背景色系
   static const Color darkBackground = Color(0xFF0f0f1a);
   static const Color darkSurface = Color(0xFF1a1a2e);
-  static const Color darkOnBackground = Color(0xE6FFFFFF); // rgba 0.9
-  static const Color darkOnSurface = Color(0x80FFFFFF); // rgba 0.5
-  static const Color darkOnSurfaceMuted = Color(0x80FFFFFF); // rgba 0.50
   static const Color darkBorder = Color(0x0FFFFFFF); // rgba 0.06
 
   // Text Colors - 文字色系 (Apple HIG label colors)
   static const Color darkTextPrimary = Color(0xFFFFFFFF);
   static const Color darkTextSecondary = Color(0xFFEBEBF5);
-  static const Color darkTextTertiary = Color(0xFFEBEBF5);
 
   // Outline Colors - 边框色系 (Apple HIG systemGray colors)
   static const Color darkOutline = Color(0xFF48484A);
@@ -78,13 +70,6 @@ class AppColors {
   static const Color warmYellowSurface = Color(0xFFFEF3C7);
   static const Color warmPinkSurface = Color(0xFFFCE7F3);
 
-  // AI-specific accent tokens - using Apple system colors
-  static const Color aiBubbleUser = Color(0xFFFFCC00); // systemYellow light
-  static const Color aiBubbleAssistant = Color(0xFFFF2D55); // systemPink light
-  static const Color aiChipBackground = Color(0xFFFF9500); // systemOrange light
-  static const Color aiHighlightSurface = Color(0xFFFFF4D6); // light yellow surface
-  static const Color cosmicFilterActive = Color(0xFFFF9500); // systemOrange light
-
   // Tertiary - System Green (Apple HIG)
   static const Color tertiary = Color(0xFF34C759); // systemGreen light
   static const Color tertiaryLight = Color(0xFF30D158); // systemGreen dark
@@ -103,11 +88,6 @@ class AppColors {
   /// Star/favorite tint (Apple systemYellow). Use for collection stars.
   static const Color favorite = Color(0xFFFFCC00); // systemYellow light
   static const Color favoriteDark = Color(0xFFFFD60A); // systemYellow dark
-
-  // Legacy named colors
-  static const Color sunGlow = Color(0xFFFFCC00); // systemYellow light
-  static const Color sunRay = Color(0xFFFF3B30); // systemRed light
-  static const Color leaf = Color(0xFF34C759); // systemGreen light
 
   // ============================================================
   // GRADIENT PALETTE - 渐变色板 (Arc-style accents)
@@ -134,17 +114,15 @@ class AppColors {
   /// Using Apple HIG system tint colors
   // ============================================================
 
-  static const Color chart5 = Color(0xFFAF52DE); // systemPurple
-  static const Color chart7 = Color(0xFF5AC8FA); // systemTeal
 
   static const List<Color> chartColors = [
     Color(0xFF5856D6), // systemIndigo
     Color(0xFF5E5CE6), // systemIndigo dark
     Color(0xFF34C759), // systemGreen
     Color(0xFFFF9500), // systemOrange
-    chart5,
+    Color(0xFFAF52DE), // systemPurple
     Color(0xFFFF2D55), // systemPink
-    chart7,
+    Color(0xFF5AC8FA), // systemTeal
     Color(0xFF30D158), // systemGreen dark
   ];
 }
@@ -158,6 +136,8 @@ class AppColors {
 class AppThemeExtension extends ThemeExtension<AppThemeExtension> {
   const AppThemeExtension({
     required this.contentMaxWidth,
+    required this.authContentMaxWidth,
+    required this.emptyStateMaxWidth,
     required this.sectionGap,
     required this.cardRadius,
     required this.buttonRadius,
@@ -178,13 +158,12 @@ class AppThemeExtension extends ThemeExtension<AppThemeExtension> {
     required this.shadowMd,
     required this.shadowLg,
     required this.chartColors,
-    required this.aiPrimary, // Legacy AI accent token (kept for compatibility)
-    required this.podcastGradientColors, // Legacy properties for backwards compatibility (non-nullable with defaults)
-    this.shellGradient,
   });
 
   // Layout
   final double contentMaxWidth;
+  final double authContentMaxWidth;
+  final double emptyStateMaxWidth;
   final double sectionGap;
   final double cardRadius;
   final double buttonRadius;
@@ -212,14 +191,11 @@ class AppThemeExtension extends ThemeExtension<AppThemeExtension> {
   // Data Visualization
   final List<Color> chartColors;
 
-  // Legacy properties for backwards compatibility
-  final Gradient? shellGradient;
-  final Color aiPrimary; // Legacy AI accent token (kept for compatibility)
-  final List<List<Color>> podcastGradientColors;
-
   @override
   AppThemeExtension copyWith({
     double? contentMaxWidth,
+    double? authContentMaxWidth,
+    double? emptyStateMaxWidth,
     double? sectionGap,
     double? cardRadius,
     double? buttonRadius,
@@ -240,12 +216,11 @@ class AppThemeExtension extends ThemeExtension<AppThemeExtension> {
     BoxShadow? shadowMd,
     BoxShadow? shadowLg,
     List<Color>? chartColors,
-    Gradient? shellGradient,
-    Color? aiPrimary,
-    List<List<Color>>? podcastGradientColors,
   }) {
     return AppThemeExtension(
       contentMaxWidth: contentMaxWidth ?? this.contentMaxWidth,
+      authContentMaxWidth: authContentMaxWidth ?? this.authContentMaxWidth,
+      emptyStateMaxWidth: emptyStateMaxWidth ?? this.emptyStateMaxWidth,
       sectionGap: sectionGap ?? this.sectionGap,
       cardRadius: cardRadius ?? this.cardRadius,
       buttonRadius: buttonRadius ?? this.buttonRadius,
@@ -266,10 +241,6 @@ class AppThemeExtension extends ThemeExtension<AppThemeExtension> {
       shadowMd: shadowMd ?? this.shadowMd,
       shadowLg: shadowLg ?? this.shadowLg,
       chartColors: chartColors ?? this.chartColors,
-      shellGradient: shellGradient ?? this.shellGradient,
-      aiPrimary: aiPrimary ?? this.aiPrimary,
-      podcastGradientColors:
-          podcastGradientColors ?? this.podcastGradientColors,
     );
   }
 
@@ -284,6 +255,10 @@ class AppThemeExtension extends ThemeExtension<AppThemeExtension> {
 
     return AppThemeExtension(
       contentMaxWidth: lerpDouble(contentMaxWidth, other.contentMaxWidth, t)!,
+      authContentMaxWidth: lerpDouble(
+          authContentMaxWidth, other.authContentMaxWidth, t)!,
+      emptyStateMaxWidth: lerpDouble(
+          emptyStateMaxWidth, other.emptyStateMaxWidth, t)!,
       sectionGap: lerpDouble(sectionGap, other.sectionGap, t)!,
       cardRadius: lerpDouble(cardRadius, other.cardRadius, t)!,
       buttonRadius: lerpDouble(buttonRadius, other.buttonRadius, t)!,
@@ -304,21 +279,21 @@ class AppThemeExtension extends ThemeExtension<AppThemeExtension> {
       shadowMd: BoxShadow.lerp(shadowMd, other.shadowMd, t)!,
       shadowLg: BoxShadow.lerp(shadowLg, other.shadowLg, t)!,
       chartColors: other.chartColors,
-      aiPrimary: Color.lerp(aiPrimary, other.aiPrimary, t)!,
-      podcastGradientColors: other.podcastGradientColors,
     );
   }
 
   /// Light theme extension (const base)
   static const light = AppThemeExtension(
     contentMaxWidth: 1240,
+    authContentMaxWidth: 480,
+    emptyStateMaxWidth: 420,
     sectionGap: 24,
-    cardRadius: 14,
-    buttonRadius: 10,
-    navItemRadius: 10,
-    itemRadius: 8,
+    cardRadius: AppRadius.cardValue,
+    buttonRadius: AppRadius.buttonValue,
+    navItemRadius: AppRadius.buttonValue,
+    itemRadius: AppRadius.itemValue,
     sheetRadius: 20,
-    pillRadius: 999,
+    pillRadius: AppRadius.pill,
     dialogRadius: 24,
     inputFillAlpha: 0.6,
     listTileHorizontalPadding: AppSpacing.md,
@@ -348,13 +323,13 @@ class AppThemeExtension extends ThemeExtension<AppThemeExtension> {
       offset: Offset(0, 8),
     ),
     chartColors: AppColors.chartColors,
-    aiPrimary: Color(0xFF5856D6),
-    podcastGradientColors: AppColors.podcastGradientColors,
   );
 
   /// Dark theme extension (const base)
   static const dark = AppThemeExtension(
     contentMaxWidth: 1240,
+    authContentMaxWidth: 480,
+    emptyStateMaxWidth: 420,
     sectionGap: 24,
     cardRadius: 14,
     buttonRadius: 10,
@@ -391,18 +366,11 @@ class AppThemeExtension extends ThemeExtension<AppThemeExtension> {
       offset: Offset(0, 8),
     ),
     chartColors: AppColors.chartColors,
-    aiPrimary: Color(0xFFA5B4FC),
-    podcastGradientColors: AppColors.podcastGradientColors,
   );
 
-  /// Light theme extension for iOS (larger radii, no Material shadows).
+  /// Light theme extension for iOS (form-only deltas; radii stay unified).
   /// Derived from [light] via copyWith.
   static AppThemeExtension lightIOS() => light.copyWith(
-    cardRadius: 16,
-    buttonRadius: 14,
-    navItemRadius: 12,
-    itemRadius: 10,
-    dialogRadius: 16,
     inputFillAlpha: 0.4,
     listTileHorizontalPadding: AppSpacing.mdLg,
     listTileVerticalPadding: AppSpacing.xs,
@@ -414,14 +382,9 @@ class AppThemeExtension extends ThemeExtension<AppThemeExtension> {
     shadowLg: const BoxShadow(color: Color(0x00000000)),
   );
 
-  /// Dark theme extension for iOS (larger radii, no Material shadows).
+  /// Dark theme extension for iOS (form-only deltas; radii stay unified).
   /// Derived from [dark] via copyWith.
   static AppThemeExtension darkIOS() => dark.copyWith(
-    cardRadius: 16,
-    buttonRadius: 14,
-    navItemRadius: 12,
-    itemRadius: 10,
-    dialogRadius: 16,
     inputFillAlpha: 0.4,
     listTileHorizontalPadding: AppSpacing.mdLg,
     listTileVerticalPadding: AppSpacing.xs,
@@ -433,23 +396,6 @@ class AppThemeExtension extends ThemeExtension<AppThemeExtension> {
     shadowLg: const BoxShadow(color: Color(0x00000000)),
   );
 
-  /// Light theme with gradient (non-const, for runtime use)
-  static AppThemeExtension get lightWithGradient => light.copyWith(
-    shellGradient: const LinearGradient(
-      colors: [Color(0xFFF2F2F7), Color(0xFFFFFFFF)],
-      begin: Alignment.topCenter,
-      end: Alignment.bottomCenter,
-    ),
-  );
-
-  /// Dark theme with gradient (non-const, for runtime use)
-  static AppThemeExtension get darkWithGradient => dark.copyWith(
-    shellGradient: const LinearGradient(
-      colors: [Color(0xFF000000), Color(0xFF1C1C1E)],
-      begin: Alignment.topCenter,
-      end: Alignment.bottomCenter,
-    ),
-  );
 }
 
 /// Get the App theme extension from context

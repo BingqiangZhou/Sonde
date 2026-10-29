@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:sonde/core/constants/app_spacing.dart';
 import 'package:sonde/core/platform/platform_helper.dart';
 import 'package:sonde/core/theme/app_colors.dart';
+import 'package:sonde/core/theme/app_opacity.dart';
 
 /// Adaptive text field.
 ///
@@ -103,7 +104,7 @@ class _AdaptiveTextFieldState extends State<AdaptiveTextField> {
         suffix: widget.suffix,
         padding: EdgeInsets.all(context.spacing.smMd),
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+          color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: AppOpacity.medium),
           borderRadius: BorderRadius.circular(appThemeOf(context).buttonRadius),
         ),
       );

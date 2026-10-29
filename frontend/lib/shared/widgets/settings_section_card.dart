@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sonde/core/constants/app_radius.dart';
 import 'package:sonde/core/constants/app_spacing.dart';
+import 'package:sonde/core/theme/app_opacity.dart';
 
 class SettingsSectionCard extends StatelessWidget {
   const SettingsSectionCard({
@@ -39,7 +40,7 @@ class SettingsSectionCard extends StatelessWidget {
               color: theme.colorScheme.surfaceContainerLow,
               borderRadius: AppRadius.mdLgRadius,
               border: Border.all(
-                color: theme.colorScheme.outlineVariant.withValues(alpha: 0.15),
+                color: theme.colorScheme.outlineVariant.withValues(alpha: AppOpacity.border),
               ),
             ),
             child: Column(children: children),

@@ -16,6 +16,7 @@ import 'package:sonde/core/theme/app_colors.dart';
 import 'package:sonde/core/theme/app_theme.dart';
 import 'package:sonde/features/podcast/presentation/constants/podcast_ui_constants.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sonde/core/theme/app_opacity.dart';
 
 const Duration _kBottomAccessoryPaddingTransition = AppDurations.navigationTransition;
 
@@ -470,7 +471,7 @@ class _CustomAdaptiveNavigationState extends ConsumerState<CustomAdaptiveNavigat
               icon,
               size: 13,
               color: isDark
-                  ? Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.3)
+                  ? Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: AppOpacity.light)
                   : Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.25),
             ),
           ),
@@ -1152,7 +1153,7 @@ class _CleanSidebar extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? AppColors.darkSurface : AppColors.lightSurfaceVariant,
+        color: Theme.of(context).colorScheme.surfaceContainerLow,
         borderRadius: expanded
             ? const BorderRadiusDirectional.horizontal(end: Radius.circular(AppRadius.lg))
             : AppRadius.lgXlRadius,
@@ -1221,7 +1222,7 @@ class _CleanDock extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final surfaceColor = isDark ? AppColors.darkSurface : AppColors.lightSurface;
+    final surfaceColor = Theme.of(context).colorScheme.surface;
     return SizedBox(
       width: width,
       child: ClipRRect(

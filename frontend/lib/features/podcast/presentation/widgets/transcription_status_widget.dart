@@ -12,6 +12,7 @@ import 'package:sonde/features/podcast/data/models/podcast_transcription_model.d
 import 'package:sonde/features/podcast/presentation/providers/conversation_providers.dart';
 import 'package:sonde/features/podcast/presentation/widgets/transcription/transcript_result_widget.dart';
 import 'package:sonde/features/podcast/presentation/widgets/transcription/transcription_progress_widget.dart';
+import 'package:sonde/core/theme/app_opacity.dart';
 
 class TranscriptionStatusWidget extends ConsumerWidget {
 
@@ -65,7 +66,7 @@ class TranscriptionStatusWidget extends ConsumerWidget {
         color: scheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(ext.cardRadius),
         border: Border.all(
-          color: scheme.outlineVariant.withValues(alpha: 0.15),
+          color: scheme.outlineVariant.withValues(alpha: AppOpacity.border),
         ),
       ),
       child: Padding(

@@ -2058,4 +2058,7 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get common_not_published =>
       'This issue hasn\'t been published yet. Check back later.';
+
+  @override
+  String get profile_user_menu => 'User menu';
 }

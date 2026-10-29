@@ -128,7 +128,7 @@ class PodcastNavigation {
   static void goToEpisodeDetail(
     BuildContext context, {
     required int episodeId,
-    required int subscriptionId,
+    int? subscriptionId,
     String? episodeTitle,
   }) {
     final routingContext = _resolveRoutingContext(context);
@@ -138,12 +138,22 @@ class PodcastNavigation {
     final query = episodeTitle != null
         ? {'title': episodeTitle}
         : <String, dynamic>{};
+    if (subscriptionId != null) {
+      GoRouter.of(routingContext).pushNamed(
+        'episodeDetail',
+        pathParameters: {
+          'subscriptionId': subscriptionId.toString(),
+          'episodeId': episodeId.toString(),
+        },
+        queryParameters: query,
+      );
+      return;
+    }
+    // Detail loads by episodeId; subscriptionId is only needed for the
+    // subscription-scoped route variant.
     GoRouter.of(routingContext).pushNamed(
-      'episodeDetail',
-      pathParameters: {
-        'subscriptionId': subscriptionId.toString(),
-        'episodeId': episodeId.toString(),
-      },
+      'episodeDetailDirect',
+      pathParameters: {'episodeId': episodeId.toString()},
       queryParameters: query,
     );
   }

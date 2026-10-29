@@ -12,6 +12,7 @@ import 'package:sonde/core/platform/platform_helper.dart';
 import 'package:sonde/core/theme/app_colors.dart';
 import 'package:sonde/core/widgets/adaptive/adaptive.dart';
 import 'package:sonde/features/auth/presentation/providers/onboarding_provider.dart';
+import 'package:sonde/core/theme/app_opacity.dart';
 
 class OnboardingPage extends ConsumerStatefulWidget {
   const OnboardingPage({super.key});
@@ -91,7 +92,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                     _OnboardingScreen(
                       icon: Icons.podcasts_rounded,
                       iconBackgroundColor: isDark
-                          ? AppColors.primary.withValues(alpha: 0.15)
+                          ? AppColors.primary.withValues(alpha: AppOpacity.border)
                           : AppColors.primaryContainer,
                       iconColor: isDark
                           ? AppColors.primaryLight
@@ -103,7 +104,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                     _OnboardingScreen(
                       icon: Icons.auto_awesome_rounded,
                       iconBackgroundColor: isDark
-                          ? AppColors.accentWarmDark.withValues(alpha: 0.15)
+                          ? AppColors.accentWarmDark.withValues(alpha: AppOpacity.border)
                           : AppColors.warmYellowSurface,
                       iconColor: isDark
                           ? AppColors.accentWarmDark
@@ -114,7 +115,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                     _OnboardingScreen(
                       icon: Icons.chat_bubble_rounded,
                       iconBackgroundColor: isDark
-                          ? AppColors.accentCoralLight.withValues(alpha: 0.15)
+                          ? AppColors.accentCoralLight.withValues(alpha: AppOpacity.border)
                           : AppColors.warmPinkSurface,
                       iconColor: isDark
                           ? AppColors.accentCoralLight
@@ -181,6 +182,9 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
 
 /// A single onboarding screen with an icon, title, optional subtitle, and body.
 class _OnboardingScreen extends StatelessWidget {
+  static const double _kOnboardingIconCircle = 120;
+  static const double _kOnboardingIconSize = 56;
+
   const _OnboardingScreen({
     required this.icon,
     required this.iconBackgroundColor,
@@ -207,17 +211,18 @@ class _OnboardingScreen extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // Icon
+          // Icon — full-bleed intro art, intentionally larger than standard
+          // circular avatars; kept as named constants for clarity.
           Container(
-            width: 120,
-            height: 120,
+            width: _kOnboardingIconCircle,
+            height: _kOnboardingIconCircle,
             decoration: BoxDecoration(
               color: iconBackgroundColor,
               shape: BoxShape.circle,
             ),
             child: Icon(
               icon,
-              size: 56,
+              size: _kOnboardingIconSize,
               color: iconColor,
             ),
           ),

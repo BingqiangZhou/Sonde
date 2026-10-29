@@ -24,6 +24,7 @@ import 'package:sonde/features/podcast/presentation/providers/conversation_provi
 import 'package:sonde/features/podcast/presentation/widgets/highlight_card.dart';
 import 'package:sonde/features/podcast/presentation/widgets/highlight_detail_sheet.dart';
 import 'package:sonde/core/widgets/app_shells.dart';
+import 'package:sonde/core/theme/app_opacity.dart';
 
 /// View mode for transcript display
 enum TranscriptViewMode { highlights, fullTranscript }
@@ -246,7 +247,7 @@ class TranscriptDisplayWidgetState
         color: scheme.primaryContainer.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(extension.itemRadius),
         border: Border.all(
-          color: scheme.primary.withValues(alpha: 0.3),
+          color: scheme.primary.withValues(alpha: AppOpacity.light),
         ),
       ),
       child: Row(
@@ -509,7 +510,7 @@ class TranscriptDisplayWidgetState
           Icon(
             Icons.auto_awesome_outlined,
             size: 64,
-            color: scheme.onSurfaceVariant.withValues(alpha: 0.5),
+            color: scheme.onSurfaceVariant.withValues(alpha: AppOpacity.medium),
           ),
           SizedBox(height: context.spacing.md),
           Text(
@@ -970,10 +971,10 @@ class _FormattedTranscriptWidgetState
                       vertical: context.spacing.xs,
                     ),
                     decoration: BoxDecoration(
-                      color: scheme.primary.withValues(alpha: 0.1),
+                      color: scheme.primary.withValues(alpha: AppOpacity.faint),
                       borderRadius: AppRadius.xsRadius,
                       border: Border.all(
-                        color: scheme.primary.withValues(alpha: 0.3),
+                        color: scheme.primary.withValues(alpha: AppOpacity.light),
                       ),
                     ),
                     child: Text(

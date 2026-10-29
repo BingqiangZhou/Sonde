@@ -154,7 +154,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
               Flexible(
                 child: Text(
                   l10n.auth_welcome_back,
-                  style: Theme.of(context).textTheme.headlineLarge,
+                  style: Theme.of(context).textTheme.headlineMedium,
                   overflow: TextOverflow.ellipsis,
                 ),
               ),

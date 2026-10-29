@@ -1,14 +1,20 @@
 import 'package:flutter/material.dart';
 
-/// Named text style helpers for sizes not covered by standard TextTheme slots.
+/// Named text style helpers filling gaps between standard TextTheme slots.
 ///
-/// These are pure functions with no theme dependency.
+/// Sizes deliberately stay on the app's type scale (11 / 12 / 14 / 16 —
+/// matching labelSmall / bodySmall / bodyMedium / bodyLarge) instead of
+/// introducing 1px off-scale steps. These are pure functions with no theme
+/// dependency.
 class AppTextStyles {
   AppTextStyles._();
 
   /// Monospace style for code, timestamps, and data.
+  ///
+  /// Uses the platform monospace fallback chain; no bundled family is
+  /// guaranteed on Android/iOS/desktop.
   static TextStyle monoStyle({
-    double fontSize = 13,
+    double fontSize = 12,
     FontWeight fontWeight = FontWeight.w400,
     double height = 1.5,
     Color? color,
@@ -19,22 +25,23 @@ class AppTextStyles {
       height: height,
       letterSpacing: 0,
       fontFamily: 'monospace',
+      fontFamilyFallback: <String>['RobotoMono', 'Menlo', 'Consolas'],
       color: color,
     );
   }
 
-  /// Transcript body text (fontSize: 15, height: 1.6).
+  /// Transcript body text (fontSize: 14, height: 1.6).
   static TextStyle transcriptBody([Color? color]) => TextStyle(
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: FontWeight.w400,
     height: 1.6,
     letterSpacing: 0,
     color: color,
   );
 
-  /// Caption text (fontSize: 13, height: 1.4).
+  /// Caption text (fontSize: 12, height: 1.4).
   static TextStyle caption([Color? color]) => TextStyle(
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: FontWeight.w400,
     height: 1.4,
     letterSpacing: 0.1,

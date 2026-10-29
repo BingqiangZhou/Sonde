@@ -8,6 +8,7 @@ import 'package:sonde/core/platform/platform_helper.dart';
 import 'package:sonde/core/theme/app_colors.dart';
 import 'package:sonde/core/widgets/adaptive/adaptive.dart';
 import 'package:sonde/core/widgets/custom_adaptive_navigation.dart';
+import 'package:sonde/core/theme/app_opacity.dart';
 
 /// StatusBadge - 状态徽章
 class StatusBadge extends StatelessWidget {
@@ -28,7 +29,7 @@ class StatusBadge extends StatelessWidget {
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: context.spacing.smMd, vertical: context.spacing.xsSm),
         decoration: BoxDecoration(
-          color: resolvedColor.withValues(alpha: 0.1),
+          color: resolvedColor.withValues(alpha: AppOpacity.faint),
           borderRadius: AppRadius.smRadius,
           border: Border.all(color: resolvedColor.withValues(alpha: 0.2)),
         ),
@@ -338,7 +339,7 @@ class _SurfacePanelState extends State<SurfacePanel> {
         borderRadius: BorderRadius.circular(radius),
         border: widget.showBorder
             ? Border.all(
-                color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.15),
+                color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: AppOpacity.border),
               )
             : null,
         boxShadow: widget.showShadow
@@ -611,7 +612,9 @@ class AppEmptyState extends StatelessWidget {
       child: SurfacePanel(
         padding: EdgeInsets.all(context.spacing.xxl),
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 420),
+          constraints: BoxConstraints(
+            maxWidth: appThemeOf(context).emptyStateMaxWidth,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -619,7 +622,7 @@ class AppEmptyState extends StatelessWidget {
                 width: 80,
                 height: 80,
                 decoration: BoxDecoration(
-                  color: scheme.primary.withValues(alpha: 0.1),
+                  color: scheme.primary.withValues(alpha: AppOpacity.faint),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(icon, size: 36, color: scheme.primary),
@@ -753,8 +756,10 @@ class ProfileShell extends StatelessWidget {
             child: child,
           ),
         ),
+        // Bottom clearance so iOS tab-bar pages can overscroll past the
+        // floating dock; intentionally generous (no smaller token maps to it).
         const SliverPadding(
-          padding: EdgeInsets.only(bottom: 120),
+          padding: EdgeInsets.only(bottom: _profileShellBottomClearance),
         ),
       ];
 
@@ -871,7 +876,9 @@ class AuthShell extends StatelessWidget {
                 vertical: context.spacing.lg,
               ),
               child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 480),
+                constraints: BoxConstraints(
+                  maxWidth: appThemeOf(context).authContentMaxWidth,
+                ),
                 child: Column(
                   children: [
                     if (header != null) ...[
@@ -919,3 +926,94 @@ class AuthShell extends StatelessWidget {
   }
 }
 
+/// Sliver header for scrollable list panels (highlights / subscriptions /
+/// cache pages): rounded top, hairline border, section header and divider.
+/// Pair with [PanelBottomCapSliver] at the end of the sliver list.
+class PanelHeaderSliver extends StatelessWidget {
+  const PanelHeaderSliver({
+    required this.title,
+    super.key,
+    this.subtitle,
+    this.hideTitle = false,
+    this.headerPadding,
+  });
+
+  final String title;
+  final String? subtitle;
+  final bool hideTitle;
+  final EdgeInsetsGeometry? headerPadding;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final tokens = appThemeOf(context);
+    return SliverToBoxAdapter(
+      child: Container(
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surfaceContainerLow,
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(tokens.cardRadius),
+            topRight: Radius.circular(tokens.cardRadius),
+          ),
+          border: Border.all(
+            color: theme.colorScheme.outlineVariant
+                .withValues(alpha: AppOpacity.border),
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: headerPadding ??
+                  EdgeInsets.fromLTRB(
+                    context.spacing.mdLg,
+                    context.spacing.mdLg,
+                    context.spacing.mdLg,
+                    context.spacing.smMd,
+                  ),
+              child: AppSectionHeader(
+                title: title,
+                subtitle: subtitle,
+                hideTitle: hideTitle,
+              ),
+            ),
+            Divider(
+              height: 1,
+              color: theme.colorScheme.outlineVariant.withValues(alpha: 0.45),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Closing sliver cap for panels opened by [PanelHeaderSliver].
+class PanelBottomCapSliver extends StatelessWidget {
+  const PanelBottomCapSliver({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final tokens = appThemeOf(context);
+    return SliverToBoxAdapter(
+      child: Container(
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surfaceContainerLow,
+          borderRadius: BorderRadius.only(
+            bottomLeft: Radius.circular(tokens.cardRadius),
+            bottomRight: Radius.circular(tokens.cardRadius),
+          ),
+          border: Border.all(
+            color: theme.colorScheme.outlineVariant
+                .withValues(alpha: AppOpacity.border),
+          ),
+        ),
+        height: context.spacing.smMd,
+      ),
+    );
+  }
+}
+
+/// Overscroll clearance below ProfileShell content on iOS.
+const double _profileShellBottomClearance = 120;

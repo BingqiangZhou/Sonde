@@ -5,6 +5,7 @@ import 'package:sonde/core/theme/app_colors.dart';
 import 'package:sonde/features/podcast/presentation/widgets/shared/base_episode_card.dart' show BaseEpisodeCard;
 
 import 'package:sonde/shared/widgets/loading_widget.dart';
+import 'package:sonde/core/theme/app_opacity.dart';
 
 /// A single shimmer rectangle with rounded corners.
 class SkeletonBox extends StatelessWidget {
@@ -211,7 +212,7 @@ class DiscoverChartRowSkeleton extends StatelessWidget {
           color: theme.colorScheme.surfaceContainerLow,
           borderRadius: BorderRadius.circular(extension.cardRadius),
           border: Border.all(
-            color: theme.colorScheme.outlineVariant.withValues(alpha: 0.15),
+            color: theme.colorScheme.outlineVariant.withValues(alpha: AppOpacity.border),
           ),
         ),
         child: Padding(

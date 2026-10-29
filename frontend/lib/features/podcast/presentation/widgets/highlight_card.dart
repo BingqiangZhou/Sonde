@@ -10,6 +10,7 @@ import 'package:sonde/core/theme/app_colors.dart';
 import 'package:sonde/core/theme/app_theme.dart';
 import 'package:sonde/features/podcast/data/models/podcast_highlight_model.dart';
 import 'package:sonde/features/podcast/presentation/widgets/highlight_score_indicator.dart';
+import 'package:sonde/core/theme/app_opacity.dart';
 
 /// Card widget for displaying a podcast highlight.
 ///
@@ -43,7 +44,7 @@ class HighlightCard extends ConsumerWidget {
             color: theme.colorScheme.surfaceContainerLow,
             borderRadius: AppRadius.xxlCardRadius,
             border: Border.all(
-              color: theme.colorScheme.outlineVariant.withValues(alpha: 0.15),
+              color: theme.colorScheme.outlineVariant.withValues(alpha: AppOpacity.border),
             ),
           ),
           padding: EdgeInsets.fromLTRB(
@@ -143,7 +144,7 @@ class HighlightCard extends ConsumerWidget {
           tapTargetSize: MaterialTapTargetSize.padded,
           padding: EdgeInsets.zero,
           foregroundColor: isFavorited
-              ? AppColors.sunRay
+              ? theme.colorScheme.error
               : theme.colorScheme.onSurfaceVariant,
         ),
       ),
@@ -156,10 +157,10 @@ class HighlightCard extends ConsumerWidget {
       child: Container(
         padding: EdgeInsets.all(context.spacing.smMd),
         decoration: BoxDecoration(
-          color: theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
+          color: theme.colorScheme.primaryContainer.withValues(alpha: AppOpacity.light),
           borderRadius: AppRadius.lgRadius,
           border: Border.all(
-            color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
+            color: theme.colorScheme.outlineVariant.withValues(alpha: AppOpacity.light),
           ),
         ),
         child: Column(
@@ -264,7 +265,7 @@ class HighlightCard extends ConsumerWidget {
             alpha: 0.4,
           ),
           side: BorderSide(
-            color: theme.colorScheme.outlineVariant.withValues(alpha: 0.3),
+            color: theme.colorScheme.outlineVariant.withValues(alpha: AppOpacity.light),
           ),
           shape: RoundedRectangleBorder(
             borderRadius: AppRadius.pillRadius,
@@ -280,7 +281,7 @@ class HighlightCard extends ConsumerWidget {
     } else if (score >= 7.0) {
       return AppColors.primary;
     } else if (score >= 5.5) {
-      return AppColors.sunGlow;
+      return AppColors.favorite;
     }
     return Theme.of(context).colorScheme.onSurfaceVariant;
   }
