@@ -5,23 +5,22 @@
 [![Flutter](https://img.shields.io/badge/flutter-3.8+-cyan)](https://flutter.dev/)
 [![Docker](https://img.shields.io/badge/docker-supported-blue)](https://www.docker.com/)
 
-**个人播客知识库**：订阅播客 → 自动转写全文 → AI 评分筛选 → 每天/周/月自动成刊（中文日报/周报/月报），多端阅读与收听。
+**个人播客知识库**：订阅播客 → 自动转写全文 → AI 评分筛选 → 每天/周/月自动成刊（中文日报/周报/月报），多端阅读。
 
 - **backend/** — Python FastAPI（+ Celery + Redis + PostgreSQL）：订阅抓取、六步转写流水线、AI 评分与三刊成刊、多用户认证、管理面板
-- **frontend/** — Flutter 多端客户端（Android / iOS / 桌面）：登录、订阅管理、发现、播放、阅读（三刊/归档/全部动态）
+- **frontend/** — Flutter 多端客户端（Android / iOS / 桌面）：登录、订阅管理、发现、阅读（三刊/归档/全部动态）
 
 > **v2（2026-10-28）**：回归 Python + Flutter 多用户形态，移植 v1.x TS 版的 AI 评分/三刊流水线，六阶段转向已全部完成（决策与实施记录见 [`docs/v2-pivot/`](docs/v2-pivot/README.md)）；v1.x TS 版完整存档于 [`ts-era`](https://github.com/BingqiangZhou/Sonde/tree/ts-era) 分支。原 `web/` React 阅读站已于 Phase G 退役，阅读功能并入 App「阅读」Tab，`/api/v1/site/*` 同步收紧为登录态。
 
 ## 功能
 
-- **多用户**：邮箱注册（可关闭）+ JWT；每人自己的订阅、播放进度、收藏
+- **多用户**：邮箱注册（可关闭）+ JWT；每人自己的订阅、收藏
 - **订阅**：RSS 播客订阅，feed 全局去重（多人订阅同一播客只转写/评分一次），可配置抓取频率
 - **转写**：音频下载 → ffmpeg → 分块 → OpenAI 兼容 ASR → 全文转录
 - **AI 评分筛选**：LLM 按注意力价值为单集打分（0-100），按源分级门槛（T1/T2）入选；落选保留分数与理由
 - **三刊**：日报（每天 08:00）、周报（周一 08:30）、月报（每月 1 日 08:30，Asia/Shanghai）；主编 prompt 成刊，报刊风排版
 - **发现**：iTunes 多国搜索 + 热门榜（经后端代理出站；`ITUNES_PROXY_URL` 走 HTTP 代理，容器直连不稳时推荐）
 - **收藏**：per-user 云同步（App 星标 + 收藏页）
-- **播放**：后台播放、锁屏控制、倍速、进度续播（per-user 云同步）
 - **成本台账**：每次 LLM/转写调用入 receipts，面板可查
 
 ## 快速开始

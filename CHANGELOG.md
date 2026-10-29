@@ -11,6 +11,12 @@ All notable changes to this project will be documented in this file.
 
 > Phase G：退役 Web 阅读站，阅读功能并入 Flutter App「阅读」Tab（设计见 `docs/v2-pivot/09-phase-g-app-reading.md`）。
 
+### 🗑️ 移除（Breaking）
+
+- **播放功能栈整体退役**（声读转纯阅读/知识库应用，决策见 `docs/v2-pivot/00-decisions.md` #13）：
+  - 后端：删除 `GET /podcasts/episodes/history(-lite)`、`PUT|GET /podcasts/episodes/{id}/playback`、`/podcasts/playback/rate/*`、`/podcasts/queue/*` 全套端点与 `GET /podcasts/stats`；episode 响应删除 `play_count/last_played_at/playback_position/is_playing/playback_rate/is_played` 六字段与订阅 `unplayed_count`；新增 alembic 027 删表删列迁移（`podcast_playback_states`/`podcast_queues`/`podcast_queue_items` 及四列两约束，**不可逆**）
+  - 前端：删除播放器（后台/锁屏/通知）、播放队列、倍速、睡眠定时、离线下载、播放历史/进度同步、本地 Drift 播放库；移除 audioplayers/audio_service/permission_handler/drift 依赖与 Android/iOS 播放权限声明；点击单集统一为打开详情阅读；l10n 删除 70 个播放相关 key
+
 ### ✨ 新增
 
 - App「阅读」Tab（底部导航第 3 栏）：三刊（日/周/月）阅读 + 站点标语（/site/meta）

@@ -26,6 +26,7 @@
 | 10 | 版本 | 转向完成发布 **v2.0.0** |
 | 11 | 命名（2026-10-28 追加） | 全库弃用 "Personal AI Assistant" 与 "Stella"：Dart 包名 `sonde`、Bundle ID 统一 `app.sonde`、产物名 `sonde-*`（v2.0.1 起生效；历史文档中的旧名仅作记录保留） |
 | 12 | Web 阅读站退役（2026-10-28 追加，Phase G） | 删除 `web/` React 阅读站，阅读功能并入 Flutter App「阅读」Tab（Material 3，非报刊风）；`/api/v1/site/*` 由公开无鉴权收紧为 `require_user` 登录态；web/compose/nginx/CI 同批清理。设计见 [09-phase-g-app-reading.md](09-phase-g-app-reading.md) |
+| 13 | 播放栈退役（2026-10-29 追加） | App 转**纯阅读/知识库**：删除前后端播放全栈（播放器/队列/倍速/睡眠定时/离线下载/播放历史与进度/播放统计），alembic 027 删表删列（不可逆）；episode 保留 `audio_url`/`audio_duration`（时长展示与转写音频源）。部分淘汰 v2 决策 #2 的「后台播放+续播」与决策 #9 的播放类候补 |
 
 ## 3. 分支布局与推送待办
 
