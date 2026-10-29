@@ -26,7 +26,6 @@ git push origin v1.0.0
 ```
 .github/
 └── workflows/
-    ├── ci.yml          # 持续集成 / CI workflow
     └── release.yml     # 发布工作流 / Release workflow
 
 docs/

@@ -2,33 +2,17 @@
 
 ## 概述 / Overview
 
-本项目使用 GitHub Actions 实现自动化 CI/CD 流程，包括：
-- **持续集成 (CI)**: 每次推送或 PR 时自动运行测试和代码检查
+本项目使用 GitHub Actions 实现自动化 CD 流程：
 - **持续发布 (CD)**: 推送版本 tag 时自动构建多平台应用并发布到 GitHub Release
 
-This project uses GitHub Actions for automated CI/CD pipeline, including:
-- **Continuous Integration**: Automated testing and code checks on every push or PR
+This project uses GitHub Actions for automated CD pipeline:
 - **Continuous Deployment**: Multi-platform builds and GitHub Release publishing on version tags
 
 ---
 
 ## 工作流说明 / Workflows Overview
 
-### 1. CI Workflow (`.github/workflows/ci.yml`)
-
-**触发条件 / Triggers:**
-- 推送到 `main` 或 `develop` 分支
-- 针对 `main` 或 `develop` 的 Pull Request
-
-**执行任务 / Tasks:**
-
-| 平台 / Platform | 检查项 / Checks |
-|-----------------|-----------------|
-| Backend (Python/FastAPI) | mypy, black, isort, flake8, pytest |
-| Frontend (Flutter Mobile) | analyze, format, test (sharded), build web |
-| Desktop (Flutter Desktop) | analyze, test on Linux/Windows/macOS |
-
-### 2. Release Workflow (`.github/workflows/release.yml`)
+### Release Workflow (`.github/workflows/release.yml`)
 
 **触发条件 / Triggers:**
 - 推送匹配 `v*.*.*` 格式的 tag (如 `v1.0.0`, `v2.1.3-beta`)
@@ -172,11 +156,10 @@ env:
 
 如果你想在发布前编辑更新日志：
 
-1. 等待 CI 检查通过
-2. 创建 tag 但不要立即推送
-3. 创建 `CHANGELOG.md` 文件并写入自定义内容
-4. 提交 `CHANGELOG.md`
-5. 推送 tag
+1. 创建 tag 但不要立即推送
+2. 创建 `CHANGELOG.md` 文件并写入自定义内容
+3. 提交 `CHANGELOG.md`
+4. 推送 tag
 
 ---
 
@@ -186,16 +169,11 @@ env:
 
 **检查清单 / Checklist:**
 
-1. **CI 失败 / CI Failed**
-   - 检查代码是否通过所有测试 / Check if all tests pass
-   - 运行 `flutter analyze` 检查代码问题 / Run `flutter analyze` for code issues
-   - 确保 `black`, `isort`, `flake8` 检查通过 / Ensure linter checks pass
-
-2. **构建超时 / Build Timeout**
+1. **构建超时 / Build Timeout**
    - GitHub Actions 有时间限制（6 小时）
    - 如果构建时间过长，考虑优化构建步骤
 
-3. **Flutter 依赖问题 / Flutter Dependency Issues**
+2. **Flutter 依赖问题 / Flutter Dependency Issues**
    - 清理缓存：`flutter clean`
    - 重新获取依赖：`flutter pub get`
    - 检查 `pubspec.yaml` 和 `pubspec.lock`
