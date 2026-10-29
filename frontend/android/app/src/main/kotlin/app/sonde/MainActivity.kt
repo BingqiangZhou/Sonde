@@ -4,12 +4,12 @@ import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import androidx.annotation.NonNull
-import com.ryanheise.audioservice.AudioServiceActivity
+import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugins.GeneratedPluginRegistrant
 
-class MainActivity : AudioServiceActivity() {
+class MainActivity : FlutterActivity() {
     companion object {
         private const val TAG = "MainActivity"
         private const val CHANNEL = "app.sonde/app_update"
@@ -73,22 +73,11 @@ class MainActivity : AudioServiceActivity() {
     }
 
     override fun onDestroy() {
-        // CRITICAL: Ensure AudioService is properly released when activity is destroyed
-        // This prevents the service from running indefinitely after app exit
         try {
             methodChannel?.setMethodCallHandler(null)
-            // AudioService will be cleaned up by Flutter's dispose method
-            super.onDestroy()
         } catch (e: Exception) {
-            // Log but don't crash
-            android.util.Log.e("MainActivity", "Error in onDestroy", e)
-            super.onDestroy()
+            android.util.Log.e(TAG, "Error in onDestroy", e)
         }
-    }
-
-    override fun onStop() {
-        // Called when the activity is no longer visible to the user
-        // This happens when app is minimized or another app is opened
-        super.onStop()
+        super.onDestroy()
     }
 }
