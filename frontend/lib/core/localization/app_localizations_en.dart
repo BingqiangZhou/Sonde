@@ -2039,4 +2039,23 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get site_all_episodes_no_more => 'You\'re all caught up';
+
+  @override
+  String get favorites_title => 'My Favorites';
+
+  @override
+  String get favorites_empty => 'No favorite episodes yet';
+
+  @override
+  String get favorites_remove => 'Remove from favorites';
+
+  @override
+  String get common_load_failed => 'Failed to load';
+
+  @override
+  String get common_no_data => 'Nothing here yet';
+
+  @override
+  String get common_not_published =>
+      'This issue hasn\'t been published yet. Check back later.';
 }

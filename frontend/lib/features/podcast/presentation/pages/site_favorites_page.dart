@@ -2,19 +2,27 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:sonde/features/podcast/presentation/providers/favorites_providers.dart';
+import 'package:sonde/core/constants/app_radius.dart';
+import 'package:sonde/core/constants/app_spacing.dart';
+import 'package:sonde/core/localization/app_localizations_extension.dart';
+import 'package:sonde/core/theme/app_colors.dart';
+import 'package:sonde/core/widgets/adaptive/adaptive.dart';
+import 'package:sonde/core/widgets/app_shells.dart';
 import 'package:sonde/features/podcast/presentation/navigation/podcast_navigation.dart';
+import 'package:sonde/features/podcast/presentation/providers/favorites_providers.dart';
+import 'package:sonde/features/podcast/presentation/widgets/podcast_image_widget.dart';
 
 class SiteFavoritesPage extends ConsumerWidget {
   const SiteFavoritesPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
     final favorites = ref.watch(favoritesProvider);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('我的收藏'),
+        title: Text(l10n.favorites_title),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -26,46 +34,55 @@ class SiteFavoritesPage extends ConsumerWidget {
         data: (value) {
           final items = value?.items ?? const [];
           if (items.isEmpty) {
-            return const Center(child: Text('还没有收藏的单集'));
+            return AppEmptyState(
+              icon: Icons.star_border,
+              title: l10n.favorites_empty,
+            );
           }
-          return RefreshIndicator(
+          return AdaptiveRefreshIndicator(
             onRefresh: () =>
                 ref.read(favoritesProvider.notifier).reload(),
             child: ListView.separated(
+              padding: EdgeInsets.symmetric(horizontal: context.spacing.sm),
               itemCount: items.length,
-              separatorBuilder: (_, __) => const Divider(height: 1),
+              separatorBuilder: (_, __) =>
+                  const Divider(height: 1),
               itemBuilder: (context, index) {
                 final item = items[index];
                 return ListTile(
-                  leading: item.imageUrl != null
-                      ? ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: Image.network(
-                            item.imageUrl!,
-                            width: 52,
-                            height: 52,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => const SizedBox(
-                              width: 52,
-                              height: 52,
-                              child: Icon(Icons.podcasts),
-                            ),
-                          ),
-                        )
-                      : const SizedBox(
-                          width: 52,
-                          height: 52,
-                          child: Icon(Icons.podcasts),
-                        ),
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: context.spacing.xs,
+                    vertical: context.spacing.xxs,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: AppRadius.mdLgRadius,
+                  ),
+                  leading: ClipRRect(
+                    borderRadius: AppRadius.smRadius,
+                    child: PodcastImageWidget(
+                      imageUrl: item.imageUrl,
+                      width: 52,
+                      height: 52,
+                    ),
+                  ),
                   title: Text(
                     item.title,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  subtitle: Text(item.subscriptionTitle ?? ''),
+                  subtitle: Text(
+                    item.subscriptionTitle ?? '',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                   trailing: IconButton(
-                    icon: const Icon(Icons.star, color: Colors.amber),
-                    tooltip: '取消收藏',
+                    icon: Icon(
+                      Icons.star,
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? AppColors.favoriteDark
+                          : AppColors.favorite,
+                    ),
+                    tooltip: l10n.favorites_remove,
                     onPressed: () => ref
                         .read(favoritesProvider.notifier)
                         .remove(item.id),
@@ -80,8 +97,16 @@ class SiteFavoritesPage extends ConsumerWidget {
             ),
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => Center(child: Text('加载失败：$error')),
+        loading: () => const Center(child: CircularProgressIndicator.adaptive()),
+        error: (error, _) => AppEmptyState(
+          icon: Icons.cloud_off,
+          title: l10n.common_load_failed,
+          subtitle: error.toString(),
+          action: AdaptiveButton(
+            onPressed: () => ref.read(favoritesProvider.notifier).reload(),
+            child: Text(l10n.retry),
+          ),
+        ),
       ),
     );
   }

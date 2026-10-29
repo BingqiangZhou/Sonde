@@ -6,6 +6,8 @@ import 'package:go_router/go_router.dart';
 
 import 'package:sonde/core/constants/app_spacing.dart';
 import 'package:sonde/core/localization/app_localizations_extension.dart';
+import 'package:sonde/core/widgets/adaptive/adaptive.dart';
+import 'package:sonde/core/widgets/app_shells.dart';
 import 'package:sonde/features/podcast/data/models/site_report_model.dart';
 import 'package:sonde/features/podcast/presentation/providers/site_report_providers.dart';
 
@@ -78,20 +80,11 @@ class _ArchiveList extends ConsumerWidget {
 
     return archive.when(
       data: (value) => (value?.keys ?? []).isEmpty
-          ? Center(
-              child: Padding(
-                padding: const EdgeInsets.all(AppSpacing.xl),
-                child: Text(
-                  l10n.site_archive_empty,
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodyMedium
-                      ?.copyWith(color: Theme.of(context).colorScheme.outline),
-                ),
-              ),
+          ? AppEmptyState(
+              icon: Icons.history,
+              title: l10n.site_archive_empty,
             )
-          : RefreshIndicator(
+          : AdaptiveRefreshIndicator(
               onRefresh: () async =>
                   ref.invalidate(siteReportArchiveProvider(kind)),
               child: ListView.separated(
@@ -105,11 +98,14 @@ class _ArchiveList extends ConsumerWidget {
                 },
               ),
             ),
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, _) => Center(
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.xl),
-          child: Text(l10n.site_report_load_failed('$error')),
+      loading: () => const Center(child: CircularProgressIndicator.adaptive()),
+      error: (error, _) => AppEmptyState(
+        icon: Icons.cloud_off,
+        title: l10n.common_load_failed,
+        subtitle: '$error',
+        action: AdaptiveButton(
+          onPressed: () => ref.invalidate(siteReportArchiveProvider(kind)),
+          child: Text(l10n.retry),
         ),
       ),
     );
@@ -147,14 +143,14 @@ class _ArchiveEntryTile extends StatelessWidget {
             : Text(
                 generatedAt,
                 style: theme.textTheme.bodySmall
-                    ?.copyWith(color: theme.colorScheme.outline),
+                    ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
               ),
         trailing: entry.revision == null
             ? null
             : Text(
                 context.l10n.site_report_revision(entry.revision!),
                 style: theme.textTheme.bodySmall
-                    ?.copyWith(color: theme.colorScheme.outline),
+                    ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
               ),
         onTap: () => context.push(
           '/reading/issue/${kind.name}/${entry.reportKey}',

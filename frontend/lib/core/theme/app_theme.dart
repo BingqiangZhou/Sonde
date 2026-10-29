@@ -47,7 +47,7 @@ class AppTheme {
     return CupertinoThemeData(
       brightness: brightness,
       primaryColor: isDark
-          ? const Color(0xFF5E5CE6)
+          ? AppColors.primaryLight // systemIndigo dark
           : AppColors.primary,
       scaffoldBackgroundColor: isDark
           ? AppColors.darkBackground
@@ -263,7 +263,7 @@ class AppTheme {
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xxl)),
         ),
       ),
       navigationRailTheme: NavigationRailThemeData(
@@ -368,7 +368,7 @@ class AppTheme {
     return base.copyWith(
       // Primary - Apple systemIndigo
       primary: isDark
-          ? const Color(0xFF5E5CE6) // systemIndigo dark
+          ? AppColors.primaryLight // systemIndigo dark
           : AppColors.primary, // systemIndigo light
       onPrimary: isDark ? const Color(0xFF0C0A1A) : Colors.white,
       primaryContainer: isDark
@@ -400,7 +400,9 @@ class AppTheme {
           ? const Color(0xFFECFDF5)
           : const Color(0xFF166534),
       // Error - Apple systemRed
-      error: AppColors.error, // systemRed light
+      error: isDark
+          ? const Color(0xFFFF453A) // systemRed dark
+          : AppColors.error, // systemRed light
       onError: Colors.white,
       errorContainer: isDark
           ? const Color(0xFF451A1B)
@@ -412,6 +414,24 @@ class AppTheme {
       surface: isDark
           ? AppColors.darkSurface // secondarySystemGroupedBackground dark
           : AppColors.lightSurface, // secondarySystemGroupedBackground light
+      surfaceContainerLowest: isDark
+          ? const Color(0xFF12121F)
+          : Colors.white,
+      // Container roles MUST be overridden too, otherwise they keep the
+      // indigo seed tonal palette and tint every chip/input fill/panel.
+      surfaceContainerLow: isDark
+          ? const Color(0xFF1F1F33) // elevated grouped background dark
+          : const Color(0xFFF2F2F7), // systemGroupedBackground light
+      surfaceContainer: isDark
+          ? AppColors.darkSurface
+          : const Color(0xFFEFEFF4),
+      surfaceContainerHigh: isDark
+          ? const Color(0xFF242438)
+          : const Color(0xFFEAEAF0),
+      surfaceContainerHighest: isDark
+          ? const Color(0xFF2C2C2E) // tertiarySystemGroupedBackground dark
+          : const Color(0xFFE5E5EA),
+      surfaceTint: isDark ? AppColors.primaryLight : AppColors.primary,
       onSurface: isDark
           ? AppColors.darkTextPrimary // Apple .label dark
           : AppColors.lightTextPrimary, // Apple .label light
@@ -434,8 +454,10 @@ class AppTheme {
     Color color, {
     double width = 1,
   }) {
+    // Radius must match the normal/enabled/focused input borders (mdLg),
+    // otherwise the field visibly jumps when validation errors appear.
     return OutlineInputBorder(
-      borderRadius: BorderRadius.circular(extension.buttonRadius),
+      borderRadius: AppRadius.mdLgRadius,
       borderSide: BorderSide(color: color, width: width),
     );
   }

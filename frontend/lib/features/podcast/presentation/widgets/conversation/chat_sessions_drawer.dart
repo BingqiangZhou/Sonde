@@ -33,7 +33,7 @@ class ChatSessionsDrawer extends ConsumerWidget {
 
     return Drawer(
       width: MediaQuery.sizeOf(context).width * 0.75,
-      backgroundColor: AppColors.darkSurface,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       child: Column(
         children: [
           DrawerHeader(
@@ -66,7 +66,7 @@ class ChatSessionsDrawer extends ConsumerWidget {
                     child: Text(
                       l10n.podcast_conversation_empty_title,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppColors.darkOnSurfaceMuted,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                     ),
                   );
@@ -150,27 +150,27 @@ class _SessionListTile extends ConsumerWidget {
         contentPadding: EdgeInsets.symmetric(horizontal: context.spacing.md, vertical: context.spacing.sm),
         leading: Icon(
           isSelected ? Icons.chat_bubble : Icons.chat_bubble_outline,
-          color: isSelected ? scheme.primary : AppColors.darkOnSurface,
+          color: isSelected ? scheme.primary : scheme.onSurface,
         ),
         title: Text(
           session.title,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: TextStyle(
-            color: isSelected ? AppColors.darkOnBackground : AppColors.darkOnSurface,
+            color: isSelected ? scheme.onSurface : scheme.onSurfaceVariant,
             fontWeight: isSelected ? FontWeight.w700 : FontWeight.w400,
           ),
         ),
         subtitle: Text(
           session.createdAt.substring(0, 10),
           style: theme.textTheme.labelSmall?.copyWith(
-            color: AppColors.darkOnSurfaceMuted,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
         ),
         trailing: IconButton(
           tooltip: l10n.delete,
           icon: const Icon(Icons.delete_outline, size: 20),
-          color: AppColors.darkOnSurfaceMuted,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
           onPressed: () async {
             final confirm = await showAppConfirmationDialog(
               context: context,

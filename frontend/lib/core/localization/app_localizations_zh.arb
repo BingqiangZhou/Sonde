@@ -2588,5 +2588,29 @@
   "site_all_episodes_no_more": "已经到底了",
   "@site_all_episodes_no_more": {
     "description": "全部动态页全部加载完毕的提示"
+  },
+  "favorites_title": "我的收藏",
+  "@favorites_title": {
+    "description": "Title of the favorites page"
+  },
+  "favorites_empty": "还没有收藏的单集",
+  "@favorites_empty": {
+    "description": "Empty state text on the favorites page"
+  },
+  "favorites_remove": "取消收藏",
+  "@favorites_remove": {
+    "description": "Action to unfavorite an episode"
+  },
+  "common_load_failed": "加载失败",
+  "@common_load_failed": {
+    "description": "Generic load failure title used in empty/error states"
+  },
+  "common_no_data": "暂无内容",
+  "@common_no_data": {
+    "description": "Generic empty state title"
+  },
+  "common_not_published": "本期尚未发布，请稍后再来。",
+  "@common_not_published": {
+    "description": "Placeholder when a publication issue is not published yet"
   }
 }

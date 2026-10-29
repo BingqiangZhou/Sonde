@@ -1,7 +1,7 @@
 part of 'podcast_episode_detail_page.dart';
 
-const double _artworkBorderRadiusWide = 18;
-const double _artworkBorderRadiusCompact = 10;
+const double _artworkBorderRadiusWide = AppRadius.chip;
+const double _artworkBorderRadiusCompact = AppRadius.md;
 
 extension _PodcastEpisodeDetailPageHeader on _PodcastEpisodeDetailPageState {
   bool get _isCompactPhoneLayout =>
@@ -377,8 +377,11 @@ extension _PodcastEpisodeDetailPageHeader on _PodcastEpisodeDetailPageState {
   }
   Widget _buildFavoriteButton(PodcastEpisodeModel episode) {
     final favorited = ref.watch(favoriteStatusProvider(episode.id)).value ?? false;
+    final l10n = AppLocalizations.of(context) ?? AppLocalizationsEn();
     return HeaderCapsuleActionButton(
-      tooltip: favorited ? '取消收藏' : '收藏',
+      tooltip: favorited
+          ? l10n.podcast_highlights_unfavorite
+          : l10n.podcast_highlights_favorite,
       icon: favorited ? Icons.star_rounded : Icons.star_outline_rounded,
       onPressed: () => toggleFavorite(
         ref: ref,

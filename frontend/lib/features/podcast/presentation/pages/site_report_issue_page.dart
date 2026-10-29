@@ -3,8 +3,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:sonde/core/constants/app_spacing.dart';
 import 'package:sonde/core/localization/app_localizations_extension.dart';
+import 'package:sonde/core/widgets/adaptive/adaptive.dart';
+import 'package:sonde/core/widgets/app_shells.dart';
 import 'package:sonde/features/podcast/data/models/site_report_model.dart';
 import 'package:sonde/features/podcast/presentation/providers/site_reading_providers.dart';
 import 'package:sonde/features/podcast/presentation/widgets/site_report_body.dart';
@@ -35,24 +36,20 @@ class SiteReportIssuePage extends ConsumerWidget {
       appBar: AppBar(title: Text(reportKey)),
       body: issue.when(
         data: (value) => value == null
-            ? Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(AppSpacing.xl),
-                  child: Text(
-                    l10n.site_report_not_published,
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Theme.of(context).colorScheme.outline,
-                        ),
-                  ),
-                ),
+            ? AppEmptyState(
+                icon: Icons.outbox_outlined,
+                title: l10n.common_not_published,
               )
             : SiteReportBody(report: value),
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => Center(
-          child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.xl),
-            child: Text(l10n.site_report_load_failed('$error')),
+        loading: () => const Center(child: CircularProgressIndicator.adaptive()),
+        error: (error, _) => AppEmptyState(
+          icon: Icons.cloud_off,
+          title: l10n.common_load_failed,
+          subtitle: '$error',
+          action: AdaptiveButton(
+            onPressed: () =>
+                ref.invalidate(siteReportIssueProvider((kind, reportKey))),
+            child: Text(l10n.retry),
           ),
         ),
       ),

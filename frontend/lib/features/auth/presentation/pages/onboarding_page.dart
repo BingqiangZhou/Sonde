@@ -146,7 +146,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                             color: isActive
                                 ? scheme.primary
                                 : scheme.outlineVariant,
-                            borderRadius: AppRadius.xsRadius,
+                            borderRadius: AppRadius.pillRadius,
                           ),
                         );
                       }),

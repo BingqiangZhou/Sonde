@@ -8,6 +8,8 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:sonde/core/constants/app_radius.dart';
 import 'package:sonde/core/constants/app_spacing.dart';
 import 'package:sonde/core/localization/app_localizations_extension.dart';
+import 'package:sonde/core/widgets/adaptive/adaptive.dart';
+import 'package:sonde/core/widgets/app_shells.dart';
 import 'package:sonde/core/theme/app_colors.dart';
 import 'package:sonde/core/utils/time_formatter.dart';
 import 'package:sonde/features/podcast/data/models/site_report_model.dart';
@@ -36,11 +38,14 @@ class SiteAllEpisodesPage extends ConsumerWidget {
       ),
       body: state.when(
         data: (value) => _AllEpisodesList(state: value),
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => Center(
-          child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.xl),
-            child: Text(l10n.site_report_load_failed('$error')),
+        loading: () => const Center(child: CircularProgressIndicator.adaptive()),
+        error: (error, _) => AppEmptyState(
+          icon: Icons.cloud_off,
+          title: l10n.common_load_failed,
+          subtitle: '$error',
+          action: AdaptiveButton(
+            onPressed: () => ref.read(siteAllEpisodesProvider.notifier).reload(),
+            child: Text(l10n.retry),
           ),
         ),
       ),
@@ -57,21 +62,13 @@ class _AllEpisodesList extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
     if (state.items.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.xl),
-          child: Text(
-            l10n.site_all_episodes_empty,
-            style: Theme.of(context)
-                .textTheme
-                .bodyMedium
-                ?.copyWith(color: Theme.of(context).colorScheme.outline),
-          ),
-        ),
+      return AppEmptyState(
+        icon: Icons.playlist_add_check,
+        title: l10n.site_all_episodes_empty,
       );
     }
 
-    return RefreshIndicator(
+    return AdaptiveRefreshIndicator(
       onRefresh: () async => ref.read(siteAllEpisodesProvider.notifier).reload(),
       child: ListView.separated(
         physics: const AlwaysScrollableScrollPhysics(),
@@ -86,13 +83,14 @@ class _AllEpisodesList extends ConsumerWidget {
           if (state.isLoading) {
             return const Padding(
               padding: EdgeInsets.symmetric(vertical: AppSpacing.md),
-              child: Center(child: CircularProgressIndicator()),
+              child: Center(child: CircularProgressIndicator.adaptive()),
             );
           }
           if (state.hasMore) {
             return Padding(
               padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-              child: OutlinedButton(
+              child: AdaptiveButton(
+                style: AdaptiveButtonStyle.outlined,
                 onPressed: () =>
                     ref.read(siteAllEpisodesProvider.notifier).loadNextPage(),
                 child: Text(l10n.site_all_episodes_load_more),
@@ -107,7 +105,7 @@ class _AllEpisodesList extends ConsumerWidget {
               style: Theme.of(context)
                   .textTheme
                   .bodySmall
-                  ?.copyWith(color: Theme.of(context).colorScheme.outline),
+                  ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
             ),
           );
         },
@@ -286,11 +284,12 @@ class _ScoreBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final color = score >= 80
-        ? AppColors.success
+        ? (isDark ? AppColors.successDark : AppColors.success)
         : score >= 60
-            ? AppColors.warning
-            : theme.colorScheme.outline;
+            ? (isDark ? AppColors.warningDark : AppColors.warning)
+            : theme.colorScheme.onSurfaceVariant;
 
     return Container(
       width: 40,

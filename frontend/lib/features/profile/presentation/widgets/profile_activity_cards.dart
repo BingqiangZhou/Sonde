@@ -154,7 +154,7 @@ class ProfileActivityCards extends ConsumerWidget {
       _buildActivityCard(
         context,
         icon: Icons.star_outline,
-        label: '我的收藏',
+        label: context.l10n.favorites_title,
         value: '',
         color: scheme.secondary,
         onTap: () => context.push('/profile/favorites'),

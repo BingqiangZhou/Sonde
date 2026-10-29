@@ -9,6 +9,7 @@ import 'package:go_router/go_router.dart';
 import 'package:sonde/core/theme/app_colors.dart';
 import 'package:sonde/core/localization/app_localizations_extension.dart';
 import 'package:sonde/core/widgets/app_shells.dart';
+import 'package:sonde/core/widgets/adaptive/adaptive.dart';
 import 'package:sonde/core/widgets/custom_adaptive_navigation.dart';
 import 'package:sonde/core/widgets/adaptive/adaptive_sliver_app_bar.dart';
 import 'package:sonde/features/auth/presentation/providers/auth_provider.dart';
@@ -390,7 +391,8 @@ class _PodcastHighlightsPageState extends ConsumerState<PodcastHighlightsPage> {
                     ),
                   ),
                   SizedBox(height: context.spacing.md),
-                  FilledButton.tonal(
+                  AdaptiveButton(
+                    style: AdaptiveButtonStyle.outlined,
                     onPressed: () {
                       final selectedDate =
                           ref.read(selectedHighlightDateProvider);

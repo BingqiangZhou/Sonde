@@ -113,8 +113,8 @@ extension _PodcastEpisodesPageView on _PodcastEpisodesPageState {
     return SliverGrid(
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: crossAxisCount,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
+        crossAxisSpacing: AppSpacing.smMd,
+        mainAxisSpacing: AppSpacing.smMd,
         mainAxisExtent: _PodcastEpisodesPageState._desktopEpisodeCardHeight,
       ),
       delegate: SliverChildBuilderDelegate(
@@ -139,39 +139,14 @@ extension _PodcastEpisodesPageView on _PodcastEpisodesPageState {
 
   Widget _buildEmptyState() {
     final l10n = context.l10n;
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.headphones_outlined,
-            size: 80,
-            color: Theme.of(
-              context,
-            ).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
-          ),
-          SizedBox(height: context.spacing.md),
-          Text(
-            _showOnlyWithSummary
-                ? l10n.podcast_no_episodes_with_summary
-                : l10n.podcast_no_episodes,
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-          ),
-          SizedBox(height: context.spacing.sm),
-          Text(
-            _showOnlyWithSummary
-                ? l10n.podcast_try_adjusting_filters
-                : l10n.podcast_no_episodes_yet,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Theme.of(
-                context,
-              ).colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
-            ),
-          ),
-        ],
-      ),
+    return AppEmptyState(
+      icon: Icons.headphones_outlined,
+      title: _showOnlyWithSummary
+          ? l10n.podcast_no_episodes_with_summary
+          : l10n.podcast_no_episodes,
+      subtitle: _showOnlyWithSummary
+          ? l10n.podcast_try_adjusting_filters
+          : l10n.podcast_no_episodes_yet,
     );
   }
 

@@ -38,7 +38,7 @@ class SiteReportBody extends StatelessWidget {
             l10n.site_report_item_count(content.selectedCount),
           ].join(' · '),
           style: theme.textTheme.bodySmall
-              ?.copyWith(color: theme.colorScheme.outline),
+              ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
         ),
         const SizedBox(height: AppSpacing.smMd),
         Text(content.leadParagraph, style: theme.textTheme.bodyLarge),
@@ -184,7 +184,7 @@ class _ReportItemTile extends StatelessWidget {
                           Text(
                             metaParts.join(' · '),
                             style: theme.textTheme.bodySmall
-                                ?.copyWith(color: theme.colorScheme.outline),
+                                ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                           ),
                         ],
                       ),
@@ -214,7 +214,7 @@ class _ReportItemTile extends StatelessWidget {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.outline,
+                        color: theme.colorScheme.onSurfaceVariant,
                       ),
                     ),
                   ],
@@ -240,7 +240,7 @@ class _ScoreBadge extends StatelessWidget {
         ? AppColors.success
         : score >= 60
             ? AppColors.warning
-            : theme.colorScheme.outline;
+            : theme.colorScheme.onSurfaceVariant;
 
     return Container(
       width: 44,

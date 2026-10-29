@@ -156,11 +156,7 @@ class _AdaptiveTextFieldState extends State<AdaptiveTextField> {
         autofocus: widget.autofocus,
         autofillHints: widget.autofillHints,
         validator: widget.validator,
-        decoration: widget.decoration ??
-            InputDecoration(
-              hintText: widget.placeholder,
-              border: const OutlineInputBorder(),
-            ),
+        decoration: _materialDecoration(context),
       );
     }
 
@@ -176,11 +172,14 @@ class _AdaptiveTextFieldState extends State<AdaptiveTextField> {
       textInputAction: widget.textInputAction,
       autofocus: widget.autofocus,
       autofillHints: widget.autofillHints,
-      decoration: widget.decoration ??
-          InputDecoration(
-            hintText: widget.placeholder,
-            border: const OutlineInputBorder(),
-          ),
+      decoration: _materialDecoration(context),
     );
+  }
+
+  /// Material fallback decoration: keep the themed shape/fill instead of a
+  /// bare OutlineInputBorder that ignores inputDecorationTheme styling.
+  InputDecoration _materialDecoration(BuildContext context) {
+    return widget.decoration ??
+        InputDecoration(hintText: widget.placeholder);
   }
 }

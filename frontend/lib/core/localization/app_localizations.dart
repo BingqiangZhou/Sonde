@@ -3751,6 +3751,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'You\'re all caught up'**
   String get site_all_episodes_no_more;
+
+  /// Title of the favorites page
+  ///
+  /// In en, this message translates to:
+  /// **'My Favorites'**
+  String get favorites_title;
+
+  /// Empty state text on the favorites page
+  ///
+  /// In en, this message translates to:
+  /// **'No favorite episodes yet'**
+  String get favorites_empty;
+
+  /// Action to unfavorite an episode
+  ///
+  /// In en, this message translates to:
+  /// **'Remove from favorites'**
+  String get favorites_remove;
+
+  /// Generic load failure title used in empty/error states
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load'**
+  String get common_load_failed;
+
+  /// Generic empty state title
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing here yet'**
+  String get common_no_data;
+
+  /// Placeholder when a publication issue is not published yet
+  ///
+  /// In en, this message translates to:
+  /// **'This issue hasn\'t been published yet. Check back later.'**
+  String get common_not_published;
 }
 
 class _AppLocalizationsDelegate

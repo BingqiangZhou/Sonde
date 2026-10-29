@@ -336,9 +336,20 @@ class _SurfacePanelState extends State<SurfacePanel> {
       decoration: BoxDecoration(
         color: widget.backgroundColor ?? Theme.of(context).colorScheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(radius),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.15),
-        ),
+        border: widget.showBorder
+            ? Border.all(
+                color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.15),
+              )
+            : null,
+        boxShadow: widget.showShadow
+            ? [
+                BoxShadow(
+                  color: Theme.of(context).colorScheme.shadow.withValues(alpha: 0.04),
+                  blurRadius: 16,
+                  offset: const Offset(0, 4),
+                ),
+              ]
+            : null,
       ),
       child: widget.child,
     );

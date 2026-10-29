@@ -7,6 +7,8 @@ import 'package:go_router/go_router.dart';
 
 import 'package:sonde/core/constants/app_spacing.dart';
 import 'package:sonde/core/localization/app_localizations_extension.dart';
+import 'package:sonde/core/widgets/adaptive/adaptive.dart';
+import 'package:sonde/core/widgets/app_shells.dart';
 import 'package:sonde/features/podcast/data/models/site_report_model.dart';
 import 'package:sonde/features/podcast/presentation/providers/site_reading_providers.dart';
 import 'package:sonde/features/podcast/presentation/providers/site_report_providers.dart';
@@ -68,21 +70,32 @@ class SiteReadingPage extends ConsumerWidget {
                 child: Text(
                   tagline!,
                   textAlign: TextAlign.center,
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodySmall
-                      ?.copyWith(color: Theme.of(context).colorScheme.outline),
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
                 ),
               ),
             ),
           Expanded(
             child: report.when(
               data: (value) => value == null
-                  ? _MessageView(message: l10n.site_report_not_published)
+                  ? AppEmptyState(
+                      icon: Icons.outbox_outlined,
+                      title: l10n.common_not_published,
+                    )
                   : SiteReportBody(report: value),
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (error, _) =>
-                  _MessageView(message: l10n.site_report_load_failed('$error')),
+              loading: () =>
+                  const Center(child: CircularProgressIndicator.adaptive()),
+              error: (error, _) => AppEmptyState(
+                icon: Icons.cloud_off,
+                title: l10n.common_load_failed,
+                subtitle: '$error',
+                action: AdaptiveButton(
+                  onPressed: () =>
+                      ref.read(siteReportProvider(kind).notifier).reload(),
+                  child: Text(l10n.retry),
+                ),
+              ),
             ),
           ),
         ],
@@ -109,29 +122,6 @@ class _KindSelector extends ConsumerWidget {
       onSelectionChanged: (selection) => ref
           .read(selectedReportKindProvider.notifier)
           .set(selection.first),
-    );
-  }
-}
-
-class _MessageView extends StatelessWidget {
-  const _MessageView({required this.message});
-
-  final String message;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.xl),
-        child: Text(
-          message,
-          textAlign: TextAlign.center,
-          style: Theme.of(context)
-              .textTheme
-              .bodyMedium
-              ?.copyWith(color: Theme.of(context).colorScheme.outline),
-        ),
-      ),
     );
   }
 }

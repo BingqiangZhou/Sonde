@@ -1952,4 +1952,22 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get site_all_episodes_no_more => '已经到底了';
+
+  @override
+  String get favorites_title => '我的收藏';
+
+  @override
+  String get favorites_empty => '还没有收藏的单集';
+
+  @override
+  String get favorites_remove => '取消收藏';
+
+  @override
+  String get common_load_failed => '加载失败';
+
+  @override
+  String get common_no_data => '暂无内容';
+
+  @override
+  String get common_not_published => '本期尚未发布，请稍后再来。';
 }

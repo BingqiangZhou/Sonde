@@ -94,8 +94,15 @@ class AppColors {
   // ============================================================
 
   static const Color success = Color(0xFF34C759); // systemGreen light
+  static const Color successDark = Color(0xFF30D158); // systemGreen dark
   static const Color warning = Color(0xFFFF9500); // systemOrange light
+  static const Color warningDark = Color(0xFFFF9F0A); // systemOrange dark
   static const Color error = Color(0xFFFF3B30); // systemRed light
+  static const Color errorDark = Color(0xFFFF453A); // systemRed dark
+
+  /// Star/favorite tint (Apple systemYellow). Use for collection stars.
+  static const Color favorite = Color(0xFFFFCC00); // systemYellow light
+  static const Color favoriteDark = Color(0xFFFFD60A); // systemYellow dark
 
   // Legacy named colors
   static const Color sunGlow = Color(0xFFFFCC00); // systemYellow light

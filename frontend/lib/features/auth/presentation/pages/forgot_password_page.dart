@@ -175,15 +175,12 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
             },
           ),
           SizedBox(height: context.spacing.xl),
-          SizedBox(
-            width: double.infinity,
-            height: context.spacing.xl,
-            child: FilledButton(
-              key: const Key('forgot_password_submit_button'),
-              onPressed: isLoading ? null : _submitForgotPassword,
-              child: Text(
-                l10n?.auth_send_reset_link ?? _fallbackSendResetLink,
-              ),
+          AdaptiveButton(
+            key: const Key('forgot_password_submit_button'),
+            style: AdaptiveButtonStyle.filled,
+            onPressed: isLoading ? null : _submitForgotPassword,
+            child: Text(
+              l10n?.auth_send_reset_link ?? _fallbackSendResetLink,
             ),
           ),
         ],
@@ -199,26 +196,23 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
           l10n?.auth_check_email_fallback ?? _fallbackCheckEmailMessage,
           key: const Key('forgot_password_success_message'),
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color:
-                    Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
           textAlign: TextAlign.center,
         ),
         SizedBox(height: context.spacing.xl),
-        SizedBox(
-          width: double.infinity,
-          height: context.spacing.xl,
-          child: OutlinedButton(
-            key: const Key('back_to_login_button'),
-            onPressed: () => context.go('/login'),
-            child: Text(
-              l10n?.auth_back_to_login ?? _fallbackBackToLogin,
-            ),
+        AdaptiveButton(
+          key: const Key('back_to_login_button'),
+          style: AdaptiveButtonStyle.outlined,
+          onPressed: () => context.go('/login'),
+          child: Text(
+            l10n?.auth_back_to_login ?? _fallbackBackToLogin,
           ),
         ),
         SizedBox(height: context.spacing.md),
-        TextButton(
+        AdaptiveButton(
           key: const Key('resend_email_button'),
+          style: AdaptiveButtonStyle.text,
           onPressed: () {
             setState(() {
               _emailSent = false;

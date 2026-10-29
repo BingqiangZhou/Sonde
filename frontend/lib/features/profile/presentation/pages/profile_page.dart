@@ -386,7 +386,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
         color: isIOS
             ? CupertinoColors.systemBackground.resolveFrom(dialogContext)
             : theme.colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(isIOS ? 14 : 28),
+        borderRadius: BorderRadius.circular(isIOS ? AppRadius.lg : AppRadius.xxl),
       ),
       clipBehavior: Clip.antiAlias,
       child: Column(

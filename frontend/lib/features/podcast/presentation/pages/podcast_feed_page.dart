@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:sonde/core/constants/app_radius.dart';
 import 'package:sonde/core/constants/app_spacing.dart';
 import 'package:sonde/core/constants/breakpoints.dart';
 import 'package:sonde/core/constants/scroll_constants.dart';
@@ -131,7 +132,7 @@ class _PodcastFeedPageState extends ConsumerState<PodcastFeedPage> {
     }
 
     final theme = Theme.of(context);
-    final borderRadius = compact ? 12.0 : 16.0;
+    final borderRadius = compact ? AppRadius.mdLgRadius : AppRadius.lgXlRadius;
 
     return Semantics(
       button: true,
@@ -142,13 +143,13 @@ class _PodcastFeedPageState extends ConsumerState<PodcastFeedPage> {
           key: const Key('library_daily_report_entry_tile'),
           color: Colors.transparent,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(borderRadius),
+            borderRadius: borderRadius,
             side: BorderSide(
               color: theme.colorScheme.outlineVariant.withValues(alpha: 0.35),
             ),
           ),
           child: AdaptiveInkWell(
-            borderRadius: BorderRadius.circular(borderRadius),
+            borderRadius: borderRadius,
             onTap: () =>
                 PodcastNavigation.goToReports(context),
             child: Padding(
@@ -299,22 +300,10 @@ class _FeedContent extends ConsumerWidget {
       child: ListView(
         padding: EdgeInsets.symmetric(vertical: context.spacing.sm),
         children: [
-          SizedBox(height: context.spacing.xxl - context.spacing.md),
-          Center(
-            child: Column(
-              children: [
-                Icon(
-                  Icons.rss_feed,
-                  size: 64,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-                SizedBox(height: context.spacing.xl),
-                Text(
-                  l10n.podcast_no_episodes_found,
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-              ],
-            ),
+          SizedBox(height: context.spacing.xl),
+          AppEmptyState(
+            icon: Icons.rss_feed,
+            title: l10n.podcast_no_episodes_found,
           ),
         ],
       ),

@@ -235,7 +235,20 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
             child: AnimatedBuilder(
               animation: _passwordController,
               builder: (context, child) {
-                return Column(
+                // Same card treatment as the register page requirement list.
+                return Container(
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surfaceContainerLow,
+                    borderRadius: AppRadius.smRadius,
+                    border: Border.all(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .outlineVariant
+                          .withValues(alpha: 0.15),
+                    ),
+                  ),
+                  padding: EdgeInsets.all(context.spacing.sm),
+                  child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
@@ -262,6 +275,7 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
                       isValid: _hasNumber(_passwordController.text),
                     ),
                   ],
+                  ),
                 );
               },
             ),
@@ -270,14 +284,11 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
           SizedBox(height: context.spacing.xl),
 
           // Reset button
-          SizedBox(
-            width: double.infinity,
-            height: context.spacing.xl,
-            child: FilledButton(
-              key: const Key('reset_password_button'),
-              onPressed: isLoading ? null : _submitResetPassword,
-              child: Text(l10n.auth_reset_password),
-            ),
+          AdaptiveButton(
+            key: const Key('reset_password_button'),
+            style: AdaptiveButtonStyle.filled,
+            onPressed: isLoading ? null : _submitResetPassword,
+            child: Text(l10n.auth_reset_password),
           ),
         ],
       ),
@@ -288,14 +299,11 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        SizedBox(
-          width: double.infinity,
-          height: context.spacing.xl,
-          child: FilledButton(
-            key: const Key('go_to_login_button'),
-            onPressed: () => context.go('/login'),
-            child: Text(l10n.auth_back_to_login),
-          ),
+        AdaptiveButton(
+          key: const Key('go_to_login_button'),
+          style: AdaptiveButtonStyle.filled,
+          onPressed: () => context.go('/login'),
+          child: Text(l10n.auth_back_to_login),
         ),
       ],
     );

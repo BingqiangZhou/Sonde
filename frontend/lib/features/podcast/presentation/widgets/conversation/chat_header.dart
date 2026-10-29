@@ -238,13 +238,13 @@ class _ModelSelectorState extends State<_ModelSelector> {
         hint: Text(
           l10n.podcast_ai_model,
           style: theme.textTheme.bodySmall?.copyWith(
-            color: AppColors.darkOnSurface,
+            color: scheme.onSurfaceVariant,
           ),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
         style: theme.textTheme.bodySmall?.copyWith(
-          color: AppColors.darkOnBackground,
+          color: scheme.onSurface,
         ),
         selectedItemBuilder: (context) {
           return widget.models
@@ -256,7 +256,7 @@ class _ModelSelectorState extends State<_ModelSelector> {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: theme.textTheme.bodySmall?.copyWith(
-                      color: AppColors.darkOnBackground,
+                      color: scheme.onSurface,
                     ),
                   ),
                 ),

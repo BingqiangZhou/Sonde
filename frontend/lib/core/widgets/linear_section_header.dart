@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:sonde/core/constants/app_spacing.dart';
 import 'package:sonde/core/constants/app_text_styles.dart';
 import 'package:sonde/core/constants/breakpoints.dart';
-import 'package:sonde/core/theme/app_colors.dart';
 
 /// A Linear-style section header with title and optional trailing widget.
 ///
@@ -60,9 +59,7 @@ class LinearSectionHeader extends StatelessWidget {
       horizontal: context.spacing.mdLg,
       vertical: context.spacing.smMd,
     );
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final mutedColor =
-        isDark ? AppColors.darkOnSurfaceMuted : AppColors.lightOnSurfaceMuted;
+    final mutedColor = Theme.of(context).colorScheme.onSurfaceVariant;
 
     return Padding(
       padding: effectivePadding,
