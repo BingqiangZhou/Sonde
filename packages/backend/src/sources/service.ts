@@ -1,4 +1,4 @@
-/** 源服务：到期扫描 + 单源抓取入库 + 派发转写。 */
+/** 源服务：到期扫描派发 + 单源抓取入库 + 派发转写。 */
 
 import { row, rows, sql } from '../db/db.ts';
 import { sendJob } from '../queue/boss.ts';
@@ -14,7 +14,9 @@ interface SourceRow {
   interval_minutes: number;
 }
 
-/** 扫描全部到期源，逐个抓取（cron 每分钟触发）。返回处理的源数。 */
+/** 扫描全部到期源并逐源派发 `sources.fetch`（cron 每分钟触发）。
+ *  纯派发器：不在此进程内抓取，避免一个长任务顺序抓上百个 feed 超过队列 expire。
+ *  返回真正入队的源数（singletonKey 去重掉的计为未入队）。 */
 export async function scanDueSources(): Promise<number> {
   const due = await rows<{ id: number }>(sql`
     SELECT id FROM sources
@@ -26,16 +28,20 @@ export async function scanDueSources(): Promise<number> {
     ORDER BY (cursor->>'lastFetchedAt')::timestamptz NULLS FIRST
     LIMIT 100
   `);
-  let processed = 0;
+  let sent = 0;
   for (const { id } of due) {
-    try {
-      await fetchSource(id);
-      processed++;
-    } catch (error) {
-      console.warn(`[sources] fetch failed source=${id}:`, error instanceof Error ? error.message : error);
+    if (await dispatchSourceFetch(id)) {
+      sent++;
     }
   }
-  return processed;
+  return sent;
+}
+
+/** 派发单源抓取任务（stately 策略下 singletonKey `src:<id>` 防同源堆叠）。
+ *  返回 false 表示同源任务尚在途、本次被去重。 */
+export async function dispatchSourceFetch(sourceId: number): Promise<boolean> {
+  const jobId = await sendJob('sources.fetch', { sourceId }, { singletonKey: `src:${sourceId}` });
+  return jobId !== null;
 }
 
 /** 抓取一个源：解析 feed → 新单集入库 → 派发转写 → 更新 cursor/health。 */
@@ -64,21 +70,23 @@ export async function fetchSource(sourceId: number): Promise<{ fetched: number; 
       }
     }
 
-    await updateCursor(sourceId, {
-      etag: feed.etag,
-      lastModified: feed.lastModified,
+    // 条件头随成功响应整体覆盖（服务端不再返回时存 null，与旧行为一致）
+    await persistRun(sourceId, {
+      ok: true,
+      error: null,
+      cursor: { etag: feed.etag, lastModified: feed.lastModified },
     });
-    await updateHealth(sourceId, true, null);
 
     return { fetched: feed.episodes.length, inserted };
   } catch (error) {
     if (error instanceof FeedNotModifiedError) {
-      await updateCursor(sourceId, {});
-      await updateHealth(sourceId, true, null);
+      // 304：只推进 lastFetchedAt，etag/lastModified 必须原样保留（否则条件 GET 退化）
+      await persistRun(sourceId, { ok: true, error: null, cursor: {} });
       return { fetched: 0, inserted: 0 };
     }
     const message = error instanceof Error ? error.message : String(error);
-    await updateHealth(sourceId, false, message);
+    // 失败：只写 health、不动 cursor —— lastFetchedAt 不前进，源保持"到期"由 cron 重派
+    await persistRun(sourceId, { ok: false, error: message, cursor: null });
     throw error;
   }
 
@@ -100,35 +108,28 @@ export async function fetchSource(sourceId: number): Promise<{ fetched: number; 
     return true;
   }
 
-  async function updateCursor(
+  /** cursor + health 落库合并为单条 UPDATE（原子，P1-7）。
+   *  cursor 语义：
+   *  - null：失败，cursor 整体不动（lastFetchedAt 不前进）
+   *  - {}：304，只并入 lastFetchedAt，etag/lastModified 保留
+   *  - {etag, lastModified}：成功，整体覆盖条件头 */
+  async function persistRun(
     sid: number,
-    values: { etag?: string | null; lastModified?: string | null },
+    run: { ok: boolean; error: string | null; cursor: Record<string, string | null> | null },
   ): Promise<void> {
+    const failures = run.ok ? 0 : (src.health?.consecutiveFailures ?? 0) + 1;
+    const patch = run.cursor === null ? null : JSON.stringify(run.cursor);
     await rows(sql`
       UPDATE sources
-      SET cursor = jsonb_set(
-            jsonb_set(cursor, '{lastFetchedAt}', to_jsonb(now()::timestamptz::text)),
-            '{etag}', ${JSON.stringify(values.etag ?? null)}::jsonb
-          ),
-          updated_at = now()
-      WHERE id = ${sid}
-    `);
-    if (values.lastModified !== undefined) {
-      await rows(sql`
-        UPDATE sources
-        SET cursor = jsonb_set(cursor, '{lastModified}', ${JSON.stringify(values.lastModified)}::jsonb)
-        WHERE id = ${sid}
-      `);
-    }
-  }
-
-  async function updateHealth(sid: number, ok: boolean, error: string | null): Promise<void> {
-    const failures = ok ? 0 : (src.health?.consecutiveFailures ?? 0) + 1;
-    await rows(sql`
-      UPDATE sources
-      SET health = jsonb_build_object(
-            'lastStatus', ${ok ? 'ok' : 'error'}::text,
-            'lastError', ${error}::text,
+      SET cursor = CASE
+            WHEN ${patch}::jsonb IS NULL THEN cursor
+            ELSE cursor
+                 || jsonb_build_object('lastFetchedAt', now()::timestamptz::text)
+                 || ${patch}::jsonb
+          END,
+          health = jsonb_build_object(
+            'lastStatus', ${run.ok ? 'ok' : 'error'}::text,
+            'lastError', ${run.error}::text,
             'consecutiveFailures', ${failures}::int,
             'lastRunAt', now()::timestamptz::text
           ),
@@ -137,4 +138,3 @@ export async function fetchSource(sourceId: number): Promise<{ fetched: number; 
     `);
   }
 }
-

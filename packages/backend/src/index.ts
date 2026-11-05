@@ -61,7 +61,7 @@ export {
   clearItunesCache,
 } from './sources/itunes.ts';
 export type { DiscoveredPodcast } from './sources/itunes.ts';
-export { scanDueSources, fetchSource } from './sources/service.ts';
+export { scanDueSources, dispatchSourceFetch, fetchSource } from './sources/service.ts';
 
 export { transcribeEpisode } from './pipeline/transcribe.ts';
 export { analyzeEpisode, sweepPendingAnalyses } from './pipeline/analyze.ts';

@@ -1,0 +1,237 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import type { RssEpisodeInput } from '../src/sources/rss.ts';
+
+/** db/boss/rss 全部 mock：断言落在真实行为（SQL 形状、派发参数）上，不测 mock 本身。 */
+const rowMock = vi.fn();
+const rowsMock = vi.fn();
+const sendJobMock = vi.fn();
+const fetchPodcastFeedMock = vi.fn();
+
+vi.mock('../src/db/db.ts', () => ({
+  sql: (strings: readonly string[], ...values: unknown[]) => ({
+    text: strings.reduce(
+      (acc: string, part: string, i: number) => acc + part + (i < values.length ? `$${i + 1}` : ''),
+      '',
+    ),
+    values,
+  }),
+  row: (...args: unknown[]) => rowMock(...(args as [])),
+  rows: (...args: unknown[]) => rowsMock(...(args as [])),
+}));
+
+class MockFeedNotModifiedError extends Error {
+  constructor() {
+    super('feed not modified');
+    this.name = 'FeedNotModifiedError';
+  }
+}
+
+vi.mock('../src/sources/rss.ts', () => ({
+  FeedNotModifiedError: MockFeedNotModifiedError,
+  fetchPodcastFeed: (...args: unknown[]) => fetchPodcastFeedMock(...(args as [])),
+}));
+
+vi.mock('../src/queue/boss.ts', () => ({
+  sendJob: (...args: unknown[]) => sendJobMock(...(args as [])),
+}));
+
+const { dispatchSourceFetch, fetchSource, scanDueSources } = await import(
+  '../src/sources/service.ts'
+);
+
+interface Frag {
+  text: string;
+  values: unknown[];
+}
+
+/** 捕获到的 UPDATE sources 语句（经 rows() 走的持久化写入）。 */
+let updates: Frag[] = [];
+
+const sourceFixture = {
+  id: 7,
+  name: '测试播客',
+  config: { feedUrl: 'https://example.com/feed.xml' },
+  cursor: { lastFetchedAt: '2026-11-01T00:00:00Z', etag: 'W/"abc"', lastModified: 'Mon, 01 Jan 2026 00:00:00 GMT' },
+  health: { lastStatus: 'ok', lastError: null, consecutiveFailures: 0 },
+  interval_minutes: 60,
+};
+
+function episode(guid: string): RssEpisodeInput {
+  return {
+    guid,
+    title: `第 ${guid} 期`,
+    url: 'https://example.com/ep',
+    author: null,
+    publishedAt: new Date('2026-11-04T00:00:00Z'),
+    shownotes: null,
+    durationSeconds: 1800,
+    enclosureUrl: 'https://example.com/ep.mp3',
+    enclosureBytes: 1000,
+  };
+}
+
+beforeEach(() => {
+  updates = [];
+  rowMock.mockReset();
+  rowsMock.mockReset();
+  sendJobMock.mockReset();
+  fetchPodcastFeedMock.mockReset();
+  sendJobMock.mockResolvedValue('job-1');
+});
+
+describe('fetchSource 持久化（单条 UPDATE，304 保留 etag）', () => {
+  function installRouter(opts: { source?: unknown } = {}) {
+    rowMock.mockImplementation(async (frag: Frag) => {
+      if (frag.text.includes('FROM sources WHERE id')) {
+        return opts.source ?? sourceFixture;
+      }
+      if (frag.text.includes('INSERT INTO episodes')) {
+        return { id: 11, inserted: true };
+      }
+      return null;
+    });
+    rowsMock.mockImplementation(async (frag: Frag) => {
+      if (frag.text.includes('SELECT id FROM sources')) {
+        return [];
+      }
+      if (frag.text.includes('UPDATE sources')) {
+        updates.push(frag);
+        return [];
+      }
+      return [];
+    });
+  }
+
+  it('304 时只推进 lastFetchedAt，保留已存 etag/lastModified（恰一条 UPDATE）', async () => {
+    installRouter();
+    fetchPodcastFeedMock.mockRejectedValue(new MockFeedNotModifiedError());
+
+    const result = await fetchSource(7);
+
+    expect(result).toEqual({ fetched: 0, inserted: 0 });
+    expect(updates).toHaveLength(1);
+    const update = updates[0] as Frag;
+    // cursor patch 是 '{}'：只合并 lastFetchedAt，etag/lastModified 原样保留
+    expect(update.values[0]).toBe('{}');
+    // 不得再出现把 etag 写为 null 的 jsonb_set
+    expect(update.text).not.toContain('{etag}');
+    // health 同语句写入 ok
+    expect(update.values).toContain('ok');
+    expect(update.text).toContain('consecutiveFailures');
+  });
+
+  it('成功时把 etag/lastModified 并入 cursor patch（恰一条 UPDATE）', async () => {
+    installRouter();
+    fetchPodcastFeedMock.mockResolvedValue({
+      feedTitle: '测试播客',
+      episodes: [episode('g1')],
+      etag: 'W/"new"',
+      lastModified: 'Tue, 04 Nov 2026 00:00:00 GMT',
+    });
+
+    await fetchSource(7);
+
+    expect(updates).toHaveLength(1);
+    const patch = JSON.parse((updates[0] as Frag).values[1] as string) as Record<string, string>;
+    expect(patch).toEqual({ etag: 'W/"new"', lastModified: 'Tue, 04 Nov 2026 00:00:00 GMT' });
+  });
+
+  it('服务端不再返回条件头时，patch 存 JSON null（与旧行为一致）', async () => {
+    installRouter();
+    fetchPodcastFeedMock.mockResolvedValue({
+      feedTitle: null,
+      episodes: [],
+      etag: null,
+      lastModified: null,
+    });
+
+    await fetchSource(7);
+
+    expect(updates).toHaveLength(1);
+    const patch = JSON.parse((updates[0] as Frag).values[1] as string) as Record<string, unknown>;
+    expect(patch).toEqual({ etag: null, lastModified: null });
+  });
+
+  it('失败时只写 health（patch 为 null，lastFetchedAt 不动以保持到期重试）并重抛', async () => {
+    installRouter();
+    fetchPodcastFeedMock.mockRejectedValue(new Error('feed fetch failed: 500'));
+
+    await expect(fetchSource(7)).rejects.toThrow('feed fetch failed: 500');
+
+    expect(updates).toHaveLength(1);
+    const update = updates[0] as Frag;
+    expect(update.values[0]).toBeNull();
+    expect(update.values[1]).toBeNull();
+    expect(update.values).toContain('error');
+    expect(update.values).toContain(1); // consecutiveFailures 0 + 1
+  });
+
+  it('失败计数基于已有 consecutiveFailures 递增', async () => {
+    installRouter({
+      source: { ...sourceFixture, health: { lastStatus: 'error', lastError: 'x', consecutiveFailures: 2 } },
+    });
+    fetchPodcastFeedMock.mockRejectedValue(new Error('boom'));
+
+    await expect(fetchSource(7)).rejects.toThrow('boom');
+    expect((updates[0] as Frag).values).toContain(3);
+  });
+
+  it('新插入的单集按 singletonKey ep:<id> 派发转写', async () => {
+    installRouter();
+    let nextId = 10;
+    rowMock.mockImplementation(async (frag: Frag) => {
+      if (frag.text.includes('FROM sources WHERE id')) return sourceFixture;
+      if (frag.text.includes('INSERT INTO episodes')) {
+        nextId += 1;
+        return { id: nextId, inserted: true };
+      }
+      return null;
+    });
+    fetchPodcastFeedMock.mockResolvedValue({
+      feedTitle: null,
+      episodes: [episode('g1'), episode('g2')],
+      etag: null,
+      lastModified: null,
+    });
+
+    const result = await fetchSource(7);
+
+    expect(result).toEqual({ fetched: 2, inserted: 2 });
+    expect(sendJobMock).toHaveBeenNthCalledWith(1, 'episodes.transcribe', { episodeId: 11 }, { singletonKey: 'ep:11' });
+    expect(sendJobMock).toHaveBeenNthCalledWith(2, 'episodes.transcribe', { episodeId: 12 }, { singletonKey: 'ep:12' });
+  });
+});
+
+describe('scanDueSources 派发器（不内联抓取）', () => {
+  it('到期源逐个派发 sources.fetch，singletonKey src:<id>；去重（null jobId）不计数', async () => {
+    rowMock.mockReset();
+    rowsMock.mockImplementation(async (frag: Frag) => {
+      if (frag.text.includes('SELECT id FROM sources')) {
+        return [{ id: 1 }, { id: 2 }, { id: 3 }];
+      }
+      return [];
+    });
+    sendJobMock.mockImplementation(async (_name: string, data: { sourceId: number }) =>
+      data.sourceId === 2 ? null : 'job-9',
+    );
+
+    const sent = await scanDueSources();
+
+    expect(sent).toBe(2);
+    expect(sendJobMock).toHaveBeenCalledTimes(3);
+    expect(sendJobMock).toHaveBeenNthCalledWith(1, 'sources.fetch', { sourceId: 1 }, { singletonKey: 'src:1' });
+    expect(sendJobMock).toHaveBeenNthCalledWith(2, 'sources.fetch', { sourceId: 2 }, { singletonKey: 'src:2' });
+    expect(sendJobMock).toHaveBeenNthCalledWith(3, 'sources.fetch', { sourceId: 3 }, { singletonKey: 'src:3' });
+    // 派发器绝不下场抓取
+    expect(fetchPodcastFeedMock).not.toHaveBeenCalled();
+  });
+
+  it('dispatchSourceFetch 返回是否真正入队', async () => {
+    sendJobMock.mockResolvedValueOnce('job-1');
+    await expect(dispatchSourceFetch(42)).resolves.toBe(true);
+    sendJobMock.mockResolvedValueOnce(null);
+    await expect(dispatchSourceFetch(42)).resolves.toBe(false);
+    expect(sendJobMock).toHaveBeenLastCalledWith('sources.fetch', { sourceId: 42 }, { singletonKey: 'src:42' });
+  });
+});

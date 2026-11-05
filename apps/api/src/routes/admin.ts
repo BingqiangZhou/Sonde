@@ -6,6 +6,7 @@ import type { FastifyInstance, FastifyRequest } from 'fastify';
 
 import {
   ConflictError,
+  dispatchSourceFetch,
   fetchItunesTopPodcasts,
   fetchPodcastFeed,
   FeedNotModifiedError,
@@ -191,7 +192,7 @@ export async function adminRoutes(app: FastifyInstance) {
       tier: body.tier === 'T1' ? 'T1' : 'T2',
       intervalMinutes: clampInt(body.intervalMinutes, 5, 1440, 60),
     });
-    await sendJob('sources.fetch', { sourceId });
+    await dispatchSourceFetch(sourceId);
     return { ok: true, sourceId };
   });
 
@@ -235,7 +236,7 @@ export async function adminRoutes(app: FastifyInstance) {
   app.post('/sources/:id/fetch-now', async (request) => {
     const { id } = request.params as { id: string };
     const sourceId = parseId(id);
-    await sendJob('sources.fetch', { sourceId });
+    await dispatchSourceFetch(sourceId);
     return { ok: true };
   });
 
