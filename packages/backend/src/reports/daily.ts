@@ -11,7 +11,7 @@ import { SELECTION, SITE, categoryLabel, sectionOrderFor } from '@sonde/industry
 import { promptsDir } from '@sonde/industry/paths';
 
 import { loadConfig } from '../config.ts';
-import { row, rows, sql } from '../db/db.ts';
+import { getPool, row, rows, sql } from '../db/db.ts';
 import { loadPromptFiles } from '../prompts/loader.ts';
 import { renderPrompt } from '../prompts/renderer.ts';
 import { chatJson } from '../providers/llm.ts';
@@ -102,6 +102,9 @@ export interface ReportOptions {
   force?: boolean;
 }
 
+/** pg_advisory_lock 命名空间（单集分析用 42，见 pipeline/analyze.ts） */
+const ADVISORY_NS_REPORT = 43;
+
 export async function generateReport(
   kind: ReportKind,
   options: ReportOptions = {},
@@ -118,12 +121,39 @@ export async function generateReport(
   }
   const { start, end } = spec.window(reportKey, config.reportTimezone);
 
-  const existing = await row<{ revision: number }>(sql`
-    SELECT revision FROM daily_reports WHERE kind = ${kind} AND report_key = ${reportKey}
-  `);
-  if (existing && !options.force) {
-    return { reportKey, created: false, skipped: 'already exists' };
+  // 会话级咨询锁串行化同 (kind, reportKey) 的并发生成（cron + 手动触发）。
+  // 会话级而非事务级：LLM 生成耗时长，不能占用事务；连接断开时锁自动释放。
+  // hashtext 碰撞只会过度串行，无害。
+  const client = await getPool().connect();
+  try {
+    await client.query('SELECT pg_advisory_lock($1, hashtext($2))', [ADVISORY_NS_REPORT, `${kind}:${reportKey}`]);
+    try {
+      const existing = await client.query<{ revision: number }>(
+        'SELECT revision FROM daily_reports WHERE kind = $1 AND report_key = $2',
+        [kind, reportKey],
+      );
+      if ((existing.rowCount ?? 0) > 0 && !options.force) {
+        return { reportKey, created: false, skipped: 'already exists' };
+      }
+      return await buildAndPersist(kind, reportKey, { start, end });
+    } finally {
+      await client
+        .query('SELECT pg_advisory_unlock($1, hashtext($2))', [ADVISORY_NS_REPORT, `${kind}:${reportKey}`])
+        .catch(() => {});
+    }
+  } finally {
+    client.release();
   }
+}
+
+/** 锁内执行：取候选 → LLM 刊头 → 分节 → upsert。 */
+async function buildAndPersist(
+  kind: ReportKind,
+  reportKey: string,
+  window: { start: Date; end: Date },
+): Promise<{ reportKey: string; created: boolean; skipped?: string }> {
+  const spec = KINDS[kind];
+  const { start, end } = window;
 
   const candidates = await rows<SelectedEpisode>(sql`
     SELECT e.id AS episode_id, s.name AS podcast_name, e.title AS original_title,

@@ -274,7 +274,8 @@ export async function adminRoutes(app: FastifyInstance) {
         kind === 'monthly' ? '月报 reportKey 格式应为 YYYY-MM' : 'reportKey 格式应为 YYYY-MM-DD',
       );
     }
-    await sendJob(`reports.${kind}`, body.reportKey ? { reportKey: body.reportKey } : {});
+    // 手动触发 = 显式 force（重新生成、修订+1）
+    await sendJob(`reports.${kind}`, { ...(body.reportKey ? { reportKey: body.reportKey } : {}), force: true });
     return { ok: true };
   });
 

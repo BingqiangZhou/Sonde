@@ -131,4 +131,15 @@ describe('worker 处理器委派', () => {
     await monthly([{ data: {} }]);
     expect(generateReport).toHaveBeenCalledWith('monthly', { reportKey: undefined, force: true });
   });
+
+  it('reports.*：payload 可显式传 force=false（缺省仍为 true，保持 cron 覆盖语义）', async () => {
+    loadConfig.mockReturnValue({ workConcurrency: 1 });
+    const boss = makeBoss();
+    await registerJobs(boss as never);
+
+    const daily = byName(boss.registrations, 'reports.daily')[0]?.handler;
+    if (!daily) throw new Error('reports.daily handler 未注册');
+    await daily([{ data: { reportKey: '2026-11-04', force: false } }]);
+    expect(generateReport).toHaveBeenLastCalledWith('daily', { reportKey: '2026-11-04', force: false });
+  });
 });

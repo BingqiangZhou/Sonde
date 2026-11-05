@@ -47,7 +47,8 @@ function reportHandler(kind: 'daily' | 'weekly' | 'monthly') {
   return async (jobs: Job): Promise<void> => {
     for (const job of jobs) {
       const data = job.data as { reportKey?: string; force?: boolean };
-      await generateReport(kind, { reportKey: data?.reportKey, force: true });
+      // 缺省 force=true 保持 cron 覆盖语义（schedules.ts 显式传 true）；catch-up 场景可显式传 false
+      await generateReport(kind, { reportKey: data?.reportKey, force: data.force ?? true });
     }
   };
 }
