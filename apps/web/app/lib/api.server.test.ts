@@ -1,7 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { ApiUnavailableError } from './api-error.ts';
-
 const { apiGet } = await import('./api.server.ts');
 
 function statusResponse(status: number) {
@@ -25,19 +23,19 @@ describe('apiGet 错误分层', () => {
     }
   });
 
-  it('5xx → 抛 ApiUnavailableError（携带状态码），不再与“未生成”同形', async () => {
+  it('5xx → 抛 Response（携带 .status）——框架原生通道，ErrorBoundary 可判型', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => statusResponse(502)));
     const error = await apiGet('/site/reports/daily/latest').catch((e: unknown) => e);
-    expect(error).toBeInstanceOf(ApiUnavailableError);
-    expect((error as ApiUnavailableError).status).toBe(502);
+    expect(error).toBeInstanceOf(Response);
+    expect((error as Response).status).toBe(502);
   });
 
-  it('网络/超时 → 抛 ApiUnavailableError(503)', async () => {
+  it('网络/超时 → 抛 Response(503)', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => {
       throw new TypeError('fetch failed');
     }));
     const error = await apiGet('/site/meta').catch((e: unknown) => e);
-    expect(error).toBeInstanceOf(ApiUnavailableError);
-    expect((error as ApiUnavailableError).status).toBe(503);
+    expect(error).toBeInstanceOf(Response);
+    expect((error as Response).status).toBe(503);
   });
 });
