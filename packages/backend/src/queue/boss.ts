@@ -17,9 +17,14 @@ export async function getBoss(): Promise<PgBoss> {
   }
   starting = (async () => {
     const boss = new PgBoss({ connectionString: loadConfig().databaseUrl });
+    // 无监听的 error 事件会直接抛出（EventEmitter 语义）——DB 瞬断不能击穿进程
+    boss.on('error', (error) => console.error('[pg-boss] error:', error));
     await boss.start();
     for (const name of QUEUE_NAMES) {
+      // createQueue 对已存在队列是 no-op（ON CONFLICT DO NOTHING + 早返回），
+      // 策略/expire 变更必须经 updateQueue 才能落到存量部署
       await boss.createQueue(name, { name, ...QUEUES[name] });
+      await boss.updateQueue(name, { name, ...QUEUES[name] });
     }
     instance = boss;
     return boss;
