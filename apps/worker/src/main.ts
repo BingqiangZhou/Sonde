@@ -10,7 +10,7 @@ const config = loadConfig();
 
 async function main() {
   const boss = await getBoss();
-  registerJobs(boss);
+  await registerJobs(boss);
   await registerSchedules(boss);
   console.log(`[sonde-worker] started (concurrency=${config.workConcurrency})`);
 }
