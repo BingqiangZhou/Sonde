@@ -67,9 +67,12 @@ describe('episodeInputsFromFeed', () => {
   });
 
   it('first import filters by recency and limit', () => {
+    // 「新」单集日期必须相对当前时间生成：firstImport 截断线由 Date.now() 计算（默认 14 天窗），
+    // 硬编码日期会在窗口滑过后过期（2026-10-12 起本用例即因此失败）
+    const freshIso = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString();
     const old = item({ guid: 'old', isoDate: '2020-01-01T00:00:00.000Z' });
-    const fresh1 = item({ guid: 'f1' });
-    const fresh2 = item({ guid: 'f2' });
+    const fresh1 = item({ guid: 'f1', isoDate: freshIso });
+    const fresh2 = item({ guid: 'f2', isoDate: freshIso });
     const result = episodeInputsFromFeed([old, fresh1, fresh2], { firstImport: true, firstImportLimit: 1 });
     expect(result.map((e) => e.guid)).toEqual(['f1']);
   });
