@@ -28,6 +28,9 @@ const SCORING_TRANSCRIPT_LIMIT = 10_000;
 /** 写作时的转录截断（需要更完整的上下文） */
 const WRITING_TRANSCRIPT_LIMIT = 30_000;
 
+/** pg_advisory_xact_lock 命名空间（报表用 43，见 reports/daily.ts） */
+const ADVISORY_NS_ANALYSIS = 42;
+
 interface EpisodeForAnalysis {
   id: number;
   title: string;
@@ -102,8 +105,10 @@ export async function analyzeEpisode(episodeId: number): Promise<{ selected: boo
     writingVersion = writing.version;
   }
 
-  // ③ 落库：旧判定失效 + 插入当前判定 + 单集状态收尾（同一事务）
+  // ③ 落库：旧判定失效 + 插入当前判定 + 单集状态收尾（同一事务）。
+  //  事务级咨询锁串行化同集并发分析（事件驱动 + sweep 双发时）；配合 0003 的部分唯一索引兜底。
   await withTx(async (client) => {
+    await client.query('SELECT pg_advisory_xact_lock($1, $2)', [ADVISORY_NS_ANALYSIS, episodeId]);
     await client.query('UPDATE analyses SET is_current = false WHERE episode_id = $1 AND is_current', [episodeId]);
     await client.query(
       `INSERT INTO analyses
