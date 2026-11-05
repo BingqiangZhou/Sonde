@@ -95,9 +95,11 @@ export default function App() {
 
 export function ErrorBoundary() {
   const error = useRouteError();
-  // 鸭子判型：loader 抛出的错误经 SSR 序列化后 instanceof 必失效，只能看 status
+  // 鸭子判型：loader 抛出的错误经 SSR 序列化后 instanceof 必失效，只能看 status。
+  // 路由未匹配的错误带 status:404 → 404 卡片；无 status 的未知错误（如 loader 自身抛异常）
+  // 按"服务暂时不可用"处理，不再误标成 404（P1-9 的原始诉求）。
   const status = (error as { status?: unknown } | null)?.status;
-  const unavailable = typeof status === 'number' && status >= 500;
+  const unavailable = !(typeof status === 'number' && status < 500);
   if (unavailable) {
     return (
       <div className="flex min-h-[70vh] items-center justify-center px-4 py-16">

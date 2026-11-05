@@ -117,6 +117,16 @@ async function proxyToApi(req: InstanceType<typeof import('node:http').IncomingM
   const target = `${API_URL}${req.url}`;
   const headers = { ...req.headers } as Record<string, string>;
   delete headers.host;
+  // 标准代理行为：追加本跳的对端地址到 XFF 链尾。
+  // api 侧 trustProxy:1 只信最后一跳 → 取到的是这里追加的真实来源地址，
+  // 客户端自行伪造的 XFF 落在被忽略的左侧，无法再旋转限速桶。
+  // （若前面还有 Caddy，见 api main.ts 的 trustProxy 注释。）
+  const peer = req.socket.remoteAddress;
+  if (peer) {
+    headers['x-forwarded-for'] = headers['x-forwarded-for']
+      ? `${headers['x-forwarded-for']}, ${peer}`
+      : peer;
+  }
   try {
     const chunks: Buffer[] = [];
     for await (const chunk of req) {

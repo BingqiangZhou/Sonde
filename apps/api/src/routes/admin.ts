@@ -27,7 +27,20 @@ const COOKIE_NAME = 'sonde_admin';
 const LOGIN_MAX_FAILURES = 5;
 const LOGIN_LOCKOUT_MS = 15 * 60 * 1000;
 const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+/** Map 兜底上限：防伪造 IP 无界增长（超限时丢弃已过期的锁与计数）。 */
+const LOGIN_MAP_MAX = 5_000;
 const loginAttempts = new Map<string, { count: number; lockedUntil: number }>();
+
+function pruneLoginAttempts(now: number): void {
+  if (loginAttempts.size <= LOGIN_MAP_MAX) {
+    return;
+  }
+  for (const [ip, state] of loginAttempts) {
+    if (state.lockedUntil < now) {
+      loginAttempts.delete(ip);
+    }
+  }
+}
 
 export async function adminRoutes(app: FastifyInstance) {
   // ── 登录 / 会话 ────────────────────────────────────────────
@@ -40,9 +53,11 @@ export async function adminRoutes(app: FastifyInstance) {
     }
     const ip = request.ip;
     const now = Date.now();
+    pruneLoginAttempts(now);
     const state = loginAttempts.get(ip);
     if (state && state.lockedUntil > now) {
       reply.code(429);
+      reply.header('retry-after', Math.ceil((state.lockedUntil - now) / 1000));
       return { error: '尝试次数过多，请 15 分钟后再试' };
     }
     if (!password || !safeEqual(password, config.adminPassword)) {

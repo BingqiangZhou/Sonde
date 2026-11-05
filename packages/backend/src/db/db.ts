@@ -20,6 +20,9 @@ export function getPool(): pg.Pool {
       connectionString: loadConfig().databaseUrl,
       max: 10,
     });
+    // pg.Pool 是 EventEmitter：空闲连接被服务端断开（DB 重启/防火墙空闲超时）会发 'error'，
+    // 无监听即进程崩溃（与 pg-boss 的 boss.on('error') 同理）——只记日志，由池自动重建连接。
+    pool.on('error', (error) => console.error('[pg-pool] idle client error:', error.message));
   }
   return pool;
 }

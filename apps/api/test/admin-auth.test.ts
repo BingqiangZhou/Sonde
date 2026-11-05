@@ -44,7 +44,7 @@ afterEach(() => {
 });
 
 describe('POST /api/admin/login 限速', () => {
-  it('密码错误 → 401；连续 5 次错误后锁定，正确密码也 429', async () => {
+  it('密码错误 → 401；连续 5 次错误后锁定，正确密码也 429（带 Retry-After）', async () => {
     const app = await makeApp();
     for (let i = 0; i < 5; i++) {
       const res = await app.inject({ method: 'POST', url: '/api/admin/login', payload: { password: 'wrong' }, remoteAddress: IP_A });
@@ -53,6 +53,10 @@ describe('POST /api/admin/login 限速', () => {
     const locked = await app.inject({ method: 'POST', url: '/api/admin/login', payload: { password: 'correct-password' }, remoteAddress: IP_A });
     expect(locked.statusCode).toBe(429);
     expect(locked.json()).toMatchObject({ error: expect.stringContaining('尝试次数过多') });
+    const retryAfter = Number(locked.headers['retry-after']);
+    expect(Number.isFinite(retryAfter)).toBe(true);
+    expect(retryAfter).toBeGreaterThan(0);
+    expect(retryAfter).toBeLessThanOrEqual(15 * 60);
   });
 
   it('限速按 IP 隔离：A 锁定不影响 B', async () => {

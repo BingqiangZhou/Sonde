@@ -17,8 +17,13 @@ if (!config.sessionSecret) {
 
 const app = Fastify({
   logger: { level: process.env.LOG_LEVEL ?? 'info' },
-  // api 在 web/caddy 反代之后：request.ip 取 X-Forwarded-For，登录限速才能按真实客户端 IP 生效
-  trustProxy: true,
+  // 只信任一跳（web 反代，它在 XFF 链尾追加真实来源地址）：
+  // request.ip 取链尾条目，客户端伪造的 XFF 无法旋转登录限速桶。
+  // Fastify 5 类型不接受数字，用 proxy-addr 的等价字符串形式 '1'（= 1 跳）。
+  // 注意：若启用 Caddy（https profile），浏览器→caddy→web→api 共两跳代理，
+  // 所有请求会落在 caddy 容器 IP 一个桶里（无法绕过，但共享锁定窗口）；
+  // 如需按真实客户端分桶，可改为 '2'。
+  trustProxy: '1',
 });
 
 await app.register(cookie, {
