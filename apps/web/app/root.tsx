@@ -8,6 +8,7 @@ import {
   ScrollRestoration,
   useLocation,
   useNavigation,
+  useRouteError,
 } from 'react-router';
 
 import { SITE } from '@sonde/industry';
@@ -93,6 +94,30 @@ export default function App() {
 }
 
 export function ErrorBoundary() {
+  const error = useRouteError();
+  // 鸭子判型：loader 抛出的错误经 SSR 序列化后 instanceof 必失效，只能看 status
+  const status = (error as { status?: unknown } | null)?.status;
+  const unavailable = typeof status === 'number' && status >= 500;
+  if (unavailable) {
+    return (
+      <div className="flex min-h-[70vh] items-center justify-center px-4 py-16">
+        <div className="max-w-sm text-center">
+          <div className="mono text-xs text-stone-400">服务暂时不可用</div>
+          <h1 className="mt-1.5 font-serif text-xl font-bold">API 暂时无法访问</h1>
+          <p className="mt-2 text-sm leading-relaxed text-stone-500">
+            数据服务暂时不可用，内容没有丢失，稍后刷新即可恢复。
+          </p>
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="mt-6 inline-block rounded-md bg-ink px-5 py-2 text-sm font-medium text-paper hover:bg-vermilion"
+          >
+            刷新重试
+          </button>
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="flex min-h-[70vh] items-center justify-center px-4 py-16">
       <div className="max-w-sm text-center">
