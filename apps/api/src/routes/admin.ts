@@ -23,6 +23,12 @@ import type { DiscoveredPodcast } from '@sonde/backend';
 
 const COOKIE_NAME = 'sonde_admin';
 
+/** 登录限速（内存级，每 IP）：连续失败 N 次锁定一段时间。个人部署规模足够。 */
+const LOGIN_MAX_FAILURES = 5;
+const LOGIN_LOCKOUT_MS = 15 * 60 * 1000;
+const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const loginAttempts = new Map<string, { count: number; lockedUntil: number }>();
+
 export async function adminRoutes(app: FastifyInstance) {
   // ── 登录 / 会话 ────────────────────────────────────────────
   app.post('/login', async (request, reply) => {
@@ -32,17 +38,35 @@ export async function adminRoutes(app: FastifyInstance) {
       reply.code(503);
       return { error: '未配置 ADMIN_PASSWORD' };
     }
+    const ip = request.ip;
+    const now = Date.now();
+    const state = loginAttempts.get(ip);
+    if (state && state.lockedUntil > now) {
+      reply.code(429);
+      return { error: '尝试次数过多，请 15 分钟后再试' };
+    }
     if (!password || !safeEqual(password, config.adminPassword)) {
+      const count = (state?.count ?? 0) + 1;
+      loginAttempts.set(ip, {
+        count,
+        lockedUntil: count >= LOGIN_MAX_FAILURES ? now + LOGIN_LOCKOUT_MS : 0,
+      });
       reply.code(401);
       return { error: '密码错误' };
     }
-    reply.setCookie(COOKIE_NAME, 'ok', {
-      path: '/',
-      httpOnly: true,
-      sameSite: 'lax',
-      signed: true,
-      maxAge: 7 * 24 * 60 * 60,
-    });
+    loginAttempts.delete(ip);
+    // 载荷带过期时间戳：换 SESSION_SECRET / 版本升级即可整体失效
+    reply.setCookie(
+      COOKIE_NAME,
+      JSON.stringify({ v: 1, exp: now + SESSION_TTL_MS }),
+      {
+        path: '/',
+        httpOnly: true,
+        sameSite: 'lax',
+        signed: true,
+        maxAge: 7 * 24 * 60 * 60,
+      },
+    );
     return { ok: true };
   });
 
@@ -300,7 +324,15 @@ function isAdmin(request: FastifyRequest): boolean {
     return false;
   }
   const unsigned = request.unsignCookie(raw);
-  return unsigned.valid && unsigned.value === 'ok';
+  if (!unsigned.valid || !unsigned.value) {
+    return false;
+  }
+  try {
+    const payload = JSON.parse(unsigned.value) as { v?: number; exp?: number };
+    return payload.v === 1 && typeof payload.exp === 'number' && payload.exp > Date.now();
+  } catch {
+    return false;
+  }
 }
 
 function safeEqual(a: string, b: string): boolean {

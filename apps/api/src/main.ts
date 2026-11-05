@@ -10,12 +10,19 @@ import { siteRoutes } from './routes/site.ts';
 
 const config = loadConfig();
 
+if (!config.sessionSecret) {
+  // 不再回退弱默认密钥：cookie 签名密钥缺失应拒止启动（init-env 会生成）
+  throw new Error('SESSION_SECRET 未配置：请运行 node scripts/init-env.ts 生成 .env，或手动设置 SESSION_SECRET');
+}
+
 const app = Fastify({
   logger: { level: process.env.LOG_LEVEL ?? 'info' },
+  // api 在 web/caddy 反代之后：request.ip 取 X-Forwarded-For，登录限速才能按真实客户端 IP 生效
+  trustProxy: true,
 });
 
 await app.register(cookie, {
-  secret: config.sessionSecret || 'sonde-insecure-dev-secret',
+  secret: config.sessionSecret,
 });
 
 app.get('/api/health', async () => ({ status: 'ok', service: 'sonde-api' }));
