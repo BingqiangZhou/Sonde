@@ -33,8 +33,8 @@ export async function transcribeChunk(options: TranscribeChunkOptions): Promise<
 
   const startedAt = Date.now();
   const bytes = (await stat(options.filePath)).size;
-  // 按字节估算音频时长（16kHz 单声道 mp3 ≈ 16kbps ≈ 2000 字节/秒），仅用于记账
-  const estimatedSeconds = Math.round(bytes / 2000);
+  // 按字节估算音频时长（转码后 64kbps 单声道 mp3 ≈ 8000 字节/秒，见 pipeline/transcribe.ts 的 -b:a 64k），仅用于记账
+  const estimatedSeconds = Math.round(bytes / 8000);
 
   try {
     const { text } = await callWithRetry(options, 3);
