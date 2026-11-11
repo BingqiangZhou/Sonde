@@ -42,7 +42,7 @@ const sourcesSyncXyzrankHandler = async (jobs: Job): Promise<void> => {
       const result = await syncXyzrankSources(entries);
       console.log(
         `[sonde-worker] xyzrank 同步完成: 榜单 ${entries.length} 个(跳过 ${skipped}),` +
-          `新增 ${result.added},更新 ${result.updated},手工订阅保留 ${result.keptManual},停用 ${result.deactivated}`,
+          `新增 ${result.added},更新 ${result.updated},停用 ${result.deactivated}`,
       );
     } catch (error) {
       if (error instanceof ValidationError) {

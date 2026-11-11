@@ -16,7 +16,7 @@ export const QUEUES = {
    *  expire ≥ 间隔会导致下一轮派发被吞(实测一半派发被去重)。最坏路径 60s 超时
    *  +30s 重试延迟 +60s 重试 = 150s,180s 留余量。 */
   'sources.fetch': { retryLimit: 1, retryBackoff: true, retryDelay: 30, expireInSeconds: 180, policy: 'stately' },
-  /** 每日 04:00(北京)同步 xyzrank 播客榜前 1000(进榜新增/掉榜停用,origin=xyzrank 隔离手工订阅)。
+  /** 每日 04:00(北京)同步 xyzrank 播客榜前 1000(进榜新增/掉榜停用——停用保留历史,不删除)。
    *  10 页 API + 单事务千级 upsert,expire 给足;stately + singletonKey 防与启动触发的同步堆叠。 */
   'sources.sync-xyzrank': {
     retryLimit: 1,
