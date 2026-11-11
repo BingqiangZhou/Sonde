@@ -75,6 +75,8 @@ describe('syncSources', () => {
     expect(upserts[0]?.text).toContain(`ON CONFLICT (lower(config->>'feedUrl')) WHERE config->>'feedUrl' IS NOT NULL`);
     expect(upserts[0]?.text).toContain('DO UPDATE SET');
     expect(upserts[0]?.text).toContain('is_active = true');
+    // jsonb_build_object 的参数必须显式 ::text 转型(variadic "any" 推断不出,联调实测 42P18)
+    expect(upserts[0]?.text).toMatch(/jsonb_build_object\('feedUrl', \$[0-9]+::text\)/);
     expect(upserts[0]?.values.slice(0, 3)).toEqual(['播客 A', 'https://a.com/feed.xml', 30]);
     expect(result).toMatchObject({ added: 2, updated: 0 });
   });

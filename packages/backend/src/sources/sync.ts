@@ -59,7 +59,7 @@ export async function syncSources(entries: SeedSourceEntry[]): Promise<SyncResul
     for (const entry of entries) {
       const result = await client.query<{ inserted: boolean }>(sql`
         INSERT INTO sources (name, config, interval_minutes, is_active)
-        VALUES (${entry.name}, jsonb_build_object('feedUrl', ${entry.feedUrl}), ${entry.intervalMinutes}, true)
+        VALUES (${entry.name}, jsonb_build_object('feedUrl', ${entry.feedUrl}::text), ${entry.intervalMinutes}, true)
         ON CONFLICT (lower(config->>'feedUrl')) WHERE config->>'feedUrl' IS NOT NULL
         DO UPDATE SET
           name = EXCLUDED.name,
