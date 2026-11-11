@@ -6,6 +6,7 @@ import { SITE } from '@sonde/industry';
 import { IconWave } from '~/components/icons.tsx';
 import { apiGet } from '~/lib/api.server.ts';
 import { formatDateTime, formatDuration } from '~/lib/format.ts';
+import { safeHttpUrl } from '~/lib/url.ts';
 import type { EpisodesPage, SiteMeta, EpisodeListItem } from '~/lib/types.ts';
 
 export const meta: MetaFunction = () => [
@@ -26,6 +27,7 @@ export async function loader({ request }: { request: Request }) {
 /** 单集条目：封面 + 播客名/时间/时长 + 衬线标题（外链）+ RSS 简介。 */
 function EpisodeRow({ item }: { item: EpisodeListItem }) {
   const duration = formatDuration(item.durationSeconds);
+  const href = safeHttpUrl(item.url);
   return (
     <li className="py-5">
       <div className="flex gap-4">
@@ -53,9 +55,9 @@ function EpisodeRow({ item }: { item: EpisodeListItem }) {
               </>
             )}
           </p>
-          {item.url ? (
+          {href ? (
             <a
-              href={item.url}
+              href={href}
               target="_blank"
               rel="noreferrer"
               className="mt-1 block font-serif text-lg font-semibold leading-snug hover:text-vermilion"
@@ -87,6 +89,7 @@ export default function Timeline() {
     month: 'long',
     day: 'numeric',
     weekday: 'long',
+    timeZone: 'Asia/Shanghai',
   });
 
   return (
