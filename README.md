@@ -13,7 +13,7 @@
 ## 架构
 
 ```
-apps/api       Fastify：站点读 API（/api/site/meta、/api/site/episodes）
+apps/api       Fastify：站点读 API（/api/site/meta、/api/site/episodes、/api/site/sources、/api/site/categories）
 apps/worker    pg-boss：sources.fetch 队列 + 每分钟到期扫描 cron
 apps/web       React Router 8 SSR：单页时间线（中文、报刊风、深浅双主题）
 packages/backend  业务逻辑（原生 SQL、RSS 采集、时间线读取、订阅同步）
@@ -42,7 +42,7 @@ docker compose up -d --build
 ## 定制
 
 - 站点名/文案：`industry/site.ts`
-- 一级分类词表：`GENRE_ROLLUP`（`packages/backend/src/sources/xyzrank.ts`，改字典后下次同步生效）
+- 一级分类词表：`GENRE_ROLLUP`（`packages/backend/src/sources/xyzrank.ts`，改字典后下次同步对当期在榜源生效；掉榜停用源保留旧分类）
 
 ## License
 

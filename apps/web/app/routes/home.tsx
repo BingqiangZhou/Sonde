@@ -74,7 +74,7 @@ export default function Timeline() {
     // @container:时间线的窄态切换看"内容列实际宽度"而非视口(侧栏展开会挤窄主栏)
     <div className="@container space-y-10 pt-8 pb-4">
       {categoryItems.length === 0 ? (
-        /* 还没有任何订阅:等待榜单首次同步(筛选与搜索此时无意义) */
+        /* 还没有任何已发布单集:等待榜单同步与首抓(筛选与搜索此时无意义) */
         <div className="border border-dashed border-stone-300 bg-white/50 px-6 py-14 text-center text-stone-400">
           <p className="font-serif text-lg font-semibold text-stone-500">时间线还是空的</p>
           <p className="mt-2 text-sm leading-relaxed">
