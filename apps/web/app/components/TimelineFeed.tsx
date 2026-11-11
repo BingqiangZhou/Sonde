@@ -113,7 +113,8 @@ function TimelineItem({ item }: { item: EpisodeListItem }) {
 
 /** 更新时间线:按日分组渲染 + 无限滚动。
  *  首批来自 SSR loader;追加批经 /resources/episodes 资源路由由 useFetcher 拉取,
- *  哨兵进入视口上方约 800px 即预载。筛选变更由父组件换 key 重挂载,状态整体复位。 */
+ *  哨兵进入视口下方 800px 预载余量内即开始加载(未触底先取数)。筛选变更由父组件
+ *  换 key 重挂载,状态整体复位。 */
 export function TimelineFeed({
   initialItems,
   initialHasMore,
@@ -139,8 +140,8 @@ export function TimelineFeed({
   const days = useMemo(() => groupTimelineDays(items), [items]);
   const nextPage = loadedPages + 2;
 
-  // 观察:哨兵进入视口上方 800px 即预载;每次重新进入视口都重新武装重试
-  // (IO 只在跨越时触发——失败后哨兵不动,不会形成重试风暴)
+  // 观察:rootMargin 下边距把根矩形向下扩 800px,哨兵进入"视口下方 800px"余量即预载;
+  // 每次重新进入余量都重新武装重试(IO 只在跨越时触发——失败后哨兵不动,不会重试风暴)
   useEffect(() => {
     const el = sentinelRef.current;
     if (!el) {
@@ -157,7 +158,7 @@ export function TimelineFeed({
           setFailed(false);
         }
       },
-      { rootMargin: '800px 0px 0px 0px' },
+      { rootMargin: '0px 0px 800px 0px' },
     );
     io.observe(el);
     return () => io.disconnect();
@@ -245,7 +246,7 @@ export function TimelineFeed({
         </p>
       )}
 
-      {/* 哨兵:始终渲染,进入视口上方 800px 触发预载 */}
+      {/* 哨兵:始终渲染,进入视口下方 800px 预载余量即触发 */}
       <div ref={sentinelRef} aria-hidden="true" />
     </>
   );
