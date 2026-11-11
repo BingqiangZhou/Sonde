@@ -43,6 +43,10 @@ export function normalizeSeedEntries(raw: unknown): SeedSourceEntry[] {
     if (category !== undefined && category !== null && typeof category !== 'string') {
       throw new ValidationError(`sources.json 第 ${index} 项 category 必须是字符串`);
     }
+    // 上限与 api/web 两端的截断一致:超长分类入库后 chip 会被截断,永远匹配不到自己
+    if (typeof category === 'string' && category.trim().length > 30) {
+      throw new ValidationError(`sources.json 第 ${index} 项 category 超过 30 字`);
+    }
     const interval =
       intervalMinutes === undefined
         ? DEFAULT_INTERVAL_MINUTES

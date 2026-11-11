@@ -73,6 +73,12 @@ describe('normalizeSeedEntries', () => {
   it('category 非字符串抛错(配置错误应当响亮)', () => {
     expect(() => normalizeSeedEntries([{ name: 'x', feedUrl: 'https://x.com/f', category: 123 }])).toThrow('category');
   });
+  it('category 超 30 字符抛错(超长分类的 chip 会被 api/web 截断,永远匹配不到自己)', () => {
+    expect(() => normalizeSeedEntries([{ name: 'x', feedUrl: 'https://x.com/f', category: '类'.repeat(31) }])).toThrow(
+      'category',
+    );
+    expect(() => normalizeSeedEntries([{ name: 'x', feedUrl: 'https://x.com/f', category: '类'.repeat(30) }])).not.toThrow();
+  });
 });
 
 describe('syncSources', () => {
