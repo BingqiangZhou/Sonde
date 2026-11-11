@@ -70,6 +70,24 @@ describe('syncXyzrankSources(榜单同步)', () => {
     expect(result).toEqual({ added: 2, updated: 0, deactivated: 0 });
   });
 
+  it('added/updated 计数来自 xmax=0,整个同步在单事务内', async () => {
+    clientMock.query.mockImplementation(async (frag: { text: string; values: unknown[] }) => {
+      queries.push(frag);
+      return frag.text.includes('INSERT INTO sources')
+        ? { rows: [{ inserted: false }], rowCount: 1 }
+        : { rows: [], rowCount: 0 };
+    });
+
+    const result = await syncXyzrankSources([
+      { name: 'A', feedUrl: 'https://a.com/f', intervalMinutes: 10 },
+      { name: 'B', feedUrl: 'https://b.com/f', intervalMinutes: 10 },
+    ]);
+
+    // 千级 upsert + 一条停用 UPDATE 必须同一个事务
+    expect(withTxMock).toHaveBeenCalledTimes(1);
+    expect(result).toEqual({ added: 0, updated: 2, deactivated: 0 });
+  });
+
   it('upsert 同样写 category 列:有值透传,缺省绑 null', async () => {
     clientMock.query.mockImplementation(async (frag: { text: string; values: unknown[] }) => {
       queries.push(frag);
