@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useFetcher } from 'react-router';
 
 import { IconWave } from '~/components/icons.tsx';
+import { createSentinelObserver } from '~/lib/infinite-scroll.ts';
 import { currentShanghaiYear, formatDuration, formatTimelineStamp } from '~/lib/format.ts';
 import { groupTimelineDays } from '~/lib/timeline.ts';
 import type { EpisodeListItem, EpisodesBatch } from '~/lib/types.ts';
@@ -140,26 +141,23 @@ export function TimelineFeed({
   const days = useMemo(() => groupTimelineDays(items), [items]);
   const nextPage = loadedPages + 2;
 
-  // 观察:rootMargin 下边距把根矩形向下扩 800px,哨兵进入"视口下方 800px"余量即预载;
-  // 每次重新进入余量都重新武装重试(IO 只在跨越时触发——失败后哨兵不动,不会重试风暴)
+  // 观察:哨兵进入视口下方 800px 预载余量即触发;每次重新进入余量都重新武装重试
+  // (IO 只在跨越时触发——失败后哨兵不动,不会重试风暴)。rootMargin 的槽序
+  // 几何由 lib/infinite-scroll.ts 构造并有单测钉死(提前量必须写下边距槽)。
   useEffect(() => {
     const el = sentinelRef.current;
     if (!el) {
       return;
     }
-    const io = new IntersectionObserver(
-      (entries) => {
-        const entry = entries[0];
-        if (!entry) {
-          return;
-        }
-        setIntersecting(entry.isIntersecting);
-        if (entry.isIntersecting) {
-          setFailed(false);
-        }
-      },
-      { rootMargin: '0px 0px 800px 0px' },
-    );
+    const io = createSentinelObserver((isIntersecting) => {
+      setIntersecting(isIntersecting);
+      if (isIntersecting) {
+        setFailed(false);
+      }
+    });
+    if (!io) {
+      return;
+    }
     io.observe(el);
     return () => io.disconnect();
   }, []);
