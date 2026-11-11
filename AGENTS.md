@@ -7,19 +7,19 @@
 
 ## Project Structure
 - `apps/api/` — Fastify HTTP service: site read API (`/api/site/meta`, `/api/site/episodes`, `/api/site/sources`, `/api/site/categories`), health.
-- `apps/worker/` — pg-boss worker: the `sources.fetch` queue consumer (8 concurrent workers) + every-minute due-source scan cron; also syncs the xyzrank.com top-1000 podcast ranking daily at 04:00 Beijing time (and once at startup) — sources it manages carry `config.origin='xyzrank'` and never touch manual subscriptions from `sources.json`; on startup it also cleans up the five queue schedules left over from the removed AI pipeline (pg-boss cron plans persist in the DB).
+- `apps/worker/` — pg-boss worker: the `sources.fetch` queue consumer (8 concurrent workers) + every-minute due-source scan cron; also syncs the xyzrank.com top-1000 podcast ranking daily at 04:00 Beijing time (and once at startup) — it solely owns the subscription table (sources it manages carry `config.origin='xyzrank'`); on startup it also cleans up the five queue schedules left over from the removed AI pipeline (pg-boss cron plans persist in the DB).
 - `apps/web/` — React Router 8 SSR web app (Chinese UI). ONE route: the timeline page `/` (cover, podcast, datetime, duration, title linking out, RSS-provided shownotes). Reads ONLY via HTTP from api (`lib/api.server.ts`), never touches the DB. Client-only features: theme mode (localStorage).
 - `packages/backend/` — all business logic: `db` (raw tagged-template SQL, no ORM), `sources` (rss fetch/parse, service, sync; `xyzrank.ts` holds the category rollup dict `GENRE_ROLLUP` — the single source of truth for 一级分类), `episodes` (timeline read incl. category aggregation), `queue`, `config`, `errors`.
-- `industry/` — the customization pack (change config, not code): `site.ts` (site identity/copy), `sources.json` (the single source of truth for subscriptions).
+- `industry/` — the customization pack (change config, not code): `site.ts` (site identity/copy).
 - `database/migrations/` — plain SQL migrations applied by `scripts/migrate.ts`.
-- `scripts/` — `init-env.ts`, `migrate.ts`, `seed.ts` (syncs sources.json into the DB).
+- `scripts/` — `init-env.ts`, `migrate.ts`.
 - `deploy/` — Caddyfile (reverse-proxies everything to web).
 
 ## Build, Test, and Development Commands
 - Install: `npm install` (root, workspaces)
 - Typecheck: `npm run typecheck`
 - Tests: `npm test` (vitest, workspaces-wide)
-- Migrate + seed: `npm run db:setup` (needs Postgres running)
+- Migrate: `npm run db:migrate` (needs Postgres running)
 - Run api locally: `npm run dev -w apps/api` (tsx watch)
 - Run worker locally: `npm run dev -w apps/worker`
 - Run web locally: `npm run dev -w apps/web`
@@ -28,8 +28,8 @@
 ## Coding Style & Conventions
 - TypeScript strict mode everywhere; ESM modules (`"type": "module"`), `.ts` extensions in relative imports where used by tsx.
 - No ORM: raw SQL via tagged templates in `packages/backend/src/db/`. Migrations are plain SQL files, numbered (`0001_*.sql`). Destructive migrations need a comment saying so.
-- Subscriptions are managed by editing `industry/sources.json` and running `npm run db:seed` — there is NO admin UI. Seed semantics: entries in the list are upserted (by `lower(feedUrl)`, re-listed sources re-activated); sources missing from the list are deactivated (`is_active = false`, rows and episodes kept — the timeline shows deactivated sources' history).
-- Industry config (`industry/*.ts`, `sources.json`) is the intended customization surface — framework code reads it, never hardcodes site specifics.
+- Subscriptions are managed solely by the automatic xyzrank top-1000 sync (worker, daily 04:00 Beijing + at startup) — there is NO manual subscription file and NO admin UI. Sync semantics: ranking entries are upserted (by `lower(feedUrl)`; re-ranked sources re-activated); sources dropping off the ranking are deactivated (`is_active = false`, rows and episodes kept — the timeline shows deactivated sources' history); an empty ranking is rejected (guard) rather than wiping subscriptions.
+- Industry config (`industry/*.ts`) is the intended customization surface — framework code reads it, never hardcodes site specifics.
 - Node-side errors: throw typed `AppError` subclasses from `packages/backend/src/errors.ts`; api maps them to HTTP status codes.
 - Web: React Router 8 framework mode (`app/routes.ts`), Tailwind for styling, no component library. Chinese-first UI copy. Existing design tokens (paper/ink/vermilion, serif titles, `rule-double`) are the site's visual language — keep new UI in it.
 - Commits follow Conventional Commits: `feat:`, `fix:`, `refactor:`, `chore:` (see history).
@@ -40,7 +40,7 @@
 
 ## Testing Guidelines
 - vitest, colocated tests (`*.test.ts`) or under `packages/backend/test/`.
-- Unit tests are mandatory for: RSS parsing/new-episode detection (truncation, guid fallback, shownotes cleaning, channel image), timeline read (pagination/LIMIT+1 semantics, category filter incl. 「其他」 sentinel), xyzrank genre rollup dict (exhaustiveness against the vocabulary), seed sync (upsert + deactivation), api route page-param handling.
+- Unit tests are mandatory for: RSS parsing/new-episode detection (truncation, guid fallback, shownotes cleaning, channel image), timeline read (pagination/LIMIT+1 semantics, category filter incl. 「其他」 sentinel), xyzrank genre rollup dict (exhaustiveness against the vocabulary), xyzrank sync (upsert + deactivation + empty-ranking guard), api route page-param handling.
 - api route tests use `fastify.inject` with mocked backend reads; backend service tests mock the db layer and assert on SQL shape.
 - A task is NOT COMPLETE until: typecheck passes, `npm test` passes, and the touched flow works end-to-end (Docker compose when infra is involved).
 
@@ -50,7 +50,7 @@
 |-------|---------|
 | ORM / query builder | Raw SQL tagged templates in `packages/backend/src/db/` |
 | Web querying Postgres directly | Web only calls api over HTTP (SSR loader → `apiGet`) |
-| Adding an admin UI / DB writes from web | Subscriptions = `industry/sources.json` + `npm run db:seed` only |
+| Adding an admin UI / DB writes from web | Subscriptions come only from the xyzrank sync worker — no sources.json, no seed, no admin UI |
 | Filtering the timeline by `sources.is_active` | Timeline shows deactivated sources' history too |
 | Deleting queue code and forgetting the cron | pg-boss cron plans live in the DB; removing a queue requires `boss.unschedule` + `deleteQueue` cleanup (see `apps/worker/src/schedules.ts`) |
 | `docker/` compose files | Root `docker-compose.yml` |
