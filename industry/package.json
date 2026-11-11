@@ -4,8 +4,7 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./index.ts",
-    "./sources.json": "./sources.json"
+    ".": "./index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"
