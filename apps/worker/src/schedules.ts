@@ -1,20 +1,24 @@
-/** cron 注册（worker 独有）。全部处理器已就绪。 */
+/** cron 注册（worker 独有）。 */
 
 import type PgBoss from 'pg-boss';
 
-import { loadConfig } from '@sonde/backend';
+/** 已删除的 AI 管道队列：pg-boss 的 cron 计划持久化在数据库里，
+ *  只删代码不清理计划，5 个死 cron 会永远往无人消费的队列塞任务。 */
+export const REMOVED_QUEUES = [
+  'episodes.transcribe',
+  'episodes.analyze',
+  'reports.daily',
+  'reports.weekly',
+  'reports.monthly',
+] as const;
 
 export async function registerSchedules(boss: PgBoss): Promise<void> {
-  const config = loadConfig();
-
   // 每分钟扫描到期源并逐源派发 sources.fetch（每源一个 job，singletonKey 去重）
   await boss.schedule('sources.fetch', '* * * * *', {});
-  // 每半小时兜底扫描：转写完成但丢失分析任务的单集
-  await boss.schedule('episodes.analyze', '*/30 * * * *', { sweep: true });
-  // 每天 08:00（站点时区，默认北京）成刊昨日日报；force 重新生成（修订+1，覆盖凌晨手动生成的早期版本）
-  await boss.schedule('reports.daily', '0 8 * * *', { force: true }, { tz: config.reportTimezone });
-  // 每周一 08:30 成刊上周周报（覆盖上周一至周日）
-  await boss.schedule('reports.weekly', '30 8 * * 1', { force: true }, { tz: config.reportTimezone });
-  // 每月 1 日 08:30 成刊上月月报
-  await boss.schedule('reports.monthly', '30 8 1 * *', { force: true }, { tz: config.reportTimezone });
+
+  // 一次性清理遗留计划与队列（连同在途孤儿任务一起丢弃）；计划本就不存在时静默通过
+  for (const name of REMOVED_QUEUES) {
+    await boss.unschedule(name).catch(() => {});
+    await boss.deleteQueue(name).catch(() => {});
+  }
 }

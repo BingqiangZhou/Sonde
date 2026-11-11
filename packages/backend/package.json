@@ -11,12 +11,9 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
-    "@sonde/industry": "*",
     "pg": "^8.16.0",
     "pg-boss": "^10.2.0",
-    "rss-parser": "^3.13.0",
-    "undici": "^8.11.2",
-    "zod": "^3.25.0"
+    "rss-parser": "^3.13.0"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",

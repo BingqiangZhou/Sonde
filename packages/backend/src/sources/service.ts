@@ -1,4 +1,4 @@
-/** 源服务：到期扫描派发 + 单源抓取入库 + 派发转写。 */
+/** 源服务：到期扫描派发 + 单源抓取入库。 */
 
 import { row, rows, sql } from '../db/db.ts';
 import { sendJob } from '../queue/boss.ts';
@@ -44,7 +44,7 @@ export async function dispatchSourceFetch(sourceId: number): Promise<boolean> {
   return jobId !== null;
 }
 
-/** 抓取一个源：解析 feed → 新单集入库 → 派发转写 → 更新 cursor/health。 */
+/** 抓取一个源：解析 feed → 新单集入库 → 更新 cursor/health/封面。 */
 export async function fetchSource(sourceId: number): Promise<{ fetched: number; inserted: number }> {
   const source = await row<SourceRow>(sql`
     SELECT id, name, config, cursor, health, interval_minutes
@@ -75,6 +75,7 @@ export async function fetchSource(sourceId: number): Promise<{ fetched: number; 
       ok: true,
       error: null,
       cursor: { etag: feed.etag, lastModified: feed.lastModified },
+      imageUrl: feed.feedImageUrl,
     });
 
     return { fetched: feed.episodes.length, inserted };
@@ -90,8 +91,9 @@ export async function fetchSource(sourceId: number): Promise<{ fetched: number; 
     throw error;
   }
 
+  /** DO NOTHING 下冲突行不返回：有 RETURNING 行即新插入。 */
   async function insertEpisodeIfNew(sid: number, ep: RssEpisodeInput): Promise<boolean> {
-    const result = await row<{ id: number; inserted: boolean }>(sql`
+    const result = await row<{ id: number }>(sql`
       INSERT INTO episodes
         (source_id, guid, title, url, author, published_at, shownotes,
          duration_seconds, enclosure_url, enclosure_bytes)
@@ -99,23 +101,26 @@ export async function fetchSource(sourceId: number): Promise<{ fetched: number; 
         (${sid}, ${ep.guid}, ${ep.title}, ${ep.url}, ${ep.author}, ${ep.publishedAt},
          ${ep.shownotes}, ${ep.durationSeconds}, ${ep.enclosureUrl}, ${ep.enclosureBytes})
       ON CONFLICT (source_id, guid) DO NOTHING
-      RETURNING id, (xmax = 0) AS inserted
+      RETURNING id
     `);
-    if (!result?.inserted) {
-      return false;
-    }
-    await sendJob('episodes.transcribe', { episodeId: result.id }, { singletonKey: `ep:${result.id}` });
-    return true;
+    return result !== null;
   }
 
   /** cursor + health 落库合并为单条 UPDATE（原子，P1-7）。
    *  cursor 语义：
    *  - null：失败，cursor 整体不动（lastFetchedAt 不前进）
    *  - {}：304，只并入 lastFetchedAt，etag/lastModified 保留
-   *  - {etag, lastModified}：成功，整体覆盖条件头 */
+   *  - {etag, lastModified}：成功，整体覆盖条件头
+   *  imageUrl：成功（非 304）时传 feed 封面（feed 无图为 null）——COALESCE 下
+   *  有图则覆盖、无图或 304/失败（null）一律保留旧值，单条语句覆盖全部分支。 */
   async function persistRun(
     sid: number,
-    run: { ok: boolean; error: string | null; cursor: Record<string, string | null> | null },
+    run: {
+      ok: boolean;
+      error: string | null;
+      cursor: Record<string, string | null> | null;
+      imageUrl?: string | null;
+    },
   ): Promise<void> {
     const failures = run.ok ? 0 : (src.health?.consecutiveFailures ?? 0) + 1;
     const patch = run.cursor === null ? null : JSON.stringify(run.cursor);
@@ -133,7 +138,8 @@ export async function fetchSource(sourceId: number): Promise<{ fetched: number; 
             'consecutiveFailures', ${failures}::int,
             'lastRunAt', now()::timestamptz::text
           ),
-          updated_at = now()
+          updated_at = now(),
+          image_url = COALESCE(${run.imageUrl ?? null}::text, image_url)
       WHERE id = ${sid}
     `);
   }

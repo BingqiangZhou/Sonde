@@ -177,15 +177,11 @@ describe('fetchSource 持久化（单条 UPDATE，304 保留 etag）', () => {
     expect((updates[0] as Frag).values).toContain(3);
   });
 
-  it('新插入的单集按 singletonKey ep:<id> 派发转写', async () => {
+  it('新插入的单集不再派发任何后续任务（AI 管道已移除）', async () => {
     installRouter();
-    let nextId = 10;
     rowMock.mockImplementation(async (frag: Frag) => {
       if (frag.text.includes('FROM sources WHERE id')) return sourceFixture;
-      if (frag.text.includes('INSERT INTO episodes')) {
-        nextId += 1;
-        return { id: nextId, inserted: true };
-      }
+      if (frag.text.includes('INSERT INTO episodes')) return { id: 11 };
       return null;
     });
     fetchPodcastFeedMock.mockResolvedValue({
@@ -198,8 +194,39 @@ describe('fetchSource 持久化（单条 UPDATE，304 保留 etag）', () => {
     const result = await fetchSource(7);
 
     expect(result).toEqual({ fetched: 2, inserted: 2 });
-    expect(sendJobMock).toHaveBeenNthCalledWith(1, 'episodes.transcribe', { episodeId: 11 }, { singletonKey: 'ep:11' });
-    expect(sendJobMock).toHaveBeenNthCalledWith(2, 'episodes.transcribe', { episodeId: 12 }, { singletonKey: 'ep:12' });
+    expect(sendJobMock).not.toHaveBeenCalled();
+  });
+
+  it('成功抓取把 feed 封面写入 image_url（COALESCE：feed 无图保留旧值）', async () => {
+    installRouter();
+    fetchPodcastFeedMock.mockResolvedValue({
+      feedTitle: null,
+      feedImageUrl: 'https://cdn.example.com/cover.jpg',
+      episodes: [],
+      etag: 'W/"new"',
+      lastModified: null,
+    });
+
+    await fetchSource(7);
+
+    expect(updates).toHaveLength(1);
+    const update = updates[0] as Frag;
+    expect(update.text).toContain('image_url = COALESCE(');
+    expect(update.values).toContain('https://cdn.example.com/cover.jpg');
+  });
+
+  it('304 的 UPDATE 不清空封面（image 参数为 null，COALESCE 保留旧值）', async () => {
+    installRouter();
+    fetchPodcastFeedMock.mockRejectedValue(new MockFeedNotModifiedError());
+
+    await fetchSource(7);
+
+    expect(updates).toHaveLength(1);
+    const update = updates[0] as Frag;
+    // COALESCE 的 image 参数位于 health 五参之后、sid 之前：必须是 null（保留旧封面）
+    expect(update.text).toContain('image_url = COALESCE(');
+    expect(update.values[update.values.length - 2]).toBeNull();
+    expect(update.values).not.toContain('https://cdn.example.com/cover.jpg');
   });
 });
 

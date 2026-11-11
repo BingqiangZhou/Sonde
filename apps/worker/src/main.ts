@@ -1,18 +1,16 @@
 /** 声读 worker 进程：pg-boss 队列消费 + 定时调度。
  *  main.ts 只负责装配；job 处理器在 jobs/，cron 在 schedules.ts。 */
 
-import { closeDb, getBoss, loadConfig } from '@sonde/backend';
+import { closeDb, getBoss } from '@sonde/backend';
 
 import { registerJobs } from './jobs/index.ts';
 import { registerSchedules } from './schedules.ts';
-
-const config = loadConfig();
 
 async function main() {
   const boss = await getBoss();
   await registerJobs(boss);
   await registerSchedules(boss);
-  console.log(`[sonde-worker] started (concurrency=${config.workConcurrency})`);
+  console.log('[sonde-worker] started');
 }
 
 const shutdown = async (signal: string) => {

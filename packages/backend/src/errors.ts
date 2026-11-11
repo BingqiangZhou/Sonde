@@ -21,25 +21,3 @@ export class NotFoundError extends AppError {
     super(message, 404);
   }
 }
-
-export class UnauthorizedError extends AppError {
-  constructor(message = '未授权') {
-    super(message, 401);
-  }
-}
-
-export class ConflictError extends AppError {
-  constructor(message: string) {
-    super(message, 409);
-  }
-}
-
-/** Upstream provider (LLM / transcription / feed) call failed after retries. */
-export class ProviderError extends AppError {
-  readonly service: string;
-
-  constructor(service: string, message: string) {
-    super(`${service}: ${message}`, 502);
-    this.service = service;
-  }
-}

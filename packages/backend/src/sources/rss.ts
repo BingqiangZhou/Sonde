@@ -32,6 +32,8 @@ export interface ParsedFeedItem {
 
 export interface FeedFetchResult {
   feedTitle: string | null;
+  /** 频道封面（itunes:image 优先，标准 <image><url> 兜底） */
+  feedImageUrl: string | null;
   episodes: RssEpisodeInput[];
   etag: string | null;
   lastModified: string | null;
@@ -56,6 +58,25 @@ export class FeedNotModifiedError extends Error {
     super('feed not modified');
     this.name = 'FeedNotModifiedError';
   }
+}
+
+/** 从解析后的频道对象中提取封面 URL（纯函数，防御性归一）。
+ *  - 优先 itunes:image（rss-parser 原生解析为字符串）
+ *  - 兜底标准 RSS <image><url>（xml2js 默认可能包成数组）
+ *  - 仅接受 http(s)://，其余一律 null */
+export function feedImageFromChannel(channel: {
+  itunes?: { image?: unknown };
+  image?: unknown;
+}): string | null {
+  const itunes = channel.itunes?.image;
+  const rawImage = channel.image as { url?: unknown } | null | undefined;
+  const rssUrl = Array.isArray(rawImage?.url) ? rawImage.url[0] : rawImage?.url;
+  for (const candidate of [itunes, rssUrl]) {
+    if (typeof candidate === 'string' && /^https?:\/\//.test(candidate)) {
+      return candidate;
+    }
+  }
+  return null;
 }
 
 /** 抓取并解析一个播客 feed（支持 ETag / Last-Modified 条件请求与首导截断）。 */
@@ -90,11 +111,14 @@ export async function fetchPodcastFeed(
   const xml = await res.text();
   const parsed = (await parser.parseString(xml)) as unknown as {
     title?: string;
+    itunes?: { image?: unknown };
+    image?: unknown;
     items?: ParsedFeedItem[];
   };
 
   return {
     feedTitle: parsed.title ?? null,
+    feedImageUrl: feedImageFromChannel(parsed),
     episodes: episodeInputsFromFeed(parsed.items ?? [], {
       limit: 60,
       firstImport: options.firstImport,
@@ -120,9 +144,9 @@ const DEFAULT_BACKFILL: BackfillOptions = {
 };
 
 /** 解析后的 feed items → 标准化单集输入（纯函数）。
- *  - 无音频 enclosure 的条目跳过（无法转写）
+ *  - 无音频 enclosure 的条目跳过（非播客单集）
  *  - guid 缺失时以 enclosure URL 兜底
- *  - 首次导入按 firstImportDays/Limit 截断 */
+ *  - 首次导入按 firstImportDays/Limit 截断（避免新订阅回填整个存档） */
 export function episodeInputsFromFeed(
   items: ParsedFeedItem[],
   options: Partial<BackfillOptions> & { firstImport?: boolean } = {},

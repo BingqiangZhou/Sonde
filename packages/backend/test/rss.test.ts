@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { episodeInputsFromFeed, parseItunesDuration } from '../src/sources/rss.ts';
+import { episodeInputsFromFeed, feedImageFromChannel, parseItunesDuration } from '../src/sources/rss.ts';
 
 function item(overrides: Record<string, unknown> = {}) {
   return {
@@ -29,6 +29,33 @@ describe('parseItunesDuration', () => {
     expect(parseItunesDuration('abc')).toBeNull();
     expect(parseItunesDuration('')).toBeNull();
     expect(parseItunesDuration(null)).toBeNull();
+  });
+});
+
+describe('feedImageFromChannel', () => {
+  it('优先取 itunes:image', () => {
+    expect(feedImageFromChannel({ itunes: { image: 'https://cdn.example.com/cover.jpg' } })).toBe(
+      'https://cdn.example.com/cover.jpg',
+    );
+  });
+  it('兜底标准 RSS <image><url> 对象形式', () => {
+    expect(feedImageFromChannel({ image: { url: 'https://cdn.example.com/rss.jpg' } })).toBe(
+      'https://cdn.example.com/rss.jpg',
+    );
+  });
+  it('兼容 xml2js 数组包裹的 url', () => {
+    expect(feedImageFromChannel({ image: { url: ['https://cdn.example.com/rss.jpg'] } })).toBe(
+      'https://cdn.example.com/rss.jpg',
+    );
+  });
+  it('非 http(s) 值一律拒绝', () => {
+    expect(feedImageFromChannel({ itunes: { image: 'javascript:alert(1)' } })).toBeNull();
+    expect(feedImageFromChannel({ image: { url: 'ftp://example.com/x.jpg' } })).toBeNull();
+  });
+  it('缺失或空渠道返回 null', () => {
+    expect(feedImageFromChannel({})).toBeNull();
+    expect(feedImageFromChannel({ image: null })).toBeNull();
+    expect(feedImageFromChannel({ itunes: {} })).toBeNull();
   });
 });
 

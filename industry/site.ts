@@ -5,15 +5,15 @@ export const SITE = {
   name: '声读',
   /** 站名（拉丁） */
   nameEn: 'Sonde',
-  /** 内容主题词，用于文案模板（如“每天 8 点，一份值得读的${subject}日报”） */
+  /** 内容主题词，用于文案模板 */
   subject: '播客',
   /** 首页 title */
-  homeTitle: '声读 — 每天一份值得读的播客日报',
+  homeTitle: '声读 — 播客更新时间线',
   /** 站点描述（SEO） */
-  description: '声读自动订阅播客、转写音频、AI 评分筛选，每天早晨生成一份可读的中文播客日报。',
+  description: '声读自动订阅播客，把每一集新更新汇成一条持续刷新的时间线。',
   /** 一句话标语 */
-  tagline: '把一天的播客，读成一份日报',
+  tagline: '把订阅的播客，汇成一条时间线',
   locale: 'zh-CN',
   contactEmail: '',
-  footerNote: '声读 · 个人播客知识库 · 内容版权归原作者所有',
+  footerNote: '声读 · 个人播客更新时间线 · 内容版权归原作者所有',
 } as const;

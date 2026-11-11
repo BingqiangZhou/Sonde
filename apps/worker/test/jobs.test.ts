@@ -1,25 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-/** worker 装配逻辑单测：假 boss 捕获 work() 注册，无需 DB。 */
-const analyzeEpisode = vi.fn();
+/** worker 装配逻辑单测：假 boss 捕获 work()/schedule() 注册，无需 DB。 */
 const fetchSource = vi.fn();
-const generateReport = vi.fn();
 const scanDueSources = vi.fn();
-const sweepPendingAnalyses = vi.fn();
-const transcribeEpisode = vi.fn();
-const loadConfig = vi.fn(() => ({ workConcurrency: 2 }));
 
 vi.mock('@sonde/backend', () => ({
-  analyzeEpisode: (...a: unknown[]) => analyzeEpisode(...(a as [])),
   fetchSource: (...a: unknown[]) => fetchSource(...(a as [])),
-  generateReport: (...a: unknown[]) => generateReport(...(a as [])),
   scanDueSources: (...a: unknown[]) => scanDueSources(...(a as [])),
-  sweepPendingAnalyses: (...a: unknown[]) => sweepPendingAnalyses(...(a as [])),
-  transcribeEpisode: (...a: unknown[]) => transcribeEpisode(...(a as [])),
-  loadConfig: () => loadConfig(),
 }));
 
 const { registerJobs } = await import('../src/jobs/index.ts');
+const { registerSchedules, REMOVED_QUEUES } = await import('../src/schedules.ts');
 
 interface Registration {
   name: string;
@@ -29,61 +20,46 @@ interface Registration {
 
 function makeBoss() {
   const registrations: Registration[] = [];
+  const scheduled: { name: string; cron: string; data: unknown }[] = [];
+  const unscheduled: string[] = [];
+  const deletedQueues: string[] = [];
   return {
     registrations,
+    scheduled,
+    unscheduled,
+    deletedQueues,
     work: vi.fn(async (name: string, options: Registration['options'], handler: Registration['handler']) => {
       registrations.push({ name, options, handler });
+    }),
+    schedule: vi.fn(async (name: string, cron: string, data: unknown) => {
+      scheduled.push({ name, cron, data });
+    }),
+    unschedule: vi.fn(async (name: string) => {
+      unscheduled.push(name);
+    }),
+    deleteQueue: vi.fn(async (name: string) => {
+      deletedQueues.push(name);
     }),
   };
 }
 
-function byName(regs: Registration[], name: string): Registration[] {
-  return regs.filter((r) => r.name === name);
-}
-
 beforeEach(() => {
-  analyzeEpisode.mockReset().mockResolvedValue(undefined);
   fetchSource.mockReset().mockResolvedValue(undefined);
-  generateReport.mockReset().mockResolvedValue(undefined);
   scanDueSources.mockReset().mockResolvedValue(undefined);
-  sweepPendingAnalyses.mockReset().mockResolvedValue(undefined);
-  transcribeEpisode.mockReset().mockResolvedValue(undefined);
 });
 
-describe('registerJobs 并发装配', () => {
-  it('WORK_CONCURRENCY=N：transcribe/analyze 各注册 N 个 worker，sources/reports 单 worker', async () => {
-    loadConfig.mockReturnValue({ workConcurrency: 3 });
-    const boss = makeBoss();
-
-    await registerJobs(boss as never);
-
-    expect(byName(boss.registrations, 'episodes.transcribe')).toHaveLength(3);
-    expect(byName(boss.registrations, 'episodes.analyze')).toHaveLength(3);
-    expect(byName(boss.registrations, 'sources.fetch')).toHaveLength(1);
-    expect(byName(boss.registrations, 'reports.daily')).toHaveLength(1);
-    expect(byName(boss.registrations, 'reports.weekly')).toHaveLength(1);
-    expect(byName(boss.registrations, 'reports.monthly')).toHaveLength(1);
-  });
-
-  it('WORK_CONCURRENCY 收敛到 [1,4]（pg pool max=10 留余量）', async () => {
-    loadConfig.mockReturnValue({ workConcurrency: 99 });
+describe('registerJobs 装配', () => {
+  it('只注册一个 sources.fetch worker（AI 管道已移除）', async () => {
     const boss = makeBoss();
     await registerJobs(boss as never);
-    expect(byName(boss.registrations, 'episodes.transcribe')).toHaveLength(4);
-
-    loadConfig.mockReturnValue({ workConcurrency: 0 });
-    const boss2 = makeBoss();
-    await registerJobs(boss2 as never);
-    expect(byName(boss2.registrations, 'episodes.transcribe')).toHaveLength(1);
+    expect(boss.registrations).toHaveLength(1);
+    expect(boss.registrations[0]?.name).toBe('sources.fetch');
   });
-});
 
-describe('worker 处理器委派', () => {
   it('sources.fetch：有 sourceId 抓单源，无则扫描', async () => {
-    loadConfig.mockReturnValue({ workConcurrency: 1 });
     const boss = makeBoss();
     await registerJobs(boss as never);
-    const handler = byName(boss.registrations, 'sources.fetch')[0]?.handler;
+    const handler = boss.registrations[0]?.handler;
     if (!handler) throw new Error('sources.fetch handler 未注册');
 
     await handler([{ data: { sourceId: 5 } }]);
@@ -92,54 +68,33 @@ describe('worker 处理器委派', () => {
     await handler([{ data: {} }]);
     expect(scanDueSources).toHaveBeenCalled();
   });
+});
 
-  it('episodes.transcribe → transcribeEpisode；analyze 分 sweep/单集两路', async () => {
-    loadConfig.mockReturnValue({ workConcurrency: 1 });
+describe('registerSchedules 调度', () => {
+  it('只保留每分钟一次的 sources.fetch 扫描 cron', async () => {
     const boss = makeBoss();
-    await registerJobs(boss as never);
-
-    const transcribe = byName(boss.registrations, 'episodes.transcribe')[0]?.handler;
-    if (!transcribe) throw new Error('episodes.transcribe handler 未注册');
-    await transcribe([{ data: { episodeId: 9 } }]);
-    expect(transcribeEpisode).toHaveBeenCalledWith(9);
-
-    const analyze = byName(boss.registrations, 'episodes.analyze')[0]?.handler;
-    if (!analyze) throw new Error('episodes.analyze handler 未注册');
-    await analyze([{ data: { sweep: true } }]);
-    expect(sweepPendingAnalyses).toHaveBeenCalled();
-    await analyze([{ data: { episodeId: 12 } }]);
-    expect(analyzeEpisode).toHaveBeenCalledWith(12);
+    await registerSchedules(boss as never);
+    expect(boss.scheduled).toEqual([{ name: 'sources.fetch', cron: '* * * * *', data: {} }]);
   });
 
-  it('reports.*：按 kind 委派 generateReport', async () => {
-    loadConfig.mockReturnValue({ workConcurrency: 1 });
+  it('一次性清理 5 个已删队列的遗留 cron 计划与队列本体（pg-boss 计划持久化在库里）', async () => {
     const boss = makeBoss();
-    await registerJobs(boss as never);
-
-    const daily = byName(boss.registrations, 'reports.daily')[0]?.handler;
-    if (!daily) throw new Error('reports.daily handler 未注册');
-    await daily([{ data: { reportKey: '2026-11-04' } }]);
-    expect(generateReport).toHaveBeenCalledWith('daily', { reportKey: '2026-11-04', force: true });
-
-    const weekly = byName(boss.registrations, 'reports.weekly')[0]?.handler;
-    if (!weekly) throw new Error('reports.weekly handler 未注册');
-    await weekly([{ data: {} }]);
-    expect(generateReport).toHaveBeenCalledWith('weekly', { reportKey: undefined, force: true });
-
-    const monthly = byName(boss.registrations, 'reports.monthly')[0]?.handler;
-    if (!monthly) throw new Error('reports.monthly handler 未注册');
-    await monthly([{ data: {} }]);
-    expect(generateReport).toHaveBeenCalledWith('monthly', { reportKey: undefined, force: true });
+    await registerSchedules(boss as never);
+    expect(boss.unscheduled).toEqual([
+      'episodes.transcribe',
+      'episodes.analyze',
+      'reports.daily',
+      'reports.weekly',
+      'reports.monthly',
+    ]);
+    expect(boss.deletedQueues).toEqual(boss.unscheduled);
+    expect(REMOVED_QUEUES).toHaveLength(5);
   });
 
-  it('reports.*：payload 可显式传 force=false（缺省仍为 true，保持 cron 覆盖语义）', async () => {
-    loadConfig.mockReturnValue({ workConcurrency: 1 });
+  it('清理失败（计划本就不存在）不得中断启动', async () => {
     const boss = makeBoss();
-    await registerJobs(boss as never);
-
-    const daily = byName(boss.registrations, 'reports.daily')[0]?.handler;
-    if (!daily) throw new Error('reports.daily handler 未注册');
-    await daily([{ data: { reportKey: '2026-11-04', force: false } }]);
-    expect(generateReport).toHaveBeenLastCalledWith('daily', { reportKey: '2026-11-04', force: false });
+    boss.unschedule.mockRejectedValue(new Error('schedule not found'));
+    await expect(registerSchedules(boss as never)).resolves.toBeUndefined();
+    expect(boss.scheduled).toHaveLength(1);
   });
 });
