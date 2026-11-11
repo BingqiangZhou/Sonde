@@ -103,7 +103,7 @@ describe('fetchSource 持久化（单条 UPDATE，304 保留 etag）', () => {
     });
   }
 
-  it('304 时只推进 lastFetchedAt，保留已存 etag/lastModified（恰一条 UPDATE）', async () => {
+  it('304 时只推进 lastFetchedAt 与 staleCount，保留已存 etag/lastModified（恰一条 UPDATE）', async () => {
     installRouter();
     fetchPodcastFeedMock.mockRejectedValue(new MockFeedNotModifiedError());
 
@@ -112,8 +112,8 @@ describe('fetchSource 持久化（单条 UPDATE，304 保留 etag）', () => {
     expect(result).toEqual({ fetched: 0, inserted: 0 });
     expect(updates).toHaveLength(1);
     const update = updates[0] as Frag;
-    // cursor patch 是 '{}'：只合并 lastFetchedAt，etag/lastModified 原样保留
-    expect(update.values[0]).toBe('{}');
+    // cursor patch 只含空转计数：合并 lastFetchedAt 后，etag/lastModified 原样保留
+    expect(JSON.parse(update.values[0] as string)).toEqual({ staleCount: 1 });
     // 不得再出现把 etag 写为 null 的 jsonb_set
     expect(update.text).not.toContain('{etag}');
     // health 同语句写入 ok
@@ -121,8 +121,21 @@ describe('fetchSource 持久化（单条 UPDATE，304 保留 etag）', () => {
     expect(update.text).toContain('consecutiveFailures');
   });
 
-  it('成功时把 etag/lastModified 并入 cursor patch（恰一条 UPDATE）', async () => {
-    installRouter();
+  it('304 的空转计数基于已有 staleCount 递增', async () => {
+    installRouter({
+      source: { ...sourceFixture, cursor: { ...sourceFixture.cursor, staleCount: 5 } },
+    });
+    fetchPodcastFeedMock.mockRejectedValue(new MockFeedNotModifiedError());
+
+    await fetchSource(7);
+
+    expect(JSON.parse((updates[0] as Frag).values[0] as string)).toEqual({ staleCount: 6 });
+  });
+
+  it('成功时把 etag/lastModified 并入 cursor patch，有新单集则 staleCount 归零', async () => {
+    installRouter({
+      source: { ...sourceFixture, cursor: { ...sourceFixture.cursor, staleCount: 5 } },
+    });
     fetchPodcastFeedMock.mockResolvedValue({
       feedTitle: '测试播客',
       episodes: [episode('g1')],
@@ -133,11 +146,11 @@ describe('fetchSource 持久化（单条 UPDATE，304 保留 etag）', () => {
     await fetchSource(7);
 
     expect(updates).toHaveLength(1);
-    const patch = JSON.parse((updates[0] as Frag).values[1] as string) as Record<string, string>;
-    expect(patch).toEqual({ etag: 'W/"new"', lastModified: 'Tue, 04 Nov 2026 00:00:00 GMT' });
+    const patch = JSON.parse((updates[0] as Frag).values[1] as string) as Record<string, unknown>;
+    expect(patch).toEqual({ etag: 'W/"new"', lastModified: 'Tue, 04 Nov 2026 00:00:00 GMT', staleCount: 0 });
   });
 
-  it('服务端不再返回条件头时，patch 存 JSON null（与旧行为一致）', async () => {
+  it('服务端不再返回条件头时，patch 存 JSON null；200 无新单集时 staleCount 递增', async () => {
     installRouter();
     fetchPodcastFeedMock.mockResolvedValue({
       feedTitle: null,
@@ -150,7 +163,7 @@ describe('fetchSource 持久化（单条 UPDATE，304 保留 etag）', () => {
 
     expect(updates).toHaveLength(1);
     const patch = JSON.parse((updates[0] as Frag).values[1] as string) as Record<string, unknown>;
-    expect(patch).toEqual({ etag: null, lastModified: null });
+    expect(patch).toEqual({ etag: null, lastModified: null, staleCount: 1 });
   });
 
   it('失败时只写 health（patch 为 null，lastFetchedAt 不动以保持到期重试）并重抛', async () => {
@@ -260,5 +273,31 @@ describe('scanDueSources 派发器（不内联抓取）', () => {
     sendJobMock.mockResolvedValueOnce(null);
     await expect(dispatchSourceFetch(42)).resolves.toBe(false);
     expect(sendJobMock).toHaveBeenLastCalledWith('sources.fetch', { sourceId: 42 }, { singletonKey: 'src:42' });
+  });
+
+  it('到期条件是自适应的:空翻倍(超 3 轮起算)+ 失败翻倍,取更长者并封顶 360 分钟', async () => {
+    rowsMock.mockImplementation(async (frag: Frag) => {
+      if (frag.text.includes('SELECT id FROM sources')) {
+        captured = frag;
+        return [];
+      }
+      return [];
+    });
+    let captured: Frag | null = null;
+
+    await scanDueSources();
+
+    const text = (captured as Frag | null)?.text ?? '';
+    // 空转退避:staleCount 超 3 轮后 2^n 翻倍,指数封 8
+    expect(text).toContain(`(cursor->>'staleCount')::int`);
+    expect(text).toMatch(/2 \^ LEAST\(GREATEST\(COALESCE\(\(cursor->>'staleCount'\)::int, 0\) - 3, 0\), 8\)/);
+    // 失败退避:consecutiveFailures 2^n,指数封 5
+    expect(text).toMatch(/2 \^ LEAST\(COALESCE\(\(health->>'consecutiveFailures'\)::int, 0\), 5\)/);
+    // 两条退避取更长者,均封顶 360 分钟(6 小时)
+    expect(text).toContain('GREATEST(');
+    expect((text.match(/LEAST\(360,/g) ?? []).length).toBe(2);
+    // 从未抓过的源仍最优先,每分钟派发上限 200 不变
+    expect(text).toContain('NULLS FIRST');
+    expect(text).toContain('LIMIT 200');
   });
 });

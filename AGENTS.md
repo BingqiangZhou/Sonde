@@ -7,7 +7,7 @@
 
 ## Project Structure
 - `apps/api/` — Fastify HTTP service: site read API (`/api/site/meta`, `/api/site/episodes`), health.
-- `apps/worker/` — pg-boss worker: the `sources.fetch` queue consumer + every-minute due-source scan cron; on startup it also cleans up the five queue schedules left over from the removed AI pipeline (pg-boss cron plans persist in the DB).
+- `apps/worker/` — pg-boss worker: the `sources.fetch` queue consumer (8 concurrent workers) + every-minute due-source scan cron; also syncs the xyzrank.com top-1000 podcast ranking daily at 04:00 Beijing time (and once at startup) — sources it manages carry `config.origin='xyzrank'` and never touch manual subscriptions from `sources.json`; on startup it also cleans up the five queue schedules left over from the removed AI pipeline (pg-boss cron plans persist in the DB).
 - `apps/web/` — React Router 8 SSR web app (Chinese UI). ONE route: the timeline page `/` (cover, podcast, datetime, duration, title linking out, RSS-provided shownotes). Reads ONLY via HTTP from api (`lib/api.server.ts`), never touches the DB. Client-only features: theme mode (localStorage).
 - `packages/backend/` — all business logic: `db` (raw tagged-template SQL, no ORM), `sources` (rss fetch/parse, service, sync), `episodes` (timeline read), `queue`, `config`, `errors`.
 - `industry/` — the customization pack (change config, not code): `site.ts` (site identity/copy), `sources.json` (the single source of truth for subscriptions).

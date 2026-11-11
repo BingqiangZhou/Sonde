@@ -9,24 +9,33 @@ interface SourceRow {
   id: number;
   name: string;
   config: { feedUrl?: string };
-  cursor: { lastFetchedAt?: string; etag?: string; lastModified?: string };
+  cursor: { lastFetchedAt?: string; etag?: string; lastModified?: string; staleCount?: number };
   health: { lastStatus?: string; lastError?: string | null; consecutiveFailures?: number };
   interval_minutes: number;
 }
 
 /** 扫描全部到期源并逐源派发 `sources.fetch`（cron 每分钟触发）。
  *  纯派发器：不在此进程内抓取，避免一个长任务顺序抓上百个 feed 超过队列 expire。
- *  返回真正入队的源数（singletonKey 去重掉的计为未入队）。 */
+ *  返回真正入队的源数（singletonKey 去重掉的计为未入队）。
+ *
+ *  到期间隔是自适应的（取两者中更保守的较长者,封顶 6 小时）:
+ *  - 空转退避:连续无新单集(staleCount,304 或 200 无增量都算)超过 3 轮后
+ *    间隔 ×2/轮 —— 活跃源始终按 interval_minutes 抓,长尾源自动降到小时级;
+ *  - 失败退避:consecutiveFailures 每多一次间隔 ×2,死链不再每分钟空撞。 */
 export async function scanDueSources(): Promise<number> {
   const due = await rows<{ id: number }>(sql`
     SELECT id FROM sources
     WHERE is_active
       AND (
         cursor->>'lastFetchedAt' IS NULL
-        OR (cursor->>'lastFetchedAt')::timestamptz < now() - (interval_minutes || ' minutes')::interval
+        OR (cursor->>'lastFetchedAt')::timestamptz < now() - (
+          GREATEST(
+            LEAST(360, (interval_minutes * (2 ^ LEAST(GREATEST(COALESCE((cursor->>'staleCount')::int, 0) - 3, 0), 8)))::int),
+            LEAST(360, (interval_minutes * (2 ^ LEAST(COALESCE((health->>'consecutiveFailures')::int, 0), 5)))::int)
+          ) || ' minutes')::interval
       )
     ORDER BY (cursor->>'lastFetchedAt')::timestamptz NULLS FIRST
-    LIMIT 100
+    LIMIT 200
   `);
   let sent = 0;
   for (const { id } of due) {
@@ -46,6 +55,12 @@ export async function dispatchSourceFetch(sourceId: number): Promise<boolean> {
 
 /** 抓取一个源：解析 feed → 新单集入库 → 更新 cursor/health/封面。 */
 export async function fetchSource(sourceId: number): Promise<{ fetched: number; inserted: number }> {
+  /** cursor.staleCount 的防御读取(旧数据/异常值一律按 0)。 */
+  const staleCountOf = (src: SourceRow): number =>
+    typeof src.cursor?.staleCount === 'number' && Number.isFinite(src.cursor.staleCount) && src.cursor.staleCount >= 0
+      ? Math.trunc(src.cursor.staleCount)
+      : 0;
+
   const source = await row<SourceRow>(sql`
     SELECT id, name, config, cursor, health, interval_minutes
     FROM sources WHERE id = ${sourceId}
@@ -70,19 +85,20 @@ export async function fetchSource(sourceId: number): Promise<{ fetched: number; 
       }
     }
 
-    // 条件头随成功响应整体覆盖（服务端不再返回时存 null，与旧行为一致）
+    // 条件头随成功响应整体覆盖（服务端不再返回时存 null，与旧行为一致）。
+    // staleCount:有新单集归零(活跃源),连续空转 +1(交给 scanDueSources 做退避)。
     await persistRun(sourceId, {
       ok: true,
       error: null,
-      cursor: { etag: feed.etag, lastModified: feed.lastModified },
+      cursor: { etag: feed.etag, lastModified: feed.lastModified, staleCount: inserted > 0 ? 0 : staleCountOf(src) + 1 },
       imageUrl: feed.feedImageUrl,
     });
 
     return { fetched: feed.episodes.length, inserted };
   } catch (error) {
     if (error instanceof FeedNotModifiedError) {
-      // 304：只推进 lastFetchedAt，etag/lastModified 必须原样保留（否则条件 GET 退化）
-      await persistRun(sourceId, { ok: true, error: null, cursor: {} });
+      // 304：只推进 lastFetchedAt 与 staleCount，etag/lastModified 必须原样保留（否则条件 GET 退化）
+      await persistRun(sourceId, { ok: true, error: null, cursor: { staleCount: staleCountOf(src) + 1 } });
       return { fetched: 0, inserted: 0 };
     }
     const message = error instanceof Error ? error.message : String(error);
@@ -109,8 +125,8 @@ export async function fetchSource(sourceId: number): Promise<{ fetched: number; 
   /** cursor + health 落库合并为单条 UPDATE（原子，P1-7）。
    *  cursor 语义：
    *  - null：失败，cursor 整体不动（lastFetchedAt 不前进）
-   *  - {}：304，只并入 lastFetchedAt，etag/lastModified 保留
-   *  - {etag, lastModified}：成功，整体覆盖条件头
+   *  - {staleCount}：304，只并入 lastFetchedAt 与空转计数，etag/lastModified 保留
+   *  - {etag, lastModified, staleCount}：成功，整体覆盖条件头与空转计数
    *  imageUrl：成功（非 304）时传 feed 封面（feed 无图为 null）——COALESCE 下
    *  有图则覆盖、无图或 304/失败（null）一律保留旧值，单条语句覆盖全部分支。 */
   async function persistRun(
@@ -118,7 +134,7 @@ export async function fetchSource(sourceId: number): Promise<{ fetched: number; 
     run: {
       ok: boolean;
       error: string | null;
-      cursor: Record<string, string | null> | null;
+      cursor: Record<string, string | number | null> | null;
       imageUrl?: string | null;
     },
   ): Promise<void> {

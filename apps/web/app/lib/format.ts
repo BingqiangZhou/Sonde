@@ -51,6 +51,36 @@ export function formatDateTime(value: string | Date | null | undefined): string 
   return `${parts.date} ${parts.time}`;
 }
 
+/** 时间线左槽的分层时间戳:月日一行、时分一行,年份单独给出。
+ *  组件据此判断跨年(与当前北京年份不同才多标一行年份);空值/非法值返回 null。 */
+export interface TimelineStamp {
+  year: string;
+  date: string;
+  time: string;
+}
+
+export function formatTimelineStamp(value: string | Date | null | undefined): TimelineStamp | null {
+  if (!value) {
+    return null;
+  }
+  const date = toDate(value);
+  if (!date) {
+    return null;
+  }
+  const { date: ymd, time } = shanghaiParts(date);
+  const [, month, day] = ymd.split('-');
+  return {
+    year: ymd.slice(0, 4),
+    date: `${Number(month)}月${Number(day)}日`,
+    time,
+  };
+}
+
+/** 当前北京年份(可注入时刻以便测试),用于时间线左槽的跨年判断。 */
+export function currentShanghaiYear(now: Date = new Date()): string {
+  return shanghaiParts(now).date.slice(0, 4);
+}
+
 export function formatDuration(seconds: number | null | undefined): string {
   if (!seconds || seconds <= 0) {
     return '';

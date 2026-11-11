@@ -62,3 +62,35 @@ export function IconMonitor({ size }: IconProps) {
     </>,
   );
 }
+
+/** 侧栏：收起（左箭头） */
+export function IconChevronLeft({ size }: IconProps) {
+  return svg(size, <path d="m15 18-6-6 6-6" />);
+}
+
+/** 侧栏：展开（右箭头） */
+export function IconChevronRight({ size }: IconProps) {
+  return svg(size, <path d="m9 18 6-6-6-6" />);
+}
+
+/** 搜索：放大镜 */
+export function IconSearch({ size }: IconProps) {
+  return svg(
+    size,
+    <>
+      <circle cx="11" cy="11" r="7" />
+      <path d="m21 21-4.3-4.3" />
+    </>,
+  );
+}
+
+/** 回到顶部：上箭头 */
+export function IconArrowUp({ size }: IconProps) {
+  return svg(
+    size,
+    <>
+      <path d="m5 12 7-7 7 7" />
+      <path d="M12 19V5" />
+    </>,
+  );
+}

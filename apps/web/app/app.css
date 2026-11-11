@@ -45,6 +45,21 @@ html {
   scroll-behavior: smooth;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+/* 筛选 chips 行:允许横向滚动但藏起滚动条(窄视口不至于折行撑高) */
+.tl-chips {
+  scrollbar-width: none;
+}
+
+.tl-chips::-webkit-scrollbar {
+  display: none;
+}
+
 ::selection {
   background-color: #fde68a;
 }
@@ -57,6 +72,114 @@ html {
 /* 报刊风双细线（用于刊头上下） */
 .rule-double {
   border-top: 3px double var(--color-ink, #1c1917);
+}
+
+/* ── 更新时间线:左侧书脊 + 圆点节点 + 日期左槽。
+   几何全部由 --tl-* 变量驱动;窄屏把日期槽宽与列间距归零,网格折叠成两列,
+   书脊/圆点/短横线的定位公式不变,自然贴到左缘。颜色引用主题变量,深色自动翻转。 */
+.timeline,
+.tl-indent {
+  --tl-date: 5.5rem;   /* 日期左槽宽度 */
+  --tl-node: 1.5rem;   /* 节点列宽度(书脊/圆心所在) */
+  --tl-gap: 0.75rem;   /* 列间距(日期短横线跨过它) */
+}
+
+.timeline {
+  --tl-line: 2px;      /* 书脊粗细 */
+  --tl-dot: 0.5rem;    /* 圆点直径 */
+  --tl-dot-top: 2rem;  /* 圆心到条目顶部的距离,与标题首行对齐 */
+  --tl-pad: 1.25rem;   /* 条目上下内边距 */
+}
+
+.timeline-item {
+  position: relative;
+  display: grid;
+  grid-template-columns: var(--tl-date) var(--tl-node) minmax(0, 1fr);
+  column-gap: var(--tl-gap);
+  padding: var(--tl-pad) 0;
+}
+
+/* 书脊:每条画自己那一段;首条从圆点起笔、末条到圆点收笔 */
+.timeline-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(var(--tl-date) + var(--tl-gap) + (var(--tl-node) - var(--tl-line)) / 2);
+  width: var(--tl-line);
+  background-color: var(--color-stone-300);
+}
+
+.timeline-item:first-child::before {
+  top: var(--tl-dot-top);
+}
+
+.timeline-item:last-child::before {
+  bottom: calc(100% - var(--tl-dot-top));
+}
+
+/* 圆点节点:朱砂点,paper 色环把穿过它的书脊断开 */
+.timeline-item::after {
+  content: '';
+  position: absolute;
+  top: calc(var(--tl-dot-top) - var(--tl-dot) / 2);
+  left: calc(var(--tl-date) + var(--tl-gap) + var(--tl-node) / 2 - var(--tl-dot) / 2);
+  width: var(--tl-dot);
+  height: var(--tl-dot);
+  border-radius: 9999px;
+  background-color: var(--color-vermilion);
+  box-shadow: 0 0 0 3px var(--color-paper);
+}
+
+/* 日期左槽:右对齐,分两行(月日/时分);短横线跨过列间距连向圆点 */
+.tl-date {
+  position: relative;
+  text-align: right;
+}
+
+.tl-date::after {
+  content: '';
+  position: absolute;
+  top: calc(var(--tl-dot-top) - var(--tl-pad));
+  right: calc(-1 * var(--tl-gap));
+  width: var(--tl-gap);
+  height: 1px;
+  background-color: var(--color-stone-300);
+}
+
+/* 翻页导航与内容列左对齐(复用同一组列宽变量) */
+.tl-indent {
+  margin-left: calc(var(--tl-date) + var(--tl-node) + 2 * var(--tl-gap));
+}
+
+/* 窄容器(<40rem):日期槽整体隐藏(日期回落 meta 行)。
+   用容器查询而非视口:侧栏展开会把主栏挤窄,时间线要按"自己实际多宽"降级,
+   包裹层在 home.tsx 上用 Tailwind 的 @container 工具类声明。 */
+.tl-meta-datetime {
+  display: none;
+}
+
+@container (width < 40rem) {
+  .timeline {
+    --tl-date: 0rem;
+    --tl-gap: 0rem;
+  }
+
+  .timeline-item {
+    grid-template-columns: var(--tl-node) minmax(0, 1fr);
+  }
+
+  .tl-date {
+    display: none;
+  }
+
+  .tl-indent {
+    margin-left: 0;
+  }
+
+  .tl-meta-datetime {
+    display: inline;
+  }
 }
 
 /* 卡片 hover 的统一动效 */
@@ -75,5 +198,121 @@ html {
 :where(a, button, input, select, textarea):focus-visible {
   outline: 2px solid var(--color-vermilion, #b91c1c);
   outline-offset: 2px;
+}
+
+/* ── 站点侧栏:左缘细轨(收起态)/ 刊头面板(展开态)。
+   开合由 <html> 上的 .sb-open 控制(root.tsx 内联脚本首屏打好,Sidebar 组件切换)。
+   宽度动画期间内容不回流:细轨与面板各自绝对定位、定宽,超出部分裁掉。 */
+.sidebar {
+  --sb-rail: 1.75rem;   /* 细轨宽 */
+  --sb-panel: 16rem;    /* 展开面板宽 */
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  flex: none;
+  width: var(--sb-rail);
+  overflow: hidden;
+  border-right: 1px solid var(--color-stone-200);
+  transition: width 200ms ease;
+}
+
+html.sb-open .sidebar {
+  width: calc(var(--sb-rail) + var(--sb-panel));
+}
+
+/* 细轨与面板随开合切换可见性(visibility 延迟切换,隐藏后不可聚焦) */
+.sb-rail {
+  visibility: visible;
+  opacity: 1;
+  transition: opacity 150ms ease;
+}
+
+html.sb-open .sb-rail {
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 150ms ease, visibility 0s linear 150ms;
+}
+
+.sb-panel {
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 150ms ease, visibility 0s linear 150ms;
+}
+
+html.sb-open .sb-panel {
+  visibility: visible;
+  opacity: 1;
+  transition: opacity 150ms ease 100ms;
+}
+
+/* 收起态细轨:朱印 + 竖排站名 + 展开钮(钮沉底) */
+.sb-rail {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: var(--sb-rail);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.875rem 0;
+}
+
+.sb-seal {
+  display: flex;
+  width: 1.125rem;
+  height: 1.125rem;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--color-vermilion);
+  color: var(--color-paper);
+  font-family: var(--font-serif);
+  font-size: 0.75rem;
+  line-height: 1;
+  border-radius: 0.125rem;
+}
+
+.sb-rail-name {
+  writing-mode: vertical-rl;
+  font-family: var(--font-serif);
+  font-size: 0.8125rem;
+  letter-spacing: 0.35em;
+  color: var(--color-stone-500);
+}
+
+.sb-rail .sb-toggle {
+  margin-top: auto;
+}
+
+/* 展开态面板:刊头(日期/站名/副标题)在上,主题切换/版权/收起沉底;视口矮时自滚 */
+.sb-panel {
+  position: absolute;
+  inset: 0 auto 0 var(--sb-rail);
+  width: var(--sb-panel);
+  overflow-y: auto;
+}
+
+.sb-panel-inner {
+  display: flex;
+  min-height: 100%;
+  flex-direction: column;
+  padding: 1.25rem 1.25rem 1rem;
+}
+
+/* 窄视口下面板收窄(侧栏宽度跟视口,时间线跟容器,见上) */
+@media (width < 40rem) {
+  .sidebar {
+    --sb-rail: 1.5rem;
+    --sb-panel: 9.5rem;
+  }
+}
+
+/* 动效克制:偏好减少动效时直接切换 */
+@media (prefers-reduced-motion: reduce) {
+  .sidebar,
+  .sb-rail,
+  .sb-panel {
+    transition: none;
+  }
 }
 

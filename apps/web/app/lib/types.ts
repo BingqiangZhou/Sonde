@@ -29,4 +29,18 @@ export interface EpisodesPage {
   page: number;
   pageSize: number;
   hasMore: boolean;
+  /** 筛选/搜索命中的总条数;无筛选时为 null */
+  total: number | null;
+}
+
+/** 订阅源(筛选 chips 数据):含停更源的历史,0 集的源不下发。 */
+export interface SourceListItem {
+  id: number;
+  name: string;
+  imageUrl: string | null;
+  episodeCount: number;
+}
+
+export interface SourcesList {
+  items: SourceListItem[];
 }

@@ -27,7 +27,7 @@ vi.mock('../src/db/db.ts', () => ({
   withTx: (fn: (client: unknown) => Promise<unknown>) => withTxMock(fn),
 }));
 
-const { syncSources, normalizeSeedEntries } = await import('../src/sources/sync.ts');
+const { syncSources, syncXyzrankSources, normalizeSeedEntries } = await import('../src/sources/sync.ts');
 
 beforeEach(() => {
   queries.length = 0;
@@ -117,5 +117,70 @@ describe('syncSources', () => {
     expect(deactivate[0]?.values).toEqual([['https://a.com/f']]);
     expect(queries.some((q) => q.text.includes('DELETE'))).toBe(false);
     expect(result.deactivated).toBe(2);
+  });
+
+  it('手工 seed 只停用无 origin 的源 —— 空 sources.json 不会误伤 xyzrank 等自动同步的订阅', async () => {
+    clientMock.query.mockImplementation(async (frag: { text: string; values: unknown[] }) => {
+      queries.push(frag);
+      return { rows: [] as { inserted?: boolean }[], rowCount: 0 };
+    });
+
+    await syncSources([]);
+
+    const deactivate = queries.filter((q) => q.text.includes('is_active = false'));
+    expect(deactivate).toHaveLength(1);
+    // 停用范围限定在无 origin 的手工源
+    expect(deactivate[0]?.text).toContain(`coalesce(config->>'origin', '') = ''`);
+  });
+});
+
+describe('syncXyzrankSources(榜单自动同步,origin 隔离)', () => {
+  it('空榜单防线:entries 为空直接抛错,绝不清空订阅(上游 API 异常日)', async () => {
+    await expect(syncXyzrankSources([])).rejects.toThrow('榜单为空');
+    expect(queries).toHaveLength(0); // 连事务都不该开
+  });
+
+  it('upsert 带 origin=xyzrank,且 DO UPDATE 只作用于自家源(手工订阅不被覆盖)', async () => {
+    clientMock.query.mockImplementation(async (frag: { text: string; values: unknown[] }) => {
+      queries.push(frag);
+      // 榜首插入新行;已有手工行冲突但 UPDATE 被 WHERE origin 拦下 → 无返回行(keptManual)
+      if (queries.filter((q) => q.text.includes('INSERT INTO sources')).length === 1) {
+        return { rows: [{ inserted: true }], rowCount: 1 };
+      }
+      return { rows: [] as { inserted?: boolean }[], rowCount: 0 };
+    });
+
+    const result = await syncXyzrankSources([
+      { name: '榜首播客', feedUrl: 'https://new.example/rss', intervalMinutes: 10 },
+      { name: '手工已订', feedUrl: 'https://manual.example/rss', intervalMinutes: 10 },
+    ]);
+
+    const upserts = queries.filter((q) => q.text.includes('INSERT INTO sources'));
+    expect(upserts).toHaveLength(2);
+    // origin 写进 config,与 feedUrl 一起 ::text 转型
+    expect(upserts[0]?.text).toMatch(/jsonb_build_object\('feedUrl', \$[0-9]+::text, 'origin', 'xyzrank'\)/);
+    // 手工订阅保护:UPDATE 仅当存量行 origin 是 xyzrank
+    expect(upserts[0]?.text).toContain(`WHERE sources.config->>'origin' = 'xyzrank'`);
+    expect(upserts[0]?.values.slice(0, 3)).toEqual(['榜首播客', 'https://new.example/rss', 10]);
+    expect(result).toMatchObject({ added: 1, keptManual: 1 });
+  });
+
+  it('停用只针对 origin=xyzrank 且不在当前榜单的源', async () => {
+    clientMock.query.mockImplementation(async (frag: { text: string; values: unknown[] }) => {
+      queries.push(frag);
+      if (frag.text.includes('UPDATE sources')) {
+        return { rows: [{ id: 9 }] as unknown as { inserted?: boolean }[], rowCount: 1 };
+      }
+      return { rows: [] as { inserted?: boolean }[], rowCount: 0 };
+    });
+
+    const result = await syncXyzrankSources([{ name: 'A', feedUrl: 'https://a.com/f', intervalMinutes: 10 }]);
+
+    const deactivate = queries.filter((q) => q.text.includes('UPDATE sources') && q.text.includes('is_active = false'));
+    expect(deactivate).toHaveLength(1);
+    expect(deactivate[0]?.text).toContain(`config->>'origin' = 'xyzrank'`);
+    expect(deactivate[0]?.text).toMatch(/ALL\(\$[0-9]+::text\[\]\)/);
+    expect(deactivate[0]?.values).toEqual([['https://a.com/f']]);
+    expect(result.deactivated).toBe(1);
   });
 });

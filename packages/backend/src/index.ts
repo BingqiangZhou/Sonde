@@ -19,8 +19,10 @@ export {
 } from './sources/rss.ts';
 export type { RssEpisodeInput, ParsedFeedItem, FeedFetchResult } from './sources/rss.ts';
 export { scanDueSources, dispatchSourceFetch, fetchSource } from './sources/service.ts';
-export { syncSources, normalizeSeedEntries } from './sources/sync.ts';
-export type { SeedSourceEntry, SyncResult } from './sources/sync.ts';
+export { syncSources, syncXyzrankSources, normalizeSeedEntries } from './sources/sync.ts';
+export type { SeedSourceEntry, SyncResult, XyzrankSyncResult } from './sources/sync.ts';
+export { fetchXyzrankTopPodcasts, xyzrankToEntries, XYZRANK_API_BASE, XYZRANK_SYNC_INTERVAL_MINUTES } from './sources/xyzrank.ts';
+export type { XyzrankPodcast, XyzrankPodcastLink } from './sources/xyzrank.ts';
 
-export { listEpisodes } from './episodes/read.ts';
-export type { EpisodeListItem, EpisodesPage } from './episodes/read.ts';
+export { listEpisodes, listSourcesWithCounts } from './episodes/read.ts';
+export type { EpisodeListItem, EpisodesPage, EpisodeFilters, SourceWithCount } from './episodes/read.ts';

@@ -39,7 +39,11 @@ export interface FeedFetchResult {
   lastModified: string | null;
 }
 
-const USER_AGENT = 'SondeBot/1.0 (+https://github.com/BingqiangZhou/Sonde)';
+/** UA 用常规浏览器形式:feed.xyzfm.space(小宇宙 feed CDN)会拦截非浏览器 UA
+ *  (2026-11 实测:工具 UA 及任何带链接的 UA 一律 403,浏览器形式 200)。
+ *  代价是服务端无法从 UA 识别本工具 —— 抓取保持 条件GET/低频,行为对得起这个身份。 */
+export const USER_AGENT =
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36';
 
 const parser = new Parser({
   timeout: 30_000,

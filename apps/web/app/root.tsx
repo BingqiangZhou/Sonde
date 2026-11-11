@@ -3,7 +3,8 @@ import { Link, Links, Meta, Outlet, Scripts, ScrollRestoration, useNavigation, u
 
 import { SITE } from '@sonde/industry';
 
-import { ThemeModeSelector, useThemeSync } from './components/ThemeControls.tsx';
+import { Sidebar } from './components/Sidebar.tsx';
+import { useThemeSync } from './components/ThemeControls.tsx';
 
 import stylesheet from './app.css?url';
 
@@ -17,9 +18,10 @@ export const meta: MetaFunction = () => [
   { name: 'description', content: SITE.description },
 ];
 
-/** 首屏主题初始化：在样式加载后、渲染前给 <html> 打 .dark，避免深色用户看到白色闪烁。
- *  与 lib/theme.ts 的存储键（sonde-theme）保持一致。 */
-const THEME_INIT_SCRIPT = `(function(){try{var t=localStorage.getItem('sonde-theme')||'system';var d=t==='dark'||(t!=='light'&&window.matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.classList.toggle('dark',d);}catch(e){}})();`;
+/** 首屏初始化：在样式加载后、渲染前给 <html> 打 .dark(主题,避免深色用户看到白色闪烁)
+ *  和 .sb-open(侧栏,避免展开态用户看到收起闪动)。默认展开,存了 'closed' 才收起。
+ *  存储键与 lib/theme.ts(sonde-theme)、lib/sidebar.ts(sonde-sidebar)保持一致。 */
+const THEME_INIT_SCRIPT = `(function(){try{var t=localStorage.getItem('sonde-theme')||'system';var d=t==='dark'||(t!=='light'&&window.matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.classList.toggle('dark',d);if(localStorage.getItem('sonde-sidebar')!=='closed'){document.documentElement.classList.add('sb-open');}}catch(e){}})();`;
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
@@ -40,18 +42,19 @@ export function Layout({ children }: { children: React.ReactNode }) {
   );
 }
 
-/** 单页站点外壳：居中栏 + 页脚（版权行 + 主题切换）。 */
+/** 单页站点外壳:左缘站点侧栏(刊头/主题切换/版权,可收起展开)+ 居中正文栏。 */
 function SiteShell({ children }: { children: React.ReactNode }) {
   const navigation = useNavigation();
   return (
-    <div className="flex min-h-dvh flex-col">
+    <div className="flex min-h-dvh">
       <a
         href="#main"
         className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-50 focus:rounded-md focus:bg-white focus:px-3 focus:py-2 focus:text-sm focus:shadow"
       >
         跳到正文
       </a>
-      <main id="main" className="flex-1">
+      <Sidebar />
+      <main id="main" className="min-w-0 flex-1">
         <div
           className={`mx-auto w-full max-w-3xl px-4 transition-opacity sm:px-6 ${
             navigation.state === 'loading' ? 'opacity-50' : ''
@@ -60,12 +63,6 @@ function SiteShell({ children }: { children: React.ReactNode }) {
           {children}
         </div>
       </main>
-      <footer className="mt-10 border-t border-stone-200">
-        <div className="mx-auto flex w-full max-w-3xl flex-wrap items-center justify-between gap-3 px-4 py-6 text-xs text-stone-400 sm:px-6">
-          <span>{SITE.footerNote}</span>
-          <ThemeModeSelector variant="compact" />
-        </div>
-      </footer>
     </div>
   );
 }
