@@ -51,15 +51,6 @@ html {
   }
 }
 
-/* 筛选 chips 行:允许横向滚动但藏起滚动条(窄视口不至于折行撑高) */
-.tl-chips {
-  scrollbar-width: none;
-}
-
-.tl-chips::-webkit-scrollbar {
-  display: none;
-}
-
 ::selection {
   background-color: #fde68a;
 }

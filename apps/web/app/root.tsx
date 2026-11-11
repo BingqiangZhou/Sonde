@@ -42,7 +42,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   );
 }
 
-/** 单页站点外壳:左缘站点侧栏(刊头/主题切换/版权,可收起展开)+ 居中正文栏。 */
+/** 单页站点外壳:左缘站点侧栏(刊头/主题切换/版权,可收起展开)+ 通栏正文栏。 */
 function SiteShell({ children }: { children: React.ReactNode }) {
   const navigation = useNavigation();
   return (
@@ -56,7 +56,7 @@ function SiteShell({ children }: { children: React.ReactNode }) {
       <Sidebar />
       <main id="main" className="min-w-0 flex-1">
         <div
-          className={`mx-auto w-full max-w-3xl px-4 transition-opacity sm:px-6 ${
+          className={`w-full px-4 transition-opacity sm:px-6 lg:px-10 ${
             navigation.state === 'loading' ? 'opacity-50' : ''
           }`}
         >

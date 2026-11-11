@@ -87,7 +87,7 @@ export default function Timeline() {
         <>
           {/* 筛选与搜索:原生 GET 表单(SSR 即可用),chips 走 Link 保留搜索词 */}
           <section aria-label="筛选与搜索">
-            <form method="get" action="/" className="flex gap-2">
+            <form method="get" action="/" className="flex max-w-xl gap-2">
               {source ? <input type="hidden" name="source" value={source} /> : null}
               {category ? <input type="hidden" name="category" value={category} /> : null}
               <div className="relative min-w-0 flex-1">
@@ -118,7 +118,7 @@ export default function Timeline() {
 
             {/* 一级分类 chips:点分类清 source 保 q;「全部」清 source+category 保 q。
                 顶级不再列具体播客(千榜订阅收不拢)—— 直达靠点时间线里的播客名与搜索。 */}
-            <nav className="tl-chips -mx-4 mt-3 flex gap-2 overflow-x-auto px-4" aria-label="按分类筛选">
+            <nav className="mt-3 flex flex-wrap gap-2" aria-label="按分类筛选">
               <Link
                 to={buildTimelineHref(current, { source: null, category: null })}
                 className={chipClass(!source && !category)}
