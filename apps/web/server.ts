@@ -1,4 +1,5 @@
-/** web 进程入口：/api/* 反代到 api、静态文件（build/client）、其余交给 React Router SSR handler。 */
+/** web 进程入口：静态文件（build/client）与 React Router SSR handler。
+ *  浏览器端不再直连 api（admin 已移除）；SSR loader 在服务端经 API_URL 访问 api。 */
 
 import { createServer } from 'node:http';
 import { createReadStream, statSync } from 'node:fs';
@@ -13,7 +14,6 @@ const serverEntry = './build/server/index.js';
 const build = (await import(serverEntry)) as unknown as ServerBuild;
 const handler = createRequestHandler(build);
 
-const API_URL = process.env.API_URL ?? 'http://localhost:3001';
 const PORT = Number.parseInt(process.argv[2] ?? process.env.PORT ?? '3000', 10);
 const CLIENT_DIR = fileURLToPath(new URL('./build/client/', import.meta.url));
 
@@ -36,10 +36,6 @@ const MIME_TYPES: Record<string, string> = {
 
 const server = createServer(async (req, res) => {
   try {
-    if (req.url?.startsWith('/api/')) {
-      await proxyToApi(req, res);
-      return;
-    }
     if ((req.method === 'GET' || req.method === 'HEAD') && serveStatic(req, res)) {
       return;
     }
@@ -113,41 +109,6 @@ function serveStatic(req: InstanceType<typeof import('node:http').IncomingMessag
   return true;
 }
 
-async function proxyToApi(req: InstanceType<typeof import('node:http').IncomingMessage>, res: InstanceType<typeof import('node:http').ServerResponse>) {
-  const target = `${API_URL}${req.url}`;
-  const headers = { ...req.headers } as Record<string, string>;
-  delete headers.host;
-  // 标准代理行为：追加本跳的对端地址到 XFF 链尾。
-  // api 侧 trustProxy:1 只信最后一跳 → 取到的是这里追加的真实来源地址，
-  // 客户端自行伪造的 XFF 落在被忽略的左侧，无法再旋转限速桶。
-  // （若前面还有 Caddy，见 api main.ts 的 trustProxy 注释。）
-  const peer = req.socket.remoteAddress;
-  if (peer) {
-    headers['x-forwarded-for'] = headers['x-forwarded-for']
-      ? `${headers['x-forwarded-for']}, ${peer}`
-      : peer;
-  }
-  try {
-    const chunks: Buffer[] = [];
-    for await (const chunk of req) {
-      chunks.push(chunk as Buffer);
-    }
-    const response = await fetch(target, {
-      method: req.method,
-      headers,
-      body: chunks.length > 0 ? Buffer.concat(chunks) : undefined,
-      redirect: 'manual',
-    });
-    res.writeHead(response.status, Object.fromEntries(response.headers.entries()));
-    const buffer = Buffer.from(await response.arrayBuffer());
-    res.end(buffer);
-  } catch (error) {
-    console.error('[web] api proxy failed:', error);
-    res.writeHead(502, { 'content-type': 'application/json; charset=utf-8' });
-    res.end(JSON.stringify({ error: 'API 服务不可用' }));
-  }
-}
-
 server.listen(PORT, () => {
-  console.log(`[sonde-web] listening on :${PORT} (api proxy → ${API_URL})`);
+  console.log(`[sonde-web] listening on :${PORT}`);
 });

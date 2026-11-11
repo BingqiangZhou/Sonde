@@ -9,62 +9,24 @@ export interface SiteMeta {
   tagline: string;
 }
 
-export interface EpisodeItem {
+/** 时间线条目：全部信息来自 RSS 本身（无 AI 字段）。 */
+export interface EpisodeListItem {
   id: number;
+  sourceId: number;
   podcast: string;
-  originalTitle: string;
-  titleZh: string;
-  summaryZh: string;
-  reasonZh: string;
-  category: string;
-  categoryLabel: string;
-  score: number;
-  url: string | null;
-  publishedAt: string | null;
-  durationSeconds: number | null;
-}
-
-/** 全部动态条目：在 EpisodeItem 之上附带评分理由与入选状态 */
-export interface AnalyzedEpisodeItem extends EpisodeItem {
-  reason: string;
-  selected: boolean;
-}
-
-export interface ReportItem {
-  episodeId: number;
-  podcast: string;
-  originalTitle: string;
-  titleZh: string;
-  summaryZh: string;
-  reasonZh: string;
-  category: string;
-  categoryLabel: string;
-  score: number;
-  url: string | null;
-  publishedAt: string | null;
-  durationSeconds: number | null;
-}
-
-export interface ReportSection {
-  section: string;
-  items: ReportItem[];
-}
-
-export interface DailyReportContent {
+  imageUrl: string | null;
   title: string;
-  leadParagraph: string;
-  highlights: string[];
-  sections: ReportSection[];
-  stats: { selected: number; maxItems: number };
+  /** 单集页面链接；feed 缺 <link> 时为音频地址 */
+  url: string | null;
+  /** ISO 字符串 */
+  publishedAt: string | null;
+  durationSeconds: number | null;
+  shownotes: string | null;
 }
 
-export interface DailyReport {
-  reportKey: string;
-  generatedAt: string;
-  revision: number;
-  content: DailyReportContent;
+export interface EpisodesPage {
+  items: EpisodeListItem[];
+  page: number;
+  pageSize: number;
+  hasMore: boolean;
 }
-
-/** 报刊种类：daily | weekly | monthly（正文结构与 DailyReport 一致） */
-export type ReportKind = 'daily' | 'weekly' | 'monthly';
-export type PeriodicReport = DailyReport;
