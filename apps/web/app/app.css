@@ -74,7 +74,8 @@ html {
   border-top: 3px double var(--color-ink, #1c1917);
 }
 
-/* ── 更新时间线:左侧书脊 + 圆点节点 + 日期左槽。
+/* ── 更新时间线:按日分组 + 左侧书脊 + 圆点节点 + 时间左槽。
+   结构:ol.timeline > li.tl-day(通栏日期分隔线 + ol.tl-items) > li.timeline-item。
    几何全部由 --tl-* 变量驱动;窄屏把日期槽宽与列间距归零,网格折叠成两列,
    书脊/圆点/短横线的定位公式不变,自然贴到左缘。颜色引用主题变量,深色自动翻转。 */
 .timeline,
@@ -99,7 +100,8 @@ html {
   padding: var(--tl-pad) 0;
 }
 
-/* 书脊:每条画自己那一段;首条从圆点起笔、末条到圆点收笔 */
+/* 书脊:每条画自己那一段;每一天内,首条从圆点起笔、末条到圆点收笔
+   (竖线不跨日——日与日之间由通栏日期分隔线承担结构) */
 .timeline-item::before {
   content: '';
   position: absolute;
@@ -110,11 +112,11 @@ html {
   background-color: var(--color-stone-300);
 }
 
-.timeline-item:first-child::before {
+.tl-day .timeline-item:first-child::before {
   top: var(--tl-dot-top);
 }
 
-.timeline-item:last-child::before {
+.tl-day .timeline-item:last-child::before {
   bottom: calc(100% - var(--tl-dot-top));
 }
 
@@ -131,10 +133,40 @@ html {
   box-shadow: 0 0 0 3px var(--color-paper);
 }
 
-/* 日期左槽:右对齐,分两行(月日/时分);短横线跨过列间距连向圆点 */
+/* 通栏日期分隔线:大日期嵌在横贯整行的细线上(伪元素左右两段线)。
+   首日不加顶部留白;宽/窄两态同构,无需降级规则。 */
+.tl-day-head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  padding: 1.25rem 0 0.375rem;
+}
+
+.tl-day-head::before,
+.tl-day-head::after {
+  content: '';
+  align-self: center;
+  height: 1px;
+  background-color: var(--color-stone-300);
+}
+
+.tl-day-head::before {
+  width: 1rem;
+}
+
+.tl-day-head::after {
+  flex: 1;
+}
+
+.tl-day:first-child .tl-day-head {
+  padding-top: 0;
+}
+
+/* 时间左槽:右对齐,单行时间抬到圆点行;短横线跨过列间距连向圆点 */
 .tl-date {
   position: relative;
   text-align: right;
+  padding-top: calc(var(--tl-dot-top) - var(--tl-pad) - 0.5rem);
 }
 
 .tl-date::after {
@@ -145,6 +177,11 @@ html {
   width: var(--tl-gap);
   height: 1px;
   background-color: var(--color-stone-300);
+}
+
+/* 到底收尾:双细线(比 .rule-double 的墨色更轻)+ 居中小字由组件给 */
+.tl-end {
+  border-top: 3px double var(--color-stone-300);
 }
 
 /* 翻页导航与内容列左对齐(复用同一组列宽变量) */

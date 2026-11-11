@@ -5,11 +5,11 @@ import { Link, useLoaderData } from 'react-router';
 import { SITE } from '@sonde/industry';
 
 import { BackToTop } from '~/components/BackToTop.tsx';
-import { IconSearch, IconWave } from '~/components/icons.tsx';
+import { IconSearch } from '~/components/icons.tsx';
+import { TimelineFeed } from '~/components/TimelineFeed.tsx';
 import { apiGet } from '~/lib/api.server.ts';
-import { currentShanghaiYear, formatDateTime, formatDuration, formatTimelineStamp } from '~/lib/format.ts';
-import { safeHttpUrl } from '~/lib/url.ts';
-import type { EpisodesPage, EpisodeListItem, SourcesList } from '~/lib/types.ts';
+import { episodesApiPath, parseTimelineQuery } from '~/lib/timeline.ts';
+import type { EpisodesPage, SourcesList } from '~/lib/types.ts';
 
 export const meta: MetaFunction = () => [
   { title: SITE.homeTitle },
@@ -17,103 +17,21 @@ export const meta: MetaFunction = () => [
 ];
 
 export async function loader({ request }: { request: Request }) {
-  const url = new URL(request.url);
-  const page = Math.max(1, Number.parseInt(url.searchParams.get('page') ?? '1', 10) || 1);
-  const sourceParam = Number.parseInt(url.searchParams.get('source') ?? '', 10);
-  const source = Number.isInteger(sourceParam) && sourceParam > 0 ? sourceParam : null;
-  const q = (url.searchParams.get('q') ?? '').trim().slice(0, 100) || null;
-  const episodesPath =
-    `/site/episodes?page=${page}` +
-    (source ? `&source=${source}` : '') +
-    (q ? `&q=${encodeURIComponent(q)}` : '');
+  // page 一律忽略:时间线已是无限滚动,始终从第 1 页起(遗留 ?page= 链接静默回落)
+  const { source, q } = parseTimelineQuery(new URL(request.url));
   const [sources, feed] = await Promise.all([
     apiGet<SourcesList>('/site/sources'),
-    apiGet<EpisodesPage>(episodesPath),
+    apiGet<EpisodesPage>(episodesApiPath({ page: 1, source, q })),
   ]);
-  return { sources, feed, page, source, q };
-}
-
-/** 单集节点:日期左槽(宽容器)+ 书脊圆点 + 封面/衬线标题(外链)/播客·时长 + RSS 简介。
- *  日期在左槽承担,标题成为节点主语;窄容器(视口窄或被侧栏挤窄)左槽隐藏,日期回落 meta 行。 */
-function TimelineItem({ item, currentYear }: { item: EpisodeListItem; currentYear: string }) {
-  const stamp = formatTimelineStamp(item.publishedAt);
-  const duration = formatDuration(item.durationSeconds);
-  const href = safeHttpUrl(item.url);
-  return (
-    <li className="timeline-item">
-      <div className="tl-date">
-        {stamp && stamp.year !== currentYear && (
-          <span className="block text-xs leading-4 text-stone-400">{stamp.year}年</span>
-        )}
-        {stamp ? (
-          <time dateTime={item.publishedAt ?? undefined} className="block text-sm leading-5 text-stone-500">
-            {stamp.date}
-          </time>
-        ) : (
-          <span className="block text-sm leading-5 text-stone-400">日期未知</span>
-        )}
-        {stamp && <span className="block text-xs leading-4 tabular-nums text-stone-400">{stamp.time}</span>}
-      </div>
-      <span className="tl-node" aria-hidden="true" />
-      <div className="flex min-w-0 gap-4">
-        {item.imageUrl ? (
-          <img
-            src={item.imageUrl}
-            alt=""
-            loading="lazy"
-            className="h-12 w-12 flex-none rounded-sm border border-stone-300 bg-white object-cover"
-          />
-        ) : (
-          <div className="flex h-12 w-12 flex-none items-center justify-center rounded-sm border border-stone-200 bg-white text-stone-300">
-            <IconWave size={20} />
-          </div>
-        )}
-        <div className="min-w-0 flex-1">
-          {href ? (
-            <a
-              href={href}
-              target="_blank"
-              rel="noreferrer"
-              className="block font-serif text-lg font-semibold leading-snug hover:text-vermilion"
-            >
-              {item.title}
-              <span className="ml-1.5 align-middle text-xs font-normal text-stone-400" aria-hidden>
-                ↗
-              </span>
-              <span className="sr-only">（在新窗口打开）</span>
-            </a>
-          ) : (
-            <p className="font-serif text-lg font-semibold leading-snug">{item.title}</p>
-          )}
-          <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-stone-400">
-            <span className="font-medium text-stone-500">{item.podcast}</span>
-            <span className="tl-meta-datetime" aria-hidden>
-              ·
-            </span>
-            <span className="tl-meta-datetime">{formatDateTime(item.publishedAt)}</span>
-            {duration && (
-              <>
-                <span aria-hidden>·</span>
-                <span>{duration}</span>
-              </>
-            )}
-          </p>
-          {item.shownotes && (
-            <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-stone-500">{item.shownotes}</p>
-          )}
-        </div>
-      </div>
-    </li>
-  );
+  return { sources, feed, source, q };
 }
 
 export default function Timeline() {
-  const { sources, feed, page, source, q } = useLoaderData<typeof loader>();
+  const { sources, feed, source, q } = useLoaderData<typeof loader>();
   const items = feed?.items ?? [];
   const hasMore = feed?.hasMore ?? false;
   const total = feed?.total ?? null;
   const sourceItems = sources?.items ?? [];
-  const currentYear = currentShanghaiYear();
   const searchRef = useRef<HTMLInputElement>(null);
 
   // "/" 快捷聚焦搜索框(已在输入框内时不抢)
@@ -137,20 +55,16 @@ export default function Timeline() {
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
-  /** 生成保留筛选上下文的站内链接:source/q 缺省沿用当前值,page 缺省回 1 */
-  const buildHref = (next: { source?: number | null; q?: string | null; page?: number }) => {
+  /** 生成保留筛选上下文的站内链接:source/q 缺省沿用当前值 */
+  const buildHref = (next: { source?: number | null; q?: string | null }) => {
     const nextSource = next.source !== undefined ? next.source : source;
     const nextQ = next.q !== undefined ? next.q : q;
-    const nextPage = next.page ?? 1;
     const params = new URLSearchParams();
     if (nextSource) {
       params.set('source', String(nextSource));
     }
     if (nextQ) {
       params.set('q', nextQ);
-    }
-    if (nextPage > 1) {
-      params.set('page', String(nextPage));
     }
     const search = params.toString();
     return search ? `/?${search}` : '/';
@@ -251,7 +165,8 @@ export default function Timeline() {
             )}
           </section>
 
-          {/* 更新时间线:左侧书脊 + 圆点节点,日期在左槽(刊头等站点信息在左侧栏) */}
+          {/* 更新时间线:按日分组 + 无限滚动,首批来自 SSR,追加批客户端拉取。
+              key 随筛选变化:换筛选即重挂载,追加状态整体复位。 */}
           {items.length === 0 ? (
             <div className="border border-dashed border-stone-300 bg-white/50 px-6 py-12 text-center text-stone-400">
               <p className="font-serif text-lg font-semibold text-stone-500">没有匹配的单集</p>
@@ -266,32 +181,13 @@ export default function Timeline() {
               </Link>
             </div>
           ) : (
-            <ol className="timeline" aria-label="更新时间线">
-              {items.map((item) => (
-                <TimelineItem key={item.id} item={item} currentYear={currentYear} />
-              ))}
-            </ol>
-          )}
-
-          {/* 翻页:第 2 页起为更早的更新,筛选与搜索参数随行 */}
-          {(page > 1 || hasMore) && (
-            <nav className="tl-indent flex items-center justify-between text-sm" aria-label="翻页">
-              {page > 1 ? (
-                <Link to={buildHref({ page: page - 1 })} className="text-stone-500 hover:text-vermilion">
-                  ← 较新
-                </Link>
-              ) : (
-                <span className="text-stone-300">← 较新</span>
-              )}
-              <span className="text-xs text-stone-400">第 {page} 页</span>
-              {hasMore ? (
-                <Link to={buildHref({ page: page + 1 })} className="text-stone-500 hover:text-vermilion">
-                  较早 →
-                </Link>
-              ) : (
-                <span className="text-stone-300">较早 →</span>
-              )}
-            </nav>
+            <TimelineFeed
+              key={`${source ?? 'all'}|${q ?? ''}`}
+              initialItems={items}
+              initialHasMore={hasMore}
+              source={source}
+              q={q}
+            />
           )}
         </>
       )}
