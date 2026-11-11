@@ -14,7 +14,7 @@ vi.mock('../src/db/db.ts', () => ({
   rows: (...args: unknown[]) => rowsMock(...(args as [])),
 }));
 
-const { listEpisodes, listSourcesWithCounts } = await import('../src/episodes/read.ts');
+const { listEpisodes, listSourcesWithCounts, listCategoriesWithCounts } = await import('../src/episodes/read.ts');
 
 interface Frag {
   text: string;
@@ -98,15 +98,40 @@ describe('listEpisodes', () => {
     expect(result.total).toBe(7);
   });
 
-  it('q 筛选:标题与简介 ILIKE 同一参数,百分号包裹;垃圾 sourceId 忽略', async () => {
+  it('q 筛选:标题/简介/播客名三路 ILIKE 同一参数,百分号包裹;垃圾 sourceId 忽略', async () => {
     rowsMock.mockResolvedValueOnce([episodeRow(1)]).mockResolvedValueOnce([{ total: 1 }]);
 
     await listEpisodes(50, 0, { q: ' 深度学习 ', sourceId: -3 });
 
     const list = rowsMock.mock.calls[0]?.[0] as Frag;
-    expect(list.text).toContain('(e.title ILIKE $1 OR e.shownotes ILIKE $1)');
+    expect(list.text).toContain('(e.title ILIKE $1 OR e.shownotes ILIKE $1 OR s.name ILIKE $1)');
     expect(list.text).not.toContain('s.id = $');
     expect(list.values).toEqual(['%深度学习%', 51, 0]);
+  });
+
+  it('category 筛选:COALESCE(s.category, 其他) = $2,分页参数顺延,并跑同条件 COUNT', async () => {
+    rowsMock.mockResolvedValueOnce([episodeRow(1)]).mockResolvedValueOnce([{ total: 5 }]);
+
+    const result = await listEpisodes(50, 0, { category: '科技' });
+
+    const list = rowsMock.mock.calls[0]?.[0] as Frag;
+    expect(list.text).toContain('COALESCE(s.category, $1) = $2');
+    expect(list.values).toEqual(['其他', '科技', 51, 0]);
+    const count = rowsMock.mock.calls[1]?.[0] as Frag;
+    expect(count.text).toContain('COALESCE(s.category, $1) = $2');
+    expect(count.values).toEqual(['其他', '科技']);
+    expect(result.total).toBe(5);
+  });
+
+  it('category=其他 用同一 COALESCE 谓词(无 IS NULL 分支)', async () => {
+    rowsMock.mockResolvedValueOnce([]).mockResolvedValueOnce([{ total: 0 }]);
+
+    await listEpisodes(50, 0, { category: '其他' });
+
+    const list = rowsMock.mock.calls[0]?.[0] as Frag;
+    expect(list.text).toContain('COALESCE(s.category, $1) = $2');
+    expect(list.text).not.toContain('IS NULL');
+    expect(list.values).toEqual(['其他', '其他', 51, 0]);
   });
 
   it('sourceId + q 叠加:参数依次为 sourceId、q%、limit+1、offset', async () => {
@@ -116,8 +141,20 @@ describe('listEpisodes', () => {
 
     const list = rowsMock.mock.calls[0]?.[0] as Frag;
     expect(list.text).toContain('s.id = $1');
-    expect(list.text).toContain('(e.title ILIKE $2 OR e.shownotes ILIKE $2)');
+    expect(list.text).toContain('(e.title ILIKE $2 OR e.shownotes ILIKE $2 OR s.name ILIKE $2)');
     expect(list.values).toEqual([2, '%AI%', 51, 0]);
+  });
+
+  it('sourceId + category + q 三叠加:参数依次为 sourceId、其他、分类、q%', async () => {
+    rowsMock.mockResolvedValueOnce([]).mockResolvedValueOnce([{ total: 0 }]);
+
+    await listEpisodes(50, 0, { sourceId: 2, category: '科技', q: 'AI' });
+
+    const list = rowsMock.mock.calls[0]?.[0] as Frag;
+    expect(list.text).toContain('s.id = $1');
+    expect(list.text).toContain('COALESCE(s.category, $2) = $3');
+    expect(list.text).toContain('(e.title ILIKE $4 OR e.shownotes ILIKE $4 OR s.name ILIKE $4)');
+    expect(list.values).toEqual([2, '其他', '科技', '%AI%', 51, 0]);
   });
 
   it('q 全空白/超长:空白忽略、长度夹到 100', async () => {
@@ -152,6 +189,50 @@ describe('listSourcesWithCounts', () => {
     expect(result).toEqual([
       { id: 2, name: 'B 台', imageUrl: null, episodeCount: 9 },
       { id: 1, name: 'A 台', imageUrl: 'https://cdn.example.com/a.jpg', episodeCount: 3 },
+    ]);
+  });
+});
+
+describe('listCategoriesWithCounts', () => {
+  it('按单集数倒序聚合分类,「其他」恒排末尾,含停更源历史', async () => {
+    rowsMock.mockResolvedValue([
+      { name: '休闲', episodeCount: 120, sourceCount: 30 },
+      { name: '科技', episodeCount: 40, sourceCount: 9 },
+      { name: '其他', episodeCount: 500, sourceCount: 98 },
+    ]);
+
+    const result = await listCategoriesWithCounts();
+
+    const frag = rowsMock.mock.calls[0]?.[0] as Frag;
+    // NULL 分类以 COALESCE 收进「其他」(常量走 $n 参数),同名行再在 JS 端合并
+    expect(frag.text).toContain('COALESCE(s.category, $1) AS name');
+    expect(frag.values).toEqual(['其他']);
+    expect(frag.text).toContain('GROUP BY s.category');
+    expect(frag.text).toContain('COUNT(DISTINCT s.id)::int AS "sourceCount"');
+    expect(frag.text).toContain('HAVING COUNT(e.id) > 0');
+    // 「其他」(NULL 分组)钉末尾,其余按单集数倒序
+    expect(frag.text).toContain('ORDER BY (s.category IS NULL) ASC, COUNT(e.id) DESC, name ASC');
+    expect(frag.text).not.toContain('is_active');
+    expect(result).toEqual([
+      { name: '休闲', episodeCount: 120, sourceCount: 30 },
+      { name: '科技', episodeCount: 40, sourceCount: 9 },
+      { name: '其他', episodeCount: 500, sourceCount: 98 },
+    ]);
+  });
+
+  it('同名行合并且「其他」钉回末尾(手工 category 恰为「其他」时不产生重复 chip)', async () => {
+    // 字面量「其他」行按 SQL 排序落在非 NULL 区,与末尾的 NULL「其他」不相邻
+    rowsMock.mockResolvedValue([
+      { name: '其他', episodeCount: 200, sourceCount: 38 },
+      { name: '科技', episodeCount: 40, sourceCount: 9 },
+      { name: '其他', episodeCount: 300, sourceCount: 60 },
+    ]);
+
+    const result = await listCategoriesWithCounts();
+
+    expect(result).toEqual([
+      { name: '科技', episodeCount: 40, sourceCount: 9 },
+      { name: '其他', episodeCount: 500, sourceCount: 98 },
     ]);
   });
 });

@@ -17,15 +17,17 @@ afterEach(() => {
 /** 无限滚动的追加批接口:瘦载荷(items/page/hasMore),绝不向 fetcher 抛错
  *  (fetcher.load 的 loader 错误会冒泡到最近 ErrorBoundary,顶掉整页)。 */
 describe('GET /resources/episodes loader', () => {
-  it('透传 api 的 items/page/hasMore(丢 pageSize/total),query 原样转交 api', async () => {
+  it('透传 api 的 items/page/hasMore(丢 pageSize/total),query(含 category)原样转交 api', async () => {
     const fetchMock = vi.fn(async (_input: RequestInfo | URL, _init?: RequestInit) =>
       jsonResponse(200, { items: [{ id: 1 }], page: 2, pageSize: 50, hasMore: true, total: null }),
     );
     vi.stubGlobal('fetch', fetchMock);
-    const data = await loader(call('https://x/resources/episodes?page=2&source=3&q=%E6%B7%B1%E5%BA%A6'));
+    const data = await loader(
+      call('https://x/resources/episodes?page=2&source=3&category=%E7%A7%91%E6%8A%80&q=%E6%B7%B1%E5%BA%A6'),
+    );
     expect(data).toEqual({ items: [{ id: 1 }], page: 2, hasMore: true });
     const calledUrl = String(fetchMock.mock.calls[0]?.[0] ?? '');
-    expect(calledUrl).toContain('/api/site/episodes?page=2&source=3&q=');
+    expect(calledUrl).toContain('/api/site/episodes?page=2&source=3&category=%E7%A7%91%E6%8A%80&q=');
   });
 
   it('api 不可达(apiGet 抛 Response)→ 200 error 批,不抛出', async () => {

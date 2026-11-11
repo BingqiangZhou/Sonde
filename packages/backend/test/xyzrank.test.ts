@@ -2,18 +2,58 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 /** fetch 全 mock:xyzrankToEntries 是纯函数,fetchXyzrankTopPodcasts 只做翻页与重试。 */
 
-const { fetchXyzrankTopPodcasts, xyzrankToEntries, XYZRANK_SYNC_INTERVAL_MINUTES } = await import(
+const { fetchXyzrankTopPodcasts, xyzrankToEntries, rollupGenre, GENRE_ROLLUP, CATEGORY_VOCABULARY, XYZRANK_SYNC_INTERVAL_MINUTES } = await import(
   '../src/sources/xyzrank.ts'
 );
 
-const pod = (rank: number, name: string, rss?: string) => ({
+const pod = (rank: number, name: string, rss?: string, genre?: string) => ({
   id: `id-${rank}`,
   rank,
   name,
+  ...(genre !== undefined ? { primaryGenreName: genre } : {}),
   links: [
     { name: 'xyz', url: `https://www.xiaoyuzhoufm.com/podcast/${rank}` },
     ...(rss !== undefined ? [{ name: 'rss', url: rss }] : []),
   ],
+});
+
+describe('rollupGenre', () => {
+  it('一级分类原样保留(恒等)', () => {
+    expect(rollupGenre('科技')).toBe('科技');
+    expect(rollupGenre('休闲')).toBe('休闲');
+    expect(rollupGenre('犯罪纪实')).toBe('犯罪纪实');
+  });
+
+  it('二级分类归并到一级', () => {
+    expect(rollupGenre('幽默对谈')).toBe('喜剧');
+    expect(rollupGenre('影评')).toBe('影视');
+    expect(rollupGenre('个人日记')).toBe('社会与文化');
+    expect(rollupGenre('投资')).toBe('商务');
+    expect(rollupGenre('历史')).toBe('人文');
+  });
+
+  it('两个改名映射:健康与健身→健康、电视与电影→影视', () => {
+    expect(rollupGenre('健康与健身')).toBe('健康');
+    expect(rollupGenre('电视与电影')).toBe('影视');
+  });
+
+  it('先 trim 再查表;空白/缺失 → null', () => {
+    expect(rollupGenre(' 商务 ')).toBe('商务');
+    expect(rollupGenre('')).toBeNull();
+    expect(rollupGenre('   ')).toBeNull();
+    expect(rollupGenre(undefined)).toBeNull();
+  });
+
+  it('未收录的值 → null(前端归入「其他」)', () => {
+    expect(rollupGenre('神秘新类')).toBeNull();
+  });
+
+  it('字典穷尽性:每个映射目标都在一级词表内,词表共 17 个', () => {
+    expect(CATEGORY_VOCABULARY.size).toBe(17);
+    for (const target of Object.values(GENRE_ROLLUP)) {
+      expect(CATEGORY_VOCABULARY.has(target)).toBe(true);
+    }
+  });
 });
 
 describe('xyzrankToEntries', () => {
@@ -21,10 +61,25 @@ describe('xyzrankToEntries', () => {
     const { entries, skipped } = xyzrankToEntries([pod(1, '岩中花述', 'https://feed.xyzfm.space/abc')]);
 
     expect(entries).toEqual([
-      { name: '岩中花述', feedUrl: 'https://feed.xyzfm.space/abc', intervalMinutes: XYZRANK_SYNC_INTERVAL_MINUTES },
+      {
+        name: '岩中花述',
+        feedUrl: 'https://feed.xyzfm.space/abc',
+        intervalMinutes: XYZRANK_SYNC_INTERVAL_MINUTES,
+        category: null,
+      },
     ]);
     expect(XYZRANK_SYNC_INTERVAL_MINUTES).toBe(10);
     expect(skipped).toBe(0);
+  });
+
+  it('primaryGenreName 经 rollupGenre 归并进 category,缺失时为 null', () => {
+    const { entries } = xyzrankToEntries([
+      pod(1, '一级', 'https://a.com/rss', '科技'),
+      pod(2, '二级', 'https://b.com/rss', '幽默对谈'),
+      pod(3, '无genre', 'https://c.com/rss'),
+    ]);
+
+    expect(entries.map((e) => e.category)).toEqual(['科技', '喜剧', null]);
   });
 
   it('无 rss 链接或名字为空的跳过并计数', () => {

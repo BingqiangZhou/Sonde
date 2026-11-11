@@ -1,4 +1,4 @@
-/** 时间线纯函数:?page/&source/&q 的宽容解析、api 路径组装、按北京日分组。
+/** 时间线纯函数:?page/&source/&category/&q 的宽容解析、api 路径组装、站内筛选链接组装、按北京日分组。
  *  home 首屏 loader 与 /resources/episodes 资源路由共用,两侧解析永不漂移。 */
 import type { EpisodeListItem } from './types.ts';
 
@@ -7,28 +7,62 @@ import { formatWeekdayCn, shanghaiYmd } from './format.ts';
 export interface TimelineQuery {
   page: number;
   source: number | null;
+  /** 一级分类名;「其他」= 无分类聚合 */
+  category: string | null;
   q: string | null;
 }
 
-/** ?page=&source=&q= 的宽容解析(垃圾值一律回落,语义与 api 路由一致)。 */
+/** ?page=&source=&category=&q= 的宽容解析(垃圾值一律回落,语义与 api 路由一致)。 */
 export function parseTimelineQuery(url: URL): TimelineQuery {
   const page = Math.max(1, Number.parseInt(url.searchParams.get('page') ?? '1', 10) || 1);
   const sourceParam = Number.parseInt(url.searchParams.get('source') ?? '', 10);
   const source = Number.isInteger(sourceParam) && sourceParam > 0 ? sourceParam : null;
+  const category = (url.searchParams.get('category') ?? '').trim().slice(0, 30) || null;
   const q = (url.searchParams.get('q') ?? '').trim().slice(0, 100) || null;
-  return { page, source, q };
+  return { page, source, category, q };
 }
 
-/** 组装 /site/episodes 的 api 路径(q 编码,缺省筛选省略)。 */
+/** 组装 /site/episodes 的 api 路径(q/category 编码,缺省筛选省略)。 */
 export function episodesApiPath(query: TimelineQuery): string {
   let path = `/site/episodes?page=${query.page}`;
   if (query.source) {
     path += `&source=${query.source}`;
   }
+  if (query.category) {
+    path += `&category=${encodeURIComponent(query.category)}`;
+  }
   if (query.q) {
     path += `&q=${encodeURIComponent(query.q)}`;
   }
   return path;
+}
+
+/** buildTimelineHref 的增量补丁:显式 null 即清除对应筛选,缺省沿用当前值。 */
+export type TimelineFilterPatch = {
+  source?: number | null;
+  category?: string | null;
+  q?: string | null;
+};
+
+/** 组装站内筛选链接(SSR 与客户端共用;page 恒丢弃)。
+ *  约定:点分类 chip 清 source 保 q;点「全部」清 source+category 保 q;
+ *  点播客名设 source 清 category 保 q;✕ 只清 source。 */
+export function buildTimelineHref(current: TimelineQuery, patch: TimelineFilterPatch = {}): string {
+  const source = patch.source !== undefined ? patch.source : current.source;
+  const category = patch.category !== undefined ? patch.category : current.category;
+  const q = patch.q !== undefined ? patch.q : current.q;
+  const params = new URLSearchParams();
+  if (source) {
+    params.set('source', String(source));
+  }
+  if (category) {
+    params.set('category', category);
+  }
+  if (q) {
+    params.set('q', q);
+  }
+  const search = params.toString();
+  return search ? `/?${search}` : '/';
 }
 
 export interface TimelineDay {

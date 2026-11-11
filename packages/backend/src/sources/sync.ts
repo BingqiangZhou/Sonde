@@ -12,6 +12,8 @@ export interface SeedSourceEntry {
   name: string;
   feedUrl: string;
   intervalMinutes: number;
+  /** 一级分类(xyzrank 经 GENRE_ROLLUP 归并;手工 sources.json 可显式指定)。缺省 = 无分类(前端「其他」)。 */
+  category?: string | null;
 }
 
 export interface SyncResult {
@@ -31,12 +33,15 @@ export function normalizeSeedEntries(raw: unknown): SeedSourceEntry[] {
     if (!item || typeof item !== 'object') {
       throw new ValidationError(`sources.json 第 ${index} 项不是对象`);
     }
-    const { name, feedUrl, intervalMinutes } = item as Record<string, unknown>;
+    const { name, feedUrl, intervalMinutes, category } = item as Record<string, unknown>;
     if (typeof name !== 'string' || !name.trim()) {
       throw new ValidationError(`sources.json 第 ${index} 项缺少 name`);
     }
     if (typeof feedUrl !== 'string' || !feedUrl.trim()) {
       throw new ValidationError(`sources.json 第 ${index} 项缺少 feedUrl`);
+    }
+    if (category !== undefined && category !== null && typeof category !== 'string') {
+      throw new ValidationError(`sources.json 第 ${index} 项 category 必须是字符串`);
     }
     const interval =
       intervalMinutes === undefined
@@ -47,7 +52,12 @@ export function normalizeSeedEntries(raw: unknown): SeedSourceEntry[] {
     if (interval === null) {
       throw new ValidationError(`sources.json 第 ${index} 项 intervalMinutes 必须是正整数`);
     }
-    return { name: name.trim(), feedUrl: feedUrl.trim(), intervalMinutes: interval };
+    const normalizedCategory = typeof category === 'string' ? category.trim() : '';
+    const entry: SeedSourceEntry = { name: name.trim(), feedUrl: feedUrl.trim(), intervalMinutes: interval };
+    if (normalizedCategory) {
+      entry.category = normalizedCategory;
+    }
+    return entry;
   });
 }
 
@@ -60,13 +70,14 @@ export async function syncSources(entries: SeedSourceEntry[]): Promise<SyncResul
     let updated = 0;
     for (const entry of entries) {
       const result = await client.query<{ inserted: boolean }>(sql`
-        INSERT INTO sources (name, config, interval_minutes, is_active)
-        VALUES (${entry.name}, jsonb_build_object('feedUrl', ${entry.feedUrl}::text), ${entry.intervalMinutes}, true)
+        INSERT INTO sources (name, config, interval_minutes, is_active, category)
+        VALUES (${entry.name}, jsonb_build_object('feedUrl', ${entry.feedUrl}::text), ${entry.intervalMinutes}, true, ${entry.category ?? null})
         ON CONFLICT (lower(config->>'feedUrl')) WHERE config->>'feedUrl' IS NOT NULL
         DO UPDATE SET
           name = EXCLUDED.name,
           interval_minutes = EXCLUDED.interval_minutes,
           is_active = true,
+          category = EXCLUDED.category,
           updated_at = now()
         RETURNING (xmax = 0) AS inserted
       `);
@@ -115,13 +126,14 @@ export async function syncXyzrankSources(entries: SeedSourceEntry[]): Promise<Xy
     let keptManual = 0;
     for (const entry of entries) {
       const result = await client.query<{ inserted: boolean }>(sql`
-        INSERT INTO sources (name, config, interval_minutes, is_active)
-        VALUES (${entry.name}, jsonb_build_object('feedUrl', ${entry.feedUrl}::text, 'origin', 'xyzrank'), ${entry.intervalMinutes}, true)
+        INSERT INTO sources (name, config, interval_minutes, is_active, category)
+        VALUES (${entry.name}, jsonb_build_object('feedUrl', ${entry.feedUrl}::text, 'origin', 'xyzrank'), ${entry.intervalMinutes}, true, ${entry.category ?? null})
         ON CONFLICT (lower(config->>'feedUrl')) WHERE config->>'feedUrl' IS NOT NULL
         DO UPDATE SET
           name = EXCLUDED.name,
           interval_minutes = EXCLUDED.interval_minutes,
           is_active = true,
+          category = EXCLUDED.category,
           updated_at = now()
         WHERE sources.config->>'origin' = 'xyzrank'
         RETURNING (xmax = 0) AS inserted

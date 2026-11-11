@@ -56,6 +56,23 @@ describe('normalizeSeedEntries', () => {
     const [entry] = normalizeSeedEntries([{ name: 'x', feedUrl: 'https://x.com/f' }]);
     expect(entry).toEqual({ name: 'x', feedUrl: 'https://x.com/f', intervalMinutes: 60 });
   });
+  it('category 字符串会 trim 后随条目返回', () => {
+    const [entry] = normalizeSeedEntries([{ name: 'x', feedUrl: 'https://x.com/f', category: ' 科技 ' }]);
+    expect(entry).toEqual({ name: 'x', feedUrl: 'https://x.com/f', intervalMinutes: 60, category: '科技' });
+  });
+  it('category 缺省/空串/纯空白 → 视为缺省(键不出现)', () => {
+    const [a, b, c] = normalizeSeedEntries([
+      { name: 'x', feedUrl: 'https://x.com/f' },
+      { name: 'y', feedUrl: 'https://y.com/f', category: '' },
+      { name: 'z', feedUrl: 'https://z.com/f', category: '   ' },
+    ]);
+    expect(a).not.toHaveProperty('category');
+    expect(b).not.toHaveProperty('category');
+    expect(c).not.toHaveProperty('category');
+  });
+  it('category 非字符串抛错(配置错误应当响亮)', () => {
+    expect(() => normalizeSeedEntries([{ name: 'x', feedUrl: 'https://x.com/f', category: 123 }])).toThrow('category');
+  });
 });
 
 describe('syncSources', () => {
@@ -96,6 +113,25 @@ describe('syncSources', () => {
 
     expect(withTxMock).toHaveBeenCalledTimes(1);
     expect(result).toMatchObject({ added: 1, updated: 1 });
+  });
+
+  it('upsert 写 category 列:有值透传,缺省绑 null', async () => {
+    clientMock.query.mockImplementation(async (frag: { text: string; values: unknown[] }) => {
+      queries.push(frag);
+      return { rows: [{ inserted: true }], rowCount: 1 };
+    });
+
+    await syncSources([
+      { name: 'A', feedUrl: 'https://a.com/f', intervalMinutes: 60, category: '科技' },
+      { name: 'B', feedUrl: 'https://b.com/f', intervalMinutes: 60 },
+    ]);
+
+    const upserts = queries.filter((q) => q.text.includes('INSERT INTO sources'));
+    expect(upserts).toHaveLength(2);
+    expect(upserts[0]?.text).toMatch(/INSERT INTO sources\s*\(name,\s*config,\s*interval_minutes,\s*is_active,\s*category\)/);
+    expect(upserts[0]?.text).toContain('category = EXCLUDED.category');
+    expect(upserts[0]?.values[3]).toBe('科技');
+    expect(upserts[1]?.values[3]).toBeNull();
   });
 
   it('列表外的激活源被停用（不删行，保留历史单集）', async () => {
@@ -163,6 +199,26 @@ describe('syncXyzrankSources(榜单自动同步,origin 隔离)', () => {
     expect(upserts[0]?.text).toContain(`WHERE sources.config->>'origin' = 'xyzrank'`);
     expect(upserts[0]?.values.slice(0, 3)).toEqual(['榜首播客', 'https://new.example/rss', 10]);
     expect(result).toMatchObject({ added: 1, keptManual: 1 });
+  });
+
+  it('upsert 同样写 category 列,origin 守卫不动', async () => {
+    clientMock.query.mockImplementation(async (frag: { text: string; values: unknown[] }) => {
+      queries.push(frag);
+      return { rows: [{ inserted: true }], rowCount: 1 };
+    });
+
+    await syncXyzrankSources([
+      { name: '榜首', feedUrl: 'https://a.com/rss', intervalMinutes: 10, category: null },
+      { name: '次席', feedUrl: 'https://b.com/rss', intervalMinutes: 10, category: '喜剧' },
+    ]);
+
+    const upserts = queries.filter((q) => q.text.includes('INSERT INTO sources'));
+    expect(upserts).toHaveLength(2);
+    expect(upserts[0]?.text).toMatch(/INSERT INTO sources\s*\(name,\s*config,\s*interval_minutes,\s*is_active,\s*category\)/);
+    expect(upserts[0]?.text).toContain('category = EXCLUDED.category');
+    expect(upserts[0]?.text).toContain(`WHERE sources.config->>'origin' = 'xyzrank'`);
+    expect(upserts[0]?.values[3]).toBeNull();
+    expect(upserts[1]?.values[3]).toBe('喜剧');
   });
 
   it('停用只针对 origin=xyzrank 且不在当前榜单的源', async () => {

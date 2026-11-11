@@ -1,19 +1,22 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useFetcher } from 'react-router';
+import { Link, useFetcher } from 'react-router';
 
 import { IconWave } from '~/components/icons.tsx';
 import { createSentinelObserver } from '~/lib/infinite-scroll.ts';
 import { currentShanghaiYear, formatDuration, formatTimelineStamp } from '~/lib/format.ts';
-import { groupTimelineDays } from '~/lib/timeline.ts';
+import { buildTimelineHref, groupTimelineDays } from '~/lib/timeline.ts';
 import type { EpisodeListItem, EpisodesBatch } from '~/lib/types.ts';
 import { safeHttpUrl } from '~/lib/url.ts';
 
-/** 追加批的请求地址(筛选随行,q 由 URLSearchParams 编码)。 */
-function batchHref(page: number, source: number | null, q: string | null): string {
+/** 追加批的请求地址(筛选随行,category/q 由 URLSearchParams 编码)。 */
+function batchHref(page: number, source: number | null, category: string | null, q: string | null): string {
   const params = new URLSearchParams();
   params.set('page', String(page));
   if (source) {
     params.set('source', String(source));
+  }
+  if (category) {
+    params.set('category', category);
   }
   if (q) {
     params.set('q', q);
@@ -38,8 +41,9 @@ function mergeDeduped(base: readonly EpisodeListItem[], appended: readonly Episo
 }
 
 /** 单集节点:时间左槽(宽容器)+ 书脊圆点 + 封面/衬线标题(外链)/播客·时长 + RSS 简介。
- *  日期由所在日的通栏分隔线承担,这里只标时间;窄容器左槽隐藏,时间回落 meta 行。 */
-function TimelineItem({ item }: { item: EpisodeListItem }) {
+ *  日期由所在日的通栏分隔线承担,这里只标时间;窄容器左槽隐藏,时间回落 meta 行。
+ *  播客名是内链:直达该播客的筛选(设 source 清 category 保 q)。 */
+function TimelineItem({ item, podcastHref }: { item: EpisodeListItem; podcastHref: string }) {
   const stamp = formatTimelineStamp(item.publishedAt);
   const duration = formatDuration(item.durationSeconds);
   const href = safeHttpUrl(item.url);
@@ -87,7 +91,12 @@ function TimelineItem({ item }: { item: EpisodeListItem }) {
             <p className="font-serif text-lg font-semibold leading-snug">{item.title}</p>
           )}
           <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-stone-400">
-            <span className="font-medium text-stone-500">{item.podcast}</span>
+            <Link
+              to={podcastHref}
+              className="font-medium text-stone-500 underline-offset-2 hover:text-vermilion hover:underline"
+            >
+              {item.podcast}
+            </Link>
             {stamp && (
               <>
                 <span className="tl-meta-datetime" aria-hidden>
@@ -120,11 +129,13 @@ export function TimelineFeed({
   initialItems,
   initialHasMore,
   source,
+  category,
   q,
 }: {
   initialItems: EpisodeListItem[];
   initialHasMore: boolean;
   source: number | null;
+  category: string | null;
   q: string | null;
 }) {
   // 仅客户端、仅 mount 后变更——服务端 HTML 与水合首帧只用 initialItems
@@ -140,6 +151,9 @@ export function TimelineFeed({
   const items = useMemo(() => mergeDeduped(initialItems, appended), [initialItems, appended]);
   const days = useMemo(() => groupTimelineDays(items), [items]);
   const nextPage = loadedPages + 2;
+  // 直达播客的筛选链接:设 source、清 category、保留 q(与 home 的 chip 语义一致)
+  const podcastHref = (id: number) =>
+    buildTimelineHref({ page: 1, source, category, q }, { source: id, category: null });
 
   // 观察:哨兵进入视口下方 800px 预载余量即触发;每次重新进入余量都重新武装重试
   // (IO 只在跨越时触发——失败后哨兵不动,不会重试风暴)。rootMargin 的槽序
@@ -174,8 +188,8 @@ export function TimelineFeed({
     if (data && !data.error && data.page === nextPage) {
       return;
     }
-    fetcher.load(batchHref(nextPage, source, q));
-  }, [intersecting, failed, hasMore, fetcher, nextPage, source, q]);
+    fetcher.load(batchHref(nextPage, source, category, q));
+  }, [intersecting, failed, hasMore, fetcher, nextPage, source, category, q]);
 
   // 并入:只认页号(loadedPages + 2)——陈旧/重复解析天然丢弃,不可能双并入或漏并
   useEffect(() => {
@@ -213,7 +227,7 @@ export function TimelineFeed({
             </div>
             <ol className="tl-items">
               {day.items.map((item) => (
-                <TimelineItem key={item.id} item={item} />
+                <TimelineItem key={item.id} item={item} podcastHref={podcastHref(item.sourceId)} />
               ))}
             </ol>
           </li>

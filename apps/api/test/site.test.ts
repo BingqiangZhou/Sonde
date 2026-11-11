@@ -3,10 +3,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const listEpisodesMock = vi.fn();
 const listSourcesWithCountsMock = vi.fn();
+const listCategoriesWithCountsMock = vi.fn();
 
 vi.mock('@sonde/backend', () => ({
   listEpisodes: (...args: unknown[]) => listEpisodesMock(...(args as [])),
   listSourcesWithCounts: (...args: unknown[]) => listSourcesWithCountsMock(...(args as [])),
+  listCategoriesWithCounts: (...args: unknown[]) => listCategoriesWithCountsMock(...(args as [])),
 }));
 
 const { siteRoutes } = await import('../src/routes/site.ts');
@@ -80,6 +82,52 @@ describe('GET /api/site/episodes', () => {
 
     await app.inject({ method: 'GET', url: '/api/site/episodes?source=2&q=AI' });
     expect(listEpisodesMock).toHaveBeenLastCalledWith(50, 0, { sourceId: 2, q: 'AI' });
+  });
+
+  it('?category= 透传为分类筛选(去空白);「其他」照常透传;空白/超长处理', async () => {
+    listEpisodesMock.mockResolvedValue({ items: [], hasMore: false, pageSize: 50, total: 0 });
+
+    const app = await build();
+    // 科技(URL 编码)
+    await app.inject({ method: 'GET', url: '/api/site/episodes?category=%E7%A7%91%E6%8A%80' });
+    expect(listEpisodesMock).toHaveBeenLastCalledWith(50, 0, { category: '科技' });
+
+    // 「其他」照常透传(NULL 分类的哨兵在 SQL 层处理)
+    await app.inject({ method: 'GET', url: '/api/site/episodes?category=%E5%85%B6%E4%BB%96' });
+    expect(listEpisodesMock).toHaveBeenLastCalledWith(50, 0, { category: '其他' });
+
+    // 纯空白忽略
+    await app.inject({ method: 'GET', url: '/api/site/episodes?category=%20%20' });
+    expect(listEpisodesMock).toHaveBeenLastCalledWith(50, 0, {});
+
+    // 超长截断到 30
+    await app.inject({ method: 'GET', url: `/api/site/episodes?category=${'x'.repeat(50)}` });
+    expect(listEpisodesMock).toHaveBeenLastCalledWith(50, 0, { category: 'x'.repeat(30) });
+
+    // 与 source/q 叠加
+    await app.inject({ method: 'GET', url: '/api/site/episodes?source=2&q=AI&category=%E7%A7%91%E6%8A%80' });
+    expect(listEpisodesMock).toHaveBeenLastCalledWith(50, 0, { sourceId: 2, q: 'AI', category: '科技' });
+  });
+});
+
+describe('GET /api/site/categories', () => {
+  it('透传分类列表(「其他」恒排末尾由 backend 保证)', async () => {
+    listCategoriesWithCountsMock.mockResolvedValue([
+      { name: '休闲', episodeCount: 120, sourceCount: 30 },
+      { name: '其他', episodeCount: 500, sourceCount: 98 },
+    ]);
+
+    const app = await build();
+    const res = await app.inject({ method: 'GET', url: '/api/site/categories' });
+
+    expect(res.statusCode).toBe(200);
+    expect(listCategoriesWithCountsMock).toHaveBeenCalledTimes(1);
+    expect(res.json()).toEqual({
+      items: [
+        { name: '休闲', episodeCount: 120, sourceCount: 30 },
+        { name: '其他', episodeCount: 500, sourceCount: 98 },
+      ],
+    });
   });
 });
 

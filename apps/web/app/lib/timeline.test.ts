@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import type { EpisodeListItem } from './types.ts';
-import { episodesApiPath, groupTimelineDays, parseTimelineQuery } from './timeline.ts';
+import { buildTimelineHref, episodesApiPath, groupTimelineDays, parseTimelineQuery } from './timeline.ts';
 
 function item(id: number, publishedAt: string | null): EpisodeListItem {
   return {
@@ -96,10 +96,54 @@ describe('parseTimelineQuery / episodesApiPath', () => {
     expect(parseTimelineQuery(new URL(`https://x/?q=${long}`)).q).toHaveLength(100);
   });
 
-  it('episodesApiPath 组装:筛选缺省省略,q 编码', () => {
-    expect(episodesApiPath({ page: 1, source: null, q: null })).toBe('/site/episodes?page=1');
-    expect(episodesApiPath({ page: 2, source: 3, q: '深度 学习' })).toBe(
+  it('category 去空白并截断到 30,全空白忽略为 null', () => {
+    expect(parseTimelineQuery(new URL('https://x/?category=%E7%A7%91%E6%8A%80')).category).toBe('科技');
+    expect(parseTimelineQuery(new URL('https://x/?category=%20%E5%BD%B1%E8%A7%86%20')).category).toBe('影视');
+    expect(parseTimelineQuery(new URL('https://x/?category=%20%20')).category).toBeNull();
+    expect(parseTimelineQuery(new URL('https://x/')).category).toBeNull();
+    const long = 'a'.repeat(50);
+    expect(parseTimelineQuery(new URL(`https://x/?category=${long}`)).category).toHaveLength(30);
+  });
+
+  it('episodesApiPath 组装:筛选缺省省略,q/category 编码', () => {
+    expect(episodesApiPath({ page: 1, source: null, category: null, q: null })).toBe('/site/episodes?page=1');
+    expect(episodesApiPath({ page: 2, source: 3, category: null, q: '深度 学习' })).toBe(
       `/site/episodes?page=2&source=3&q=${encodeURIComponent('深度 学习')}`,
+    );
+    expect(episodesApiPath({ page: 1, source: null, category: '科技', q: null })).toBe(
+      `/site/episodes?page=1&category=${encodeURIComponent('科技')}`,
+    );
+    expect(episodesApiPath({ page: 1, source: 3, category: '其他', q: 'AI' })).toBe(
+      `/site/episodes?page=1&source=3&category=${encodeURIComponent('其他')}&q=AI`,
+    );
+  });
+});
+
+/** 站内筛选链接组装:patch 显式 null 即清除,page 恒丢弃。 */
+describe('buildTimelineHref', () => {
+  const current = { page: 1, source: 5, category: '科技', q: 'AI' } as const;
+
+  it('点分类 chip:清 source、保留 q', () => {
+    expect(buildTimelineHref(current, { source: null, category: '喜剧' })).toBe(
+      `/?category=${encodeURIComponent('喜剧')}&q=AI`,
+    );
+  });
+
+  it('点「全部」:清 source+category、保留 q;全空回落 /', () => {
+    expect(buildTimelineHref(current, { source: null, category: null })).toBe('/?q=AI');
+    expect(buildTimelineHref({ page: 3, source: null, category: null, q: null }, { source: null, category: null })).toBe('/');
+  });
+
+  it('点时间线里的播客名:设 source、清 category、保留 q', () => {
+    expect(buildTimelineHref(current, { source: 9, category: null })).toBe('/?source=9&q=AI');
+  });
+
+  it('播客 chip 的 ✕:只清 source,category 与 q 保留;空 patch 全保留', () => {
+    expect(buildTimelineHref(current, { source: null })).toBe(
+      `/?category=${encodeURIComponent('科技')}&q=AI`,
+    );
+    expect(buildTimelineHref(current)).toBe(
+      `/?source=5&category=${encodeURIComponent('科技')}&q=AI`,
     );
   });
 });

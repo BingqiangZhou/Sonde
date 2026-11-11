@@ -6,10 +6,10 @@
 - The workspace directory is still named `PodcastInsight` (historical); the product name is 声读 Sonde.
 
 ## Project Structure
-- `apps/api/` — Fastify HTTP service: site read API (`/api/site/meta`, `/api/site/episodes`), health.
+- `apps/api/` — Fastify HTTP service: site read API (`/api/site/meta`, `/api/site/episodes`, `/api/site/sources`, `/api/site/categories`), health.
 - `apps/worker/` — pg-boss worker: the `sources.fetch` queue consumer (8 concurrent workers) + every-minute due-source scan cron; also syncs the xyzrank.com top-1000 podcast ranking daily at 04:00 Beijing time (and once at startup) — sources it manages carry `config.origin='xyzrank'` and never touch manual subscriptions from `sources.json`; on startup it also cleans up the five queue schedules left over from the removed AI pipeline (pg-boss cron plans persist in the DB).
 - `apps/web/` — React Router 8 SSR web app (Chinese UI). ONE route: the timeline page `/` (cover, podcast, datetime, duration, title linking out, RSS-provided shownotes). Reads ONLY via HTTP from api (`lib/api.server.ts`), never touches the DB. Client-only features: theme mode (localStorage).
-- `packages/backend/` — all business logic: `db` (raw tagged-template SQL, no ORM), `sources` (rss fetch/parse, service, sync), `episodes` (timeline read), `queue`, `config`, `errors`.
+- `packages/backend/` — all business logic: `db` (raw tagged-template SQL, no ORM), `sources` (rss fetch/parse, service, sync; `xyzrank.ts` holds the category rollup dict `GENRE_ROLLUP` — the single source of truth for 一级分类), `episodes` (timeline read incl. category aggregation), `queue`, `config`, `errors`.
 - `industry/` — the customization pack (change config, not code): `site.ts` (site identity/copy), `sources.json` (the single source of truth for subscriptions).
 - `database/migrations/` — plain SQL migrations applied by `scripts/migrate.ts`.
 - `scripts/` — `init-env.ts`, `migrate.ts`, `seed.ts` (syncs sources.json into the DB).
@@ -40,7 +40,7 @@
 
 ## Testing Guidelines
 - vitest, colocated tests (`*.test.ts`) or under `packages/backend/test/`.
-- Unit tests are mandatory for: RSS parsing/new-episode detection (truncation, guid fallback, shownotes cleaning, channel image), timeline read (pagination/LIMIT+1 semantics), seed sync (upsert + deactivation), api route page-param handling.
+- Unit tests are mandatory for: RSS parsing/new-episode detection (truncation, guid fallback, shownotes cleaning, channel image), timeline read (pagination/LIMIT+1 semantics, category filter incl. 「其他」 sentinel), xyzrank genre rollup dict (exhaustiveness against the vocabulary), seed sync (upsert + deactivation), api route page-param handling.
 - api route tests use `fastify.inject` with mocked backend reads; backend service tests mock the db layer and assert on SQL shape.
 - A task is NOT COMPLETE until: typecheck passes, `npm test` passes, and the touched flow works end-to-end (Docker compose when infra is involved).
 
@@ -55,3 +55,4 @@
 | Deleting queue code and forgetting the cron | pg-boss cron plans live in the DB; removing a queue requires `boss.unschedule` + `deleteQueue` cleanup (see `apps/worker/src/schedules.ts`) |
 | `docker/` compose files | Root `docker-compose.yml` |
 | Assume empty `feedUrl` handling | Upserts key on `lower(config->>'feedUrl')` against the partial unique index |
+| Listing specific podcasts as top-level filter chips | Top-level chips = 一级分类 (`xyzrank primaryGenreName` rolled up via `GENRE_ROLLUP` in `sources/xyzrank.ts`; unmapped/missing → 「其他」, always last). Direct podcast access = clicking the podcast name in a timeline row (`?source=`) or search (which also matches `s.name`) |

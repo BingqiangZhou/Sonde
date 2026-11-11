@@ -24,5 +24,5 @@ export type { SeedSourceEntry, SyncResult, XyzrankSyncResult } from './sources/s
 export { fetchXyzrankTopPodcasts, xyzrankToEntries, XYZRANK_API_BASE, XYZRANK_SYNC_INTERVAL_MINUTES } from './sources/xyzrank.ts';
 export type { XyzrankPodcast, XyzrankPodcastLink } from './sources/xyzrank.ts';
 
-export { listEpisodes, listSourcesWithCounts } from './episodes/read.ts';
-export type { EpisodeListItem, EpisodesPage, EpisodeFilters, SourceWithCount } from './episodes/read.ts';
+export { listEpisodes, listSourcesWithCounts, listCategoriesWithCounts, UNCATEGORIZED } from './episodes/read.ts';
+export type { EpisodeListItem, EpisodesPage, EpisodeFilters, SourceWithCount, CategoryWithCount } from './episodes/read.ts';

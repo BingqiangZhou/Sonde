@@ -42,7 +42,7 @@ export interface EpisodesBatch {
   error?: true;
 }
 
-/** 订阅源(筛选 chips 数据):含停更源的历史,0 集的源不下发。 */
+/** 订阅源(按源筛选时查播客名等场景):含停更源的历史,0 集的源不下发。 */
 export interface SourceListItem {
   id: number;
   name: string;
@@ -52,4 +52,15 @@ export interface SourceListItem {
 
 export interface SourcesList {
   items: SourceListItem[];
+}
+
+/** 分类 chip 数据:「其他」= 无分类聚合(榜单未提供/未收录),API 保证恒排末尾。 */
+export interface CategoryListItem {
+  name: string;
+  episodeCount: number;
+  sourceCount: number;
+}
+
+export interface CategoriesList {
+  items: CategoryListItem[];
 }

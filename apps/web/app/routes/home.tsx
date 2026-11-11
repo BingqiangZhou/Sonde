@@ -8,8 +8,8 @@ import { BackToTop } from '~/components/BackToTop.tsx';
 import { IconSearch } from '~/components/icons.tsx';
 import { TimelineFeed } from '~/components/TimelineFeed.tsx';
 import { apiGet } from '~/lib/api.server.ts';
-import { episodesApiPath, parseTimelineQuery } from '~/lib/timeline.ts';
-import type { EpisodesPage, SourcesList } from '~/lib/types.ts';
+import { buildTimelineHref, episodesApiPath, parseTimelineQuery, type TimelineQuery } from '~/lib/timeline.ts';
+import type { CategoriesList, EpisodesPage, SourcesList } from '~/lib/types.ts';
 
 export const meta: MetaFunction = () => [
   { title: SITE.homeTitle },
@@ -18,21 +18,25 @@ export const meta: MetaFunction = () => [
 
 export async function loader({ request }: { request: Request }) {
   // page 一律忽略:时间线已是无限滚动,始终从第 1 页起(遗留 ?page= 链接静默回落)
-  const { source, q } = parseTimelineQuery(new URL(request.url));
-  const [sources, feed] = await Promise.all([
-    apiGet<SourcesList>('/site/sources'),
-    apiGet<EpisodesPage>(episodesApiPath({ page: 1, source, q })),
+  const { source, category, q } = parseTimelineQuery(new URL(request.url));
+  const [sources, categories, feed] = await Promise.all([
+    // 源列表只在按源筛选时才需要(给激活 chip 显示播客名);分类 chips 走 /site/categories
+    source ? apiGet<SourcesList>('/site/sources') : Promise.resolve(null),
+    apiGet<CategoriesList>('/site/categories'),
+    apiGet<EpisodesPage>(episodesApiPath({ page: 1, source, category, q })),
   ]);
-  return { sources, feed, source, q };
+  return { sources, categories, feed, source, category, q };
 }
 
 export default function Timeline() {
-  const { sources, feed, source, q } = useLoaderData<typeof loader>();
+  const { sources, categories, feed, source, category, q } = useLoaderData<typeof loader>();
   const items = feed?.items ?? [];
   const hasMore = feed?.hasMore ?? false;
   const total = feed?.total ?? null;
   const sourceItems = sources?.items ?? [];
+  const categoryItems = categories?.items ?? [];
   const searchRef = useRef<HTMLInputElement>(null);
+  const current: TimelineQuery = { page: 1, source, category, q };
 
   // "/" 快捷聚焦搜索框(已在输入框内时不抢)
   useEffect(() => {
@@ -55,21 +59,6 @@ export default function Timeline() {
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
-  /** 生成保留筛选上下文的站内链接:source/q 缺省沿用当前值 */
-  const buildHref = (next: { source?: number | null; q?: string | null }) => {
-    const nextSource = next.source !== undefined ? next.source : source;
-    const nextQ = next.q !== undefined ? next.q : q;
-    const params = new URLSearchParams();
-    if (nextSource) {
-      params.set('source', String(nextSource));
-    }
-    if (nextQ) {
-      params.set('q', nextQ);
-    }
-    const search = params.toString();
-    return search ? `/?${search}` : '/';
-  };
-
   const chipClass = (active: boolean) =>
     `flex flex-none items-center gap-1.5 rounded-full border px-3 py-1 text-xs transition-colors ${
       active
@@ -77,26 +66,14 @@ export default function Timeline() {
         : 'border-stone-300 text-stone-500 hover:border-stone-400 hover:text-ink'
     }`;
 
-  const hasFilters = Boolean(source || q);
+  const hasFilters = Boolean(source || category || q);
   const activeSource = source ? sourceItems.find((s) => s.id === source) : undefined;
-  const filterLabel = [activeSource?.name, q ? `“${q}”` : null].filter(Boolean).join(' · ');
-
-  // chips 封顶:订阅源可达上千,按单集数(API 已倒序)只显前 20 个;
-  // 当前选中的源若在 20 名外,强制追加以保持筛选可见;其余靠搜索框触达。
-  const MAX_CHIPS = 20;
-  const chipsSources = sourceItems.slice(0, MAX_CHIPS);
-  if (source && !chipsSources.some((s) => s.id === source)) {
-    const active = sourceItems.find((s) => s.id === source);
-    if (active) {
-      chipsSources.push(active);
-    }
-  }
-  const hiddenChips = sourceItems.length - chipsSources.length;
+  const filterLabel = [category, activeSource?.name, q ? `“${q}”` : null].filter(Boolean).join(' · ');
 
   return (
     // @container:时间线的窄态切换看"内容列实际宽度"而非视口(侧栏展开会挤窄主栏)
     <div className="@container space-y-10 pt-8 pb-4">
-      {sourceItems.length === 0 ? (
+      {categoryItems.length === 0 ? (
         /* 还没有任何订阅:引导接入(筛选与搜索此时无意义) */
         <div className="border border-dashed border-stone-300 bg-white/50 px-6 py-14 text-center text-stone-400">
           <p className="font-serif text-lg font-semibold text-stone-500">时间线还是空的</p>
@@ -112,6 +89,7 @@ export default function Timeline() {
           <section aria-label="筛选与搜索">
             <form method="get" action="/" className="flex gap-2">
               {source ? <input type="hidden" name="source" value={source} /> : null}
+              {category ? <input type="hidden" name="category" value={category} /> : null}
               <div className="relative min-w-0 flex-1">
                 <span
                   className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-stone-400"
@@ -138,21 +116,36 @@ export default function Timeline() {
               </button>
             </form>
 
-            <nav className="tl-chips -mx-4 mt-3 flex gap-2 overflow-x-auto px-4" aria-label="按播客筛选">
-              <Link to={buildHref({ source: null })} className={chipClass(!source)}>
+            {/* 一级分类 chips:点分类清 source 保 q;「全部」清 source+category 保 q。
+                顶级不再列具体播客(千榜订阅收不拢)—— 直达靠点时间线里的播客名与搜索。 */}
+            <nav className="tl-chips -mx-4 mt-3 flex gap-2 overflow-x-auto px-4" aria-label="按分类筛选">
+              <Link
+                to={buildTimelineHref(current, { source: null, category: null })}
+                className={chipClass(!source && !category)}
+              >
                 全部
               </Link>
-              {chipsSources.map((s) => (
-                <Link key={s.id} to={buildHref({ source: s.id })} className={chipClass(source === s.id)}>
-                  {s.name}
-                  <span className="tabular-nums opacity-60">{s.episodeCount}</span>
+              {activeSource && (
+                <Link
+                  to={buildTimelineHref(current, { source: null })}
+                  className={chipClass(true)}
+                  title="取消按播客筛选(保留分类与搜索)"
+                >
+                  {activeSource.name}
+                  <span aria-hidden="true">✕</span>
+                  <span className="sr-only">取消按播客筛选</span>
+                </Link>
+              )}
+              {categoryItems.map((c) => (
+                <Link
+                  key={c.name}
+                  to={buildTimelineHref(current, { source: null, category: c.name })}
+                  className={chipClass(!source && category === c.name)}
+                >
+                  {c.name}
+                  <span className="tabular-nums opacity-60">{c.episodeCount}</span>
                 </Link>
               ))}
-              {hiddenChips > 0 && (
-                <span className="flex flex-none items-center px-1 text-xs text-stone-400" title="其余订阅源请用搜索筛选">
-                  …还有 {hiddenChips} 个
-                </span>
-              )}
             </nav>
 
             {hasFilters && (
@@ -182,10 +175,11 @@ export default function Timeline() {
             </div>
           ) : (
             <TimelineFeed
-              key={`${source ?? 'all'}|${q ?? ''}`}
+              key={`${source ?? 'all'}|${category ?? ''}|${q ?? ''}`}
               initialItems={items}
               initialHasMore={hasMore}
               source={source}
+              category={category}
               q={q}
             />
           )}
