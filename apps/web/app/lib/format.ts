@@ -14,6 +14,11 @@ const shanghaiFormatter = new Intl.DateTimeFormat('en-CA', {
   hourCycle: 'h23',
 });
 
+const shanghaiWeekdayFormatter = new Intl.DateTimeFormat('zh-CN', {
+  timeZone: SHANGHAI_TZ,
+  weekday: 'short',
+});
+
 function toDate(value: string | Date): Date | null {
   const date = typeof value === 'string' ? new Date(value) : value;
   return Number.isNaN(date.getTime()) ? null : date;
@@ -74,6 +79,24 @@ export function formatTimelineStamp(value: string | Date | null | undefined): Ti
     date: `${Number(month)}月${Number(day)}日`,
     time,
   };
+}
+
+/** 北京时区日键 YYYY-MM-DD(时间线按日分组用);空值/非法值返回 null。 */
+export function shanghaiYmd(value: string | Date | null | undefined): string | null {
+  if (!value) {
+    return null;
+  }
+  const date = toDate(value);
+  return date ? shanghaiParts(date).date : null;
+}
+
+/** 北京日期的中文短星期(周三,通栏日分隔线用);空值/非法值返回 null。 */
+export function formatWeekdayCn(value: string | Date | null | undefined): string | null {
+  if (!value) {
+    return null;
+  }
+  const date = toDate(value);
+  return date ? shanghaiWeekdayFormatter.format(date) : null;
 }
 
 /** 当前北京年份(可注入时刻以便测试),用于时间线左槽的跨年判断。 */

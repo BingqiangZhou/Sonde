@@ -6,6 +6,8 @@ import {
   formatDateTime,
   formatDuration,
   formatTimelineStamp,
+  formatWeekdayCn,
+  shanghaiYmd,
 } from './format.ts';
 
 /** 时间线展示固定用北京(Asia/Shanghai)时间,与运行环境时区无关:
@@ -61,5 +63,29 @@ describe('formatTimelineStamp / currentShanghaiYear', () => {
 
   it('currentShanghaiYear 取北京年份(UTC 年末已跨年样本)', () => {
     expect(currentShanghaiYear(new Date('2026-12-31T20:00:00.000Z'))).toBe('2027');
+  });
+});
+
+/** 时间线按日分组用的日键与中文短星期(通栏日分隔线),同样固定北京时区。 */
+describe('shanghaiYmd / formatWeekdayCn', () => {
+  it('UTC 20:30 在北京已是次日:日键取北京日期(跨日样本)', () => {
+    expect(shanghaiYmd('2026-11-04T20:30:00.000Z')).toBe('2026-11-05');
+    expect(shanghaiYmd('2026-11-04T02:00:00.000Z')).toBe('2026-11-04');
+  });
+
+  it('空值/非法值返回 null', () => {
+    expect(shanghaiYmd(null)).toBeNull();
+    expect(shanghaiYmd('not-a-date')).toBeNull();
+  });
+
+  it('星期取北京日期的中文短星期(跨日样本同样落在次日)', () => {
+    expect(formatWeekdayCn('2026-11-11T02:00:00.000Z')).toBe('周三');
+    expect(formatWeekdayCn('2026-11-12T02:00:00.000Z')).toBe('周四');
+    expect(formatWeekdayCn('2026-11-10T20:30:00.000Z')).toBe('周三');
+  });
+
+  it('星期空值/非法值返回 null', () => {
+    expect(formatWeekdayCn(null)).toBeNull();
+    expect(formatWeekdayCn('not-a-date')).toBeNull();
   });
 });
