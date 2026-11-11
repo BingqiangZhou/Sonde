@@ -108,7 +108,9 @@ describe('syncSources', () => {
 
     const deactivate = queries.filter((q) => q.text.includes('UPDATE sources') && q.text.includes('is_active = false'));
     expect(deactivate).toHaveLength(1);
+    // 数组参数必须显式 ::text[] 转型,否则 Postgres 报 42P18(联调实测)
     expect(deactivate[0]?.text).toContain(`<> ALL(`);
+    expect(deactivate[0]?.text).toMatch(/ALL\(\$[0-9]+::text\[\]\)/);
     expect(deactivate[0]?.text).toContain(`config->>'feedUrl' IS NOT NULL`);
     expect(deactivate[0]?.values).toEqual([['https://a.com/f']]);
     expect(queries.some((q) => q.text.includes('DELETE'))).toBe(false);

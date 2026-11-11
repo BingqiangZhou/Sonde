@@ -80,7 +80,7 @@ export async function syncSources(entries: SeedSourceEntry[]): Promise<SyncResul
       SET is_active = false, updated_at = now()
       WHERE is_active
         AND config->>'feedUrl' IS NOT NULL
-        AND lower(config->>'feedUrl') <> ALL(${urls})
+        AND lower(config->>'feedUrl') <> ALL(${urls}::text[])
       RETURNING id
     `);
 
