@@ -33,6 +33,15 @@ export interface EpisodesPage {
   total: number | null;
 }
 
+/** 资源路由 /resources/episodes 的单批响应(无限滚动追加页):EpisodesPage 的瘦载荷。 */
+export interface EpisodesBatch {
+  items: EpisodeListItem[];
+  page: number;
+  hasMore: boolean;
+  /** api 暂不可达:items 恒空,客户端应提示并允许重试 */
+  error?: true;
+}
+
 /** 订阅源(筛选 chips 数据):含停更源的历史,0 集的源不下发。 */
 export interface SourceListItem {
   id: number;
