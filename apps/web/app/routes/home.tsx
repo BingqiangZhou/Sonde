@@ -74,13 +74,13 @@ export default function Timeline() {
     // @container:时间线的窄态切换看"内容列实际宽度"而非视口(侧栏展开会挤窄主栏)
     <div className="@container space-y-10 pt-8 pb-4">
       {categoryItems.length === 0 ? (
-        /* 还没有任何订阅:引导接入(筛选与搜索此时无意义) */
+        /* 还没有任何订阅:等待榜单首次同步(筛选与搜索此时无意义) */
         <div className="border border-dashed border-stone-300 bg-white/50 px-6 py-14 text-center text-stone-400">
           <p className="font-serif text-lg font-semibold text-stone-500">时间线还是空的</p>
           <p className="mt-2 text-sm leading-relaxed">
-            在 industry/sources.json 里添加播客订阅并运行 npm run db:seed，
+            订阅由 xyzrank 中文播客榜自动同步——启动时与每天凌晨四点接入前一千名，
             <br className="hidden sm:block" />
-            worker 会按源间隔自动抓取，新单集就会出现在这里。
+            worker 会按源间隔自动抓取，新单集就会陆续出现在这里。
           </p>
         </div>
       ) : (

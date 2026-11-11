@@ -57,7 +57,7 @@ beforeEach(() => {
   fetchSource.mockReset().mockResolvedValue(undefined);
   scanDueSources.mockReset().mockResolvedValue(undefined);
   fetchXyzrankTopPodcasts.mockReset().mockResolvedValue({ entries: [], skipped: 0 });
-  syncXyzrankSources.mockReset().mockResolvedValue({ added: 0, updated: 0, keptManual: 0, deactivated: 0 });
+  syncXyzrankSources.mockReset().mockResolvedValue({ added: 0, updated: 0, deactivated: 0 });
 });
 
 describe('registerJobs 装配', () => {

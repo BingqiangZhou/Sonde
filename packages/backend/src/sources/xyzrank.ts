@@ -6,7 +6,7 @@
 import { AppError } from '../errors.ts';
 
 import { USER_AGENT } from './rss.ts';
-import type { SeedSourceEntry } from './sync.ts';
+import type { SourceEntry } from './sync.ts';
 
 export const XYZRANK_API_BASE = 'https://xyzrank.com/api/podcasts';
 export const XYZRANK_SYNC_INTERVAL_MINUTES = 10;
@@ -140,10 +140,10 @@ interface XyzrankPage {
 export function xyzrankToEntries(
   items: XyzrankPodcast[],
   options: { maxRank?: number; intervalMinutes?: number } = {},
-): { entries: SeedSourceEntry[]; skipped: number } {
+): { entries: SourceEntry[]; skipped: number } {
   const { maxRank = 1000, intervalMinutes = XYZRANK_SYNC_INTERVAL_MINUTES } = options;
   const seen = new Set<string>();
-  const entries: SeedSourceEntry[] = [];
+  const entries: SourceEntry[] = [];
   let skipped = 0;
 
   for (const item of items) {
@@ -171,7 +171,7 @@ export function xyzrankToEntries(
 /** 拉取榜单前 maxRank 名并映射为订阅条目(每页失败重试一次,全败抛 AppError)。 */
 export async function fetchXyzrankTopPodcasts(
   options: { maxRank?: number } = {},
-): Promise<{ entries: SeedSourceEntry[]; skipped: number }> {
+): Promise<{ entries: SourceEntry[]; skipped: number }> {
   const maxRank = options.maxRank ?? 1000;
   const items: XyzrankPodcast[] = [];
 
