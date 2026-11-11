@@ -1,7 +1,8 @@
 /** 站点侧栏:收纳时间线以外的全部内容(刊头/主题切换/版权)。
  *  收起态 = 左缘细轨(朱印 + 竖排站名 + 展开钮);展开态 = 刊头面板。
- *  开合实际由 <html> 上的 .sb-open class 驱动(app.css),此处只管状态、
- *  持久化(sonde-sidebar)与 aria —— DOM 恒定,SSR 无水合错配。 */
+ *  窄视口两者都不适用:改由常驻精简顶栏(.sb-top,朱印+站名+主题切换)承担,
+ *  CSS 按视口宽度切换显隐。开合实际由 <html> 上的 .sb-open class 驱动(app.css),
+ *  此处只管状态、持久化(sonde-sidebar)与 aria —— DOM 恒定,SSR 无水合错配。 */
 
 import { useEffect, useState } from 'react';
 
@@ -39,6 +40,17 @@ export function Sidebar() {
 
   return (
     <aside className="sidebar" aria-label="站点信息">
+      {/* 窄视口:常驻精简顶栏(朱印+站名+主题切换),不吸顶、不参与开合 */}
+      <div className="sb-top">
+        <span className="sb-seal" aria-hidden="true">
+          {sealChar}
+        </span>
+        <span className="sb-top-name">{SITE.name}</span>
+        <div className="ml-auto">
+          <ThemeModeSelector variant="compact" />
+        </div>
+      </div>
+
       {/* 收起态:细轨(朱印 + 竖排站名 + 展开钮) */}
       <div className="sb-rail">
         <span className="sb-seal" aria-hidden="true">

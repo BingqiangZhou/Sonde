@@ -42,11 +42,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
   );
 }
 
-/** 单页站点外壳:左缘站点侧栏(刊头/主题切换/版权,可收起展开)+ 通栏正文栏。 */
+/** 单页站点外壳:左缘站点侧栏(刊头/主题切换/版权,可收起展开)+ 通栏正文栏;
+ *  窄视口(<40rem)侧栏转为顶部常驻精简条(app.css .site-shell / .sb-top)。 */
 function SiteShell({ children }: { children: React.ReactNode }) {
   const navigation = useNavigation();
   return (
-    <div className="flex min-h-dvh">
+    <div className="site-shell flex min-h-dvh">
       <a
         href="#main"
         className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-50 focus:rounded-md focus:bg-white focus:px-3 focus:py-2 focus:text-sm focus:shadow"
