@@ -6,22 +6,6 @@ x-app: &app
     dockerfile: Dockerfile
   environment: &app-env
     DATABASE_URL: postgres://sonde:${POSTGRES_PASSWORD:-sonde}@db:5432/sonde
-    LLM_BASE_URL: ${LLM_BASE_URL:-}
-    LLM_API_KEY: ${LLM_API_KEY:-}
-    LLM_MODEL: ${LLM_MODEL:-}
-    TRANSCRIPTION_BASE_URL: ${TRANSCRIPTION_BASE_URL:-}
-    TRANSCRIPTION_API_KEY: ${TRANSCRIPTION_API_KEY:-}
-    TRANSCRIPTION_MODEL: ${TRANSCRIPTION_MODEL:-}
-    ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
-    SESSION_SECRET: ${SESSION_SECRET:-}
-    WORK_CONCURRENCY: ${WORK_CONCURRENCY:-2}
-    REPORT_TIMEZONE: ${REPORT_TIMEZONE:-Asia/Shanghai}
-    DATA_DIR: /data
-    ITUNES_COUNTRIES: ${ITUNES_COUNTRIES:-CN,US}
-    ITUNES_DNS: ${ITUNES_DNS:-}
-    ITUNES_PROXY_URL: ${ITUNES_PROXY_URL:-}
-  volumes:
-    - data:/data
   restart: unless-stopped
 
 services:
@@ -108,6 +92,5 @@ services:
 
 volumes:
   db:
-  data:
   caddy_data:
   caddy_config:

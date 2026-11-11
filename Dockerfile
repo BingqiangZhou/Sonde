@@ -7,16 +7,11 @@ COPY packages ./packages
 COPY industry ./industry
 COPY scripts ./scripts
 COPY database ./database
-COPY CHANGELOG.md ./
 COPY tsconfig.base.json ./
 RUN npm ci
 RUN npm run build -w apps/web
 
 FROM node:24-trixie-slim
-# worker 需要 ffmpeg 做音频转码；统一安装，镜像共享
-RUN apt-get update \
-  && apt-get install -y --no-install-recommends ffmpeg \
-  && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 COPY --from=build /app ./
 ENV NODE_ENV=production

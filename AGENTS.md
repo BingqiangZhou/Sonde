@@ -1,19 +1,19 @@
 # Repository Guidelines
 
 ## Project Overview
-- **Sonde (声读)** — personal podcast knowledge base: podcast RSS → transcription → AI scoring/filtering → daily report (08:00), weekly report (Mon 08:30), monthly report (1st 08:30). Learning the architecture of AIHOT (self-collecting, self-writing digest framework), implemented from scratch for podcasts.
+- **Sonde (声读)** — personal podcast update timeline: podcast RSS → scheduled fetch → new-episode detection → single-page timeline (publish-time DESC). Zero running cost: no transcription, no LLM calls, no admin backend.
 - Stack: Node 24, TypeScript (strict), npm workspaces monorepo, Fastify, pg-boss, PostgreSQL 17, React Router 8 (SSR, framework mode), Tailwind CSS, Docker Compose.
 - The workspace directory is still named `PodcastInsight` (historical); the product name is 声读 Sonde.
 
 ## Project Structure
-- `apps/api/` — Fastify HTTP service: site read API (`/api/site/*`), admin API (`/api/admin/*`, session auth), health.
-- `apps/worker/` — pg-boss worker: queue consumers + cron schedules (fetch/transcribe/analyze/report).
-- `apps/web/` — React Router 8 SSR web app (Chinese UI). Reads ONLY via HTTP from api, never touches the DB directly. Client-only features (no backend): favorites (localStorage), theme mode, `/changelog` (renders the bundled Chinese `CHANGELOG.md` via `?raw` import).
-- `packages/backend/` — all business logic: `db` (raw tagged-template SQL, no ORM), `sources`, `pipeline`, `reports`, `providers` (llm/transcription + receipts), `prompts` renderer.
-- `industry/` — the customization pack (change config, not code): `site.ts`, `taxonomy.ts`, `selection.ts` (thresholds + interest profile), `sources.json` (seed subscriptions), `prompts/*.md` (all LLM prompts, `{{var}}` + `{{> include}}` templates).
+- `apps/api/` — Fastify HTTP service: site read API (`/api/site/meta`, `/api/site/episodes`), health.
+- `apps/worker/` — pg-boss worker: the `sources.fetch` queue consumer + every-minute due-source scan cron; on startup it also cleans up the five queue schedules left over from the removed AI pipeline (pg-boss cron plans persist in the DB).
+- `apps/web/` — React Router 8 SSR web app (Chinese UI). ONE route: the timeline page `/` (cover, podcast, datetime, duration, title linking out, RSS-provided shownotes). Reads ONLY via HTTP from api (`lib/api.server.ts`), never touches the DB. Client-only features: theme mode (localStorage).
+- `packages/backend/` — all business logic: `db` (raw tagged-template SQL, no ORM), `sources` (rss fetch/parse, service, sync), `episodes` (timeline read), `queue`, `config`, `errors`.
+- `industry/` — the customization pack (change config, not code): `site.ts` (site identity/copy), `sources.json` (the single source of truth for subscriptions).
 - `database/migrations/` — plain SQL migrations applied by `scripts/migrate.ts`.
-- `scripts/` — `init-env.ts`, `migrate.ts`, `seed.ts`.
-- `deploy/` — Caddyfile. `docs/` — design notes (`SONDE_TS_REWRITE_2026-09-29.md` is the current architecture doc; older Python/Flutter-era docs were removed, see git history).
+- `scripts/` — `init-env.ts`, `migrate.ts`, `seed.ts` (syncs sources.json into the DB).
+- `deploy/` — Caddyfile (reverse-proxies everything to web).
 
 ## Build, Test, and Development Commands
 - Install: `npm install` (root, workspaces)
@@ -27,33 +27,31 @@
 
 ## Coding Style & Conventions
 - TypeScript strict mode everywhere; ESM modules (`"type": "module"`), `.ts` extensions in relative imports where used by tsx.
-- No ORM: raw SQL via tagged templates in `packages/backend/src/db/`. Migrations are plain SQL files, numbered (`0001_*.sql`).
-- All LLM prompts live in `industry/prompts/*.md` — never inline prompt text in TS code. Renderer supports `{{var}}` substitution and `{{> file}}` includes; a missing value or file is a hard error.
+- No ORM: raw SQL via tagged templates in `packages/backend/src/db/`. Migrations are plain SQL files, numbered (`0001_*.sql`). Destructive migrations need a comment saying so.
+- Subscriptions are managed by editing `industry/sources.json` and running `npm run db:seed` — there is NO admin UI. Seed semantics: entries in the list are upserted (by `lower(feedUrl)`, re-listed sources re-activated); sources missing from the list are deactivated (`is_active = false`, rows and episodes kept — the timeline shows deactivated sources' history).
 - Industry config (`industry/*.ts`, `sources.json`) is the intended customization surface — framework code reads it, never hardcodes site specifics.
-- Every paid call (LLM, transcription) goes through the provider layer which writes a `receipts` row (model, tokens/audio seconds, ok/fail) before business writes.
 - Node-side errors: throw typed `AppError` subclasses from `packages/backend/src/errors.ts`; api maps them to HTTP status codes.
-- Date/time: DB stores timestamptz (UTC); daily report windows are computed on the Asia/Shanghai calendar.
-- Web: React Router 8 framework mode (`app/routes.ts`), Tailwind for styling, no component library. Chinese-first UI copy.
+- Web: React Router 8 framework mode (`app/routes.ts`), Tailwind for styling, no component library. Chinese-first UI copy. Existing design tokens (paper/ink/vermilion, serif titles, `rule-double`) are the site's visual language — keep new UI in it.
 - Commits follow Conventional Commits: `feat:`, `fix:`, `refactor:`, `chore:` (see history).
 
 ## Environment & Secrets
-- Config via `.env` (from `.env.example`; generated by `node scripts/init-env.ts --llm-key <key>`). Never commit secrets.
-- Key vars: `DATABASE_URL`, `LLM_BASE_URL`/`LLM_API_KEY`/`LLM_MODEL`, `TRANSCRIPTION_BASE_URL`/`TRANSCRIPTION_API_KEY`/`TRANSCRIPTION_MODEL`, `ADMIN_PASSWORD`, `SESSION_SECRET`, `WORK_CONCURRENCY`.
+- Config via `.env` (from `.env.example`; generated by `node scripts/init-env.ts`). Never commit secrets.
+- Key vars: `DATABASE_URL`, `POSTGRES_PASSWORD`, and infra ports/URLs (`API_PORT`/`WEB_PORT`/`API_URL`/`SITE_URL`). Nothing else is read.
 
 ## Testing Guidelines
 - vitest, colocated tests (`*.test.ts`) or under `packages/backend/test/`.
-- Unit tests are mandatory for: prompt renderer, JSON-tolerant parsing, threshold/selection logic, report window computation (daily/weekly/monthly), RSS new-episode detection.
-- api route tests use `fastify.inject` with a test schema; provider tests mock fetch.
+- Unit tests are mandatory for: RSS parsing/new-episode detection (truncation, guid fallback, shownotes cleaning, channel image), timeline read (pagination/LIMIT+1 semantics), seed sync (upsert + deactivation), api route page-param handling.
+- api route tests use `fastify.inject` with mocked backend reads; backend service tests mock the db layer and assert on SQL shape.
 - A task is NOT COMPLETE until: typecheck passes, `npm test` passes, and the touched flow works end-to-end (Docker compose when infra is involved).
 
 ## Gotchas
 
 | Wrong | Correct |
 |-------|---------|
-| Inline prompt strings in TS | `industry/prompts/*.md` + renderer |
 | ORM / query builder | Raw SQL tagged templates in `packages/backend/src/db/` |
-| Web querying Postgres directly | Web only calls api over HTTP |
-| LLM call without receipt | Always via provider layer (`chatJson`/`transcribeAudio`) |
-| Un-transcribed episode judged by title only | Scoring always runs on full transcript (`episodes.body_text`) |
-| `docker/` compose files | Root `docker-compose.yml`（旧 docker/ 目录已删除） |
-| Assume report dates in UTC | Daily windows are Asia/Shanghai calendar days |
+| Web querying Postgres directly | Web only calls api over HTTP (SSR loader → `apiGet`) |
+| Adding an admin UI / DB writes from web | Subscriptions = `industry/sources.json` + `npm run db:seed` only |
+| Filtering the timeline by `sources.is_active` | Timeline shows deactivated sources' history too |
+| Deleting queue code and forgetting the cron | pg-boss cron plans live in the DB; removing a queue requires `boss.unschedule` + `deleteQueue` cleanup (see `apps/worker/src/schedules.ts`) |
+| `docker/` compose files | Root `docker-compose.yml` |
+| Assume empty `feedUrl` handling | Upserts key on `lower(config->>'feedUrl')` against the partial unique index |
