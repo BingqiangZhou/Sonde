@@ -247,6 +247,10 @@ html {
   top: 0;
   z-index: 10;
   flex: none;
+  /* 高度必须显式给:内部子元素全是绝对定位,不撑高度;flex 行默认 stretch 会把
+     侧栏拉成整页文档高,sticky 可移动区间随之归零(永不吸附)。钉死一个视口高,
+     滚动全程吸附;面板比矮视口高时由 .sb-panel 的 overflow-y: auto 自滚。 */
+  height: 100dvh;
   width: var(--sb-rail);
   overflow: hidden;
   border-right: 1px solid var(--color-stone-200);
