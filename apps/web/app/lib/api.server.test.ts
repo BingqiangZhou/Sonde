@@ -3,7 +3,13 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 const { apiGet, apiGetWithHeaders } = await import('./api.server.ts');
 
 function statusResponse(status: number) {
-  return { ok: status >= 200 && status < 300, status, json: async () => ({ value: 1 }) };
+  // headers 与真实 Response 对齐:读取路径现在会取 etag(apiGet 委托 apiGetWithHeaders)
+  return {
+    ok: status >= 200 && status < 300,
+    status,
+    json: async () => ({ value: 1 }),
+    headers: { get: () => null },
+  };
 }
 
 function responseWithEtag(status: number, body: unknown, etag: string | null) {
