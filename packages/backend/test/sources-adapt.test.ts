@@ -21,11 +21,8 @@ vi.mock('../src/db/db.ts', () => ({
 const { adaptSourceIntervals } = await import('../src/sources/adapt.ts');
 
 describe('adaptSourceIntervals', () => {
-  let statement: { text: string; values: unknown[] };
-
   beforeEach(() => {
     rowsMock.mockReset();
-    statement = { text: '', values: [] };
   });
 
   it('单条 SQL:per_day 取近 7 天 published_at 计数 / 7,目标夹逼 [30, 720],无产出走 720 分支', async () => {
@@ -33,8 +30,7 @@ describe('adaptSourceIntervals', () => {
     const result = await adaptSourceIntervals();
 
     expect(rowsMock).toHaveBeenCalledTimes(1);
-    const frag = rowsMock.mock.calls[0][0] as { text: string; values: unknown[] };
-    statement = frag;
+    const frag = rowsMock.mock.calls[0]?.[0] as { text: string; values: unknown[] };
 
     // per_day:LATERAL 按源统计近 7 天发布数
     expect(frag.text).toContain('e.source_id = s.id');
@@ -51,7 +47,6 @@ describe('adaptSourceIntervals', () => {
 
     // RETURNING 计数即 updated
     expect(result).toEqual({ updated: 3 });
-    void statement;
   });
 
   it('无命中行时 updated 为 0', async () => {

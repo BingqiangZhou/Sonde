@@ -24,7 +24,10 @@ export interface SyncResult {
   deactivated: number;
 }
 
-/** xyzrank 榜单同步：单事务内完成 upsert × N + 停用掉榜源。 */
+/** xyzrank 榜单同步：单事务内完成 upsert × N + 停用掉榜源。
+ *  interval_minutes 只在 INSERT 时给 bootstrap 值(10 分钟):已存在的行不重置——
+ *  间隔是 adaptSourceIntervals 的域,同步若覆盖会把每日 04:00 + 每次启动的
+ *  upsert 变成全量间隔重置(adapt 白做,重启后千源回到 10 分钟狂抓)。 */
 export async function syncXyzrankSources(entries: SourceEntry[]): Promise<SyncResult> {
   if (entries.length === 0) {
     throw new ValidationError('xyzrank 榜单为空,跳过同步以免清空订阅(上游 API 异常?)');
@@ -41,7 +44,6 @@ export async function syncXyzrankSources(entries: SourceEntry[]): Promise<SyncRe
         ON CONFLICT (lower(config->>'feedUrl')) WHERE config->>'feedUrl' IS NOT NULL
         DO UPDATE SET
           name = EXCLUDED.name,
-          interval_minutes = EXCLUDED.interval_minutes,
           is_active = true,
           category = EXCLUDED.category,
           updated_at = now()

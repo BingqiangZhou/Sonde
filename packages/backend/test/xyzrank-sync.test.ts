@@ -110,6 +110,23 @@ describe('syncXyzrankSources(榜单同步)', () => {
     expect(upserts[1]?.values[3]).toBe('喜剧');
   });
 
+  it('DO UPDATE 不重置 interval_minutes —— 间隔属 adapt 域,同步只在新插行时给 bootstrap 值', async () => {
+    clientMock.query.mockImplementation(async (frag: { text: string; values: unknown[] }) => {
+      queries.push(frag);
+      return { rows: [{ inserted: false }], rowCount: 1 };
+    });
+
+    await syncXyzrankSources([{ name: '回榜播客', feedUrl: 'https://back.example/rss', intervalMinutes: 10 }]);
+
+    const upserts = queries.filter((q) => q.text.includes('INSERT INTO sources'));
+    expect(upserts).toHaveLength(1);
+    // 回榜/在榜行:改名/激活/分类照旧,但已自适应的间隔(30–720)必须保留
+    expect(upserts[0]?.text).toContain('DO UPDATE SET');
+    expect(upserts[0]?.text).not.toContain('interval_minutes = EXCLUDED.interval_minutes');
+    // 新插行仍写 interval_minutes(10 分钟 bootstrap,由下一次 adapt 重定)
+    expect(upserts[0]?.text).toMatch(/INSERT INTO sources\s*\(name,\s*config,\s*interval_minutes,/);
+  });
+
   it('停用针对所有不在当前榜单的激活源(掉榜保留历史,不删行)', async () => {
     clientMock.query.mockImplementation(async (frag: { text: string; values: unknown[] }) => {
       queries.push(frag);
