@@ -74,8 +74,8 @@ chore(release): update version to <版本号> and generate changelog
 ## 步骤5: 创建并推送 Tag
 
 创建 tag（格式: v<版本号>），例如: v1.1.0，推送到远程仓库。
-推送 `v*` tag 后 `.github/workflows/release.yml` 自动触发：typecheck/test/build →
-从 CHANGELOG.md / CHANGELOG_EN.md 提取该版本段落拼成中英双语正文 → 创建 GitHub Release。
+推送 `v*` tag 后自动触发两个 workflow：`ci.yml` 跑 typecheck/test/build:web，
+`release.yml` 从 CHANGELOG.md / CHANGELOG_EN.md 提取该版本段落拼成中英双语正文 → 创建 GitHub Release。
 发版后用 `https://api.github.com/repos/BingqiangZhou/Sonde/actions/runs?per_page=3` 或
 仓库 Actions 页确认运行成功、Release 正文包含 🇨🇳 中文 与 🇬🇧 English 两段。
 

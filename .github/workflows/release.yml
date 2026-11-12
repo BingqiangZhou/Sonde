@@ -1,7 +1,7 @@
 name: Release
 
-# Tag 推送触发：验证构建/测试，然后从 CHANGELOG.md（中文版）与 CHANGELOG_EN.md（英文版）
-# 提取该版本段落，拼成中英双语正文并创建 GitHub Release。
+# Tag 推送触发：从 CHANGELOG.md（中文版）与 CHANGELOG_EN.md（英文版）提取该版本段落，
+# 拼成中英双语正文并创建 GitHub Release。typecheck/测试/web 构建由 ci.yml 在同一 tag 上跑。
 # 本地流程见 .claude/skills/release/SKILL.md（两份 CHANGELOG 与版本号在推送 tag 前已就位）。
 
 on:
@@ -16,14 +16,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          cache: npm
-      - run: npm ci
-      - run: npm run typecheck
-      - run: npm test
-      - run: npm run build:web
       - name: Build bilingual release notes
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
