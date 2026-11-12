@@ -146,3 +146,48 @@ describe('GET /api/site/sources', () => {
     });
   });
 });
+
+describe('读取层缓存(aihot 同款:60s 动态 / 300s 稳定 + 弱 ETag 304)', () => {
+  it('episodes:cache-control 60s + 弱 ETag;If-None-Match 命中回 304 空体且保留头', async () => {
+    listEpisodesMock.mockResolvedValue({ items: [{ id: 1 }], hasMore: false, pageSize: 50, total: 1 });
+
+    const app = await build();
+    const res = await app.inject({ method: 'GET', url: '/api/site/episodes' });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.headers['cache-control']).toBe('public, max-age=60, s-maxage=60, must-revalidate');
+    const etag = res.headers.etag as string;
+    expect(etag).toMatch(/^W\/"[0-9a-f]{16}"$/);
+
+    // 同 ETag 重发 → 304,空体,ETag/Cache-Control 仍在
+    const revalidate = await app.inject({ method: 'GET', url: '/api/site/episodes', headers: { 'if-none-match': etag } });
+    expect(revalidate.statusCode).toBe(304);
+    expect(revalidate.body).toBe('');
+    expect(revalidate.headers.etag).toBe(etag);
+    expect(revalidate.headers['cache-control']).toBe('public, max-age=60, s-maxage=60, must-revalidate');
+    // body-hash ETag 需先构体才能算指纹:304 省的是传输,不是查询
+    expect(listEpisodesMock).toHaveBeenCalledTimes(2);
+  });
+
+  it('episodes:不同 query 产出不同 ETag(分页/筛选各是各的缓存键)', async () => {
+    listEpisodesMock.mockResolvedValue({ items: [], hasMore: false, pageSize: 50, total: 0 });
+
+    const app = await build();
+    const page1 = await app.inject({ method: 'GET', url: '/api/site/episodes' });
+    const page2 = await app.inject({ method: 'GET', url: '/api/site/episodes?page=2' });
+
+    expect(page1.headers.etag).not.toBe(page2.headers.etag);
+  });
+
+  it('meta/sources/categories:稳定内容走 300s', async () => {
+    listSourcesWithCountsMock.mockResolvedValue([]);
+    listCategoriesWithCountsMock.mockResolvedValue([]);
+
+    const app = await build();
+    for (const path of ['/api/site/meta', '/api/site/sources', '/api/site/categories']) {
+      const res = await app.inject({ method: 'GET', url: path });
+      expect(res.headers['cache-control']).toBe('public, max-age=300, s-maxage=300, must-revalidate');
+      expect(res.headers.etag).toMatch(/^W\/"[0-9a-f]{16}"$/);
+    }
+  });
+});
