@@ -275,7 +275,7 @@ describe('scanDueSources 派发器（不内联抓取）', () => {
     expect(sendJobMock).toHaveBeenLastCalledWith('sources.fetch', { sourceId: 42 }, { singletonKey: 'src:42' });
   });
 
-  it('到期条件是自适应的:空翻倍(超 3 轮起算)+ 失败翻倍,取更长者并封顶 360 分钟', async () => {
+  it('到期条件是自适应的:空翻倍(超 3 轮起算)+ 失败翻倍,取更长者并封顶 1440 分钟', async () => {
     rowsMock.mockImplementation(async (frag: Frag) => {
       if (frag.text.includes('SELECT id FROM sources')) {
         captured = frag;
@@ -293,9 +293,9 @@ describe('scanDueSources 派发器（不内联抓取）', () => {
     expect(text).toMatch(/2 \^ LEAST\(GREATEST\(COALESCE\(\(cursor->>'staleCount'\)::int, 0\) - 3, 0\), 8\)/);
     // 失败退避:consecutiveFailures 2^n,指数封 5
     expect(text).toMatch(/2 \^ LEAST\(COALESCE\(\(health->>'consecutiveFailures'\)::int, 0\), 5\)/);
-    // 两条退避取更长者,均封顶 360 分钟(6 小时)
+    // 两条退避取更长者,均封顶 1440 分钟(24 小时 = 2× adapt 的 max=720,aihot 同款余量)
     expect(text).toContain('GREATEST(');
-    expect((text.match(/LEAST\(360,/g) ?? []).length).toBe(2);
+    expect((text.match(/LEAST\(1440,/g) ?? []).length).toBe(2);
     // 从未抓过的源仍最优先,每分钟派发上限 200 不变
     expect(text).toContain('NULLS FIRST');
     expect(text).toContain('LIMIT 200');

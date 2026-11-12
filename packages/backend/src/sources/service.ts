@@ -18,10 +18,11 @@ interface SourceRow {
  *  纯派发器：不在此进程内抓取，避免一个长任务顺序抓上百个 feed 超过队列 expire。
  *  返回真正入队的源数（singletonKey 去重掉的计为未入队）。
  *
- *  到期间隔是自适应的（取两者中更保守的较长者,封顶 6 小时）:
+ *  到期间隔是自适应的（取两者中更保守的较长者,封顶 24 小时 = 2× adapt 的 max=720）:
  *  - 空转退避:连续无新单集(staleCount,304 或 200 无增量都算)超过 3 轮后
  *    间隔 ×2/轮 —— 活跃源始终按 interval_minutes 抓,长尾源自动降到小时级;
- *  - 失败退避:consecutiveFailures 每多一次间隔 ×2,死链不再每分钟空撞。 */
+ *  - 失败退避:consecutiveFailures 每多一次间隔 ×2,死链不再每分钟空撞。
+ *  基线 interval_minutes 本身由 adaptSourceIntervals 每日按产出重定(30–720),退避在其上放大。 */
 export async function scanDueSources(): Promise<number> {
   const due = await rows<{ id: number }>(sql`
     SELECT id FROM sources
@@ -30,8 +31,8 @@ export async function scanDueSources(): Promise<number> {
         cursor->>'lastFetchedAt' IS NULL
         OR (cursor->>'lastFetchedAt')::timestamptz < now() - (
           GREATEST(
-            LEAST(360, (interval_minutes * (2 ^ LEAST(GREATEST(COALESCE((cursor->>'staleCount')::int, 0) - 3, 0), 8)))::int),
-            LEAST(360, (interval_minutes * (2 ^ LEAST(COALESCE((health->>'consecutiveFailures')::int, 0), 5)))::int)
+            LEAST(1440, (interval_minutes * (2 ^ LEAST(GREATEST(COALESCE((cursor->>'staleCount')::int, 0) - 3, 0), 8)))::int),
+            LEAST(1440, (interval_minutes * (2 ^ LEAST(COALESCE((health->>'consecutiveFailures')::int, 0), 5)))::int)
           ) || ' minutes')::interval
       )
     ORDER BY (cursor->>'lastFetchedAt')::timestamptz NULLS FIRST
