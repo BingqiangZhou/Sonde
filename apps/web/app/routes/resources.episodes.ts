@@ -9,6 +9,19 @@ import type { EpisodesBatch, EpisodesPage } from '~/lib/types.ts';
 
 const CC_60 = 'public, max-age=60, s-maxage=60, must-revalidate';
 
+/** RFC 9110:If-None-Match 可为 `*` 或逗号分隔的校验器列表(逗号两侧容空白),
+ *  任一命中即视为未变——与 api 层 sendCached 同语义(两包互不依赖,各持一份)。 */
+function etagMatches(header: string | null, etag: string): boolean {
+  if (!header) {
+    return false;
+  }
+  const trimmed = header.trim();
+  if (trimmed === '*') {
+    return true;
+  }
+  return trimmed.split(',').some((candidate) => candidate.trim() === etag);
+}
+
 function jsonBatch(batch: EpisodesBatch, cacheControl: string): Response {
   return new Response(JSON.stringify(batch), {
     headers: { 'content-type': 'application/json', 'cache-control': cacheControl },
@@ -25,7 +38,7 @@ export async function loader({ request }: { request: Request }): Promise<Respons
     }
     const batch: EpisodesBatch = { items: feed.data.items, page: feed.data.page, hasMore: feed.data.hasMore };
     const etag = feed.etag;
-    if (etag && request.headers.get('if-none-match') === etag) {
+    if (etag && etagMatches(request.headers.get('if-none-match'), etag)) {
       return new Response(null, { status: 304, headers: { etag, 'cache-control': CC_60 } });
     }
     return new Response(JSON.stringify(batch), {

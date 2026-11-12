@@ -12,13 +12,26 @@ import { listCategoriesWithCounts, listEpisodes, listSourcesWithCounts, type Epi
  *  max-age 浏览器本地、s-maxage 将来套 CDN 时生效;must-revalidate 过期即校验。 */
 const cacheControl = (maxAge: number) => `public, max-age=${maxAge}, s-maxage=${maxAge}, must-revalidate`;
 
+/** RFC 9110:If-None-Match 可为 `*` 或逗号分隔的校验器列表(逗号两侧容空白),
+ *  任一命中即视为未变——CDN/代理再验证时常见列表形式。 */
+function etagMatches(header: string | undefined, etag: string): boolean {
+  if (!header) {
+    return false;
+  }
+  const trimmed = header.trim();
+  if (trimmed === '*') {
+    return true;
+  }
+  return trimmed.split(',').some((candidate) => candidate.trim() === etag);
+}
+
 /** 统一读响应:弱 ETag(响应体+query 的指纹)+ 条件 GET。
  *  If-None-Match 命中回 304 空体(头保留)——aihot 公开 API 同款分层。 */
 function sendCached(request: FastifyRequest, reply: FastifyReply, body: unknown, maxAge: number) {
   const etag = `W/"${createHash('sha1').update(JSON.stringify(body) + request.url).digest('hex').slice(0, 16)}"`;
   reply.header('Cache-Control', cacheControl(maxAge));
   reply.header('ETag', etag);
-  if (request.headers['if-none-match'] === etag) {
+  if (etagMatches(request.headers['if-none-match'], etag)) {
     return reply.code(304).send();
   }
   return reply.send(body);

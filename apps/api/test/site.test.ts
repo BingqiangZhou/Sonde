@@ -179,6 +179,33 @@ describe('读取层缓存(aihot 同款:60s 动态 / 300s 稳定 + 弱 ETag 304)'
     expect(page1.headers.etag).not.toBe(page2.headers.etag);
   });
 
+  it('If-None-Match 为 RFC 列表(逗号分隔,含空白)或 * 时同样命中 304;列表不含则 200', async () => {
+    listEpisodesMock.mockResolvedValue({ items: [], hasMore: false, pageSize: 50, total: 0 });
+
+    const app = await build();
+    const etag = (await app.inject({ method: 'GET', url: '/api/site/episodes' })).headers.etag as string;
+
+    // 列表形式,目标校验器在末位且带空白
+    const asList = await app.inject({
+      method: 'GET',
+      url: '/api/site/episodes',
+      headers: { 'if-none-match': `W/"0000000000000000" ,  ${etag}` },
+    });
+    expect(asList.statusCode).toBe(304);
+
+    // * 形式:资源存在即未变
+    const star = await app.inject({ method: 'GET', url: '/api/site/episodes', headers: { 'if-none-match': '*' } });
+    expect(star.statusCode).toBe(304);
+
+    // 列表不含本 ETag → 200
+    const miss = await app.inject({
+      method: 'GET',
+      url: '/api/site/episodes',
+      headers: { 'if-none-match': 'W/"deadbeefdeadbeef", W/"cafecafecafecafe"' },
+    });
+    expect(miss.statusCode).toBe(200);
+  });
+
   it('meta/sources/categories:稳定内容走 300s', async () => {
     listSourcesWithCountsMock.mockResolvedValue([]);
     listCategoriesWithCountsMock.mockResolvedValue([]);

@@ -58,6 +58,20 @@ describe('GET /resources/episodes loader', () => {
     expect(res.headers.get('cache-control')).toBe(CC_60);
   });
 
+  it('If-None-Match 为 RFC 列表形式(逗号分隔,含空白)时同样命中 304', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => jsonResponse(200, { items: [], page: 2, pageSize: 50, hasMore: false, total: 0 }, 'W/"abc123def4567890"')),
+    );
+
+    const res = await loader(
+      call('https://x/resources/episodes?page=2', { headers: { 'if-none-match': 'W/"ffffffffffffffff" , W/"abc123def4567890"' } }),
+    );
+
+    expect(res).toBeInstanceOf(Response);
+    expect(res.status).toBe(304);
+  });
+
   it('api 不可达(apiGet 抛 Response)→ 200 error 批 + no-store(错误态不吃缓存)', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => jsonResponse(503, {})));
     const res = await loader(call('https://x/resources/episodes?page=3'));
