@@ -19,9 +19,15 @@ export async function registerSchedules(boss: PgBoss): Promise<void> {
   // 每日 04:00（北京）同步 xyzrank 播客榜前 1000：进榜新增、掉榜停用（停用保留历史单集，不删除）
   await boss.schedule('sources.sync-xyzrank', '0 4 * * *', {}, { tz: 'Asia/Shanghai' });
 
-  // 启动即触发一次同步（幂等；singletonKey 防堆叠）——空库首启不用等到凌晨四点
+  // 每日 04:10（北京,错开榜单同步）按近 7 天产出重定各源基础间隔（30–720 分钟）
+  await boss.schedule('sources.adapt-intervals', '10 4 * * *', {}, { tz: 'Asia/Shanghai' });
+
+  // 启动即触发一次同步与间隔自适应（幂等；singletonKey 防堆叠）——空库首启不用等到凌晨四点
   await boss.send('sources.sync-xyzrank', {}, { singletonKey: 'xyzrank-sync' }).catch((error) => {
     console.error('[sonde-worker] xyzrank 同步触发失败:', error instanceof Error ? error.message : error);
+  });
+  await boss.send('sources.adapt-intervals', {}, { singletonKey: 'adapt-intervals' }).catch((error) => {
+    console.error('[sonde-worker] 间隔自适应触发失败:', error instanceof Error ? error.message : error);
   });
 
   // 一次性清理遗留计划与队列（连同在途孤儿任务一起丢弃）；计划本就不存在时静默通过

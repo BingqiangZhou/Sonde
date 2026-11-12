@@ -5,6 +5,7 @@ import type PgBoss from 'pg-boss';
 
 import {
   ValidationError,
+  adaptSourceIntervals,
   fetchSource,
   fetchXyzrankTopPodcasts,
   scanDueSources,
@@ -14,8 +15,9 @@ import {
 type Job = { data: unknown }[];
 
 /** sources.fetch:并发 worker 数。
- *  1000 源 × 10 分钟间隔 ≈ 100 抓/分钟,恰好顶到每分钟扫描上限;串行会被慢 feed(60s 超时)
- *  拖垮整个队列,8 并发 + 绝大多数 304 快返回即可稳定跟上。 */
+ *  间隔自适应(adapt-intervals,30–720 分钟)后稳态每分钟个位数源到期,LIMIT 200 余量充裕;
+ *  冷启动/新订阅批量进场仍会短时顶到扫描上限,串行会被慢 feed(60s 超时)拖垮整个队列,
+ *  8 并发 + 绝大多数 304 快返回即可稳定跟上。 */
 const FETCH_WORKERS = 8;
 
 const sourcesFetchHandler = async (jobs: Job): Promise<void> => {
@@ -26,6 +28,14 @@ const sourcesFetchHandler = async (jobs: Job): Promise<void> => {
     } else {
       await scanDueSources();
     }
+  }
+};
+
+const sourcesAdaptIntervalsHandler = async (jobs: Job): Promise<void> => {
+  for (const job of jobs) {
+    void job;
+    const { updated } = await adaptSourceIntervals();
+    console.log(`[sonde-worker] 间隔自适应完成: 重定 ${updated} 个源`);
   }
 };
 
@@ -59,5 +69,8 @@ export async function registerJobs(boss: PgBoss): Promise<void> {
     await boss.work('sources.fetch', { batchSize: 1 }, sourcesFetchHandler);
   }
   await boss.work('sources.sync-xyzrank', { batchSize: 1 }, sourcesSyncXyzrankHandler);
-  console.log(`[sonde-worker] registered jobs (sources.fetch ×${FETCH_WORKERS}, sources.sync-xyzrank)`);
+  await boss.work('sources.adapt-intervals', { batchSize: 1 }, sourcesAdaptIntervalsHandler);
+  console.log(
+    `[sonde-worker] registered jobs (sources.fetch ×${FETCH_WORKERS}, sources.sync-xyzrank, sources.adapt-intervals)`,
+  );
 }

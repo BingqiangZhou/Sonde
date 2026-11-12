@@ -25,6 +25,15 @@ export const QUEUES = {
     expireInSeconds: 1200,
     policy: 'stately',
   },
+  /** 每日 04:10(北京)按近 7 天产出重定各源基础间隔(30–720 分钟)+ 启动触发一次。
+   *  stately + singletonKey 防与启动触发堆叠;单条 SQL 千级源,expire 给足。 */
+  'sources.adapt-intervals': {
+    retryLimit: 1,
+    retryBackoff: true,
+    retryDelay: 60,
+    expireInSeconds: 600,
+    policy: 'stately',
+  },
 } as const satisfies Record<string, QueueDef>;
 
 export type QueueName = keyof typeof QUEUES;

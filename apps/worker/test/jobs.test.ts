@@ -5,12 +5,14 @@ const fetchSource = vi.fn();
 const scanDueSources = vi.fn();
 const fetchXyzrankTopPodcasts = vi.fn();
 const syncXyzrankSources = vi.fn();
+const adaptSourceIntervals = vi.fn();
 
 vi.mock('@sonde/backend', () => ({
   fetchSource: (...a: unknown[]) => fetchSource(...(a as [])),
   scanDueSources: (...a: unknown[]) => scanDueSources(...(a as [])),
   fetchXyzrankTopPodcasts: (...a: unknown[]) => fetchXyzrankTopPodcasts(...(a as [])),
   syncXyzrankSources: (...a: unknown[]) => syncXyzrankSources(...(a as [])),
+  adaptSourceIntervals: (...a: unknown[]) => adaptSourceIntervals(...(a as [])),
   ValidationError: class ValidationError extends Error {},
 }));
 
@@ -58,17 +60,20 @@ beforeEach(() => {
   scanDueSources.mockReset().mockResolvedValue(undefined);
   fetchXyzrankTopPodcasts.mockReset().mockResolvedValue({ entries: [], skipped: 0 });
   syncXyzrankSources.mockReset().mockResolvedValue({ added: 0, updated: 0, deactivated: 0 });
+  adaptSourceIntervals.mockReset().mockResolvedValue({ updated: 0 });
 });
 
 describe('registerJobs 装配', () => {
-  it('注册 8 个并发 sources.fetch worker + 1 个 sources.sync-xyzrank worker（AI 管道已移除）', async () => {
+  it('注册 8 个并发 sources.fetch worker + sync-xyzrank / adapt-intervals 各 1（AI 管道已移除）', async () => {
     const boss = makeBoss();
     await registerJobs(boss as never);
     const fetchWorkers = boss.registrations.filter((r) => r.name === 'sources.fetch');
     const syncWorkers = boss.registrations.filter((r) => r.name === 'sources.sync-xyzrank');
+    const adaptWorkers = boss.registrations.filter((r) => r.name === 'sources.adapt-intervals');
     expect(fetchWorkers).toHaveLength(8);
     expect(syncWorkers).toHaveLength(1);
-    expect(boss.registrations).toHaveLength(9); // 8 + 1,别无其他队列
+    expect(adaptWorkers).toHaveLength(1);
+    expect(boss.registrations).toHaveLength(10); // 8 + 1 + 1,别无其他队列
     for (const r of boss.registrations) {
       expect(r.options).toEqual({ batchSize: 1 });
     }
@@ -86,23 +91,35 @@ describe('registerJobs 装配', () => {
     await handler([{ data: {} }]);
     expect(scanDueSources).toHaveBeenCalled();
   });
+
+  it('sources.adapt-intervals：执行间隔自适应', async () => {
+    const boss = makeBoss();
+    await registerJobs(boss as never);
+    const handler = boss.registrations.find((r) => r.name === 'sources.adapt-intervals')?.handler;
+    if (!handler) throw new Error('sources.adapt-intervals handler 未注册');
+
+    await handler([{ data: {} }]);
+    expect(adaptSourceIntervals).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe('registerSchedules 调度', () => {
-  it('保留每分钟 sources.fetch 扫描 + 每日 04:00（北京）xyzrank 同步两个 cron', async () => {
+  it('保留每分钟扫描 + 每日 04:00 xyzrank 同步 + 每日 04:10 间隔自适应三个 cron（均北京时区）', async () => {
     const boss = makeBoss();
     await registerSchedules(boss as never);
     expect(boss.scheduled).toEqual([
       { name: 'sources.fetch', cron: '* * * * *', data: {}, options: undefined },
       { name: 'sources.sync-xyzrank', cron: '0 4 * * *', data: {}, options: { tz: 'Asia/Shanghai' } },
+      { name: 'sources.adapt-intervals', cron: '10 4 * * *', data: {}, options: { tz: 'Asia/Shanghai' } },
     ]);
   });
 
-  it('启动即触发一次 xyzrank 同步（singletonKey 防堆叠，空库首启不等凌晨四点）', async () => {
+  it('启动即触发一次 xyzrank 同步与间隔自适应（singletonKey 防堆叠，空库首启不等凌晨）', async () => {
     const boss = makeBoss();
     await registerSchedules(boss as never);
     expect(boss.sent).toEqual([
       { name: 'sources.sync-xyzrank', data: {}, options: { singletonKey: 'xyzrank-sync' } },
+      { name: 'sources.adapt-intervals', data: {}, options: { singletonKey: 'adapt-intervals' } },
     ]);
   });
 
@@ -124,14 +141,14 @@ describe('registerSchedules 调度', () => {
     const boss = makeBoss();
     boss.unschedule.mockRejectedValue(new Error('schedule not found'));
     await expect(registerSchedules(boss as never)).resolves.toBeUndefined();
-    expect(boss.scheduled).toHaveLength(2);
+    expect(boss.scheduled).toHaveLength(3);
   });
 
   it('启动触发 send 失败也不得中断启动（记日志继续跑 cron）', async () => {
     const boss = makeBoss();
     boss.send.mockRejectedValue(new Error('boss unavailable'));
     await expect(registerSchedules(boss as never)).resolves.toBeUndefined();
-    expect(boss.scheduled).toHaveLength(2);
+    expect(boss.scheduled).toHaveLength(3);
     expect(boss.unscheduled).toHaveLength(5);
   });
 });
