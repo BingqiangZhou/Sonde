@@ -25,3 +25,25 @@ export async function apiGet<T>(path: string): Promise<T | null> {
   }
   return (await res.json()) as T;
 }
+
+/** apiGet 的带响应头版本(错误分层语义完全一致):
+ *  返回 { data, etag } —— api 读路由现在带弱 ETag,资源路由转发它即可让
+ *  浏览器做条件 GET(304 省传输)。既有 apiGet 调用方零改动。 */
+export async function apiGetWithHeaders<T>(path: string): Promise<{ data: T; etag: string | null } | null> {
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}/api${path}`, {
+      headers: { accept: 'application/json' },
+      signal: AbortSignal.timeout(8_000),
+    });
+  } catch {
+    throw new Response(`api unreachable: ${path}`, { status: 503 });
+  }
+  if (res.status === 404 || res.status === 401 || res.status === 403) {
+    return null;
+  }
+  if (!res.ok) {
+    throw new Response(`api ${res.status}: ${path}`, { status: res.status });
+  }
+  return { data: (await res.json()) as T, etag: res.headers.get('etag') };
+}

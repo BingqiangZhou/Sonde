@@ -1,9 +1,18 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-const { apiGet } = await import('./api.server.ts');
+const { apiGet, apiGetWithHeaders } = await import('./api.server.ts');
 
 function statusResponse(status: number) {
   return { ok: status >= 200 && status < 300, status, json: async () => ({ value: 1 }) };
+}
+
+function responseWithEtag(status: number, body: unknown, etag: string | null) {
+  return {
+    ok: status >= 200 && status < 300,
+    status,
+    json: async () => body,
+    headers: { get: (name: string) => (name.toLowerCase() === 'etag' ? etag : null) },
+  };
 }
 
 afterEach(() => {
@@ -37,5 +46,31 @@ describe('apiGet 错误分层', () => {
     const error = await apiGet('/site/meta').catch((e: unknown) => e);
     expect(error).toBeInstanceOf(Response);
     expect((error as Response).status).toBe(503);
+  });
+});
+
+describe('apiGetWithHeaders 错误分层 + ETag 透传', () => {
+  it('200 → 返回 { data, etag }(api 的弱 ETag 原样带回,供资源路由转发)', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => responseWithEtag(200, { items: [1] }, 'W/"abc123def4567890"')),
+    );
+    await expect(apiGetWithHeaders('/site/episodes')).resolves.toEqual({
+      data: { items: [1] },
+      etag: 'W/"abc123def4567890"',
+    });
+  });
+
+  it('200 无 ETag → etag 为 null;404 → null;5xx → 抛 Response(与 apiGet 同层)', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => responseWithEtag(200, { ok: 1 }, null)));
+    await expect(apiGetWithHeaders('/site/meta')).resolves.toEqual({ data: { ok: 1 }, etag: null });
+
+    vi.stubGlobal('fetch', vi.fn(async () => responseWithEtag(404, {}, null)));
+    await expect(apiGetWithHeaders('/site/episodes')).resolves.toBeNull();
+
+    vi.stubGlobal('fetch', vi.fn(async () => responseWithEtag(502, {}, 'W/"x"')));
+    const error = await apiGetWithHeaders('/site/episodes').catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(Response);
+    expect((error as Response).status).toBe(502);
   });
 });

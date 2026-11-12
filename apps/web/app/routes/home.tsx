@@ -16,6 +16,10 @@ export const meta: MetaFunction = () => [
   { name: 'description', content: SITE.description },
 ];
 
+// 60 秒内浏览器不再回源(时间线的「分钟级」观感来自这里 + api 的 60s 层);
+// 无 CDN 下 SSR 每请求照跑,s-maxage 为将来套 CDN 预留 —— aihot 首页同款策略。
+export const headers = () => ({ 'Cache-Control': 'public, max-age=60, s-maxage=60' });
+
 export async function loader({ request }: { request: Request }) {
   // page 一律忽略:时间线已是无限滚动,始终从第 1 页起(遗留 ?page= 链接静默回落)
   const { source, category, q } = parseTimelineQuery(new URL(request.url));
